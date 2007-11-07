@@ -1,0 +1,20 @@
+==Entities==
+
+ * @Searchable
+ 
+ * SearchableEntityManager#search
+ * SearchableEntityManager#delete
+ * SearchableEntityManager#addToIndex
+ * SearchableEntityManager#removeFromIndex
+ * SearchableEntityManager#optimize 		(how the heck do I test this??)
+ 
+ * Transaction#execute  (need to find a way to create a transact conflict)
+ 
+ ==DDLAction Rendering==
+ 
+ * ALTER_DROP_COLUMN
+ * ALTER_ADD_KEY
+ * ALTER_DROP_KEY
+ * DROP_INDEX
+ 
+ * @OnUpdate
