@@ -31,6 +31,7 @@ import org.junit.Test;
 import test.schema.Company;
 import test.schema.Pen;
 import test.schema.Person;
+import test.schema.PersonImpl;
 import test.schema.PersonLegalDefence;
 
 /**
@@ -172,7 +173,7 @@ public class EntityTest extends DataTest {
 		manager.delete(company);
 		
 		SQLLogMonitor.getInstance().markWatchSQL();
-		Person person = manager.create(Person.class);
+		Person person = manager.create(Person.class, new DBParam("url", "http://www.codecommit.com"));
 		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
 		
 		conn = manager.getProvider().getConnection();
@@ -245,9 +246,13 @@ public class EntityTest extends DataTest {
 	public void testDefinedImplementation() {
 		Person person = manager.get(Person.class, personID);
 		
+		PersonImpl.enableOverride = true;
+		
 		SQLLogMonitor.getInstance().markWatchSQL();
 		assertEquals("Smith", person.getLastName());
 		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
+		
+		PersonImpl.enableOverride = false;
 	}
 	
 	// if this test doesn't stack overflow, we're good
