@@ -44,10 +44,7 @@ public class DBCPPoolProvider extends PoolProvider {
 	
 	@Override
 	protected Connection getConnectionImpl() throws SQLException {
-		Connection conn = ds.getConnection();
-		setPostConnectionProperties(conn);
-		
-		return conn;
+		return ds.getConnection();
 	}
 
 	@Override

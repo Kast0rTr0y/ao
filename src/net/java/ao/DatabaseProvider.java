@@ -727,6 +727,7 @@ public abstract class DatabaseProvider {
 			}
 			
 			conn = DelegateConnectionHandler.newInstance(getConnectionImpl());
+			setPostConnectionProperties(conn);
 			connections.put(Thread.currentThread(), conn);
 			
 			return conn;
