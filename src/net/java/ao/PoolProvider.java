@@ -141,6 +141,11 @@ public abstract class PoolProvider extends DatabaseProvider {
 	}
 	
 	@Override
+	protected boolean shouldQuoteID(String id) {
+		return delegate.shouldQuoteID(id);
+	}
+	
+	@Override
 	protected Set<String> getReservedWords() {
 		return delegate.getReservedWords();
 	}
