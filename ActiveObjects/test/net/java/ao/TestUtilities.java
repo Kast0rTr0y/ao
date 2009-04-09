@@ -154,7 +154,7 @@ public class TestUtilities {
 		//_________________________________________________________________________________________
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = prepareStatement(conn, "INSERT INTO " + postgresName(companyTableName)  
+			PreparedStatement stmt = prepareStatement(conn, "INSERT INTO " + companyTableName  
 					+ " (" + postgresName("companyID") + ", " + postgresName("name") + ", " 
 					+ postgresName("cool") + ", " + postgresName("image") + ") VALUES (?,?,?,?)");
 			
@@ -174,7 +174,7 @@ public class TestUtilities {
 			int index = 0;
 			back.coolCompanyIDs = new long[3];
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(companyTableName) + " ("
+			stmt = prepareStatement(conn, "INSERT INTO " + companyTableName + " ("
 					+ postgresName("companyID") + ", " + postgresName("name") + ", " 
 					+ postgresName("cool") +") VALUES (?,?,?)");
 
@@ -204,7 +204,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "person");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(personTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + personTableName
 					+ " (" + postgresName("firstName") + ", " + postgresName("profession") 
 					+ ", " + postgresName("companyID") + ", " + postgresName("image") + ") VALUES (?, ?, ?, ?)");
 			
@@ -224,7 +224,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "nose");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(noseTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + noseTableName 
 					+ " (" + postgresName("length") + ", " + postgresName("personID") + ") VALUES (?,?)");
 			
 			stmt.setInt(1, 2);
@@ -238,7 +238,7 @@ public class TestUtilities {
 			assignPriorID(manager, conn, "pen");
 			
 			back.penIDs = new int[3];
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(penTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + penTableName 
 					+ " (" + postgresName("width") + ", " + postgresName("personID") 
 					+ ") VALUES (?,?)");
 	
@@ -271,7 +271,7 @@ public class TestUtilities {
 			assignPriorID(manager, conn, "personDefence");
 			
 			back.defenceIDs = new int[3];
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(personLegalDefenceTableName) + " (" 
+			stmt = prepareStatement(conn, "INSERT INTO " + personLegalDefenceTableName + " (" 
 					+ postgresName("severity") + ") VALUES (?)");
 			
 			index = 0;
@@ -300,7 +300,7 @@ public class TestUtilities {
 			assignPriorID(manager, conn, "personSuit");
 			
 			back.suitIDs = new int[3];
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(personSuitTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + personSuitTableName 
 					+ " (" + postgresName("personID") + ", " + postgresName("personLegalDefenceID") + ") VALUES (?,?)");
 	
 			index = 0;
@@ -331,7 +331,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "post");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(postTableName) + " (" + postgresName("title") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + postTableName + " (" + postgresName("title") + ") VALUES (?)");
 			
 			stmt.setString(1, "Test Post");
 			stmt.executeUpdate();
@@ -342,7 +342,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "photo");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(photoTableName) + " (" + postgresName("depth") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + photoTableName + " (" + postgresName("depth") + ") VALUES (?)");
 			
 			stmt.setInt(1, 256);
 			
@@ -354,7 +354,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "comment");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(commentTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + commentTableName
 					+ " (" + postgresName("title") + ", " + postgresName("text") 
 					+ ", " + postgresName("commentableID") + ", " + postgresName("commentableType") 
 					+ ") VALUES (?,?,?,?)");
@@ -425,7 +425,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "book");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(bookTableName) 
+			stmt = prepareStatement(conn, "INSERT INTO " + bookTableName 
 					+ " (" + postgresName("title") + ", " + postgresName("hardcover") + ") VALUES (?,?)");
 			
 			stmt.setString(1, "Test Book 1");
@@ -449,7 +449,7 @@ public class TestUtilities {
 			
 			assignPriorID(manager, conn, "magazine");
 			
-			stmt = prepareStatement(conn, "INSERT INTO " + postgresName(magazineTableName) + " (" + postgresName("title") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + magazineTableName + " (" + postgresName("title") + ") VALUES (?)");
 			
 			stmt.setString(1, "Test Magazine 1");
 			stmt.executeUpdate();
@@ -472,7 +472,7 @@ public class TestUtilities {
 				for (int subIndex = 0; subIndex < back.bookAuthorIDs[0].length; subIndex++) {
 					assignPriorID(manager, conn, "author");
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(authorTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + authorTableName 
 							+ " (" + postgresName("name") + ") VALUES (?)");
 					
 					stmt.setString(1, "Test Book Author " + (subIndex + 1));
@@ -482,7 +482,7 @@ public class TestUtilities {
 					
 					stmt.close();
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(authorshipTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + authorshipTableName
 							+ " (" + postgresName("publicationID") + ", " + postgresName("publicationType") 
 							+ ", " + postgresName("authorID") + ") VALUES (?,?,?)");
 					
@@ -501,7 +501,7 @@ public class TestUtilities {
 				for (int subIndex = 0; subIndex < back.magazineAuthorIDs[0].length; subIndex++) {
 					assignPriorID(manager, conn, "author");
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(authorTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + authorTableName 
 							+ " (" + postgresName("name") + ") VALUES (?)");
 					
 					stmt.setString(1, "Test Magazine Author " + (subIndex + 1));
@@ -511,7 +511,7 @@ public class TestUtilities {
 					
 					stmt.close();
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(authorshipTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + authorshipTableName 
 							+ " (" + postgresName("publicationID") + ", " + postgresName("publicationType") 
 							+ ", " + postgresName("authorID") + ") VALUES (?,?,?)");
 					
@@ -557,7 +557,7 @@ public class TestUtilities {
 					
 					stmt.close();
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(publicationToDistributionTableName) +
+					stmt = prepareStatement(conn, "INSERT INTO " + publicationToDistributionTableName +
 							" (" + postgresName("publicationID") + ", " + postgresName("publicationType") 
 							+ ", " + postgresName("distributionID") + ", " + postgresName("distributionType") + ") VALUES (?,?,?,?)");
 					
@@ -604,7 +604,7 @@ public class TestUtilities {
 					
 					stmt.close();
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(publicationToDistributionTableName) +
+					stmt = prepareStatement(conn, "INSERT INTO " + publicationToDistributionTableName +
 							" (" + postgresName("publicationID") + ", " + postgresName("publicationType") 
 							+ ", " + postgresName("distributionID") + ", " + postgresName("distributionType") 
 							+ ") VALUES (?,?,?,?)");
@@ -619,7 +619,7 @@ public class TestUtilities {
 					
 					back.addressIDs = new int[2];
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(emailAddressTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + emailAddressTableName 
 							+ " (" + postgresName("email") + ") VALUES (?)");
 					
 					assignPriorID(manager, conn, "emailAddress");
@@ -642,7 +642,7 @@ public class TestUtilities {
 					
 					String contentsName = manager.getProvider().processID("contents");
 					
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(messageTableName) 
+					stmt = prepareStatement(conn, "INSERT INTO " + messageTableName 
 							+ " (" + contentsName 
 							+ ", " + postgresName("fromID") + ", " + postgresName("fromType") 
 							+ ", " + postgresName("toID") + ", " + postgresName("toType") + ")"

@@ -221,7 +221,7 @@ public class EntityTest extends DataTest {
 		Connection conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
-					+ ", " + postgresName("cool") + " FROM " + postgresName(companyTableName) 
+					+ ", " + postgresName("cool") + " FROM " + companyTableName 
 					+ " WHERE " + postgresName("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
@@ -248,7 +248,7 @@ public class EntityTest extends DataTest {
 		conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
-					+ ", " + postgresName("cool") + " FROM " + postgresName(companyTableName) 
+					+ ", " + postgresName("cool") + " FROM " + companyTableName 
 					+ " WHERE companyID = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
@@ -278,7 +278,7 @@ public class EntityTest extends DataTest {
 		conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " 
-					+ postgresName("profession") + " FROM " + postgresName(personTableName) 
+					+ postgresName("profession") + " FROM " + personTableName 
 					+ " WHERE " + postgresName("id") + " = ?");
 			stmt.setInt(1, person.getID());
 			
@@ -617,7 +617,7 @@ public class EntityTest extends DataTest {
 		Connection conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("motivation") + " FROM " 
-					+ postgresName(companyTableName) 
+					+ companyTableName 
 					+ " WHERE " + postgresName("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
@@ -650,7 +650,7 @@ public class EntityTest extends DataTest {
 		Connection conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("companyID") 
-					+ " FROM " + postgresName(companyTableName) 
+					+ " FROM " + companyTableName 
 					+ " WHERE " + postgresName("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
