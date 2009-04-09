@@ -249,7 +249,7 @@ public class EntityTest extends DataTest {
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
 					+ ", " + postgresName("cool") + " FROM " + companyTableName 
-					+ " WHERE companyID = ?");
+					+ " WHERE " + postgresName("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
 			ResultSet res = stmt.executeQuery();
