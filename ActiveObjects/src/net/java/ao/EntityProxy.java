@@ -488,6 +488,7 @@ class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
 		try {
 			if (value instanceof RawEntity<?>) {
 				cacheLayer.markToFlush(((RawEntity<?>) value).getEntityType());
+				cacheLayer.markToFlush(entity.getEntityType());
 			}
 
 			cacheLayer.markDirty(name);
