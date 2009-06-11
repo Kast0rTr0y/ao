@@ -790,6 +790,24 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
+	public void testOneToManyCacheInvalidation() throws SQLException {
+		Person p = manager.create(Person.class);
+		Company c = manager.create(Company.class);
+		
+		c.getPeople();
+		
+		p.setCompany(c);
+		p.save();
+		
+		Person[] people = c.getPeople();
+		assertEquals(people.length, 1);
+		assertEquals(people[0], p);
+		
+		manager.delete(c);
+		manager.delete(p);
+	}
+	
+	@Test
 	public void testManyToManyRetrievalIDs() {
 		EntityProxy.ignorePreload = true;
 		try {
