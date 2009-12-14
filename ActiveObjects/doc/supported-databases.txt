@@ -1,0 +1,33 @@
+.. :mode=rest:
+
+===================
+Supported Databases
+===================
+      
+Most major databases are currently supported by ActiveObjects.  This data is
+current to the **0.9** stable release.
+
+ +---------------+-----------------------------+-------------------------------------------+
+ | Database      | URI Protocol                | Support                                   |
+ +===============+=============================+===========================================+
+ |Derby          | * ``jdbc:derby``            | |stable| Stable                           |
+ |               | * ``jdbc:derby://``         |                                           |
+ +---------------+-----------------------------+-------------------------------------------+
+ |HSQLDB         | * ``jdbc:hsqldb``           | |very-stable| Well tested and very stable |
+ |               | * ``jdbc:hsqldb://``        |                                           |
+ +---------------+-----------------------------+-------------------------------------------+
+ |MS SQL Server  | * ``jdbc:sqlserver://``     | |stable| Stable                           |
+ |2005 and 2007  | * ``jdbc:jtds:sqlserver://``|                                           |
+ +---------------+-----------------------------+-------------------------------------------+
+ |MySQL          | * ``jdbc:mysql://``         | |very-stable| Well tested and very stable |
+ +---------------+-----------------------------+-------------------------------------------+
+ |Oracle         | * ``jdbc:oracle:thin``      | |dev| Under development                   |
+ |               | * ``jdbc:oracle:oci``       |                                           |
+ +---------------+-----------------------------+-------------------------------------------+
+ |PostgreSQL     | * ``jdbc:postgresql://``    | |stable| Well tested and stable           |
+ +---------------+-----------------------------+-------------------------------------------+
+
+.. |stable| image:: images/states/stable.png
+.. |very-stable| image:: images/states/very-stable.png
+.. |dev| image:: images/states/dev.png
+.. |unsupported| image:: images/states/unsupported.png

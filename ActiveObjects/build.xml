@@ -1,0 +1,687 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="ActiveObjects" default="build" basedir=".">
+	<dirname property="activeobjects.dir" file="${ant.file.ActiveObjects}"/>
+	
+	<tstamp>
+		<format property="build.vstamp" pattern="yyyyMMdd"/>
+	</tstamp>
+	
+	<exec dir="${activeobjects.dir}" executable="svn" output="${activeobjects.dir}/svn.out" logError="yes">
+		<arg value="info"/>
+	</exec>
+	
+	<replaceregexp flags="g" file="${activeobjects.dir}/svn.out">
+		<regexp pattern="Path: .+[\n\r]{1,2}URL: .+[\n\r]{1,2}Repository Root: .+[\n\r]{1,2}Repository UUID: .+[\n\r]{1,2}Revision: (\d+)[\n\r]{1,2}.+[\n\r]{1,2}.+[\n\r]{1,2}.+[\n\r]{1,2}.+[\n\r]{1,2}.+[\n\r]{1,2}[\n\r]{1,2}"/>
+		<substitution expression="\1"/>
+	</replaceregexp>
+	
+	<loadfile property="svn.revision" srcfile="${activeobjects.dir}/svn.out"/>
+	
+	<delete file="${activeobjects.dir}/svn.out"/>
+	
+	<property file="${activeobjects.dir}/build.properties"/>
+	<property file="${activeobjects.dir}/build-internal.properties"/>
+	
+	<property name="dist.path" value="${activeobjects.dir}/dist/activeobjects-${activeobjects.version}"/>
+	
+	<target name="check-test">
+		<condition property="test-check-ok">
+			<and>
+				<isset property="junit4.path"/>
+				<isset property="hsqldb.path"/>
+				
+				<not>
+					<or>
+						<equals arg1="${junit4.path}" arg2="" trim="yes"/>
+						<equals arg1="${hsqldb.path}" arg2="" trim="yes"/>
+					</or>
+				</not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-cobertura" depends="check-test" if="test-check-ok">
+		<condition property="cobertura-check-ok">
+			<and>
+				<isset property="cobertura.path"/>
+				
+				<not>
+					<or>
+						<equals arg1="${cobertura.path}" arg2="" trim="yes"/>
+					</or>
+				</not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-jdocs">
+		<condition property="jdocs-check-ok">
+			<and>
+				<isset property="jdocs.path"/>
+				
+				<not>
+					<equals arg1="${jdocs.path}" arg2="" trim="yes"/>
+				</not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-docutils">
+		<condition property="docutils-check-ok">
+			<and>
+				<isset property="docutils.path"/>
+				
+				<not>
+					<equals arg1="${docutils.path}" arg2="" trim="yes"/>
+				</not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="install-docutils" depends="check-docutils" unless="docutils-check-ok">
+		<fail message="Docutils must be installed to build the documentation"/>
+	</target>
+
+	<target name="check-ant">
+		<condition property="test-ant-ok">
+			<and>
+				<isset property="ant.version"/>
+				<contains string="${ant.version}" substring=" 1.7."/>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="upgrade-ant" depends="check-ant" unless="test-ant-ok">
+		<fail message="Upgrade ant to version >= 1.7 to build doc and dist targets"/>
+	</target>
+	
+	<target name="init">
+		<mkdir dir="${activeobjects.dir}/bin"/>
+	</target>
+	
+	<target name="init-dist">
+		<mkdir dir="${dist.path}/src"/>
+		<mkdir dir="${dist.path}/api"/>
+	</target>
+	
+	<target name="init-javadoc" unless="supress-javadoc-deletion">
+		<delete>
+			<fileset dir="${javadoc.path}">
+				<include name="**/*"/>
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="init-reports">
+		<delete failonerror="no">
+			<fileset dir="${activeobjects.dir}/reports">
+				<include name="**/*"/>
+			</fileset>
+		</delete>
+		
+		<mkdir dir="${activeobjects.dir}/reports/junit"/>
+		<mkdir dir="${activeobjects.dir}/reports/coverage"/>
+	</target>
+	
+	<target name="build" depends="init">
+		<javac srcdir="${activeobjects.dir}/src" destdir="${activeobjects.dir}/bin" classpath="${build.classpath}" 
+				source="1.5" target="1.5" debug="${build.debug}"/>
+		
+		<copy todir="${activeobjects.dir}/bin">
+			<fileset dir="${activeobjects.dir}/src">
+				<include name="**/*.properties"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="build-test" depends="check-test,init,build" if="test-check-ok">
+		<javac srcdir="${activeobjects.dir}/test" destdir="${activeobjects.dir}/bin" 
+				classpath="bin${path.separator}${build.classpath}${path.separator}${junit4.path}${path.separator}${hsqldb.path}" 
+				source="1.5" target="1.5" debug="yes"/>
+		
+		<copy todir="${activeobjects.dir}/bin">
+			<fileset dir="${activeobjects.dir}/test">
+				<include name="**/*.properties"/>
+				<include name="**/*.sql"/>
+				<include name="**/*.png"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="assign-javadoc-dir" unless="javadoc.intern.path">
+		<property name="javadoc.intern.path" value="${javadoc.path}"/>
+	</target>
+	
+	<target name="javadoc" depends="upgrade-ant,init-javadoc,assign-javadoc-dir" if="test-ant-ok">
+		<javadoc sourcepath="${activeobjects.dir}/src" classpath="${build.classpath}" destdir="${javadoc.intern.path}"
+		 		windowtitle="ActiveObjects: Javadoc" access="protected" overview="src/overview.html">
+			<packageset dir="${activeobjects.dir}/src">
+				<include name="net/java/ao/**/*.java"/>
+			</packageset>
+			
+			<link href="${lucene.javadoc}"/>
+			<link href="http://java.sun.com/javase/6/docs/api"/>
+		</javadoc>
+	</target>
+	
+	<target name="site" depends="install-docutils" if="docutils-check-ok">
+		<!-- build index.html -->
+		<copy tofile="${activeobjects.dir}/doc/index.html" file="${activeobjects.dir}/doc/meta/index-template.html"/>
+		<exec dir="${activeobjects.dir}/doc" executable="python">
+			<arg value="${docutils.path}${file.separator}rst2html.py"/>
+			<arg value="--template=meta${file.separator}toc-template.txt"/>
+			<arg value="toc.rst"/>
+			<arg value="index-toc.html"/>
+		</exec>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;blockquote&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;/blockquote&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern=" class=&quot;.*?&quot;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;p&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;/p&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;dl&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;/dl&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;dd&gt;|&lt;dt&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="&lt;/dd&gt;|&lt;/dt&gt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="^-+$"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/index-toc.html">
+			<regexp pattern="\.txt"/>
+			<substitution expression=".html"/>
+		</replaceregexp>
+		<loadfile property="index.toc" srcfile="${activeobjects.dir}/doc/index-toc.html"/>
+		<delete file="${activeobjects.dir}/doc/index-toc.html"/>
+		<replace file="${activeobjects.dir}/doc/index.html" token="&lt;activeobjects:toc/&gt;" value="${index.toc}"/>
+		
+		<!-- build the rest -->
+		<exec dir="${activeobjects.dir}/doc" executable="python">
+			<arg value="${docutils.path}${file.separator}buildhtml.py"/>
+			<arg value="--link-stylesheet"/>
+			<arg value="--stylesheet=/style.css"/>
+			
+			<arg value="--initial-header-level=2"/>
+			<arg value="--footnote-references=superscript"/>
+		</exec>
+		<replaceregexp byline="yes">
+			<regexp pattern="&lt;body&gt;"/>
+			<substitution expression="${analytics.subst}"/>
+			
+			<fileset id="site-html" dir="${activeobjects.dir}/doc">
+				<include name="**/*.html"/>
+				<exclude name="meta/**/*"/>
+			</fileset>
+		</replaceregexp>
+
+		<delete>
+			<fileset dir="${www.path}">
+				<include name="**/*.html"/>
+				<include name="**/*.png"/>
+				<include name="**/*.jpg"/>
+				<include name="**/*.gif"/>
+				<exclude name="api/**/*"/>
+				<!-- <exclude name="index.html"/> -->
+			</fileset>
+		</delete>
+		<move todir="${www.path}" overwrite="yes" flatten="no">
+			<fileset refid="site-html"/>
+		</move>
+		<copy todir="${www.path}" overwrite="yes" flatten="no">
+			<fileset dir="${activeobjects.dir}/doc">
+				<include name="**/*.png"/>
+				<include name="**/*.jpg"/>
+				<include name="**/*.gif"/>
+			</fileset>
+		</copy>
+		
+		<!-- build pdfs -->
+		<echo level="info" message="Building documentation A4..."/>
+		<ant antfile="build.xml" target="pdf" inheritall="no">
+			<property name="pdf-size" value="a4"/>
+		</ant>
+
+		<echo level="info" message="Building documentation US-Letter..."/>
+		<ant antfile="build.xml" target="pdf" inheritall="no">
+			<property name="pdf-size" value="letter"/>
+		</ant>
+	</target>
+	
+	<target name="assign-pdf-dest" depends="assign-pdf-size" unless="pdf-dest">
+		<property name="pdf-dest" value="${www.path}/activeobjects-${pdf-size}.pdf"/>
+	</target>
+	
+	<target name="assign-pdf-size" unless="pdf-size">
+		<property name="pdf-size" value="a4"/>
+	</target>
+	
+	<target name="pdf" depends="install-docutils,assign-pdf-dest,assign-pdf-size" if="docutils-check-ok">
+		<echo level="info" message="Preprocessing ReStructuredText..."/>
+		
+		<mkdir dir="${activeobjects.dir}/doc/pdftmp"/>
+		
+		<delete file="${activeobjects.dir}/doc/pdftmp/toc.rst"/>
+		<copy file="${activeobjects.dir}/doc/toc.rst" todir="${activeobjects.dir}/doc/pdftmp"/>
+		
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern=".*?&lt;"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern="&gt;.*?"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern="`_$"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp byline="yes" file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern=".*?([^x]t|[^t])$"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern="\.txt"/>
+			<substitution expression="\.txt,"/>
+		</replaceregexp>
+		
+		<replaceregexp file="${activeobjects.dir}/doc/pdftmp/toc.rst">
+			<regexp pattern="[\n\s]+"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<loadfile property="index.toc" srcfile="${activeobjects.dir}/doc/pdftmp/toc.rst"/>
+
+		<delete file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.txt"/>
+		<concat destfile="${activeobjects.dir}/doc/pdftmp/ActiveObjects.txt">
+			<header>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ActiveObjects ${activeobjects.version}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</header>
+			<filelist dir="${activeobjects.dir}/doc" files="${index.toc}"/>
+		</concat>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.txt" token=".. :mode=rest:" value=""/>
+		
+		<replaceregexp flags="s" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.txt">
+			<regexp pattern="\.\. pdf-remove-begin.+\.\. pdf-remove-end."/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<echo level="info" message="Building LaTeX..."/>
+		<delete file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex"/>
+		<exec dir="${activeobjects.dir}/doc/pdftmp" executable="python" 
+				input="${activeobjects.dir}/doc/pdftmp/ActiveObjects.txt" 
+				output="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex"
+				logError="yes">
+			<arg value="${docutils.path}${file.separator}rst2latex.py"/>
+			<arg value="--use-verbatim-when-possible"/>
+			<arg value="--graphicx-option=pdftex"/>
+			<arg value="--use-latex-footnotes"/>
+			<arg value="--use-latex-toc"/>
+			<arg value="--documentoptions=10pt,${pdf-size}paper"/>
+		</exec>
+		
+		<!-- custom LaTeX styling -->
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>% generated by Docutils &lt;http://docutils.sourceforge.net/&gt;</replacetoken>
+			<replacevalue><![CDATA[
+%\setlength{\parskip}{4pt}
+\usepackage{upquote, mathptmx}
+]]></replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>%% generator Docutils: http://docutils.sourceforge.net/</replacetoken>
+			<replacevalue><![CDATA[
+%\setlength{\parskip}{4pt}
+\usepackage{upquote, mathptmx}
+]]></replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>]{hyperref}</replacetoken>
+			<replacevalue>,bookmarks=true,pdftex=true]{hyperref}</replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>linkcolor=blue,urlcolor=blue</replacetoken>
+			<replacevalue>linkcolor=black,urlcolor=black</replacevalue>
+		</replace>
+
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>colorlinks=true,linkcolor=blue,urlcolor=blue</replacetoken>
+			<replacevalue>colorlinks=false</replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>\maketitle</replacetoken>
+			<replacevalue><![CDATA[
+\maketitle
+\tableofcontents
+\pagebreak
+]]></replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>%___________________________________________________________________________</replacetoken>
+			<replacevalue></replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken>\begin{verbatim}</replacetoken>
+			<replacevalue><![CDATA[\begin{samepage}
+\begin{verbatim}]]></replacevalue>
+		</replace>
+		
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken><![CDATA[\end{verbatim}
+\end{quote}
+]]></replacetoken>
+			<replacevalue><![CDATA[\end{verbatim}
+\end{samepage}
+\end{quote}
+
+\noindent]]></replacevalue>
+		</replace>
+
+		<replace file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<replacetoken><![CDATA[\end{verbatim}\end{quote}
+]]></replacetoken>
+			<replacevalue><![CDATA[\end{verbatim}
+\end{samepage}\end{quote}
+
+\noindent]]></replacevalue>
+		</replace>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="\\href\{([^}]|\\\})+\}"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="(\\pdfbookmark\[\d\]\{.*?\}\{.*?\}[\n\r]{2}){2}"/>
+			<substitution expression="\1"/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="(\\hypertarget\{.*?\}\{\}\s+){2,3}"/>
+			<substitution expression="\1"/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="(\\label\{.*?\}[\n\r]{2}){2}"/>
+			<substitution expression="\1"/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="\{\\color\{red\}\\bfseries\{\}(.+)\{\\_\}\}"/>
+			<substitution expression="\1"/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="\\includegraphics\{.*?\}"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="(\\subsection\{)\d+\.[ ]"/>
+			<substitution expression="\1"/>
+		</replaceregexp>
+		
+		<replaceregexp flags="g" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="Duplicate explicit target name: ``.+''\."/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp flags="gm" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="&lt;stdin&gt;:.*$"/>
+			<substitution expression=""/>
+		</replaceregexp>
+		
+		<replaceregexp flags="s" file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.tex">
+			<regexp pattern="(\\)section\*?\{Docutils System Messages\}.+"/>
+			<substitution expression="\1end{document}"/>
+		</replaceregexp>
+		
+		<echo level="info" message="Building PDF..."/>
+		
+		<exec dir="${activeobjects.dir}/doc/pdftmp" executable="pdflatex" 
+			output="${activeobjects.dir}/doc/pdftmp/pdflatex.log"
+			logError="yes">
+			<arg value="ActiveObjects.tex"/>
+		</exec>
+		
+		<!-- second run for cross-references -->
+		<exec dir="${activeobjects.dir}/doc/pdftmp" executable="pdflatex" 
+			output="${activeobjects.dir}/doc/pdftmp/pdflatex.log"
+			logError="yes">
+			<arg value="ActiveObjects.tex"/>
+		</exec>
+		
+		<move file="${activeobjects.dir}/doc/pdftmp/ActiveObjects.pdf" tofile="${pdf-dest}"/>
+		<delete dir="${activeobjects.dir}/doc/pdftmp"/>
+	</target>
+	
+	<target name="jdocs" depends="check-jdocs" if="jdocs-check-ok">
+		<taskdef name="jdocs" classpath="${jdocs.path}" classname="com.dzone.jdocs.ant.jdk15.task.Jdocs"/>
+
+		<jdocs sourcepath="${activeobjects.dir}/src/net/java/" classpath="${build.classpath}" destdir="${javadoc.intern.path}"
+		 		windowtitle="ActiveObjects: Javadoc" access="protected" overview="src/overview.html" forkJVM="true">
+			<packageset dir="${activeobjects.dir}/src/net/java/">
+				<include name="ao/**"/>
+			</packageset>
+			
+			<link href="${lucene.javadoc}"/>
+			<link href="http://java.sun.com/javase/6/docs/api"/>
+		</jdocs>
+	</target>
+	
+	<target name="jar" depends="init-dist">
+		<!-- done as a antcall(s) rather than dependencies to ensure ordering -->
+		<antcall target="clean"/>
+		<antcall target="build"/>
+		
+		<jar basedir="${activeobjects.dir}/bin" compress="${jar.compress}" 
+				destfile="${dist.path}/activeobjects-${activeobjects.version}.jar"/>
+	</target>
+	
+	<target name="dist" depends="upgrade-ant,init-dist,jar" if="test-ant-ok">
+		<property name="javadoc.intern.path" value="${dist.path}/api"/>
+		<property name="supress-javadoc-deletion" value="yes"/>
+		
+		<antcall target="javadoc"/>
+		
+		<copy todir="${dist.path}/src">
+			<fileset dir="${activeobjects.dir}/src">
+				<include name="**/*.java"/>
+			</fileset>
+		</copy>
+		<copy todir="${dist.path}">
+			<fileset dir="${activeobjects.dir}">
+				<include name="BUGS"/>
+				<include name="CONTRIBUTORS"/>
+				<include name="LICENSE"/>
+			</fileset>
+		</copy>
+		
+		<property name="pdf-dest" value="${dist.path}/documentation.pdf"/>
+		<antcall target="pdf"/>
+		
+		<zip destfile="${dist.path}.zip">
+			<fileset dir="${activeobjects.dir}/dist">
+				<include name="activeobjects-${activeobjects.version}/**/*"/>
+			</fileset>
+		</zip>
+	
+		<tar destfile="${dist.path}.tar">
+			<fileset dir="${activeobjects.dir}/dist">
+				<include name="activeobjects-${activeobjects.version}/**/*"/>
+			</fileset>
+		</tar>
+		<gzip src="${dist.path}.tar" zipfile="${dist.path}.tar.gz"/>
+		
+		<delete file="${dist.path}.tar"/>
+		
+		<checksum file="${dist.path}.zip" algorithm="sha" fileext=".sha1"/>
+		<checksum file="${dist.path}.zip" algorithm="md5" fileext=".md5"/>
+		<checksum file="${dist.path}.tar.gz" algorithm="sha" fileext=".sha1"/>
+		<checksum file="${dist.path}.tar.gz" algorithm="md5" fileext=".md5"/>
+		
+		<delete includeemptydirs="yes">
+			<fileset dir="${activeobjects.dir}/dist">
+				<include name="activeobjects-${activeobjects.version}/**/*"/>
+			</fileset>
+		</delete>
+		<delete includeemptydirs="yes">
+			<fileset dir="${activeobjects.dir}/dist">
+				<include name="activeobjects-${activeobjects.version}"/>
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="test" depends="check-test,build-test" if="test-check-ok">
+        <junit printsummary="on" haltonerror="yes" haltonfailure="no" fork="yes">
+        	<jvmarg value="-Xms256m"/>
+        	<jvmarg value="-Xmx512m"/>
+        	<jvmarg value="-XX:MaxPermSize=256m"/>
+
+        	<jvmarg value="-Ddb.uri.prefix=jdbc:hsqldb:mem:ao_test"/>
+        	<jvmarg value="-Ddb.user=sa"/>
+        	<jvmarg value="-Ddb.pass="/>
+        	
+        	<classpath>
+        		<pathelement location="bin/"/>
+        		<pathelement location="${junit4.path}"/>
+        		<pathelement location="${hsqldb.path}"/>
+        		<pathelement path="${build.classpath}"/>
+        	</classpath>
+        	
+        	<assertions>
+        		<enable package="net.java.ao"/>
+        	</assertions>
+        	
+        	<formatter type="plain" usefile="no"/>
+        	
+        	<test name="AllTests"/>
+		</junit>
+	</target>
+	
+	<target name="report" depends="check-cobertura,init-reports" if="cobertura-check-ok">
+		<antcall target="clean"/>
+		<antcall target="build-test"/>
+		
+		<taskdef resource="tasks.properties">
+			<classpath>
+			    <fileset id="corbertura.classpath" dir="${cobertura.path}">
+			        <include name="cobertura.jar"/>
+			        <include name="lib/**/*.jar"/>
+			    </fileset>
+			</classpath>
+		</taskdef>
+		
+		<mkdir dir="${activeobjects.dir}/instrument-bin"/>
+		
+		<cobertura-instrument datafile="${activeobjects.dir}/cobertura.ser" todir="${activeobjects.dir}/instrument-bin">
+		    <fileset dir="${activeobjects.dir}/bin">
+				<include name="**/*.class"/>
+
+    			<exclude name="**/*Test.class"/>
+				<exclude name="**/*Test*.class"/>
+		    	<exclude name="test/schema/*.class"/>
+		    	<exclude name="net/java/ao/schema/task/*.class"/>
+
+		    	<!-- we'll just trust the Harmony tests -->
+				<exclude name="net/java/ao/SoftHashMap.class"/>
+		    	<exclude name="net/java/ao/SoftHashMap*.class"/>
+		    	
+				<exclude name="net/java/ao/SQLLogMonitor.class"/>
+		    	<exclude name="net/java/ao/TestUtilities.class"/>
+		    	<exclude name="net/java/ao/types/ClassType.class"/>
+		    </fileset>
+		</cobertura-instrument>
+		
+        <junit printsummary="on" haltonerror="no" haltonfailure="no" fork="yes">
+        	<jvmarg value="-Xms256m"/>
+        	<jvmarg value="-Xmx512m"/>
+        	<jvmarg value="-XX:MaxPermSize=256m"/>
+
+        	<jvmarg value="-Ddb.uri.prefix=jdbc:hsqldb:mem:ao_test"/>
+        	<jvmarg value="-Ddb.user=sa"/>
+        	<jvmarg value="-Ddb.pass="/>
+        	
+        	<classpath>
+        		<pathelement location="${activeobjects.dir}/instrument-bin/"/>
+        		<pathelement location="${activeobjects.dir}/bin/"/>
+        		<pathelement location="${junit4.path}"/>
+        		<pathelement location="${hsqldb.path}"/>
+        		<pathelement path="${build.classpath}"/>
+        		
+			    <fileset refid="corbertura.classpath"/>
+        	</classpath>
+	
+        	<assertions>
+        		<enable package="net.java.ao"/>
+        	</assertions>
+        	
+        	<formatter type="plain" usefile="no"/>
+        	<formatter type="xml"/>
+        	
+        	<test name="AllTests" todir="${activeobjects.dir}/reports/junit"/>
+		</junit>
+
+		<junitreport todir="${activeobjects.dir}/reports/junit">
+			<fileset dir="${activeobjects.dir}/reports/junit">
+				<include name="TEST-*.xml" />
+			</fileset>
+			<report format="frames" todir="reports/junit" />
+		</junitreport>
+		
+		<cobertura-report srcdir="${activeobjects.dir}/src" destdir="${activeobjects.dir}/reports/coverage"/>
+		<cobertura-report srcdir="${activeobjects.dir}/src" destdir="${activeobjects.dir}/reports/coverage"/>
+		
+		<delete file="${activeobjects.dir}/cobertura.ser"/>
+		<delete file="${activeobjects.dir}/cobertura.log"/>
+		
+		<delete dir="${activeobjects.dir}/instrument-bin"/>
+		<antcall target="clean"/>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${activeobjects.dir}/bin"/>
+	</target>
+	
+	<target name="clean-dist">
+		<delete dir="${activeobjects.dir}/dist"/>
+	</target>
+</project>
