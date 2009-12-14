@@ -148,7 +148,7 @@ public class EntityManager {
 			proxies = new SoftHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
 		}
 		
-		entityCache = new HashMap<CacheKey<?>, Reference<RawEntity<?>>>();
+		entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
 		
 		cache = new RAMCache();
 		
