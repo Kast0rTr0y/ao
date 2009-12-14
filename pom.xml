@@ -119,7 +119,7 @@
     <dependency>
       <groupId>snaq.db.dbpool</groupId>
       <artifactId>dbpool</artifactId>
-      <version>4.8.3</version>
+      <version>4.7.3</version>
       <optional>true</optional>
     </dependency>
   </dependencies>
