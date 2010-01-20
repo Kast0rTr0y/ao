@@ -15,31 +15,9 @@
  */
 package net.java.ao;
 
-import static net.java.ao.TestUtilities.postgresName;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Calendar;
-
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
-
 import org.junit.Test;
-
 import test.schema.Author;
 import test.schema.Authorship;
 import test.schema.Book;
@@ -62,6 +40,27 @@ import test.schema.PrintDistribution;
 import test.schema.Profession;
 import test.schema.PublicationToDistribution;
 import test.schema.Select;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.HashMap;
+
+import static net.java.ao.TestUtilities.postgresName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -791,7 +790,7 @@ public class EntityTest extends DataTest {
 	
 	@Test
 	public void testOneToManyCacheInvalidation() throws SQLException {
-		Person p = manager.create(Person.class);
+		Person p = manager.create(Person.class, new HashMap<String, Object>() {{put("url", "test-url");}});
 		Company c = manager.create(Company.class);
 		
 		c.getPeople();
@@ -802,9 +801,9 @@ public class EntityTest extends DataTest {
 		Person[] people = c.getPeople();
 		assertEquals(people.length, 1);
 		assertEquals(people[0], p);
-		
-		manager.delete(c);
-		manager.delete(p);
+
+        manager.delete(p);
+        manager.delete(c);
 	}
 	
 	@Test

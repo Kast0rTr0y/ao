@@ -15,10 +15,18 @@
  */
 package net.java.ao;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import net.java.ao.test.Configuration;
+import net.java.ao.types.ClassType;
+import net.java.ao.types.TypeManager;
+import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.store.FSDirectory;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import test.schema.Company;
+import test.schema.Person;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,19 +40,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.java.ao.types.ClassType;
-import net.java.ao.types.TypeManager;
-
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.store.FSDirectory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import test.schema.Company;
-import test.schema.Person;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Daniel Spiewak
@@ -67,10 +66,10 @@ public class SearchTest {
 	public static void setUp() throws IOException, SQLException {
 		TypeManager.getInstance().addType(new ClassType());
 		
-		String uri = System.getProperty("db.uri.prefix");
-		String suffix = System.getProperty("db.uri.suffix", "");
-		String user = System.getProperty("db.user");
-		String pass = System.getProperty("db.pass");
+		String uri = Configuration.get().getUriPrefix();
+		String suffix = Configuration.get().getUriSuffix();
+		String user = Configuration.get().getUserName();
+		String pass = Configuration.get().getPassword();
 		
 
 		manager = new SearchableEntityManager(uri + '_' + 0 + suffix, user, pass, FSDirectory.getDirectory(TEST_INDEX));

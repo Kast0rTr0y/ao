@@ -1,14 +1,8 @@
 package net.java.ao;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
 import junit.framework.JUnit4TestAdapter;
 import junit.framework.Test;
+import net.java.ao.test.Configuration;
 import test.schema.Address;
 import test.schema.Author;
 import test.schema.Authorship;
@@ -36,6 +30,13 @@ import test.schema.PublicationToDistribution;
 import test.schema.Select;
 import test.schema.UserBase;
 
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 /*
  * Copyright 2007 Daniel Spiewak
  * 
@@ -58,7 +59,7 @@ import test.schema.UserBase;
 public class TestUtilities {
 	private static int priorID = -1;	// ugly hack for postgresql and oracle
 	
-	private static String uri = System.getProperty("db.uri.prefix");
+	private static String uri = Configuration.get().getUriPrefix();
 	
 	public static final Test asTest(Class<?> clazz) {
 		return new JUnit4TestAdapter(clazz);
