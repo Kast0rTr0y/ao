@@ -15,31 +15,21 @@
  */
 package net.java.ao;
 
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.PluralizedNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.UnderscoreTableNameConverter;
+import net.java.ao.test.Configuration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
 import test.schema.Book;
 import test.schema.Distribution;
 import test.schema.EmailAddress;
@@ -49,6 +39,15 @@ import test.schema.Photo;
 import test.schema.Post;
 import test.schema.PostalAddress;
 import test.schema.PrintDistribution;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Daniel Spiewak
@@ -91,10 +90,10 @@ public abstract class DataTest {
 	protected int[] messageIDs;
 
 	public DataTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		String uri = System.getProperty("db.uri.prefix");
-		String suffix = System.getProperty("db.uri.suffix", "");
-		String user = System.getProperty("db.user");
-		String pass = System.getProperty("db.pass");
+		String uri = Configuration.get().getUriPrefix();
+		String suffix = Configuration.get().getUriSuffix();
+		String user = Configuration.get().getUserName();
+		String pass = Configuration.get().getPassword();
 		
 		manager = new EntityManager(uri + '_' + ordinal + suffix,
 				user, pass);
