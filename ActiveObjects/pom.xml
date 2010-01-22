@@ -2,29 +2,30 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects</artifactId>
-    <name>ActiveObjects</name>
     <version>0.9-SNAPSHOT</version>
+
+    <name>ActiveObjects</name>
     <inceptionYear>2007</inceptionYear>
+
     <scm>
         <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk/ActiveObjects</url>
     </scm>
-    <repositories>
-        <repository>
-            <id>maven2-repository.dev.java.net</id>
-            <name>Java.net Repository for Maven</name>
-            <url>http://download.java.net/maven/2/</url>
-            <layout>default</layout>
-        </repository>
-    </repositories>
-    <distributionManagement>
-        <repository>
-            <uniqueVersion>false</uniqueVersion>
-            <id>java.net-maven2-repository</id>
-            <url>java-net:/maven2-repository/trunk/repository/</url>
-        </repository>
-    </distributionManagement>
+
+    <issueManagement>
+        <system>BugZilla</system>
+        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Bamboo</system>
+        <url>http://opensource.bamboo.atlassian.com/browse/AO</url>
+    </ciManagement>
+
     <build>
         <sourceDirectory>src</sourceDirectory>
         <resources>
@@ -50,28 +51,42 @@
                 </excludes>
             </testResource>
         </testResources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-eclipse-plugin</artifactId>
+                    <configuration>
+                        <downloadSources>true</downloadSources>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.0-beta-1</version>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
+                        <id>enforce-maven</id>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>enforce</goal>
                         </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[2.1.0,)</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-eclipse-plugin</artifactId>
-                <configuration>
-                    <downloadSources>true</downloadSources>
-                </configuration>
-            </plugin>
-            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.1</version>
                 <configuration>
                     <source>1.5</source>
                     <target>1.5</target>
@@ -85,16 +100,36 @@
                     <test>AllTests</test>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <extensions>
             <extension>
                 <groupId>org.jvnet.wagon-svn</groupId>
                 <artifactId>wagon-svn</artifactId>
-                <version>RELEASE</version>
+                <version>1.9</version>
             </extension>
         </extensions>
     </build>
+
     <dependencies>
+        <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.6.5</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
@@ -120,16 +155,13 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.6.5</version>
-        </dependency>
-        <dependency>
             <groupId>proxool</groupId>
             <artifactId>proxool</artifactId>
             <version>0.8.3</version>
             <optional>true</optional>
         </dependency>
+
+        <!-- need to make that a non-system dependency -->
         <dependency>
             <groupId>snaq.db.dbpool</groupId>
             <artifactId>dbpool</artifactId>
@@ -151,5 +183,20 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>maven2-repository.dev.java.net</id>
+            <name>Java.net Repository for Maven</name>
+            <url>http://download.java.net/maven/2/</url>
+        </repository>
+    </repositories>
+    <distributionManagement>
+        <repository>
+            <id>java.net-maven2-repository</id>
+            <url>java-net:/maven2-repository/trunk/repository/</url>
+            <uniqueVersion>false</uniqueVersion>
+        </repository>
+    </distributionManagement>
 </project>
 
