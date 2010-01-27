@@ -1,0 +1,469 @@
+.. :mode=rest:
+
+Entities
+========
+
+The concept of the entity is at the core of the ActiveObjects framework.  Most
+meaningful interaction with the database takes place within the confines of an
+entity instance.  Understanding the design principles behind entities is
+critical to being able to use ActiveObjects effectively.  This section attempts
+to outline some of these concepts as well as provide useful examples to get you
+started.
+
+Every entity type corresponds uniquely with a single table in the database.
+Each instance of an entity corresponds uniquely with a single row in that
+table.  From throughout this documentation, the term "entity" is used to refer
+specifically to an entity *instance* (and often its corresponding row).
+Whenever it is necessary to refer to the interface which defines an entity, the
+term "entity type" is employed.
+
+Entity types are always defined as Java interfaces which extend (usually
+indirectly) the ``RawEntity`` interface in the ``net.java.ao`` package.  These
+entity type interfaces declare the methods necessary to access data,
+relationships and even custom logic on the entity.  These methods are defined in
+natural style, following Java conventions.  ActiveObjects is able to infer the
+necessary mappings between methods and fields automatically in most cases.  When
+the inference cannot be made (or is incorrect for the specific case), minimal
+Java annotations are used to disambiguate.
+
+The entity interfaces themselves are **not implemented** by the end developer [#]_.
+JDK interface proxies are used to reflectively implement entities within the
+framework itself.  This saves the end developer a significant amount of effort
+as well as making entity type definitions far more readable than otherwise.  The
+only serious disadvantage to this approach is that it requires some admitedly
+unintuitive steps to allow the insertion of custom logic into an entity (a
+critical aspect of the active record pattern).
+
+There are four different ways to obtain entity instances: (roughly) creation,
+retrieval, queries and field access.  Most of these functions are implemented by
+methods within ``EntityManager``.  Assuming we have already defined an entity
+type named ``Post``, the following code illustrates all three operations::
+    
+    EntityManager manager = ...
+    
+    Post newPost = manager.create(Post.class);
+    Post oldPost = manager.get(Post.class, 123);
+    
+    Post[] found = manager.find(Post.class, "name LIKE '%test%'");
+    for (Post post : found) {
+        System.out.print(post.getName() + " has ");
+        
+        Comment[] comments = post.getComments();
+        System.out.println(comments.length + " comments");
+    }
+
+Each of the three ``EntityManager`` methods shown has a different purpose and
+function.  The ``create`` method does exactly that, creates an entirely new
+entity and performs an SQL ``INSERT`` to generate the corresponding database row.
+By contrast, the ``get`` method only instantiates an entity to correspond with
+an existing row (denoted by the primary key value given as the second parameter).
+A quick check is performed to ensure that the row does in fact exist in the
+database.  Finally, the ``find`` method is the only direct analogy to the SQL
+``SELECT`` statement.  As such, ``find`` by far the most flexible method in
+``EntityManager``.  Using ``find``, it is possible to perform qualified queries
+against the database and to receive the results in the form of an array of
+entities.  It is similar to ``get`` in that no new rows are created in the
+database, but it is more flexible in that gradient queries may be performed.
+
+The fourth way to obtain entity instances is through field (or in this case,
+relationship) access.  Within the loop, a call is made to the ``getComments()``
+method of the ``Post`` entity.  This method queries the relationship between
+``Post`` and ``Comment``, returning the results as an array of ``Comment``
+entities.  The same functionality can be satisfied by the ``find``, but direct
+relational access is both easier and more idiomatic of the active record
+pattern.
+
+.. [#] The term "end developer" refers to the developer *using* ActiveObjects
+
+
+.. _fields:
+
+Fields
+------
+
+In ActiveObjects, database fields correspond with methods in the entity 
+interface.  These methods are often an accessor/mutator pair, but this is not
+required.  For example, you may want a database field which is read-only.  This
+could be done very easily by only creating the accessor method.  A typical
+pair of field-peered methods could look like this::
+    
+    public interface Person extends Entity {
+        public String getName();
+        public void setName(String n);
+    }
+
+From this code alone, ActiveObjects is able to infer a series of mappings into
+the database.  These mappings are as follows (exact values will depend upon the
+name converters in use):
+
+* Interface ``Person`` corresponds to the ``people`` table in the database
+* Method ``Person#getName():String`` corresponds to a field ``name`` in the
+  ``people`` table of type ``VARCHAR(255)``
+* Method ``Person#setName(String):void`` corresponds to a field ``name`` in the
+  ``people`` table of type ``VARCHAR(255)``
+
+Notice how the mappings for ``getName()`` and ``setName(String)`` are identical.
+This makes sense as we want ``getName()`` to *retrieve* the value of ``name``,
+while ``setName(String)`` should *update* the value.  ActiveObjects infers the
+read/write function of a method based on method name (assuming no annotations)
+and then verifies this assumption by checking the return type and formal
+parameters.  If everything seems to correspond with a standard Java Bean
+accessor or mutator, then the mapping is finalized and execution procedes.  For
+what it's worth, these mappings are infered at runtime, specifically durring the
+handling of the method call.  Thus, the control flow for an entity method call
+would look like this:
+
+#. Receive proxied method call
+#. Infer mapping for method
+#. Perform relevant operation
+
+Mappings are not cached, but the inference is usually extremely quick, negating
+any advantage gained by the extra overhead.  There are actually a few more
+steps to the general method handling procedure, but this does provide a rough
+overview.
+
+As an aside, ActiveObjects can also parse ``boolean`` bean accessors (most
+commonly prefixed by "``is``")::
+    
+    public interface Book extends Entity {
+        public boolean isClassic();
+        public void setClassic(boolean c);
+    }
+
+These methods map to the ``classic`` field in the ``books`` table.  The type of
+``classic`` is database-specific, since different databases handle booleans in
+different ways.  Both "``is``" and "``get``" prefixes are supported for boolean 
+fields.  The less common prefix "``has``" is not supported, though can still be 
+utilized through the use of annotations (see below).
+
+
+Explicit Field Annotations
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ActiveObjects is very smart about its method-to-field mapping inferences, but
+regardless of how "smart" a system is, there will always be a case in which one
+must override the defaults.  ActiveObjects allows for these cases by providing
+a number of field-related annotations.  Using these explicit annotations, it is
+possible to override the inferred name, type and even database-level constraints
+(such as ``UNIQUE``).
+
+A very common case for explicit overriding is a field name which is actually an
+acronym.  In Java, accessors and mutators for acronyms are (conventionally)
+capitalized, whereas most database designs have them in lower-case.  This poses
+a problem for field name inference.  Consider the following example::
+    
+    public interface Website extends Entity {
+        public URL getURL();
+        public void setURL(URL url);
+    }
+
+At first glance, one might assume that the ``getURL()`` accessor (and its
+corresponding mutator) correspond to a database field named "``url``".
+Unfortunately, this is not the case.  ActiveObjects (by default) performs its 
+field inference by stripping the accessor/mutator prefix and then converting
+the first character of the resulting string to lower-case.  Thus, the infered
+mapping for the ``getURL()`` method is actually a field called "``uRL``".
+Regardless of which convention we choose to represent acronyms in the database,
+it's fairly safe to say that alternating case will rarely (if ever) do the right
+thing.  It is certainly possible for the field name converter (the pluggable
+module responsible for converting method names into database field names) to
+observe the consecutive upper-case characters and perform an appropriate
+transformation, but the principle of least surprise is usually the right path.
+Thus, we need to annotate our method to explicitly specify the field to which
+it corresponds::
+    
+    public interface Website extends Entity {
+        @Accessor("url")
+        public URL getURL();
+        
+        @Mutator("url")
+        public void setURL(URL url);
+    }
+
+Notice that *both* the ``@Accessor`` and ``@Mutator`` annotations must be
+specified here.  Of course, if we didn't care about the ``setURL(URL)`` method,
+we could omit the ``@Mutator`` annotation (and the entire method for that matter),
+but it is more likely that we need both ``getURL()`` and ``setURL(URL)`` to
+correspond to the correct field.  In this respect, ``@Accessor`` and
+``@Mutator`` are unique annotations in the ActiveObjects API.  Most field
+annotations can be specified once on either accessor or mutator and the library
+will perform the appropriate gymnastics to cross-apply the constraints.
+
+The fact that ``@Accessor`` and ``@Mutator`` are separate annotations (rather
+than a single annotation "``@Field``" or similar) allows the added flexibility
+of completely overriding the Java Bean accessor/mutator prefix conventions::
+    
+    public interface Tree extends Entity {
+        @Accessor("branch")
+        public boolean hasBranch();
+        
+        ...
+    }
+
+In this way, arbitrary methods can be retargetted at the appropriate database
+fields.  Note that when it is necessary to override infered field names on a
+more global scale, it is often easier to use a custom `field name converter`_.
+
+Field names are not the only infered property which can be overridden.  It is
+also possible to explicitly specify a database type for a field.  This is
+extremely important as the type system for ANSI SQL has far more primitives
+than Java.  A common case for this is the need to differentiate between a short
+string field and one which can contain much larger blocks of text::
+    
+    public interface Comment extends Entity {
+        public String getSubject();
+        public void setSubject(String subject);
+        
+        @SQLType(Types.CLOB)
+        public String getText();
+        public void setText(String text);
+    }
+
+In the above example, the ``getSubject()`` method (and its associated mutator)
+corresponds with the ``subject`` field in the database with type ``VARCHAR(255)``.
+This is the default inference for fields of Java type ``String``.  However, in
+the case of the ``text`` field, we will likely need more than just 255 characters
+(unless we're building the next Twittr).  We still want to use the same Java
+type (``String``), so our only recourse is to specify explicitly [#]_ using another
+annotation that the correct type is ``CLOB`` (rendered as ``TEXT`` on MySQL).
+
+Notice that the ``@SQLType`` annotation need only be specified on *one* of the
+accessor/mutator pair.  There is no harm in specifying it redundantly on both
+methods, but ActiveObjects does not require it.  Specified annotations are
+merged between methods which correspond to the same field; effectively,
+ActiveObjects queries both methods in an attempt to determine what annotations
+are available.  Thus, both methods can be annotated separately and ActiveObjects
+has no problem cross-applying the annotations to their correspondant target
+methods.  In the case that two methods have conflicting annotations (e.g. one
+which specifies a type of ``CLOB`` while the other explicitly specifies``VARCHAR``)
+the result is indeterminate.  Technically, it is possible to predict which
+annotation will be chosen under which circumstances, but there should *never* be
+a need to exploit this behavior.
+
+.. [#] Note that the ``Types`` class is actually part of JDBC
+
+.. _field name converter: ../cookbook/custom-naming-conventions.html
+
+
+Bean Property Listeners
+-----------------------
+
+Because ActiveObjects entities are based on the Java bean conventions (by default),
+it only makes sense to further implement the bean spec by providing support for
+``PropertyChangeListener``.  Using this mechanism, it is possible to receive
+notification of field change directly through ActiveObjects.  Consider the
+following::
+    
+    Person me = manager.get(Person.class, 123);
+    me.addPropertyChangeListener(new PropertyChangeListener() {
+        public void propertyChange(PropertyChangeEvent e) {
+            System.out.print(e.getPropertyName());
+            System.out.print(" changed to ");
+            System.out.println(e.getNewValue());
+        }
+    });
+    
+    System.out.println("A");
+    me.setName("Daniel");
+    
+    System.out.println("B");
+    me.save();
+
+This code will print::
+    
+    A
+    name changed to Daniel
+    B
+
+It is important to remember this sequence.  The property listeners are invoked
+when the mutator is called, **not** on ``save(...)``.  This falls in line with
+expected bean behavior, but also can lead to some odd contradictions in
+functionality.  For example, when the ``propertyChange`` event is received by
+the listener, it contains the information that the ``name`` field has been changed
+to a value of "Daniel".  However, the value of the ``name`` field within the
+database has not yet been updated.  Fortunately, this behavior is rarely a
+problem in practice and thus there has never been sufficient reason to actually
+modify the semantics.
+
+
+.. _relationships:
+
+Relationships
+-------------
+
+Entities and fields are all well and good, but they are far less interesting in
+the absence of relations.  The concept of a relational database specifies three
+core relation types:
+
+* **One-to-One**
+* **One-to-Many**
+* **Many-to-Many**
+
+Technically, these can all be described in terms of *one-to-many*, but that is
+neither here nor there.  ActiveObjects provides full support for querying these
+relations and has a very advanced mechanism for infering the relational
+constraints based on known entity structure.  Consider the following simple
+example::
+    
+    public interface Person extends Entity {
+        ...
+        
+        public Company getEmployer();
+        public void setEmployer(Company e);
+    }
+    
+    public interface Company extends Entity {
+        ...
+        
+        @OneToMany
+        public Person[] getEmployees();
+    }
+
+In this example, ActiveObjects is able to infer several things.  First, there
+are two tables (``companies`` and ``people``) which contain various fields
+(most omitted for the sake of brevity).  The ``people`` table contains a field
+``employerID`` of type ``INTEGER`` [#]_.  In Java, the corresponding methods
+(``getEmployer()`` and ``setEmployer(Company``) define a field of special entity
+type ``Company``.  Thus, ``Company`` has a one-to-many relationship on the
+``Person`` entity.
+
+The ``@OneToMany`` annotation is used to flag a specific method as pertaining to
+a relationship, rather than a field in the database.  All of the relationship
+annotations (``@OneToOne``, ``@OneToMany`` and ``@ManyToMany``) have priority
+over all other annotations.  Methods annotated as pertaining to a relationship
+are not introspected by the normal inferences.  Rather, the return type of the
+method is examined.  The component type of the array (in the case of ``getEmployees()``,
+it would be ``Person``) is examined to determine the entity on which the
+relationship should be queried.  ActiveObjects then introspects all fields
+(based on the methods declared in the entity type) within ``Person`` and
+aggregates the fields of entity type ``Company``.  In this way, the relationship
+is introspected dynamically and the relevant query can be built.  Note that
+multiple fields can be used to define a one-to-many relationship, so long as
+they are all of the same entity type.
+
+This may seem somewhat confusing, but it's actually very intuitive (just
+difficult to explain).  To put it into fewer words, the relationship is defined
+by the relational field in the originating entity (in this case, ``Person``).
+The ``@OneToMany`` annotation on a method within ``Company`` allows querying of
+this relationship via instances of ``Company``.  Asside from this function, the
+annotation does not affect framework behavior in the slightest.
+
+ActiveObjects also has support for one-to-one relationships.  These are almost
+identical to one-to-many relationships, and have a similar syntax (the annotation
+used is ``@OneToOne`` rather than ``@OneToMany``).  This relationship type is
+covered in more detail in the section on `complex relationships`_.
+
+The most complex relational primitive is many-to-many.  In terms of the database,
+these relationships are most often mapped as two one-to-many relationships
+"connected end-to-end".  For a many-to-many relationship between two tables, a
+third table is required to function as a mapping.  The two target tables each
+have a one-to-many relationship on the mapping table, and thus logically have a
+many-to-many relationship with eachother, through the mapping table.
+
+Many ORMs allow the end developer to specify a many-to-many relationship between
+two entities without specifying an intermediary mapping table.  Such ORMs will
+automatically generate this mapping table, keeping its existence transparent to
+the end developer.  There are several problems with this approach, primarily
+having to do with unexpected schemata and such.  More importantly, a significant
+amount of control is lost to the end developer because they have no direct 
+access to this intermediary table.
+
+ActiveObjects resorts to a slightly different approach.  Rather than transparently
+managing the mapping tables, ActiveObjects requires the end developer to declare
+these tables as proper entities, with all the appropriate fields as would be
+required if they were building the schema by hand.  This allows additional
+constraints to be placed upon the relationship, as well as precise control over
+the relational path from one entity to the other.  In practice, this is actually
+easier than it sounds::
+    
+    public interface Person extends Entity {
+        public String getName();
+        public void setName(String name);
+        
+        @ManyToMany(Authorship.class)
+        public Book[] getBooks();
+    }
+    
+    public interface Authorship extends Entity {
+        public Person getAuthor();
+        public void setAuthor(Author author);
+        
+        public Book getBook();
+        public void setBook(Book book);
+    }
+    
+    public interface Book extends Entity {
+        ...
+        
+        @ManyToMany(Authorship.class)
+        public Person[] getAuthors();
+    }
+
+Once this relationship has been established, it is possible to make use of it
+using code like the following::
+    
+    Person me = ...
+    Book[] myBooks = me.getBooks();
+    
+    for (Book book : myBooks) {
+        Person[] authors = book.getAuthors();
+        
+        System.out.println("Book has " + authors.length + " authors:");
+        for (Person author : authors) {
+            System.out.print('\t');
+            System.out.println(author.getName());
+        }
+    }
+
+This code will retrieve all of the ``Book`` entities which have been authored by the
+``Person`` represented by the ``me`` instance.  It will then iterate over these
+books, printing out how many authors it has, as well as all of their names
+(indented by tabs).  Notice how we never actually see the ``Authorship`` entity
+in the using code [#]_.  All of the details of mapping between ``Person`` and
+``Book`` entities are handled by the framework.  The entire relational path is
+infered based on return types and the mapping type (``Authorship``) as specified
+to the ``@ManyToMany`` annotation.  Once again, the relationship annotation has
+no function other than to indicate how the ``getBooks()`` and ``getAuthors``
+methods should be handled.  The many-to-many relationship is fully specified by
+the ``Authorship`` entity.
+
+.. [#] Actually, the type of the related field depends upon the primary key type
+    of the entity in question.  In this case, ``Company`` inherits its primary
+    key field from ``Entity``.  This field is ``id`` and has type ``INTEGER``.
+.. [#] The term "using code" refers to the code written by the end developer
+    which makes use of their entity model
+    
+.. _complex relationships: ../cookbook/complex-relationships.html
+
+
+.. _convention-over-configuration:
+
+Convention Over Configuration
+-----------------------------
+
+It's been hinted at several times in this document, but it's still worth noting
+explicitly.  ActiveObjects strongly favors "convention over configuration" in
+its design.  That is to say, it attempts to make strong inferences based on
+common patterns and use-cases and then provides mechanisms to override these
+inferences.  An example of this is the mechanism through which field mappings
+are determined.  It is possible to build an entire entity model without using a
+single annotation.  This hypothetical entity model could be extremely complex,
+with foreign keys, relationships, fields, complex types, etc.  All of this can
+be infered by the framework.
+
+This design principle is carried on throughout the ActiveObjects API.  In fact,
+there are very few features which actually *require* any sort of boiler-plate
+configuration in order to be functional [#]_.  The main advantage to this
+design is that it is *very* easy to get up and running with ActiveObjects.  For
+most applications, minimal-to-no configuration will be required to achieve
+optimal results.  The disadvantage to this is that sometimes ActiveObjects may
+make an inference which leads to an undesirable result.  This is unfortunate,
+but unavoidable.  We have tried to follow the "principle of least surprise" in
+the design of the various inference mechanisms, but there is no inference rule
+which does the right thing 100% of the time.  In order to get the most out of 
+ActiveObjects, it is best to be aware of how the various inference rules behave
+and when it may be necessary to override them.
+
+.. [#] An example of such a feature would be `polymorphic relationships`_
+
+.. _polymorphic relationships: ../cookbook/complex-relationships.html#polymorphism
