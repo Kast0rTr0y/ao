@@ -15,19 +15,19 @@
  */
 package net.java.ao;
 
-import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.types.TypeManager;
+
+import java.io.Serializable;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Daniel Spiewak
@@ -257,21 +257,21 @@ public class Query implements Serializable {
 	}
 	
 	public String[] getCanonicalFields(Class<? extends RawEntity<?>> type, FieldNameConverter converter) {
-		List<String> back = Arrays.asList(fields.split(","));
-		
-		for (int i = 0; i < back.size(); i++) {
-			if (back.get(i).trim().equals("*")) {
-				back.remove(i);
-				
+        String[] back = fields.split(",");
+               
+        List<String> result = new ArrayList<String>();
+		for(String fieldName : back) {
+            if (fieldName.trim().equals("*")) {
+
 				for (DDLField field : SchemaGenerator.parseFields(type, converter)) {
-					back.add(field.getName());
+					result.add(field.getName());
 				}
-			}
-			
-			back.set(i, back.get(i).trim());
-		}
-		
-		return back.toArray(new String[back.size()]);
+			}  else {
+                result.add(fieldName.trim());
+            }
+        }
+
+		return result.toArray(new String[result.size()]);
 	}
 
 	protected <K> String toSQL(Class<? extends RawEntity<K>> tableType, DatabaseProvider provider, TableNameConverter converter, 
