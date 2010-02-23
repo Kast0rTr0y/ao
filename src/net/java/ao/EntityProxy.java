@@ -48,7 +48,7 @@ import net.java.ao.types.TypeManager;
 /**
  * @author Daniel Spiewak
  */
-class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
+public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
 	private static final Pattern WHERE_PATTERN = Pattern.compile("([\\d\\w]+)\\s*(=|>|<|LIKE|IS)");
 	
 	static boolean ignorePreload = false;	// hack for testing
@@ -83,6 +83,10 @@ class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
 
 	@SuppressWarnings("unchecked")
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        if(method.getName().equals("getEntityProxy")) {
+            return this;
+        }
+
 		if (method.getName().equals("getEntityType")) {
 			return type;
 		}

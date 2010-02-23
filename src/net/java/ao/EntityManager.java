@@ -369,7 +369,7 @@ public class EntityManager {
 	protected <T extends RawEntity<K>, K> T getAndInstantiate(Class<T> type, K key) {
 		EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, type, key);
 		
-		T entity = (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type}, proxy);
+		T entity = (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy);
 
 		proxyLock.writeLock().lock();
 		try {
@@ -1060,7 +1060,7 @@ public class EntityManager {
 	<T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
 		proxyLock.readLock().lock();
 		try {
-			return (EntityProxy<T, K>) proxies.get(entity);
+            return ((EntityProxyAccessor) entity).getEntityProxy();
 		} finally {
 			proxyLock.readLock().unlock();
 		}
