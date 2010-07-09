@@ -15,6 +15,20 @@
  */
 package net.java.ao.db;
 
+import net.java.ao.Common;
+import net.java.ao.DBParam;
+import net.java.ao.DatabaseFunction;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.EntityManager;
+import net.java.ao.RawEntity;
+import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
@@ -26,23 +40,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import net.java.ao.Common;
-import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.EntityManager;
-import net.java.ao.RawEntity;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * @author Daniel Spiewak
@@ -411,7 +410,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		if (back == null) {
 			String sql = "SELECT NEXTVAL('" + processID(table + "_" + pkField + "_seq") + "')";
 			
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+            eventManager.publish(new SqlEvent(sql));
 			PreparedStatement stmt = conn.prepareStatement(sql);
 			
 			ResultSet res = stmt.executeQuery();
@@ -436,7 +435,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, 
 			String sql, DBParam... params) throws SQLException {
-		Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+        eventManager.publish(new SqlEvent(sql));
 		PreparedStatement stmt = conn.prepareStatement(sql);
 		
 		for (int i = 0; i < params.length; i++) {

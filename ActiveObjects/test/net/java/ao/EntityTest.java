@@ -106,38 +106,48 @@ public class EntityTest extends DataTest {
 		assertEquals("Company Name", person.getCompany().getName());
 		assertEquals(false, person.getCompany().isCool());
 	}
-	
-	@Test
-	public void testCacheAccessor() {
-		Person person = manager.get(Person.class, personID);
-		
-		person.getFirstName();
-		Company c = person.getCompany();
-		c.getName();
-		c.isCool();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		
-		assertEquals("Daniel", person.getFirstName());
-		
-		assertEquals(companyID, person.getCompany().getCompanyID());
-		assertEquals("Company Name", person.getCompany().getName());
-		assertEquals(false, person.getCompany().isCool());
-		
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
-	
-	@Test
-	public void testUncachableCacheAccessor() throws IOException {
-		Company company = manager.get(Company.class, companyID);
-		company.getImage().close();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		company.getImage().close();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
-	
-	@Test
+
+    @Test
+    public void testCacheAccessor() throws Exception
+    {
+        final Person person = manager.get(Person.class, personID);
+        person.getFirstName();
+
+        final Company c = person.getCompany();
+        c.getName();
+        c.isCool();
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                assertEquals("Daniel", person.getFirstName());
+
+                assertEquals(companyID, person.getCompany().getCompanyID());
+                assertEquals("Company Name", person.getCompany().getName());
+                assertEquals(false, person.getCompany().isCool());
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void testUncachableCacheAccessor() throws Exception
+    {
+        final Company company = manager.get(Company.class, companyID);
+        company.getImage().close();
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                company.getImage().close();
+                return null;
+            }
+        });
+    }
+
+    @Test
 	public void testBlobAccessor() throws IOException, SQLException {
 		Person person = manager.get(Person.class, personID);
 		byte[] image = person.getImage();
@@ -180,16 +190,21 @@ public class EntityTest extends DataTest {
 	}
 
 	@Test
-	public void testCacheMutator() throws SQLException {
-		Company company = manager.create(Company.class);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		
-		company.setName("Another company name");
-		company.setCool(true);
-		
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		assertEquals("Another company name", company.getName());
+	public void testCacheMutator() throws Exception
+    {
+		final Company company = manager.create(Company.class);
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                company.setName("Another company name");
+                company.setCool(true);
+                return null;
+            }
+        });
+
+        assertEquals("Another company name", company.getName());
 		assertEquals(true, company.isCool());
 		
 		company.setName(null);
@@ -199,22 +214,28 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testSave() throws SQLException {
+	public void testSave() throws Exception
+    {
 		String companyTableName = manager.getTableNameConverter().getName(Company.class);
 		companyTableName = manager.getProvider().processID(companyTableName);
 
 		String personTableName = manager.getTableNameConverter().getName(Person.class);
 		personTableName = manager.getProvider().processID(personTableName);
 		
-		Company company = manager.create(Company.class);
+		final Company company = manager.create(Company.class);
 		
 		company.setName("Another company name");
 		company.setCool(true);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		company.save();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                company.save();
+                return null;
+            }
+        });
+
 		String name = null;
 		boolean cool = false;
 		Connection conn = manager.getProvider().getConnection();
@@ -239,11 +260,16 @@ public class EntityTest extends DataTest {
 		assertEquals(true, cool);
 		
 		company.setName(null);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		company.save();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                company.save();
+                return null;
+            }
+        });
+
 		conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
@@ -267,13 +293,18 @@ public class EntityTest extends DataTest {
 		
 		manager.delete(company);
 		
-		Person person = manager.get(Person.class, personID);
+		final Person person = manager.get(Person.class, personID);
 		person.setProfession(Profession.MUSICIAN);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.save();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.save();
+                return null;
+            }
+        });
+
 		conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " 
@@ -298,27 +329,39 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testTransientCacheAccessor() {
-		Person person = manager.get(Person.class, personID);
+	public void testTransientCacheAccessor() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.setAge(25);
 		person.save();
 		
 		person.getAge();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		assertEquals(25, person.getAge());
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                assertEquals(25, person.getAge());
+                return null;
+            }
+        });
 	}
 	
 	@Test
-	public void testTransientCacheMutator() {
-		Person person = manager.get(Person.class, personID);
+	public void testTransientCacheMutator() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.setAge(25);
 		person.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		assertEquals(25, person.getAge());
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                assertEquals(25, person.getAge());
+                return null;
+            }
+        });
 	}
 
 	@Test
@@ -471,16 +514,17 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testOnUpdate() {
+	public void testOnUpdate() throws Exception
+    {
 		if (manager.getProvider().getURI().startsWith("jdbc:hsqldb")) {
 			return;		// hsqldb doesn't support @OnUpdate
 		}
 		
-		Person person = manager.get(Person.class, personID);
+		final Person person = manager.get(Person.class, personID);
 		person.setFirstName(person.getFirstName());		// no-op to guarentee value
 		person.save();
 		
-		Calendar old = person.getModified();
+		final Calendar old = person.getModified();
 		person.getAge();
 		
 		try {
@@ -491,14 +535,24 @@ public class EntityTest extends DataTest {
 		person.save();
 		
 		assertNotNull(old);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		assertFalse(old.getTimeInMillis() == person.getModified().getTimeInMillis());
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getModified();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                assertFalse(old.getTimeInMillis() == person.getModified().getTimeInMillis());
+                return null;
+            }
+        });
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getModified();
+                return null;
+            }
+        });
 	}
 	
 	@Test
@@ -636,17 +690,23 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testDelete() throws SQLException {
+	public void testDelete() throws Exception
+    {
 		String companyTableName = manager.getTableNameConverter().getName(Company.class);
 		companyTableName = manager.getProvider().processID(companyTableName);
-		
-		Company company = manager.create(Company.class);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		manager.delete(company);
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		Connection conn = manager.getProvider().getConnection();
+
+        final Company company = manager.create(Company.class);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                manager.delete(company);
+                return null;
+            }
+        });
+
+        Connection conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("companyID") 
 					+ " FROM " + companyTableName 
@@ -665,17 +725,23 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testDefinedImplementation() {
-		Person person = manager.get(Person.class, personID);
-		
-		PersonImpl.enableOverride = true;
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		assertEquals("Smith", person.getLastName());
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		PersonImpl.enableOverride = false;
-	}
+	public void testDefinedImplementation() throws Exception
+    {
+        final Person person = manager.get(Person.class, personID);
+
+        PersonImpl.enableOverride = true;
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                assertEquals("Smith", person.getLastName());
+                return null;
+            }
+        });
+
+        PersonImpl.enableOverride = false;
+    }
 	
 	// if this test doesn't stack overflow, we're good
 	@Test
@@ -729,63 +795,97 @@ public class EntityTest extends DataTest {
 			EntityProxy.ignorePreload = false;
 		}
 	}
-	
-	@Test
-	public void testOneToManyRetrievalPreload() {
-		manager.getRelationsCache().flush();
-		
-		Person person = manager.get(Person.class, personID);
-		
-		for (Pen pen : person.getPens()) {
-			SQLLogMonitor.getInstance().markWatchSQL();
-			pen.getWidth();
-			assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		}
-	}
-	
-	@Test
-	public void testOneToManyRetrievalFromCache() {
-		Person person = manager.get(Person.class, personID);
-		person.getPens();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
-	
-	@Test
-	public void testOneToManyCacheExpiry() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+
+    @Test
+    public void testOneToManyRetrievalPreload() throws Exception
+    {
+        manager.getRelationsCache().flush();
+
+        Person person = manager.get(Person.class, personID);
+
+        for (final Pen pen : person.getPens())
+        {
+            sql.checkNotExecuted(new Command<Void>()
+            {
+                public Void run() throws Exception
+                {
+                    pen.getWidth();
+                    return null;
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testOneToManyRetrievalFromCache() throws Exception
+    {
+        final Person person = manager.get(Person.class, personID);
+        person.getPens();
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+    }
+
+    @Test
+	public void testOneToManyCacheExpiry() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.getPens();
 		
 		Pen pen = manager.create(Pen.class);
 		pen.setPerson(person);
 		pen.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
 		manager.delete(pen);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
 		pen = manager.create(Pen.class, new DBParam("personID", person));
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
 		pen.setPerson(null);
 		pen.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		manager.delete(pen);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
+        manager.delete(pen);
 	}
 	
 	@Test
@@ -834,97 +934,151 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testManyToManyRetrievalPreload() {
+	public void testManyToManyRetrievalPreload() throws Exception
+    {
 		manager.getRelationsCache().flush();
 		
 		Person person = manager.get(Person.class, personID);
-		
-		for (PersonLegalDefence defence : person.getPersonLegalDefences()) {
-			SQLLogMonitor.getInstance().markWatchSQL();
-			defence.getSeverity();
-			assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		}
-	}
+
+        for (final PersonLegalDefence defence : person.getPersonLegalDefences())
+        {
+            sql.checkNotExecuted(new Command<Void>()
+            {
+                public Void run() throws Exception
+                {
+                    defence.getSeverity();
+                    return null;
+                }
+            });
+        }
+    }
 	
 	@Test
-	public void testManyToManyRetrievalFromCache() {
-		Person person = manager.get(Person.class, personID);
+	public void testManyToManyRetrievalFromCache() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.getPersonLegalDefences();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+    }
 	
 	@Test
-	public void testManyToManyCacheExpiry() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+	public void testManyToManyCacheExpiry() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.getPersonLegalDefences();
 		
 		PersonSuit suit = manager.create(PersonSuit.class);
 		suit.setPerson(person);
 		suit.setPersonLegalDefence(manager.get(PersonLegalDefence.class, defenceIDs[0]));
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
 		manager.delete(suit);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		suit = manager.create(PersonSuit.class, new DBParam("personID", person), 
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        suit = manager.create(PersonSuit.class, new DBParam("personID", person),
 				new DBParam("personLegalDefenceID", defenceIDs[1]));
 
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
 		suit.setPerson(null);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		suit.setPerson(person);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        suit.setPerson(person);
 		suit.save();
 		
 		person.getPersonLegalDefences();
 		
 		suit.setPersonLegalDefence(null);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		PersonLegalDefence defence = manager.create(PersonLegalDefence.class);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        PersonLegalDefence defence = manager.create(PersonLegalDefence.class);
 		
 		suit.setPersonLegalDefence(defence);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
 		suit.setPersonLegalDefence(null);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
 		manager.delete(suit);
 		manager.delete(defence);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+    }
 
 	@Test
 	public void testPolymorphicOneToManyRetrievalIDs() {
@@ -973,62 +1127,96 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testPolymorphicOneToManyRetrievalPreload() {
+	public void testPolymorphicOneToManyRetrievalPreload() throws Exception
+    {
 		manager.getRelationsCache().flush();
 		
 		Post post = manager.get(Post.class, postID);
-		
-		for (Comment comment : post.getComments()) {
-			SQLLogMonitor.getInstance().markWatchSQL();
-			comment.getTitle();
-			assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		}
-	}
+
+        for (final Comment comment : post.getComments())
+        {
+            sql.checkNotExecuted(new Command<Void>()
+            {
+                public Void run() throws Exception
+                {
+                    comment.getTitle();
+                    return null;
+                }
+            });
+        }
+    }
 
 	@Test
-	public void testPolymorphicOneToManyRetrievalFromCache() {
-		Post post = manager.get(Post.class, postID);
+	public void testPolymorphicOneToManyRetrievalFromCache() throws Exception
+    {
+		final Post post = manager.get(Post.class, postID);
 		post.getComments();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		post.getComments();
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                post.getComments();
+                return null;
+            }
+        });
 	}
 	
 	@Test
-	public void testPolymorphicOneToManyCacheExpiry() throws SQLException {
-		Post post = manager.get(Post.class, postID);
+	public void testPolymorphicOneToManyCacheExpiry() throws Exception
+    {
+		final Post post = manager.get(Post.class, postID);
 		post.getComments();
 		
 		Comment comment = manager.create(Comment.class);
 		comment.setCommentable(post);
 		comment.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		post.getComments();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                post.getComments();
+                return null;
+            }
+        });
+
 		manager.delete(comment);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		post.getComments();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                post.getComments();
+                return null;
+            }
+        });
+
 		comment = manager.create(Comment.class, new DBParam("commentableID", post), 
 				new DBParam("commentableType", manager.getPolymorphicTypeMapper().convert(Post.class)));
 
-		SQLLogMonitor.getInstance().markWatchSQL();
-		post.getComments();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                post.getComments();
+                return null;
+            }
+        });
+
 		comment.setCommentable(null);
 		comment.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		post.getComments();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		manager.delete(comment);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                post.getComments();
+                return null;
+            }
+        });
+
+        manager.delete(comment);
 	}
 
 	@Test
@@ -1128,69 +1316,108 @@ public class EntityTest extends DataTest {
 	}
 	
 	@Test
-	public void testPolymorphicManyToManyRetrievalPreload() {
-		manager.getRelationsCache().flush();
-		
-		Book book = manager.get(Book.class, bookIDs[0]);
-		
-		for (Author author : book.getAuthors()) {
-			SQLLogMonitor.getInstance().markWatchSQL();
-			author.getName();
-			assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		}
-	}
+	public void testPolymorphicManyToManyRetrievalPreload() throws Exception
+    {
+        manager.getRelationsCache().flush();
+
+        Book book = manager.get(Book.class, bookIDs[0]);
+
+        for (final Author author : book.getAuthors())
+        {
+            sql.checkNotExecuted(new Command<Void>()
+            {
+                public Void run() throws Exception
+                {
+                    author.getName();
+                    return null;
+                }
+            });
+        }
+    }
 
 	@Test
-	public void testPolymorphicManyToManyRetrievalFromCache() {
-		Magazine magazine = manager.get(Magazine.class, magazineIDs[0]);
+	public void testPolymorphicManyToManyRetrievalFromCache() throws Exception
+    {
+		final Magazine magazine = manager.get(Magazine.class, magazineIDs[0]);
 		magazine.getAuthors();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		magazine.getDistributions();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertFalse(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
+        magazine.getDistributions();
+
+        sql.checkNotExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
 	}
 	
 	@Test
-	public void testPolymorphicManyToManyCacheExpiry() throws SQLException {
-		Magazine magazine = manager.get(Magazine.class, magazineIDs[0]);
+	public void testPolymorphicManyToManyCacheExpiry() throws Exception
+    {
+		final Magazine magazine = manager.get(Magazine.class, magazineIDs[0]);
 		magazine.getAuthors();
 		
 		Authorship authorship = manager.create(Authorship.class);
 		authorship.setPublication(magazine);
 		authorship.setAuthor(manager.get(Author.class, magazineAuthorIDs[0][0]));
 		authorship.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		manager.delete(authorship);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		authorship = manager.create(Authorship.class, new DBParam("publicationID", magazine), 
 				new DBParam("publicationType", manager.getPolymorphicTypeMapper().convert(Magazine.class)),
 				new DBParam("authorID", bookAuthorIDs[0][1]));
 
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		authorship.setAuthor(null);
 		authorship.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		authorship.setPublication(magazine);
 		authorship.save();
 		
@@ -1200,35 +1427,55 @@ public class EntityTest extends DataTest {
 		
 		authorship.setAuthor(author);
 		authorship.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		manager.delete(authorship);
 		manager.delete(author);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getAuthors();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getAuthors();
+                return null;
+            }
+        });
+
 		magazine.getDistributions();
 		
 		PublicationToDistribution mapping = manager.create(PublicationToDistribution.class);
 		mapping.setPublication(magazine);
 		mapping.setDistribution(manager.get(OnlineDistribution.class, magazineDistributionIDs[0][1]));
 		mapping.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+
 		manager.delete(mapping);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+
 		mapping = manager.create(PublicationToDistribution.class);
 		mapping.setPublication(magazine);
 		mapping.setDistribution(manager.get(OnlineDistribution.class, magazineDistributionIDs[0][1]));
@@ -1238,31 +1485,51 @@ public class EntityTest extends DataTest {
 		
 		mapping.setDistribution(null);
 		mapping.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+
 		mapping.setDistribution(manager.get(PrintDistribution.class, magazineDistributionIDs[0][0]));
 		mapping.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+
 		mapping.setPublication(null);
 		mapping.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		manager.delete(mapping);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		magazine.getDistributions();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+
+        manager.delete(mapping);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                magazine.getDistributions();
+                return null;
+            }
+        });
+    }
 
 	@Test
 	public void testMultiPathPolymorphicOneToManyRetrievalIDs() {

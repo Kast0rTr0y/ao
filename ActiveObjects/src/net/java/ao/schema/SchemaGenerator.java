@@ -15,6 +15,25 @@
  */
 package net.java.ao.schema;
 
+import net.java.ao.AnnotationDelegate;
+import net.java.ao.Common;
+import net.java.ao.DatabaseFunction;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.ManyToMany;
+import net.java.ao.OneToMany;
+import net.java.ao.OneToOne;
+import net.java.ao.Polymorphic;
+import net.java.ao.RawEntity;
+import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SchemaReader;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,26 +48,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import net.java.ao.AnnotationDelegate;
-import net.java.ao.Common;
-import net.java.ao.DatabaseFunction;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.ManyToMany;
-import net.java.ao.OneToMany;
-import net.java.ao.OneToOne;
-import net.java.ao.Polymorphic;
-import net.java.ao.RawEntity;
-import net.java.ao.schema.ddl.DDLAction;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.schema.ddl.SchemaReader;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -74,7 +73,7 @@ public final class SchemaGenerator {
 			
 			for (String statement : statements) {
 				if (!statement.trim().equals("")) {
-					Logger.getLogger("net.java.ao").log(Level.INFO, statement);
+                    provider.getEventManager().publish(new SqlEvent(statement));
 					stmt.executeUpdate(statement);
 				}
 			}

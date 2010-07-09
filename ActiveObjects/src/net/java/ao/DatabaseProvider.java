@@ -15,6 +15,21 @@
  */
 package net.java.ao;
 
+import net.java.ao.db.SupportedDBProvider;
+import net.java.ao.db.SupportedPoolProvider;
+import net.java.ao.event.EventManager;
+import net.java.ao.schema.OnUpdate;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionType;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SchemaReader;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
@@ -38,20 +53,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.java.ao.db.SupportedDBProvider;
-import net.java.ao.db.SupportedPoolProvider;
-import net.java.ao.schema.OnUpdate;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.ddl.DDLAction;
-import net.java.ao.schema.ddl.DDLActionType;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.schema.ddl.SchemaReader;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * <p>The superclass parent of all <code>DatabaseProvider</code>
@@ -83,13 +84,15 @@ import net.java.ao.types.TypeManager;
  * @author Daniel Spiewak
  */
 public abstract class DatabaseProvider {
-	private String uri, username, password;
+    private String uri, username, password;
 	
 	private Map<Thread, Connection> connections;
 	private final ReadWriteLock connectionsLock = new ReentrantReadWriteLock();
 	
 	private String quote;
-	
+
+    protected EventManager eventManager;
+
 	/**
 	 * <p>The base constructor for <code>DatabaseProvider</code>.
 	 * Initializes the JDBC uri, username and password values as specified.</p>
@@ -2030,8 +2033,18 @@ public abstract class DatabaseProvider {
 	public boolean isCaseSensetive() {
 		return true;
 	}
-	
-	/**
+
+    public void setEventManager(EventManager eventManager)
+    {
+        this.eventManager = eventManager;
+    }
+
+    public EventManager getEventManager()
+    {
+        return eventManager;
+    }
+
+    /**
 	 * Auto-magically retrieves the appropriate provider instance for the
 	 * specified JDBC URI, passing it the given username and password.  This
 	 * method actually delegates all of its interesting work to

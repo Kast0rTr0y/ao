@@ -15,6 +15,10 @@
  */
 package net.java.ao;
 
+import net.java.ao.event.EventManager;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.ddl.DDLAction;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
@@ -22,9 +26,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Set;
-
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.ddl.DDLAction;
 
 /**
  * <p>Abstract superclass for connection pool library abstractions.  This class
@@ -154,8 +155,15 @@ public abstract class PoolProvider extends DatabaseProvider {
 	public boolean isCaseSensetive() {
 		return delegate.isCaseSensetive();
 	}
-	
-	/**
+
+    @Override
+    public void setEventManager(EventManager eventManager)
+    {
+        delegate.setEventManager(eventManager);
+        super.setEventManager(eventManager);
+    }
+
+    /**
 	 * <p>Should release all resources held by the pool.  This is especially important
 	 * to implement for pool providers, as conection pools may have connections
 	 * which are being held (potentially) indefinitely.  It is important for developers

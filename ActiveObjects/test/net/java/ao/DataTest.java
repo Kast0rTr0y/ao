@@ -45,9 +45,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Daniel Spiewak
@@ -55,9 +52,14 @@ import java.util.logging.Logger;
 @RunWith(Parameterized.class)
 public abstract class DataTest {
 	private static final Map<String, DataStruct> prepared = new HashMap<String, DataStruct>();
-	
+
 	protected final EntityManager manager;
-	
+
+    /**
+     * A helper object to test whether any SQL calls have been issued or not
+     */
+    protected final Sql sql;
+
 	protected int personID;
 	protected int noseID;
 	protected long companyID;
@@ -94,59 +96,45 @@ public abstract class DataTest {
 		String suffix = Configuration.get().getUriSuffix();
 		String user = Configuration.get().getUserName();
 		String pass = Configuration.get().getPassword();
-		
-		manager = new EntityManager(uri + '_' + ordinal + suffix,
-				user, pass);
 
-//		manager = new EntityManager("jdbc:oracle:thin:@192.168.101.17:1521:xe", "activeobjects", "password");
-		
+        manager = EntityManagerBuilder.url(uri + '_' + ordinal + suffix).username(user).password(pass).build();
+        sql = new Sql(manager.getEventManager());
+
 		manager.setTableNameConverter(tableConverter);
 		manager.setFieldNameConverter(fieldConverter);
 
-		Logger logger = Logger.getLogger("net.java.ao");
-		Logger l = logger;	
-		
-		while ((l = l.getParent()) != null) {
-			for (Handler h : l.getHandlers()) {
-				l.removeHandler(h);
-			}
-		}
-		
-		logger.setLevel(Level.FINE);
-		logger.addHandler(SQLLogMonitor.getInstance());
-		
-		manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, 
+		manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class,
 				Post.class, Book.class, Magazine.class, PrintDistribution.class, OnlineDistribution.class,
 				EmailAddress.class, PostalAddress.class));
 	}
-	
+
 	@Before
 	public void setup() throws SQLException {
 		prepareData(this);
 	}
-	
+
 	@After
 	public void tearDown() {
 		manager.getProvider().dispose();
 	}
-	
+
 	private static void prepareData(DataTest test) throws SQLException {
 		EntityManager manager = test.manager;
-		
+
 		if (prepared.containsKey(manager.getProvider().getURI())) {
 			applyStruct(test, prepared.get(manager.getProvider().getURI()));
 			return;
 		}
-		
+
 		try {
 			TestUtilities.tearDownEntityManager(manager);
 		} catch (Throwable t) {}
-		
+
 		DataStruct data = TestUtilities.setUpEntityManager(manager);
 		applyStruct(test, data);
 		prepared.put(manager.getProvider().getURI(), data);
 	}
-	
+
 	private static void applyStruct(DataTest test, DataStruct data) {
 		test.personID = data.personID;
 		test.noseID = data.noseID;
@@ -170,26 +158,26 @@ public abstract class DataTest {
 		test.addressIDs = data.addressIDs;
 		test.messageIDs = data.messageIDs;
 	}
-	
+
 	@Parameters
 	public static Collection<Object[]> data() {
 		CamelCaseTableNameConverter camelCaseTableNameConverter = new CamelCaseTableNameConverter();
 		UnderscoreTableNameConverter underscoreTableNameConverter = new UnderscoreTableNameConverter(false);
 		UnderscoreTableNameConverter underscoreTableNameConverter2 = new UnderscoreTableNameConverter(true);
-		
+
 		PluralizedNameConverter pluralizedCamelNameConverter = new PluralizedNameConverter(camelCaseTableNameConverter);
 		PluralizedNameConverter pluralizedUnderscore2NameConverter = new PluralizedNameConverter(underscoreTableNameConverter2);
-		
+
 		CamelCaseFieldNameConverter camelCaseFieldNameConverter = new CamelCaseFieldNameConverter();
 //		UnderscoreFieldNameConverter underscoreFieldNameConverter = new UnderscoreFieldNameConverter(false);
 //		UnderscoreFieldNameConverter underscoreFieldNameConverter2 = new UnderscoreFieldNameConverter(true);
-		
+
 		// try all combinations, just for fun
 		return Arrays.asList(new Object[][] {
 			{0, camelCaseTableNameConverter, camelCaseFieldNameConverter},
 //			{camelCaseTableNameConverter, underscoreFieldNameConverter},
 //			{camelCaseTableNameConverter, underscoreFieldNameConverter2},
-			
+
 			{1, underscoreTableNameConverter, camelCaseFieldNameConverter},
 //			{underscoreTableNameConverter, underscoreFieldNameConverter},
 //			{underscoreTableNameConverter, underscoreFieldNameConverter2},
@@ -197,7 +185,7 @@ public abstract class DataTest {
 			{2, pluralizedCamelNameConverter, camelCaseFieldNameConverter},
 //			{pluralizedCamelNameConverter, underscoreFieldNameConverter},
 //			{pluralizedCamelNameConverter, underscoreFieldNameConverter2},
-			
+
 			{3, pluralizedUnderscore2NameConverter, camelCaseFieldNameConverter}
 //			{pluralizedUnderscore2NameConverter, underscoreFieldNameConverter},
 //			{pluralizedUnderscore2NameConverter, underscoreFieldNameConverter2}

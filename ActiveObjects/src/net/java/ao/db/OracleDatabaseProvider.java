@@ -15,6 +15,20 @@
  */
 package net.java.ao.db;
 
+import net.java.ao.Common;
+import net.java.ao.DBParam;
+import net.java.ao.DatabaseFunction;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.EntityManager;
+import net.java.ao.Query;
+import net.java.ao.RawEntity;
+import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
@@ -27,21 +41,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import net.java.ao.Common;
-import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.EntityManager;
-import net.java.ao.Query;
-import net.java.ao.RawEntity;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * @author Daniel Spiewak
@@ -263,7 +262,8 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException {
 		T back = null;
-		Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+
+        eventManager.publish(new SqlEvent(sql));
 		String[] generatedColumns = { pkField };
 
 		PreparedStatement stmt = conn.prepareStatement(sql, generatedColumns);
