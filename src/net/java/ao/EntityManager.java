@@ -15,6 +15,23 @@
  */
 package net.java.ao;
 
+import net.java.ao.cache.Cache;
+import net.java.ao.cache.CacheLayer;
+import net.java.ao.cache.RAMCache;
+import net.java.ao.cache.RAMRelationsCache;
+import net.java.ao.cache.RelationsCache;
+import net.java.ao.event.EventManager;
+import net.java.ao.event.EventManagerImpl;
+import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.CamelCaseFieldNameConverter;
+import net.java.ao.schema.CamelCaseTableNameConverter;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.SchemaGenerator;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -32,27 +49,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.Map.Entry;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.java.ao.cache.Cache;
-import net.java.ao.cache.CacheLayer;
-import net.java.ao.cache.RAMCache;
-import net.java.ao.cache.RAMRelationsCache;
-import net.java.ao.cache.RelationsCache;
-import net.java.ao.schema.AutoIncrement;
-import net.java.ao.schema.CamelCaseFieldNameConverter;
-import net.java.ao.schema.CamelCaseTableNameConverter;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.SchemaGenerator;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -76,11 +79,14 @@ import net.java.ao.types.TypeManager;
  * @author Daniel Spiewak
  */
 public class EntityManager {
-	static {
-		Logger.getLogger("net.java.ao").setLevel(Level.OFF);
-	}
-	
+
 	private final DatabaseProvider provider;
+
+    /**
+     * To fire events, for example Sql releated events
+     */
+    private final EventManager eventManager;
+
 	
 	private final boolean weaklyCache;
 	
@@ -106,8 +112,8 @@ public class EntityManager {
 	private final ReadWriteLock valGenCacheLock = new ReentrantReadWriteLock(true);
 	
 	private final RelationsCache relationsCache = new RAMRelationsCache();
-	
-	/**
+
+    /**
 	 * Creates a new instance of <code>EntityManager</code> using the specified
 	 * {@link DatabaseProvider}.  This constructor intializes the entity cache, as well
 	 * as creates the default {@link TableNameConverter} (the default is 
@@ -139,7 +145,11 @@ public class EntityManager {
 	 * 		cache.  If <code>false</code>, then {@link SoftReference} will be used.
 	 */
 	public EntityManager(DatabaseProvider provider, boolean weaklyCache) {
-		this.provider = provider;
+        // for now we use the only implementation of the event manager, and it is not configurable
+        this.eventManager = new EventManagerImpl();
+        this.provider = provider;
+        this.provider.setEventManager(this.eventManager);
+
 		this.weaklyCache = weaklyCache;
 		
 		if (weaklyCache) {
@@ -586,7 +596,8 @@ public class EntityManager {
 					}
 					sql.append(')');
 					
-					Logger.getLogger("net.java.ao").log(Level.INFO, sql.toString());
+                    eventManager.publish(new SqlEvent(sql.toString()));
+
 					PreparedStatement stmt = conn.prepareStatement(sql.toString());
 					
 					int index = 1;
@@ -747,8 +758,9 @@ public class EntityManager {
 			} finally {
 				tableNameConverterLock.readLock().unlock();
 			}
-			
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+
+            eventManager.publish(new SqlEvent(sql));
+
 			PreparedStatement stmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 			provider.setQueryStatementProperties(stmt, query);
 			
@@ -807,7 +819,8 @@ public class EntityManager {
 		
 		Connection conn = getProvider().getConnection();
 		try {
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+			eventManager.publish(new SqlEvent(sql));
+
 			PreparedStatement stmt = conn.prepareStatement(sql);
 			
 			TypeManager manager = TypeManager.getInstance();
@@ -884,8 +897,9 @@ public class EntityManager {
 			} finally {
 				tableNameConverterLock.readLock().unlock();
 			}
-			
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+
+            eventManager.publish(new SqlEvent(sql));
+            
 			PreparedStatement stmt = conn.prepareStatement(sql);
 			provider.setQueryStatementProperties(stmt, query);
 			
@@ -1057,7 +1071,16 @@ public class EntityManager {
 		return provider;
 	}
 
-	<T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
+    /**
+     * Returns the event manager in use by this entity manager, cannot but {@code null}
+     * @return the event manager in use by this entity manager
+     */
+    public EventManager getEventManager()
+    {
+        return eventManager;
+    }
+
+    <T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
 		proxyLock.readLock().lock();
 		try {
             return ((EntityProxyAccessor) entity).getEntityProxy();

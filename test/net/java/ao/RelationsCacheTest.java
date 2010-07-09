@@ -15,19 +15,15 @@
  */
 package net.java.ao;
 
-import static org.junit.Assert.assertTrue;
-
-import java.sql.SQLException;
-
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
-
 import org.junit.Test;
-
 import test.schema.Pen;
 import test.schema.Person;
 import test.schema.PersonLegalDefence;
 import test.schema.PersonSuit;
+
+import java.sql.SQLException;
 
 /**
  * @author Daniel Spiewak
@@ -39,52 +35,74 @@ public class RelationsCacheTest extends DataTest {
 	}
 
 	@Test
-	public void testOneToManyDestinationCreation() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+	public void testOneToManyDestinationCreation() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.getPens();
 		
 		Pen pen = manager.create(Pen.class);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
 		manager.delete(pen);
 	}
 	
 	@Test
-	public void testOneToManyDestinationDeletion() throws SQLException {
+	public void testOneToManyDestinationDeletion() throws Exception
+    {
 		Pen pen = manager.create(Pen.class);
-		Person person = manager.get(Person.class, personID);
+		final Person person = manager.get(Person.class, personID);
 		person.getPens();
 
 		manager.delete(pen);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-	}
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+    }
 
 	@Test
-	public void testOneToManyFieldModification() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+	public void testOneToManyFieldModification() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		Pen pen = person.getPens()[0];
 		
 		pen.setDeleted(true);
 		pen.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		Pen pen2 = person.getPens()[0];
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		pen2.setPerson(null);
-		pen2.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPens();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		pen2.setPerson(person);
+
+        Pen pen2 = sql.checkExecuted(new Command<Pen>()
+        {
+            public Pen run() throws Exception
+            {
+                return person.getPens()[0];
+            }
+        });
+
+        pen2.setPerson(null);
+        pen2.save();
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+
+        pen2.setPerson(person);
 		pen2.save();
 		
 		pen.setDeleted(false);
@@ -92,55 +110,78 @@ public class RelationsCacheTest extends DataTest {
 	}
 	
 	@Test
-	public void testManyToManyIntermediateCreation() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+	public void testManyToManyIntermediateCreation() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		person.getPersonLegalDefences();
 		
 		PersonSuit suit = manager.create(PersonSuit.class);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		manager.delete(suit);
-	}
-	
-	@Test
-	public void testManyToManyIntermediateDeletion() throws SQLException {
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        manager.delete(suit);
+    }
+
+    @Test
+	public void testManyToManyIntermediateDeletion() throws Exception
+    {
 		PersonSuit suit = manager.create(PersonSuit.class);
-		Person person = manager.get(Person.class, personID);
+		final Person person = manager.get(Person.class, personID);
 		person.getPersonLegalDefences();
 		
 		manager.delete(suit);
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
 	}
 	
 	@Test
-	public void testManyToManyFieldModification() throws SQLException {
-		Person person = manager.get(Person.class, personID);
+	public void testManyToManyFieldModification() throws Exception
+    {
+		final Person person = manager.get(Person.class, personID);
 		PersonLegalDefence defence = person.getPersonLegalDefences()[0];
 		PersonSuit suit = manager.get(PersonSuit.class, suitIDs[0]);
 		
 		suit.setDeleted(true);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		suit.setDeleted(false);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        suit.setDeleted(false);
 		suit.save();
 		person.getPersonLegalDefences();
 		
 		suit.setPerson(null);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
 
 		suit.setPerson(person);
 		suit.save();
@@ -148,12 +189,17 @@ public class RelationsCacheTest extends DataTest {
 		
 		suit.setPersonLegalDefence(null);
 		suit.save();
-		
-		SQLLogMonitor.getInstance().markWatchSQL();
-		person.getPersonLegalDefences();
-		assertTrue(SQLLogMonitor.getInstance().isExecutedSQL());
-		
-		suit.setPersonLegalDefence(defence);
+
+        sql.checkExecuted(new Command<Void>()
+        {
+            public Void run() throws Exception
+            {
+                person.getPersonLegalDefences();
+                return null;
+            }
+        });
+
+        suit.setPersonLegalDefence(defence);
 		suit.save();
 	}
 }

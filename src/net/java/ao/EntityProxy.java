@@ -15,6 +15,13 @@
  */
 package net.java.ao;
 
+import net.java.ao.cache.CacheLayer;
+import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.schema.NotNull;
+import net.java.ao.schema.OnUpdate;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Array;
@@ -34,16 +41,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import net.java.ao.cache.CacheLayer;
-import net.java.ao.schema.NotNull;
-import net.java.ao.schema.OnUpdate;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 /**
  * @author Daniel Spiewak
@@ -239,7 +238,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			sql.append(" WHERE ").append(provider.processID(pkFieldName)).append(" = ?");
 
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql.toString());
+            this.manager.getEventManager().publish(new SqlEvent(sql.toString()));
 			PreparedStatement stmt = conn.prepareStatement(sql.toString());
 
 			List<PropertyChangeEvent> events = new LinkedList<PropertyChangeEvent>();
@@ -432,8 +431,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	
 				sql.append(" FROM ").append(provider.processID(table)).append(" WHERE ");
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
-	
-				Logger.getLogger("net.java.ao").log(Level.INFO, sql.toString());
+
+                manager.getEventManager().publish(new SqlEvent(sql.toString()));
 				PreparedStatement stmt = conn.prepareStatement(sql.toString());
 				Common.getPrimaryKeyType(this.type).putToDatabase(getManager(), stmt, 1, key);
 	
@@ -765,7 +764,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 
-			Logger.getLogger("net.java.ao").log(Level.INFO, sql.toString());
+            manager.getEventManager().publish(new SqlEvent(sql.toString()));
 			PreparedStatement stmt = conn.prepareStatement(sql.toString());
 			
 			DatabaseType<K> dbType = (DatabaseType<K>) TypeManager.getInstance().getType(key.getClass());
