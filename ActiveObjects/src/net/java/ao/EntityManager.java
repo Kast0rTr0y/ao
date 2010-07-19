@@ -21,7 +21,6 @@ import net.java.ao.cache.RAMCache;
 import net.java.ao.cache.RAMRelationsCache;
 import net.java.ao.cache.RelationsCache;
 import net.java.ao.event.EventManager;
-import net.java.ao.event.EventManagerImpl;
 import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
@@ -54,8 +53,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -67,29 +66,19 @@ import java.util.logging.Logger;
  * instance corresponding to a single database.  Thus, rather than a singleton instance or a
  * static factory method, <code>EntityManager</code> does have a proper constructor.  Any
  * static instance management is left up to the developer using the API.</p>
- * 
- * <p>As a side note, ActiveObjects can optionally log all SQL queries prior to their
- * execution.  This query logging is done with the Java Logging API using the {@link Logger}
- * instance for the <code>net.java.ao</code> package.  This logging is disabled by default
- * by the <code>EntityManager</code> static initializer.  Thus, if it is desirable to log the
- * SQL statements, the <code>Logger</code> level must be set to {@link Level.FINE}
- * <i>after</i> the <code>EntityManager</code> class is first used.  This usually means
- * setting the log level after the constructer has been called.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
-public class EntityManager {
-
-	private final DatabaseProvider provider;
+public class EntityManager
+{
+    private final DatabaseProvider provider;
+    private final EntityManagerConfiguration configuration;
 
     /**
      * To fire events, for example Sql releated events
      */
     private final EventManager eventManager;
 
-	
-	private final boolean weaklyCache;
-	
 	private Map<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> proxies;
 	private final ReadWriteLock proxyLock = new ReentrantReadWriteLock(true);
 	
@@ -115,23 +104,6 @@ public class EntityManager {
 
     /**
 	 * Creates a new instance of <code>EntityManager</code> using the specified
-	 * {@link DatabaseProvider}.  This constructor intializes the entity cache, as well
-	 * as creates the default {@link TableNameConverter} (the default is 
-	 * {@link CamelCaseTableNameConverter}, which is non-pluralized) and the default
-	 * {@link FieldNameConverter} ({@link CamelCaseFieldNameConverter}).  The provider
-	 * instance is immutable once set using this constructor.  By default (using this
-	 * constructor), all entities are strongly cached, meaning references are held to
-	 * the instances, preventing garbage collection.
-	 * 
-	 * @param provider	The {@link DatabaseProvider} to use in all database operations.
-	 * @see #EntityManager(DatabaseProvider, boolean)
-	 */
-	public EntityManager(DatabaseProvider provider) {
-		this(provider, false);
-	}
-	
-	/**
-	 * Creates a new instance of <code>EntityManager</code> using the specified
 	 * {@link DatabaseProvider}.  This constructor initializes the entity and proxy
 	 * caches based on the given boolean value.  If <code>true</code>, the entities
 	 * will be weakly cached, not maintaining a reference allowing for garbage 
@@ -139,62 +111,44 @@ public class EntityManager {
 	 * garbage collection and ensuring the cache is logically complete.  If you are
 	 * concerned about memory, specify <code>true</code>.  Otherwise, for
 	 * maximum performance use <code>false</code> (highly recomended).
-	 * 
-	 * @param provider	The {@link DatabaseProvider} to use in all database operations.
-	 * @param weaklyCache	Whether or not to use {@link WeakReference} in the entity
-	 * 		cache.  If <code>false</code>, then {@link SoftReference} will be used.
+	 *
+     * @param provider    the {@link DatabaseProvider} to use in all database operations.
+     * @param configuration the configuration for this entity manager
+     * @param eventManager the event manager to use
 	 */
-	public EntityManager(DatabaseProvider provider, boolean weaklyCache) {
-        // for now we use the only implementation of the event manager, and it is not configurable
-        this.eventManager = new EventManagerImpl();
-        this.provider = provider;
+	public EntityManager(DatabaseProvider provider, EntityManagerConfiguration configuration, EventManager eventManager)
+    {
+        this.provider = checkNotNull(provider);
+        this.configuration = checkNotNull(configuration);
+        this.eventManager = checkNotNull(eventManager);
+
+        // this should not be there
         this.provider.setEventManager(this.eventManager);
 
-		this.weaklyCache = weaklyCache;
-		
-		if (weaklyCache) {
-			proxies = new WeakHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
-		} else {
-			proxies = new SoftHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
-		}
+        if (configuration.useWeakCache())
+        {
+            proxies = new WeakHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
+        }
+        else
+        {
+            proxies = new SoftHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
+        }
 		
 		entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
-		
 		cache = new RAMCache();
-		
 		valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
 		
 		tableNameConverter = new CamelCaseTableNameConverter();
 		fieldNameConverter = new CamelCaseFieldNameConverter();
 		typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
 	}
-	
-	/**
-	 * <p>Creates a new instance of <code>EntityManager</code> by auto-magically
-	 * finding a {@link DatabaseProvider} instance for the specified JDBC URI, username
-	 * and password.  The auto-magically determined instance is pooled by default
-	 * (if a supported connection pooling library is available on the classpath).</p>
-	 * 
-	 * <p>The actual auto-magical parsing code isn't contained within this method,
-	 * but in {@link DatabaseProvider#getInstance(String, String, String)}.  This way,
-	 * it is possible to use the parsing logic to get a <code>DatabaseProvider</code>
-	 * instance separate from <code>EntityManager</code> if necessary.</p>
-	 * 
-	 * @param uri	The JDBC URI to use for the database connection.
-	 * @param username	The username to use in authenticating the database connection. 
-	 * @param password		The password to use in authenticating the database connection.
-	 * @see #EntityManager(DatabaseProvider)
-	 * @see net.java.ao.DatabaseProvider#getInstance(String, String, String)
-	 */
-	public EntityManager(String uri, String username, String password) {
-		this(DatabaseProvider.getInstance(uri, username, password));
-	}
+
 	
 	/**
 	 * Convenience method to create the schema for the specified entities
 	 * using the current settings (table/field name converter and database provider).
 	 * 
-	 *  @see net.java.ao.schema.SchemaGenerator#migrate(DatabaseProvider, TableNameConverter, FieldNameConverter, Class...)
+	 *  @see net.java.ao.schema.SchemaGenerator#migrate(DatabaseProvider, net.java.ao.schema.TableNameConverter, net.java.ao.schema.FieldNameConverter, Class[])
 	 */
 	public void migrate(Class<? extends RawEntity<?>>... entities) throws SQLException {
 		tableNameConverterLock.readLock().lock();
@@ -213,7 +167,7 @@ public class EntityManager {
 	 * within this class.  Rather, it simply dumps all of the field values cached within the entities
 	 * themselves (with the exception of the primary key value).  This should be used in the case
 	 * of a complex process outside AO control which may have changed values in the database.  If
-	 * it is at all possible to determine precisely which rows have been changed, the {@link #flush(RawEntity...)}
+	 * it is at all possible to determine precisely which rows have been changed, the {@link #flush(RawEntity[])} }
 	 * method should be used instead.
 	 */
 	public void flushAll() {
@@ -367,7 +321,7 @@ public class EntityManager {
 	
 	/**
 	 * Creates a new instance of the entity of the specified type corresponding to the
-	 * given primary key.  This is used by {@link #get(Class, Object...)} to create the entity
+	 * given primary key.  This is used by {@link #get(Class, Object[])}} to create the entity
 	 * if the instance is not found already in the cache.  This method should not be
 	 * repurposed to perform any caching, since ActiveObjects already assumes that
 	 * the caching has been performed.
@@ -379,7 +333,7 @@ public class EntityManager {
 	protected <T extends RawEntity<K>, K> T getAndInstantiate(Class<T> type, K key) {
 		EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, type, key);
 		
-		T entity = (T) Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy);
+		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy));
 
 		proxyLock.writeLock().lock();
 		try {
@@ -1094,7 +1048,7 @@ public class EntityManager {
 	}
 
 	private Reference<RawEntity<?>> createRef(RawEntity<?> entity) {
-		if (weaklyCache) {
+		if (configuration.useWeakCache()) {
 			return new WeakReference<RawEntity<?>>(entity);
 		}
 		

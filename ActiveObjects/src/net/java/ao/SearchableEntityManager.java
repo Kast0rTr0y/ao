@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.List;
 
+import net.java.ao.event.EventManager;
 import net.java.ao.types.DatabaseType;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -40,86 +41,55 @@ import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * <p>Required to manage entities with enabled full-text searching.  This is where
  * all the "meat" of the Lucene indexing support is actually implemented.  It is
  * required to use this {@link EntityManager} implementation to use full-text
  * searching.  Example:</p>
- * 
+ *
  * <pre>public interface Post extends Entity {
  *     // ...
- *     
+ *
  *     &#064;Searchable
  *     &#064;SQLType(Types.BLOB)
  *     public String getBody();
- *     
+ *
  *     &#064;Searchable
  *     &#064;SQLType(Types.BLOB)
  *     public void setBody(String body);
  * }
- * 
+ *
  * // ...
  * SearchableEntityManager manager = new SearchableEntityManager(
  *         uri, username, password, FSDirectory.getDirectory("~/lucene_index"));
  * manager.search(Post.class, "my search string");       // returns results as Post[]</pre>
- * 
+ *
  * <p>This class does not support any Java full-text search libraries other than
  * Lucene.  Also, the support for Lucene itself is comparatively limited.  If your
  * requirements dictate more advanced functionality, you should consider
  * writing a custom implementation of this class to provide the enhancements
  * you need.  More features are planned for this class in future...</p>
- * 
+ *
  * @author Daniel Spiewak
  * @see net.java.ao.Searchable
  */
 public class SearchableEntityManager extends EntityManager {
-	private Directory indexDir;
 
-	private Analyzer analyzer;
+    private final Directory indexDir;
 
-	/**
-	 * Constructs a new instance with the specified provider and index
-	 * {@link Directory}.  Delegates more-or-less all of the functionality
-	 * to {@link EntityManager}.
-	 * 
-	 * @throws IOException		If Lucene was unable to open the index.
-	 * @see net.java.ao.EntityManager#EntityManager(DatabaseProvider)
-	 */
-	public SearchableEntityManager(DatabaseProvider provider, Directory indexDir) throws IOException {
-		super(provider);
+	private final Analyzer analyzer;
 
-		init(indexDir);
-	}
+    public SearchableEntityManager(DatabaseProvider databaseProvider, EntityManagerConfiguration configuration, EventManager eventManager, LuceneConfiguration luceneConfiguration) throws IOException
+    {
+        super(databaseProvider, configuration, eventManager);
+        this.indexDir = checkNotNull(checkNotNull(luceneConfiguration).getIndexDirectory());
+        this.analyzer = new StopAnalyzer();
+        init();
+    }
 
-	/**
-	 * Constructs a new instance with the specified provider, index
-	 * {@link Directory}, and <code>weaklyCache</code> flag.  Delegates 
-	 * more-or-less all of the functionality to {@link EntityManager}.
-	 * 
-	 * @throws IOException		If Lucene was unable to open the index.
-	 * @see net.java.ao.EntityManager#EntityManager(DatabaseProvider, boolean)
-	 */
-	public SearchableEntityManager(DatabaseProvider provider, Directory indexDir, boolean weaklyCache) throws IOException {
-		super(provider, weaklyCache);
-
-		init(indexDir);
-	}
-
-	/**
-	 * Constructs a new instance with the specified JDBC information and index
-	 * {@link Directory}.  Delegates more-or-less all of the functionality to 
-	 * {@link EntityManager}.
-	 * 
-	 * @throws IOException		If Lucene was unable to open the index.
-	 * @see net.java.ao.EntityManager#EntityManager(String, String, String)
-	 */
-	public SearchableEntityManager(String uri, String username, String password, Directory indexDir) throws IOException {
-		super(uri, username, password);
-
-		init(indexDir);
-	}
-
-	@Override
+    @Override
 	protected <T extends RawEntity<K>, K> T getAndInstantiate(Class<T> type, K key) {
 		T back = super.getAndInstantiate(type, key);
 		back.addPropertyChangeListener(new IndexAppender<T, K>(back));
@@ -132,7 +102,7 @@ public class SearchableEntityManager extends EntityManager {
 	 * query.  The search will be run on every {@link Searchable} field within
 	 * the entity.  No caching is performed in this method.  Rather, AO relies
 	 * upon the underlying Lucene code to be performant.
-	 * 
+	 *
 	 * @param type		The type of the entities to search for.
 	 * @param strQuery	The query to pass to Lucene for the search.
 	 * @throws IOException		If Lucene was unable to open the index.
@@ -157,7 +127,7 @@ public class SearchableEntityManager extends EntityManager {
 
 		Hits hits = searcher.search(query);
 		K[] keys = (K[]) new Object[hits.length()];
-		
+
 		for (int i = 0; i < hits.length(); i++) {
 			keys[i] = (K) dbType.defaultParseValue(hits.doc(i).get(table + "." + primaryKeyField));
 		}
@@ -189,11 +159,11 @@ public class SearchableEntityManager extends EntityManager {
 	}
 
 	/**
-	 * Adds the entity instance to the index.  No checking is performed to 
+	 * Adds the entity instance to the index.  No checking is performed to
 	 * ensure that the entity is not already part of the index.  All of the
 	 * {@link Searchable} fields within the entity will be added to the
 	 * index as part of the document corresponding to the instance.
-	 * 
+	 *
 	 * @param entity	The entity to add to the index.
 	 * @throws IOException		If Lucene was unable to open the index.
 	 */
@@ -205,9 +175,9 @@ public class SearchableEntityManager extends EntityManager {
 			writer = new IndexWriter(indexDir, analyzer, false);
 
 			Document doc = new Document();
-			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "." 
-					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()), 
-					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)), 
+			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
+					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 
 			boolean shouldAdd = false;
@@ -216,7 +186,7 @@ public class SearchableEntityManager extends EntityManager {
 
 				if (indexAnno != null) {
 					shouldAdd = true;
-					
+
 					if (Common.isAccessor(m)) {
 						String attribute = getFieldNameConverter().getName(m);
 						Object value = m.invoke(entity);
@@ -248,7 +218,7 @@ public class SearchableEntityManager extends EntityManager {
 	 * Removes the specified entity from the Lucene index.  This performs a lookup
 	 * in the index based on the value of the entity primary key and removes the
 	 * appropriate {@link Document}.
-	 * 
+	 *
 	 * @param entity	The entity to remove from the index.
 	 * @throws IOException		If Lucene was unable to open the index.
 	 */
@@ -265,8 +235,8 @@ public class SearchableEntityManager extends EntityManager {
 	}
 
 	private void removeFromIndexImpl(RawEntity<?> entity, IndexReader reader) throws IOException {
-		reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "." 
-				+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()), 
+		reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
+				+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
 				Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))));
 	}
 
@@ -276,13 +246,13 @@ public class SearchableEntityManager extends EntityManager {
 	 * call will take some time, so it is best not to perform the operation
 	 * in scenarios where it may block interface responsiveness (such as
 	 * in the middle of a page request, or within the EDT).</p>
-	 * 
+	 *
 	 * <p>This method is the only optimization call made against the Lucene
 	 * index.  Meaning, <code>SearchableEntityManager</code> never
 	 * optimizes the index automatically, as this could potentially cause major
 	 * performance issues.  Developers should be aware of this and the
 	 * negative impact lack-of optimization can have upon search performance.</p>
-	 * 
+	 *
 	 * @throws IOException		If Lucene was unable to open the index.
 	 */
 	public void optimize() throws IOException {
@@ -305,15 +275,13 @@ public class SearchableEntityManager extends EntityManager {
 		return analyzer;
 	}
 
-	private void init(Directory indexDir) throws IOException {
-		this.indexDir = indexDir;
-
-		analyzer = new StopAnalyzer();
-
-		if (!IndexReader.indexExists(indexDir)) {
-			new IndexWriter(indexDir, analyzer, true).close();
-		}
-	}
+    private void init() throws IOException
+    {
+        if (!IndexReader.indexExists(indexDir))
+        {
+            new IndexWriter(indexDir, analyzer, true).close();
+        }
+    }
 
 	private class IndexAppender<T extends RawEntity<K>, K> implements PropertyChangeListener {
 		private List<String> indexFields;
@@ -324,9 +292,9 @@ public class SearchableEntityManager extends EntityManager {
 			indexFields = Common.getSearchableFields(SearchableEntityManager.this, entity.getEntityType());
 
 			doc = new Document();
-			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "." 
-					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()), 
-					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)), 
+			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
+					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 		}
 
@@ -334,14 +302,14 @@ public class SearchableEntityManager extends EntityManager {
 			if (indexFields.contains(evt.getPropertyName())) {
 				T entity = (T) evt.getSource();
 
-				doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + '.' 
+				doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + '.'
 						+ evt.getPropertyName(), evt.getNewValue().toString(), Field.Store.YES, Field.Index.TOKENIZED));
 
 				IndexWriter writer = null;
 				try {
 					writer = new IndexWriter(getIndexDir(), getAnalyzer(), false);
-					writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "." 
-							+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()), 
+					writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
+							+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
 							Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))), doc);
 				} catch (IOException e) {
 				} finally {

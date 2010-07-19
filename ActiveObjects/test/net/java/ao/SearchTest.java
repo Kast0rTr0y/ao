@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.test.Configuration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
@@ -72,7 +73,8 @@ public class SearchTest {
 		String pass = Configuration.get().getPassword();
 		
 
-		manager = new SearchableEntityManager(uri + '_' + 0 + suffix, user, pass, FSDirectory.getDirectory(TEST_INDEX));
+		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass)
+                .withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
 
 		try {
 			TestUtilities.tearDownEntityManager(manager);

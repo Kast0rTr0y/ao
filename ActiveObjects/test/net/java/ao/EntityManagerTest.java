@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import org.junit.Test;
@@ -503,8 +504,8 @@ public class EntityManagerTest extends DataTest
     @Test(expected = RuntimeException.class)
     public void testNullTypeMapper()
     {
-        EntityManager manager = new EntityManager("jdbc:hsqldb:mem:other_testdb", null, null);
-
+        EntityManager manager =
+                EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null).build();
         try
         {
             manager.setPolymorphicTypeMapper(null);

@@ -1,12 +1,15 @@
-package net.java.ao;
+package net.java.ao.builder;
+
+import net.java.ao.DatabaseProvider;
 
 /**
  * This is class used to build {@link net.java.ao.EntityManager}
- * @see net.java.ao.EntityManagerBuilder
+ *
+ * @see EntityManagerBuilder
  * @see EntityManagerBuilderWithUrl
- * @see net.java.ao.EntityManagerBuilderWithDatabaseProvider
+ * @see EntityManagerBuilderWithDatabaseProvider
  */
-public class EntityManagerBuilderWithUrlAndUsername
+public final class EntityManagerBuilderWithUrlAndUsername
 {
     private final String url;
     private final String username;
