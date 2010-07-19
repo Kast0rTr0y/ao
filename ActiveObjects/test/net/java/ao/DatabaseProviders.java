@@ -2,42 +2,40 @@ package net.java.ao;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
-import net.java.ao.db.JTDSSQLServerDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
-
-import javax.sql.DataSource;
+import net.java.ao.db.SQLServerDatabaseProvider;
 
 public class DatabaseProviders
 {
-    public static HSQLDatabaseProvider getHsqlDatabaseProvider(ActiveObjectsDataSource source)
+    public static HSQLDatabaseProvider getHsqlDatabaseProvider(DisposableDataSource source)
     {
-        return new HSQLDatabaseProvider(Database.HSQLDB, source);
+        return new HSQLDatabaseProvider(source);
     }
 
-    public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider(ActiveObjectsDataSource source)
+    public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider(DisposableDataSource source)
     {
-        return new PostgreSQLDatabaseProvider(Database.POSTGRES, source);
+        return new PostgreSQLDatabaseProvider(source);
     }
 
-    public static OracleDatabaseProvider getOrableDatabaseProvider(ActiveObjectsDataSource source)
+    public static OracleDatabaseProvider getOrableDatabaseProvider(DisposableDataSource source)
     {
-        return new OracleDatabaseProvider(Database.ORACLE, source);
+        return new OracleDatabaseProvider(source);
     }
 
-    public static MySQLDatabaseProvider getMySqlDatabaseProvider(ActiveObjectsDataSource source)
+    public static MySQLDatabaseProvider getMySqlDatabaseProvider(DisposableDataSource source)
     {
-        return new MySQLDatabaseProvider(Database.MYSQL, source);
+        return new MySQLDatabaseProvider(source);
     }
 
-    public static JTDSSQLServerDatabaseProvider getJtdsMsSqlDatabaseProvider(ActiveObjectsDataSource source)
+    public static SQLServerDatabaseProvider getMsSqlDatabaseProvider(DisposableDataSource source)
     {
-        return new JTDSSQLServerDatabaseProvider(Database.MSSQL, source);
+        return new SQLServerDatabaseProvider(source);
     }
 
-    public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider(ActiveObjectsDataSource source)
+    public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider(DisposableDataSource source)
     {
-        return new EmbeddedDerbyDatabaseProvider(Database.DERBY, source);
+        return new EmbeddedDerbyDatabaseProvider(source, "");
     }
 }

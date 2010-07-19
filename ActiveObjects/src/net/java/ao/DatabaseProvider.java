@@ -28,10 +28,10 @@ import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
-import javax.sql.DataSource;
+import java.io.InputStream;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,6 +53,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.Common.closeQuietly;
 
 /**
  * <p>The superclass parent of all <code>DatabaseProvider</code>
@@ -74,65 +75,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p/>
  * <p>This class also handles the implementation details required to ensure
  * that only one active {@link Connection} instance is available per thread.  This is
- * in fact a very basic (and naive) form of connection pooling.  It should
- * <i>not</i> be relied upon for performance reasons.  Instead, a third-party
- * connection pool should be available in the classpath, enabling the use of
- * one of the {@link PoolProvider} implementations.  The purpose of the
- * thread-locked connection pooling in this class is to satisfy transactions
- * with external SQL statements.</p>
+ * in fact a very basic (and naive) form of connection pooling. It should
+ * <i>not</i> be relied upon for performance reasons.  Instead one should enable
+ * connection pooling via the {@link javax.sql.DataSource} passed to instances. You can
+ * also use the {@link net.java.ao.builder.EntityManagerBuilder} builder to make it
+ * easier to configure the pooling. The purpose of the thread-locked connection pooling
+ * in this class is to satisfy transactions with external SQL statements.</p>
  *
  * @author Daniel Spiewak
  */
 public abstract class DatabaseProvider
 {
-    private final Database database;
-    private final ActiveObjectsDataSource dataSource;
+    private final DisposableDataSource dataSource;
 
     // TODO make final
     protected EventManager eventManager;
 
-    private Map<Thread, Connection> connections;
+    private final Map<Thread, Connection> connections;
     private final ReadWriteLock connectionsLock = new ReentrantReadWriteLock();
 
     private String quote;
 
-    protected DatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    protected DatabaseProvider(DisposableDataSource dataSource)
     {
-        this.database = checkNotNull(database);
         this.dataSource = checkNotNull(dataSource);
         this.connections = new HashMap<Thread, Connection>();
-    }
-
-//	/**
-//	 * <p>The base constructor for <code>DatabaseProvider</code>.
-//	 * Initializes the JDBC uri, username and password values as specified.</p>
-//	 *
-//	 * <p>Subclasses should implement a public constructor of this form, however
-//	 * it is not mandatory.</p>
-//	 *
-//	 * @param uri	The JDBC URI which corresponds to the database being abstracted.
-//	 * @param username	The database username (note: for implementations which
-//	 * 	do not make use of this field, <code>null</code> is permitted).
-//	 * @param password		The database password (note: for implementations which
-//	 * 	do not make use of this field, <code>null</code> is permitted).
-//	 */
-//	protected DatabaseProvider(String uri, String username, String password) {
-//		this.uri = uri;
-//
-//		this.username = username;
-//		this.password = password;
-//
-//		connections = new HashMap<Thread, Connection>();
-//	}
-
-    public Database getDatabase()
-    {
-        return database;
-    }
-
-    public ActiveObjectsDataSource getDataSource()
-    {
-        return dataSource;
     }
 
     private synchronized void loadQuoteString()
@@ -142,7 +109,7 @@ public abstract class DatabaseProvider
             Connection conn = null;
             try
             {
-                conn = getConnectionImpl();
+                conn = dataSource.getConnection();
 
                 if (conn == null)
                 {        // probably a unit test
@@ -159,45 +126,10 @@ public abstract class DatabaseProvider
             }
             finally
             {
-                try
-                {
-                    if (conn != null)
-                    {
-                        conn.close();
-                    }
-                }
-                catch (SQLException e)
-                {
-                }
+                closeQuietly(conn);
             }
         }
     }
-
-    /**
-     * <p>Returns the JDBC Driver class which corresponds to the database being
-     * abstracted.  This should be implemented in such a way as to initialize
-     * and register the driver with JDBC.  For most drivers, this requires code in the
-     * following form:</p>
-     * <p/>
-     * <pre>public Class&lt;? extends Driver&gt; getDriverClass() {
-     *     return (Class&lt;? extends Driver&gt;) Class.forName("com.mysql.jdbc.Driver");
-     * }</pre>
-     * <p/>
-     * <p>The following does <i>not</i> fire the driver's static initializer and thus
-     * will (usually) not work:</p>
-     * <p/>
-     * <pre>public Class&lt;? extends Driver&gt; getDriverClass() {
-     *     return com.mysql.jdbc.Driver.class;
-     * }</pre>
-     * <p/>
-     * <p>If the driver is not on the classpath, a {@link ClassNotFoundException}
-     * can and should be thrown (certain auto-magic configuration sections of
-     * ActiveObjects depend upon this under certain circumstances).</p>
-     *
-     * @return The JDBC {@link Driver} implementation which corresponds to the
-     *         relevant database.
-     */
-    public abstract Class<? extends Driver> getDriverClass() throws ClassNotFoundException;
 
     /**
      * <p>Generates the DDL fragment required to specify an INTEGER field as
@@ -765,71 +697,36 @@ public abstract class DatabaseProvider
     }
 
     /**
-     * Retrieves the JDBC URI in use by the provider to obtain connections
-     * when necessary.  This should always return a valid URI, even in
-     * implementations such as connection pools which don't use the URI
-     * directly.
-     *
-     * @return A JDBC URI.
-     */
-//	public String getURI() {
-//		return uri;
-//	}
-
-    /**
-     * Retrieves the username used to authenticate against the database.
-     *
-     * @return The database username.
-     */
-//	public String getUsername() {
-//		return username;
-//	}
-
-    /**
-     * Retrieves the password used to authenticate against the database.
-     *
-     * @return The database password.
-     */
-//	public String getPassword() {
-//		return password;
-//	}
-
-    /**
      * <p>Retrieves a JDBC {@link Connection} instance which corresponds
-     * to the database represented by the provider instance.  This Connection
+     * to the database represented by the provider instance. This Connection
      * can be used to execute arbitrary JDBC operations against the database.
      * Also, this is the method used by the whole of ActiveObjects itself to
      * get database connections when required.</p>
-     * <p/>
+     *
      * <p>All {@link Connection} instances are pooled internally by thread.
      * Thus, there is never more than one connection per thread.  This is
      * necessary to allow arbitrary JDBC operations within a transaction
-     * without breaking transaction integrity.  Developers using this method
+     * without breaking transaction integrity. Developers using this method
      * should bear this fact in mind and consider the {@link Connection}
      * instance immutable.  The only exception is if one is <i>absolutely</i>
      * certain that the JDBC code in question is not being executed within
      * a transaction.</p>
-     * <p/>
+     *
      * <p>Despite the fact that there is only a single connection per thread,
      * the {@link Connection} instances returned from this method should
-     * still be treated as bona fide JDBC connections.  They can and
+     * still be treated as bona fide JDBC connections. They can and
      * <i>should</i> be closed when their usage is complete.  This is
      * especially important when actual connection pooling is in use and
      * non-disposal of connections can lead to a crash as the connection
-     * pool runs out of resources.  The developer need not concern themselves
+     * pool runs out of resources. The developer need not concern themselves
      * with the single-connection-per-thread issue when closing the connection
      * as the call to <code>close()</code> will be intercepted and ignored
      * if necessary.</p>
      * <p/>
-     * <p>Due to the fact that this method must implement some thread-specific
-     * operations, it is declared <code>final</code> and thus is not
-     * overridable in subclasses.  Database providers which need to override
-     * the connection fetching mechanism (such as pool providers) should
-     * instead override the {@link #getConnectionImpl()} method.</p>
      *
-     * @return A new connection to the database or <code>null</code>
-     * if the driver could not be loaded.
+     * @return A new connection to the database
      */
+    // TODO? move this in a datasource implementation, delegate?
     public final Connection getConnection() throws SQLException
     {
         connectionsLock.writeLock().lock();
@@ -841,7 +738,7 @@ public abstract class DatabaseProvider
                 return conn;
             }
 
-            Connection connectionImpl = getConnectionImpl();
+            Connection connectionImpl = dataSource.getConnection();
             if (connectionImpl == null)
             {
                 throw new SQLException("Unable to create connection");
@@ -857,37 +754,6 @@ public abstract class DatabaseProvider
         {
             connectionsLock.writeLock().unlock();
         }
-    }
-
-    /**
-     * <p>Creates a new connection to the database prepresented by the
-     * provider instance.  This method should not attempt to do any
-     * caching of any kind (unless implemented by a connection pool
-     * library).  Prior to creating the database connection, this
-     * method makes a call to {@link #getDriverClass()} to ensure that
-     * the JDBC driver has been loaded.  The return value is not
-     * checked for validity.</p>
-     * <p/>
-     * <p>This method is <i>never</i> called directly.  Instead, the
-     * {@link #getConnection()} method should be used.</p>
-     *
-     * @return A new connection to the database or <code>null</code>
-     * if the driver could not be loaded.
-     */
-    protected Connection getConnectionImpl() throws SQLException
-    {
-        final Connection conn = dataSource.getConnection();
-        setPostConnectionProperties(conn);
-        return conn;
-//		try {
-//			getDriverClass();
-//		} catch (ClassNotFoundException e) {
-//			return null;
-//		}
-//
-//		Connection conn = DriverManager.getConnection(getURI(), getUsername(), getPassword());
-//
-//		return conn;
     }
 
     /**
@@ -1764,6 +1630,23 @@ public abstract class DatabaseProvider
         return back.toString();
     }
 
+    public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
+    {
+        final Blob blob = res.getBlob(field);
+        if (type.equals(InputStream.class))
+        {
+            return blob.getBinaryStream();
+        }
+        else if (type.equals(byte[].class))
+        {
+            return blob.getBytes(1, (int) blob.length());
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     /**
      * <p>Determines whether or not the database allows explicit precisions
      * for the field in question.  This is to support databases such as
@@ -2241,7 +2124,7 @@ public abstract class DatabaseProvider
      * support both case-sensetive and case-insensetive identifiers (like MySQL) should
      * return <code>true</code> for better all-around compatibility.
      *
-     * @returns Boolean <code>true</code> if identifiers are case-sensetive,
+     * @return boolean <code>true</code> if identifiers are case-sensetive,
      * <code>false</code> otherwise.
      */
     public boolean isCaseSensetive()
@@ -2258,91 +2141,4 @@ public abstract class DatabaseProvider
     {
         return eventManager;
     }
-//
-//    /**
-//	 * Auto-magically retrieves the appropriate provider instance for the
-//	 * specified JDBC URI, passing it the given username and password.  This
-//	 * method actually delegates all of its interesting work to
-//	 * {@link #getInstance(String, String, String, boolean)}, passing <code>true</code>
-//	 * to enable auto-magical connection pool configuratoin by default.
-//	 *
-//	 * @param uri	The JDBC URI for which a provider must be obtained.
-//	 * @param username	The database username (note: for implementations which
-//	 * 		do not make use of this field, <code>null</code> is permitted).
-//	 * @param password		The database password (note: for implementations which
-//	 * 		do not make use of this field, <code>null</code> is permitted).
-//	 * @return	A database provider corresponding to the database referenced by
-//	 * 		the <code>uri</code>.
-//	 */
-//	public final static DatabaseProvider getInstance(String uri, String username, String password) {
-//		return getInstance(uri, username, password, true);		// enable pooling by default (if available)
-//	}
-//
-//	/**
-//	 * <p>Auto-magically retrieves the appropriate provider instance for the
-//	 * specified JDBC URI, passing it the given username and password.  Depending
-//	 * on the value of the <code>enablePooling</code> parameter, a connection
-//	 * pool library may also be auto-magically selected based on the CLASSPATH
-//	 * and the appropriate {@link PoolProvider} implementation returned, delegating
-//	 * to the actual requested provider.  If no pool provider can be located, the
-//	 * raw provider is returned (unpooled), irregardless of the <code>enablePooling</code>
-//	 * parameter.  If no database provider can be found for the given JDBC URI
-//	 * prefix, a {@link RuntimeException} will be thrown.  This should probably
-//	 * be changed to something a little less drastic, like returning <code>null</code>.</p>
-//	 *
-//	 * <p>Technically speaking, this method doesn't perform the actual logic
-//	 * to find the database and/or pool providers.  Both searches are delegated
-//	 * to the {@link SupportedDBProvider} and {@link SupportedPoolProvider} enums,
-//	 * respectively.  The exception to this is that the convention for determining
-//	 * whether or not a pool provider is actually availalble <i>is</i> defined
-//	 * here.  The convention imposed is that all pool providers contained within
-//	 * the {@link SupportedPoolProvider} enum must define a static <code>isAvailable</code>
-//	 * method which tests for the existance of some critical class on the CLASSPATH.
-//	 * If this method is not found, the provider will be assumed to be unfound and
-//	 * the search will continue.  This convention isn't required for third-party
-//	 * pool providers, but it is to be enforced for any pool providers supplied by
-//	 * ActiveObjects itself.</p>
-//	 *
-//	 * @param uri	The JDBC URI for which a provider must be obtained.
-//	 * @param username	The database username (note: for implementations which
-//	 * 		do not make use of this field, <code>null</code> is permitted).
-//	 * @param password		The database password (note: for implementations which
-//	 * 		do not make use of this field, <code>null</code> is permitted).
-//	 * @param enablePooling	A flag indicating whether or not connection pooling
-//	 * 		should be enabled (if possible).  Note that this flag is ignored if
-//	 * 		no connection pool library could be found on the CLASSPATH.
-//	 * @return	A database provider corresponding to the database referenced by
-//	 * 		the <code>uri</code>.
-//	 * @throws	RuntimeException	If no database provider is found for the
-//	 * 		specified URI prefix, or if the provider class could not be instantiated.
-//	 */
-//	public final static DatabaseProvider getInstance(String uri, String username, String password,
-//			boolean enablePooling) {
-//		SupportedDBProvider provider = SupportedDBProvider.getProviderForURI(uri);
-//		if (provider == null) {
-//			throw new RuntimeException("Unable to locate a valid database provider for URI: " + uri);
-//		}
-//
-//		DatabaseProvider back = provider.createInstance(uri, username, password);
-//		if (back == null) {
-//			throw new RuntimeException("Unable to instantiate database provider for URI: " + uri);
-//		}
-//
-//		if (enablePooling) {
-//			for (SupportedPoolProvider supportedProvider : SupportedPoolProvider.values()) {
-//				Class<? extends PoolProvider> providerClass = supportedProvider.getProvider();
-//
-//				try {
-//					if ((Boolean) providerClass.getMethod("isAvailable").invoke(null)) {
-//						back = providerClass.getConstructor(DatabaseProvider.class).newInstance(back);
-//						break;
-//					}
-//				} catch (Throwable t) {
-//					continue;
-//				}
-//			}
-//		}
-//
-//		return back;
-//	}
 }

@@ -1,19 +1,15 @@
 package net.java.ao.builder;
 
-import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.ActiveObjectsException;
-import net.java.ao.Database;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.db.ClientDerbyDatabaseProvider;
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
-import net.java.ao.db.JTDSSQLServerDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
-
-import javax.sql.DataSource;
 
 import java.sql.Driver;
 
@@ -22,90 +18,83 @@ import static com.google.common.base.Preconditions.checkNotNull;
 enum SupportedDatabase
 {
     // Note: the order IS important!
-    MYSQL("jdbc:mysql", "com.mysql.jdbc.Driver", Database.MYSQL)
+    MYSQL("jdbc:mysql", "com.mysql.jdbc.Driver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new MySQLDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new MySQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    DERBY_NETWORK("jdbc:derby://", "org.apache.derby.jdbc.ClientDriver", Database.DERBY)
+    DERBY_NETWORK("jdbc:derby://", "org.apache.derby.jdbc.ClientDriver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new ClientDerbyDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new ClientDerbyDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    DERBY_EMBEDDED("jdbc:derby", "org.apache.derby.jdbc.EmbeddedDriver", Database.DERBY)
+    DERBY_EMBEDDED("jdbc:derby", "org.apache.derby.jdbc.EmbeddedDriver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new EmbeddedDerbyDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new EmbeddedDerbyDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), uri);
                 }
             },
-    ORACLE("jdbc:oracle", "oracle.jdbc.OracleDriver", Database.ORACLE)
+    ORACLE("jdbc:oracle", "oracle.jdbc.OracleDriver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new OracleDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new OracleDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    POSTGRESQL("jdbc:postgresql", "org.postgresql.Driver", Database.POSTGRES)
+    POSTGRESQL("jdbc:postgresql", "org.postgresql.Driver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new PostgreSQLDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new PostgreSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    MSSQL("jdbc:sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver", Database.MSSQL)
+    MSSQL("jdbc:sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new SQLServerDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    MSSQL_JTDS("jdbc:jtds:sqlserver", "net.sourceforge.jtds.jdbc.Driver", Database.MSSQL)
+    MSSQL_JTDS("jdbc:jtds:sqlserver", "net.sourceforge.jtds.jdbc.Driver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new JTDSSQLServerDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             },
-    HSQLDB("jdbc:hsqldb", "org.hsqldb.jdbcDriver", Database.HSQLDB)
+    HSQLDB("jdbc:hsqldb", "org.hsqldb.jdbcDriver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
                 {
-                    return new HSQLDatabaseProvider(getDatabase(), getDataSource(dataSourceFactory, uri, username, password));
+                    return new HSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
             };
 
     private final String uriPrefix;
     private final String driverClassName;
-    private final Database database;
 
-    SupportedDatabase(String uriPrefix, String driverClassName, Database database)
+    SupportedDatabase(String uriPrefix, String driverClassName)
     {
         this.uriPrefix = checkNotNull(uriPrefix);
         this.driverClassName = checkNotNull(driverClassName);
-        this.database = checkNotNull(database);
     }
 
     public abstract DatabaseProvider getDatabaseProvider(DataSourceFactory factory, String url, String username, String password);
 
-    Database getDatabase()
-    {
-        return database;
-    }
-
-    ActiveObjectsDataSource getDataSource(DataSourceFactory factory, String uri, String username, String password)
+    DisposableDataSource getDataSource(DataSourceFactory factory, String uri, String username, String password)
     {
         final Class<? extends Driver> driverClass = checkDriverLoaded();
         return factory.getDataSource(driverClass, uri, username, password);
@@ -149,6 +138,6 @@ enum SupportedDatabase
     @Override
     public String toString()
     {
-        return new StringBuilder().append("Database ").append(database).append(" with driver ").append(driverClassName).toString();
+        return new StringBuilder().append("Database with prefix ").append(uriPrefix).append(" and driver ").append(driverClassName).toString();
     }
 }

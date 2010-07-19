@@ -19,14 +19,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
 import net.java.ao.Common;
-import net.java.ao.Database;
 import net.java.ao.EntityManager;
 
 /**
@@ -47,33 +45,11 @@ class BlobType extends DatabaseType<Object> {
 		return super.shouldCache(type);
 	}
 
-	@Override
-	public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<?> type, String field) throws SQLException {
-		if (Database.POSTGRES.equals(manager.getProvider().getDatabase())) {
-			if (type.equals(InputStream.class)) {
-				return res.getBinaryStream(field);
-			} else if (type.equals(byte[].class)) {
-				return res.getBytes(field);
-			}
-			
-			return null;
-		}
-		
-		Blob blob = res.getBlob(field);
-		
-		if (type.equals(InputStream.class)) {
-			// derby handles BLOBs oddly
-			if (Database.DERBY.equals(manager.getProvider().getDatabase())) {
-				return new ByteArrayInputStream(blob.getBytes(1, (int) blob.length()));
-			}
-			
-			return blob.getBinaryStream();
-		} else if (type.equals(byte[].class)) {
-			return blob.getBytes(1, (int) blob.length());
-		}
-		
-		return null;
-	}
+    @Override
+    public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<?> type, String field) throws SQLException
+    {
+        return manager.getProvider().handleBlob(res, type, field);
+    }
 	
 	@Override
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Object value) throws SQLException {

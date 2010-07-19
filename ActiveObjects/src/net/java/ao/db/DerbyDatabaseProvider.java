@@ -15,6 +15,9 @@
  */
 package net.java.ao.db;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,16 +29,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.java.ao.ActiveObjectsDataSource;
-import net.java.ao.Database;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
-
-import javax.sql.DataSource;
 
 /**
  * @author Daniel Spiewak
@@ -74,9 +74,9 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-    DerbyDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    DerbyDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
+        super(dataSource);
     }
 
     @Override
@@ -174,8 +174,26 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	protected String renderOnUpdate(DDLField field) {
 		return "";
 	}
-	
-	@Override
+
+    @Override
+    public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
+    {
+        final Blob blob = res.getBlob(field);
+        if (type.equals(InputStream.class))
+        {
+            return new ByteArrayInputStream(blob.getBytes(1, (int) blob.length()));
+        }
+        else if (type.equals(byte[].class))
+        {
+            return blob.getBytes(1, (int) blob.length());
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    @Override
 	protected String renderTriggerForField(DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {

@@ -15,10 +15,9 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.Database;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
@@ -31,9 +30,8 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
-import javax.sql.DataSource;
+import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -111,15 +109,10 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-    public PostgreSQLDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
+        super(dataSource);
     }
-
-    @Override
-	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
-		return (Class<? extends Driver>) Class.forName("org.postgresql.Driver");
-	}
 
 	@Override
 	protected boolean considerPrecision(DDLField field) {
@@ -271,7 +264,24 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return "";
 	}
 
-	@Override
+    @Override
+    public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
+    {
+        if (type.equals(InputStream.class))
+        {
+            return res.getBinaryStream(field);
+        }
+        else if (type.equals(byte[].class))
+        {
+            return res.getBytes(field);
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    @Override
 	protected String[] renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
 		List<String> back = new ArrayList<String>();
 
