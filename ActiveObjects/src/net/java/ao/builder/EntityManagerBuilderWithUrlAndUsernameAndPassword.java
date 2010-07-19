@@ -1,5 +1,7 @@
 package net.java.ao.builder;
 
+import net.java.ao.ActiveObjectsException;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EntityManagerBuilderWithUrlAndUsernameAndPassword
@@ -13,7 +15,7 @@ public class EntityManagerBuilderWithUrlAndUsernameAndPassword
         this.password = checkNotNull(password);
     }
 
-    public EntityManagerBuilderWithDatabaseProperties noPooling()
+    public EntityManagerBuilderWithDatabaseProperties none()
     {
         return getEntityManagerBuilderWithDatabaseProperties(ConnectionPool.NONE);
     }
@@ -30,8 +32,7 @@ public class EntityManagerBuilderWithUrlAndUsernameAndPassword
 
     public EntityManagerBuilderWithDatabaseProperties dbPool()
     {
-        return c3po();
-        //return getEntityManagerBuilderWithDatabaseProperties(ConnectionPool.DBPOOL);
+        return getEntityManagerBuilderWithDatabaseProperties(ConnectionPool.DBPOOL);
     }
 
     public EntityManagerBuilderWithDatabaseProperties c3po()
@@ -39,9 +40,28 @@ public class EntityManagerBuilderWithUrlAndUsernameAndPassword
         return getEntityManagerBuilderWithDatabaseProperties(ConnectionPool.C3PO);
     }
 
+    public EntityManagerBuilderWithDatabaseProperties auto()
+    {
+        for (ConnectionPool pool : ConnectionPool.values())
+        {
+            if (pool.isAvailable())
+            {
+                return getEntityManagerBuilderWithDatabaseProperties(pool);
+            }
+        }
+        throw new ActiveObjectsException("Could not find any connection pool! Impossible, " + ConnectionPool.NONE + " should always be an option...");
+    }
+
     private EntityManagerBuilderWithDatabaseProperties getEntityManagerBuilderWithDatabaseProperties(ConnectionPool pool)
     {
-        return new EntityManagerBuilderWithDatabaseProperties(getDatabaseProperties(pool));
+        if (pool.isAvailable())
+        {
+            return new EntityManagerBuilderWithDatabaseProperties(getDatabaseProperties(pool));
+        }
+        else
+        {
+            throw new ActiveObjectsException("Connection pool " + pool + " is not available on the classpath");
+        }
     }
 
     private BuilderDatabaseProperties getDatabaseProperties(ConnectionPool connectionPool)

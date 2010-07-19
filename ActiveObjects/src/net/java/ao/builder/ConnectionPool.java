@@ -1,157 +1,85 @@
 package net.java.ao.builder;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
-import com.mchange.v2.c3p0.DataSources;
-import net.java.ao.DisposableDataSource;
 import net.java.ao.ActiveObjectsException;
-import org.apache.commons.dbcp.BasicDataSource;
-import snaq.db.DBPoolDataSource;
+import net.java.ao.DisposableDataSource;
+import net.java.ao.builder.c3po.C3poDataSourceFactory;
+import net.java.ao.builder.dbcp.DbcpDataSourceFactory;
+import net.java.ao.builder.dbpool.DbPoolDataSourceFactory;
+import net.java.ao.builder.proxool.ProxoolDataSourceFactory;
 
-import javax.sql.DataSource;
-import java.beans.PropertyVetoException;
-import java.io.PrintWriter;
-import java.sql.Connection;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Driver;
-import java.sql.SQLException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public enum ConnectionPool implements DataSourceFactory
 {
-    DBPOOL
+    C3PO(C3poDataSourceFactory.class),
+    DBPOOL(DbPoolDataSourceFactory.class),
+    PROXOOL(ProxoolDataSourceFactory.class),
+    DBCP(DbcpDataSourceFactory.class),
+    NONE(null)
             {
-                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                @Override
+                public boolean isAvailable()
                 {
-                    DBPoolDataSource ds = new DBPoolDataSource();
-                    ds.setName("active-objects");
-                    ds.setDriverClassName(driverClass.getName());
-                    ds.setUrl(url);
-                    ds.setUsername(username);
-                    ds.setPassword(password);
-                    ds.setPoolSize(5);
-                    ds.setMaxSize(30);
-                    ds.setExpiryTime(3600);  // Specified in seconds.
-                    return new DelegatingDisposableDataSource(ds);
+                    return true;
                 }
-            },
-    C3PO
-            {
+
+                @Override
                 public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
-                    final ComboPooledDataSource cpds = new ComboPooledDataSource();
-                    try
+                    return new DelegatingDisposableDataSource(new DriverManagerDataSource(url, username, password))
                     {
-                        cpds.setDriverClass(driverClass.getName());
-                    }
-                    catch (PropertyVetoException e)
-                    {
-                        throw new ActiveObjectsException(e);
-                    }
-                    cpds.setJdbcUrl(url);
-                    cpds.setUser(username);
-                    cpds.setPassword(password);
-                    cpds.setMaxPoolSize(30);
-                    cpds.setMaxStatements(180);
-
-                    return new DelegatingDisposableDataSource(cpds)
-                    {
-                        @Override
                         public void dispose()
                         {
-                            try
-                            {
-                                DataSources.destroy(getDelegate());
-                            }
-                            catch (SQLException ignored)
-                            {
-                                // ignored
-                            }
                         }
                     };
                 }
-            },
-    PROXOOL
-            {
-                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-                {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-            },
-    DBCP
-            {
-                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-                {
-                    final BasicDataSource dbcp = new BasicDataSource();
-                    dbcp.setUrl(url);
-                    dbcp.setUsername(username);
-                    dbcp.setPassword(password);
-                    return new DelegatingDisposableDataSource(dbcp);
-                }
-            },
-    NONE
-            {
-                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-                {
-                    return new DelegatingDisposableDataSource(new DriverManagerDataSource(url, username, password));
-                }
             };
 
-    private static class DelegatingDisposableDataSource implements DisposableDataSource
+    private final Class<? extends DataSourceFactory> dataSourceFactoryClass;
+
+    ConnectionPool(Class<? extends DataSourceFactory> dataSourceFactoryClass)
     {
-        private final DataSource delegate;
+        this.dataSourceFactoryClass = dataSourceFactoryClass;
+    }
 
-        DelegatingDisposableDataSource(DataSource delegate)
+    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+    {
+        checkNotNull(dataSourceFactoryClass);
+        try
         {
-            this.delegate = checkNotNull(delegate);
+            return dataSourceFactoryClass.newInstance().getDataSource(driverClass, url, username, password);
         }
-
-        DataSource getDelegate()
+        catch (InstantiationException e)
         {
-            return delegate;
+            throw new ActiveObjectsException("Could not create an instance of <" + dataSourceFactoryClass + ">, have you called isAvailable before hand?", e);
         }
-
-        public void dispose()
+        catch (IllegalAccessException e)
         {
+            throw new ActiveObjectsException("Could not create an instance of <" + dataSourceFactoryClass + ">, have you called isAvailable before hand?", e);
         }
+    }
 
-        public Connection getConnection() throws SQLException
+    public boolean isAvailable()
+    {
+        checkNotNull(dataSourceFactoryClass);
+        try
         {
-            return delegate.getConnection();
+            return (Boolean) dataSourceFactoryClass.getMethod("isAvailable").invoke(null);
         }
-
-        public Connection getConnection(String username, String password) throws SQLException
+        catch (IllegalAccessException e)
         {
-            return delegate.getConnection(username, password);
+            return false;
         }
-
-        public <T> T unwrap(Class<T> iface) throws SQLException
+        catch (InvocationTargetException e)
         {
-            return delegate.unwrap(iface);
+            return false;
         }
-
-        public boolean isWrapperFor(Class<?> iface) throws SQLException
+        catch (NoSuchMethodException e)
         {
-            return delegate.isWrapperFor(iface);
-        }
-
-        public PrintWriter getLogWriter() throws SQLException
-        {
-            return delegate.getLogWriter();
-        }
-
-        public void setLogWriter(PrintWriter out) throws SQLException
-        {
-            delegate.setLogWriter(out);
-        }
-
-        public void setLoginTimeout(int seconds) throws SQLException
-        {
-            delegate.setLoginTimeout(seconds);
-        }
-
-        public int getLoginTimeout() throws SQLException
-        {
-            return delegate.getLoginTimeout();
+            return false;
         }
     }
 }

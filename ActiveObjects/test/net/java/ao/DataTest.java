@@ -122,7 +122,7 @@ public abstract class DataTest {
     private EntityManager getEntityManager(String url)
     {
         final Configuration conf = Configuration.get();
-        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).dbPool().build();
+        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).auto().build();
     }
 
     @Before

@@ -8,7 +8,7 @@ import java.sql.Driver;
  * Allow creation of a {@link net.java.ao.DisposableDataSource disposable data source} from given
  * connection properties.
  */
-interface DataSourceFactory
+public interface DataSourceFactory
 {
     DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password);
 }
