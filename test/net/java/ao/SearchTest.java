@@ -73,7 +73,7 @@ public class SearchTest {
 		String pass = Configuration.get().getPassword();
 		
 
-		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass).dbPool()
+		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass).auto()
                 .withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
 
 		try {

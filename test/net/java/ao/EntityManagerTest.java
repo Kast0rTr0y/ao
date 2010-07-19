@@ -504,16 +504,10 @@ public class EntityManagerTest extends DataTest
     @Test(expected = RuntimeException.class)
     public void testNullTypeMapper()
     {
-        EntityManager manager =
-                EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null).dbPool().build();
-        try
-        {
-            manager.setPolymorphicTypeMapper(null);
-            manager.getPolymorphicTypeMapper();
-        }
-        finally
-        {
-//            manager.getProvider().dispose();
-        }
+        EntityManager manager = EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null)
+                .auto().build();
+
+        manager.setPolymorphicTypeMapper(null);
+        manager.getPolymorphicTypeMapper();
     }
 }
