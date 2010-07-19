@@ -18,6 +18,8 @@ package net.java.ao;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -360,4 +362,23 @@ public final class Common {
 		
 		return typeA == typeB;
 	}
+
+    /**
+     * Closes a connection quietly, no exception will be thrown, nor logged
+     * @param connection the connection to close, can be {@code null}
+     */
+    public static void closeQuietly(Connection connection)
+    {
+        if (connection != null)
+        {
+            try
+            {
+                connection.close();
+            }
+            catch (SQLException e)
+            {
+                // ignored
+            }
+        }
+    }
 }

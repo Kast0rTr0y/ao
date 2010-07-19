@@ -15,19 +15,15 @@
  */
 package net.java.ao.db;
 
-import java.sql.Driver;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.java.ao.ActiveObjectsDataSource;
-import net.java.ao.Database;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.types.DatabaseType;
-
-import javax.sql.DataSource;
 
 /**
  * @author Daniel Spiewak
@@ -74,16 +70,11 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-    public MySQLDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
+        super(dataSource);
     }
 
-    @Override
-	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
-		return (Class<? extends Driver>) Class.forName("com.mysql.jdbc.Driver");
-	}
-	
 	@Override
 	protected String convertTypeToString(DatabaseType<?> type) {
 		switch (type.getType()) {

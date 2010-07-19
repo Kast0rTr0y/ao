@@ -25,7 +25,6 @@ import net.java.ao.schema.UnderscoreTableNameConverter;
 import net.java.ao.test.Configuration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -47,18 +46,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static net.java.ao.TestUtilities.setUpEntityManager;
+
 /**
  * @author Daniel Spiewak
  */
 @RunWith(Parameterized.class)
 public abstract class DataTest {
-	private static final Map<String, DataStruct> prepared = new HashMap<String, DataStruct>();
+	private static final Map<String, DataStruct> PREPARED_DATA = new HashMap<String, DataStruct>();
 
+    protected final String connectionUrl;
 	protected final EntityManager manager;
-
-    /**
-     * A helper object to test whether any SQL calls have been issued or not
-     */
     protected final Sql sql;
 
 	protected int personID;
@@ -92,46 +90,55 @@ public abstract class DataTest {
 	protected int[] addressIDs;
 	protected int[] messageIDs;
 
-	public DataTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		String uri = Configuration.get().getUriPrefix();
-		String suffix = Configuration.get().getUriSuffix();
-		String user = Configuration.get().getUserName();
-		String pass = Configuration.get().getPassword();
+    public DataTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
 
-        manager = EntityManagerBuilder.url(uri + '_' + ordinal + suffix).username(user).password(pass).dbPool().build();
+        connectionUrl = getConnectionUrl(ordinal);
+        manager = getEntityManager(connectionUrl);
         sql = new Sql(manager.getEventManager());
 
-		manager.setTableNameConverter(tableConverter);
-		manager.setFieldNameConverter(fieldConverter);
+        manager.setTableNameConverter(tableConverter);
+        manager.setFieldNameConverter(fieldConverter);
+        manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, Post.class, Book.class,
+                Magazine.class, PrintDistribution.class, OnlineDistribution.class, EmailAddress.class, PostalAddress.class));
 
-		manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class,
-				Post.class, Book.class, Magazine.class, PrintDistribution.class, OnlineDistribution.class,
-				EmailAddress.class, PostalAddress.class));
-	}
+        // prepare the test data and cache it
+        if (!PREPARED_DATA.containsKey(connectionUrl))
+        {
+            PREPARED_DATA.put(connectionUrl, setUpEntityManager(manager));
+        }
+    }
 
-	@Before
-	public void setup() throws SQLException {
-		prepareData(this);
-	}
+    private String getConnectionUrl(int ordinal)
+    {
+        final Configuration conf = Configuration.get();
+        return new StringBuilder()
+                .append(conf.getUriPrefix())
+                .append('_')
+                .append(ordinal)
+                .append(conf.getUriSuffix())
+                .toString();
+    }
 
-	private static void prepareData(DataTest test) throws SQLException {
-		EntityManager manager = test.manager;
+    private EntityManager getEntityManager(String url)
+    {
+        final Configuration conf = Configuration.get();
+        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).dbPool().build();
+    }
 
-		if (prepared.containsKey(manager.getProvider().getDataSource().getUrl())) {
-			applyStruct(test, prepared.get(manager.getProvider().getDataSource().getUrl()));
-			return;
-		}
+    @Before
+	public void setUp() throws SQLException
+    {
+        if (PREPARED_DATA.containsKey(connectionUrl))
+        {
+            applyStruct(this, PREPARED_DATA.get(connectionUrl));
+        }
+        else
+        {
+            throw new RuntimeException("Could not find any prepared data for this test");
+        }
+    }
 
-		try {
-			TestUtilities.tearDownEntityManager(manager);
-		} catch (Throwable t) {}
-
-		DataStruct data = TestUtilities.setUpEntityManager(manager);
-		applyStruct(test, data);
-		prepared.put(manager.getProvider().getDataSource().getUrl(), data);
-	}
-
-	private static void applyStruct(DataTest test, DataStruct data) {
+    private static void applyStruct(DataTest test, DataStruct data) {
 		test.personID = data.personID;
 		test.noseID = data.noseID;
 		test.companyID = data.companyID;

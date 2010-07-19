@@ -17,7 +17,7 @@ package net.java.ao;
 
 import static net.java.ao.DatabaseProviders.getEmbeddedDerbyDatabaseProvider;
 import static net.java.ao.DatabaseProviders.getHsqlDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getJtdsMsSqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getMsSqlDatabaseProvider;
 import static net.java.ao.DatabaseProviders.getMySqlDatabaseProvider;
 import static net.java.ao.DatabaseProviders.getOrableDatabaseProvider;
 import static org.junit.Assert.assertEquals;
@@ -25,12 +25,6 @@ import static org.mockito.Mockito.mock;
 
 import java.sql.SQLException;
 
-import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
-import net.java.ao.db.HSQLDatabaseProvider;
-import net.java.ao.db.JTDSSQLServerDatabaseProvider;
-import net.java.ao.db.MySQLDatabaseProvider;
-import net.java.ao.db.OracleDatabaseProvider;
-import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
@@ -42,8 +36,6 @@ import test.schema.Comment;
 import test.schema.Company;
 import test.schema.Person;
 
-import javax.sql.DataSource;
-
 /**
  * @author Daniel Spiewak
  */
@@ -53,12 +45,12 @@ public class QueryTest extends DataTest {
 		super(ordinal, tableConverter, fieldConverter);
 	}
 
-    private ActiveObjectsDataSource dataSource;
+    private DisposableDataSource dataSource;
 	private FieldNameConverter converter;
 	
 	@Before
 	public void instanceSetUp() {
-        dataSource = mock(ActiveObjectsDataSource.class);
+        dataSource = mock(DisposableDataSource.class);
 		converter = new CamelCaseFieldNameConverter();
 	}
 
@@ -132,7 +124,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = getJtdsMsSqlDatabaseProvider(dataSource);
+		provider = getMsSqlDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));

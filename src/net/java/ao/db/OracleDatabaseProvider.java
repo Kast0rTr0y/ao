@@ -15,10 +15,9 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.Database;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
@@ -31,10 +30,8 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -124,15 +121,10 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-    public OracleDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    public OracleDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
+        super(dataSource);
     }
-
-    @Override
-	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
-		return (Class<? extends Driver>) Class.forName("oracle.jdbc.OracleDriver");
-	}
 
 	@Override
 	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {

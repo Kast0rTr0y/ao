@@ -516,7 +516,7 @@ public class EntityTest extends DataTest {
 	@Test
 	public void testOnUpdate() throws Exception
     {
-		if (Database.HSQLDB.equals(manager.getProvider().getDatabase())) {
+		if (connectionUrl.trim().startsWith("jdbc:hsqldb")) {
 			return;		// hsqldb doesn't support @OnUpdate
 		}
 		

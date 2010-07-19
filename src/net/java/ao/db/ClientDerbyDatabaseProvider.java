@@ -15,12 +15,9 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.ActiveObjectsDataSource;
-import net.java.ao.Database;
+import net.java.ao.DisposableDataSource;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.SQLException;
 
 /**
@@ -28,15 +25,9 @@ import java.sql.SQLException;
  */
 public class ClientDerbyDatabaseProvider extends DerbyDatabaseProvider
 {
-    public ClientDerbyDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    public ClientDerbyDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
-    }
-
-    @Override
-    public Class<? extends Driver> getDriverClass() throws ClassNotFoundException
-    {
-        return (Class<? extends Driver>) Class.forName("org.apache.derby.jdbc.ClientDriver");
+        super(dataSource);
     }
 
     @Override

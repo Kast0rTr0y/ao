@@ -2,7 +2,7 @@ package net.java.ao.builder;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.DataSources;
-import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.ActiveObjectsException;
 import org.apache.commons.dbcp.BasicDataSource;
 import snaq.db.DBPoolDataSource;
@@ -20,7 +20,7 @@ public enum ConnectionPool implements DataSourceFactory
 {
     DBPOOL
             {
-                public ActiveObjectsDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
                     DBPoolDataSource ds = new DBPoolDataSource();
                     ds.setName("active-objects");
@@ -31,12 +31,12 @@ public enum ConnectionPool implements DataSourceFactory
                     ds.setPoolSize(5);
                     ds.setMaxSize(30);
                     ds.setExpiryTime(3600);  // Specified in seconds.
-                    return new DelegatingActiveObjectsDataSource(ds, driverClass, url, username, password);
+                    return new DelegatingDisposableDataSource(ds);
                 }
             },
     C3PO
             {
-                public ActiveObjectsDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
                     final ComboPooledDataSource cpds = new ComboPooledDataSource();
                     try
@@ -52,8 +52,8 @@ public enum ConnectionPool implements DataSourceFactory
                     cpds.setPassword(password);
                     cpds.setMaxPoolSize(30);
                     cpds.setMaxStatements(180);
-                    
-                    return new DelegatingActiveObjectsDataSource(cpds, driverClass, url, username, password)
+
+                    return new DelegatingDisposableDataSource(cpds)
                     {
                         @Override
                         public void dispose()
@@ -72,70 +72,42 @@ public enum ConnectionPool implements DataSourceFactory
             },
     PROXOOL
             {
-                public ActiveObjectsDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
                     return null;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             },
     DBCP
             {
-                public ActiveObjectsDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
                     final BasicDataSource dbcp = new BasicDataSource();
                     dbcp.setUrl(url);
                     dbcp.setUsername(username);
                     dbcp.setPassword(password);
-                    return new DelegatingActiveObjectsDataSource(dbcp, driverClass, url, username, password);
+                    return new DelegatingDisposableDataSource(dbcp);
                 }
             },
     NONE
             {
-                public ActiveObjectsDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
+                public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
-                    return new DelegatingActiveObjectsDataSource(new DriverManagerDataSource(url, username, password), driverClass, url, username, password);
+                    return new DelegatingDisposableDataSource(new DriverManagerDataSource(url, username, password));
                 }
             };
 
-    private static class DelegatingActiveObjectsDataSource implements ActiveObjectsDataSource
+    private static class DelegatingDisposableDataSource implements DisposableDataSource
     {
         private final DataSource delegate;
-        private final String url;
-        private final String username;
-        private final String password;
-        private final Class<? extends Driver> driverClass;
 
-        DelegatingActiveObjectsDataSource(DataSource delegate, Class<? extends Driver> driverClass, String url, String username, String password)
+        DelegatingDisposableDataSource(DataSource delegate)
         {
             this.delegate = checkNotNull(delegate);
-            this.driverClass = checkNotNull(driverClass);
-            this.url = checkNotNull(url);
-            this.username = checkNotNull(username);
-            this.password = checkNotNull(password);
         }
 
         DataSource getDelegate()
         {
             return delegate;
-        }
-
-        public String getUrl()
-        {
-            return url;
-        }
-
-        public String getUsername()
-        {
-            return username;
-        }
-
-        public String getPassword()
-        {
-            return password;
-        }
-
-        public Class<? extends Driver> getDriverClass()
-        {
-            return driverClass;
         }
 
         public void dispose()

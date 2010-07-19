@@ -16,7 +16,6 @@
 package net.java.ao.db;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -28,9 +27,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.DBParam;
-import net.java.ao.Database;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
@@ -40,8 +38,6 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
-
-import javax.sql.DataSource;
 
 /**
  * @author Daniel Spiewak
@@ -124,15 +120,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-    public SQLServerDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    public SQLServerDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(database, dataSource);
+        super(dataSource);
     }
-
-    @Override
-	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
-		return (Class<? extends Driver>) Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-	}
 	
 	@Override
 	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
