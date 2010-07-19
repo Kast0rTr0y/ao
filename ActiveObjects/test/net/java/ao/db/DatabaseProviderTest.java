@@ -15,7 +15,14 @@
  */
 package net.java.ao.db;
 
+import static net.java.ao.DatabaseProviders.getEmbeddedDerbyDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getHsqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getJtdsMsSqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getMySqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getOrableDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
 import static org.junit.Assert.assertArrayEquals;
+import static org.mockito.Mockito.mock;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +33,7 @@ import java.net.URL;
 import java.sql.Types;
 import java.util.Calendar;
 
+import net.java.ao.ActiveObjectsDataSource;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.ddl.DDLAction;
@@ -43,12 +51,14 @@ import org.junit.Test;
 
 import test.schema.Company;
 
+import javax.sql.DataSource;
+
 /**
  * @author Daniel Spiewak
  */
 public class DatabaseProviderTest {
 	private static final PrintStream STDERR = System.err;
-	
+	private ActiveObjectsDataSource dataSource;
 	@Before
 	public void setUp() {
 		System.setErr(new PrintStream(new OutputStream() {
@@ -56,219 +66,123 @@ public class DatabaseProviderTest {
 			public void write(int arg0) throws IOException {
 			}
 		}));
+
+        dataSource = mock(ActiveObjectsDataSource.class);
 	}
 
 	@Test
 	public void testRenderActionCreateTable() throws IOException {
-		DDLAction action = createActionCreateTable();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-create-table.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-create-table.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-create-table.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-create-table.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-create-table.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-create-table.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionCreateTable();
 
-	@Test
+        testRenderAction("derby-create-table.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-create-table.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-create-table.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-create-table.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-create-table.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-create-table.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
+
+    @Test
 	public void testRenderActionDropTable() throws IOException {
-		DDLAction action = createActionDropTable();
-		String[] ddl = {"DROP TABLE person"};
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(ddl, provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(ddl, provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(ddl, provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(ddl, provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-drop-table.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(ddl, provider.renderAction(action));action = createActionCreateTable();
-	}
-	
-	@Test
+		final DDLAction action = createActionDropTable();
+		final String[] ddl = {"DROP TABLE person"};
+
+        testRenderAction(ddl, action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction(ddl, action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction(ddl, action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction(ddl, action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-drop-table.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction(ddl, action, getPostgreSqlDatabaseProvider(dataSource));
+    }
+
+    @Test
 	public void testRenderActionAddColumn() throws IOException {
-		DDLAction action = createActionAddColumn();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-add-column.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-add-column.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-add-column.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-add-column.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-add-column.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-add-column.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionAddColumn();
+
+        testRenderAction("derby-add-column.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-add-column.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-add-column.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-add-column.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-add-column.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-add-column.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionAlterColumn() throws IOException {
-		DDLAction action = createActionAlterColumn();
-		
-		DatabaseProvider provider  = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(new String[0], provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-alter-column.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-alter-column.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-alter-column.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-alter-column.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-alter-column.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionAlterColumn();
+
+        testRenderAction(new String[0], action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-alter-column.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-alter-column.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-alter-column.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-alter-column.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-alter-column.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionDropColumn() throws IOException {
-		DDLAction action = createActionDropColumn();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(new String[0], provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-drop-column.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-drop-column.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-drop-column.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-drop-column.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-drop-column.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionDropColumn();
+
+        testRenderAction(new String[0], action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-drop-column.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-drop-column.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-drop-column.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-drop-column.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-drop-column.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionCreateIndex() throws IOException {
-		DDLAction action = createActionCreateIndex();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-create-index.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-create-index.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-create-index.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-create-index.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-create-index.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-create-index.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionCreateIndex();
+
+        testRenderAction("derby-create-index.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-create-index.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-create-index.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-create-index.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-create-index.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-create-index.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionDropIndex() throws IOException {
-		DDLAction action = createActionDropIndex();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-drop-index.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-drop-index.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-drop-index.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-drop-index.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-drop-index.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-drop-index.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionDropIndex();
+
+        testRenderAction("derby-drop-index.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-drop-index.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-drop-index.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-drop-index.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-drop-index.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-drop-index.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionAddKey() throws IOException {
-		DDLAction action = createActionAddKey();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-add-key.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-add-key.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-add-key.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-add-key.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-add-key.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-add-key.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionAddKey();
+
+        testRenderAction("derby-add-key.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-add-key.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-add-key.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-add-key.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-add-key.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-add-key.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@Test
 	public void testRenderActionDropKey() throws IOException {
-		DDLAction action = createActionDropKey();
-		
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("derby-drop-key.sql"), provider.renderAction(action));
-		
-		provider = new HSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("hsqldb-drop-key.sql"), provider.renderAction(action));
-		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("sqlserver-drop-key.sql"), provider.renderAction(action));
-		
-		provider = new MySQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("mysql-drop-key.sql"), provider.renderAction(action));
-		
-		provider = new OracleDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("oracle-drop-key.sql"), provider.renderAction(action));
-		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
-		assertArrayEquals(readStatements("postgres-drop-key.sql"), provider.renderAction(action));
-	}
+		final DDLAction action = createActionDropKey();
+
+        testRenderAction("derby-drop-key.sql", action, getEmbeddedDerbyDatabaseProvider(dataSource));
+        testRenderAction("hsqldb-drop-key.sql", action, getHsqlDatabaseProvider(dataSource));
+        testRenderAction("sqlserver-drop-key.sql", action, getJtdsMsSqlDatabaseProvider(dataSource));
+        testRenderAction("mysql-drop-key.sql", action, getMySqlDatabaseProvider(dataSource));
+        testRenderAction("oracle-drop-key.sql", action, getOrableDatabaseProvider(dataSource));
+        testRenderAction("postgres-drop-key.sql", action, getPostgreSqlDatabaseProvider(dataSource));
+    }
 	
 	@After
 	public void tearDown() {
-		System.setErr(STDERR);
+        dataSource = null;
+        System.setErr(STDERR);
 	}
 	
 	private DDLAction createActionCreateTable() {
@@ -475,13 +389,23 @@ public class DatabaseProviderTest {
 		
 		return back;
 	}
-	
+
+    private void testRenderAction(String expectedSqlFile, DDLAction action, DatabaseProvider databaseProvider) throws IOException
+    {
+        testRenderAction(readStatements(expectedSqlFile), action, databaseProvider);
+    }
+
+    private void testRenderAction(String[] expectedSql, DDLAction action, DatabaseProvider databaseProvider)
+    {
+        assertArrayEquals(expectedSql, databaseProvider.renderAction(action));
+    }
+
 	private String[] readStatements(String resource) throws IOException {
 		StringBuilder back = new StringBuilder();
 		
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				getClass().getResourceAsStream("/net/java/ao/db/" + resource)));
-		String cur = null;
+		String cur;
 		while ((cur = reader.readLine()) != null) {
 			back.append(cur).append('\n');
 		}

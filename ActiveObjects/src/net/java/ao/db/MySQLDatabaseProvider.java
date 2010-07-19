@@ -21,14 +21,18 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.Database;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.types.DatabaseType;
 
+import javax.sql.DataSource;
+
 /**
  * @author Daniel Spiewak
  */
-public class MySQLDatabaseProvider extends DatabaseProvider {
+public final class MySQLDatabaseProvider extends DatabaseProvider {
 	private static final Set<String> RESERVED_WORDS = new HashSet<String>() {
 		{
 			addAll(Arrays.asList("ADD", "ALL", "ALTER", "ANALYZE", "AND", "AS", "ASC", 
@@ -70,11 +74,12 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-	public MySQLDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-	}
+    public MySQLDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
 
-	@Override
+    @Override
 	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
 		return (Class<? extends Driver>) Class.forName("com.mysql.jdbc.Driver");
 	}

@@ -26,12 +26,16 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.Database;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
+
+import javax.sql.DataSource;
 
 /**
  * @author Daniel Spiewak
@@ -70,11 +74,12 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-	protected DerbyDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-	}
-	
-	@Override
+    DerbyDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
+
+    @Override
 	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
 		int limit = query.getLimit();
 		
@@ -135,7 +140,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected void setPostConnectionProperties(Connection conn) throws SQLException {
 		Statement stmt = conn.createStatement();
-		
 		stmt.executeUpdate("SET SCHEMA app");
 		stmt.close();
 	}

@@ -7,7 +7,7 @@ import net.java.ao.DatabaseProvider;
  *
  * @see EntityManagerBuilder
  * @see EntityManagerBuilderWithUrl
- * @see EntityManagerBuilderWithDatabaseProvider
+ * @see EntityManagerBuilderWithDatabaseProperties
  */
 public final class EntityManagerBuilderWithUrlAndUsername
 {
@@ -20,8 +20,8 @@ public final class EntityManagerBuilderWithUrlAndUsername
         this.username = username;
     }
 
-    public EntityManagerBuilderWithDatabaseProvider password(String password)
+    public EntityManagerBuilderWithUrlAndUsernameAndPassword password(final String password)
     {
-        return new EntityManagerBuilderWithDatabaseProvider(DatabaseProvider.getInstance(url, username, password));
+        return new EntityManagerBuilderWithUrlAndUsernameAndPassword(url, username, password);
     }
 }

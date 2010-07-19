@@ -28,7 +28,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.ActiveObjectsDataSource;
 import net.java.ao.DBParam;
+import net.java.ao.Database;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
@@ -38,6 +40,8 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
+
+import javax.sql.DataSource;
 
 /**
  * @author Daniel Spiewak
@@ -120,11 +124,12 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
-	public SQLServerDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-	}
+    public SQLServerDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
 
-	@Override
+    @Override
 	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
 		return (Class<? extends Driver>) Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 	}

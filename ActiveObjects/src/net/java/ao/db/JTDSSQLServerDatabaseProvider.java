@@ -15,6 +15,10 @@
  */
 package net.java.ao.db;
 
+import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.Database;
+
+import javax.sql.DataSource;
 import java.sql.Driver;
 
 /**
@@ -22,11 +26,12 @@ import java.sql.Driver;
  */
 public class JTDSSQLServerDatabaseProvider extends SQLServerDatabaseProvider {
 
-	public JTDSSQLServerDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-	}
+    public JTDSSQLServerDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
 
-	@Override
+    @Override
 	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
 		return (Class<? extends Driver>) Class.forName("net.sourceforge.jtds.jdbc.Driver");
 	}
