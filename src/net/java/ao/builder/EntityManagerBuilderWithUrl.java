@@ -5,7 +5,7 @@ package net.java.ao.builder;
  *
  * @see EntityManagerBuilder
  * @see EntityManagerBuilderWithUrlAndUsername
- * @see EntityManagerBuilderWithDatabaseProvider
+ * @see EntityManagerBuilderWithDatabaseProperties
  */
 public final class EntityManagerBuilderWithUrl
 {

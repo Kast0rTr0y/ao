@@ -15,7 +15,13 @@
  */
 package net.java.ao;
 
+import static net.java.ao.DatabaseProviders.getEmbeddedDerbyDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getHsqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getJtdsMsSqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getMySqlDatabaseProvider;
+import static net.java.ao.DatabaseProviders.getOrableDatabaseProvider;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.sql.SQLException;
 
@@ -36,6 +42,8 @@ import test.schema.Comment;
 import test.schema.Company;
 import test.schema.Person;
 
+import javax.sql.DataSource;
+
 /**
  * @author Daniel Spiewak
  */
@@ -45,10 +53,12 @@ public class QueryTest extends DataTest {
 		super(ordinal, tableConverter, fieldConverter);
 	}
 
+    private ActiveObjectsDataSource dataSource;
 	private FieldNameConverter converter;
 	
 	@Before
 	public void instanceSetUp() {
+        dataSource = mock(ActiveObjectsDataSource.class);
 		converter = new CamelCaseFieldNameConverter();
 	}
 
@@ -70,7 +80,7 @@ public class QueryTest extends DataTest {
 		Query query8 = Query.select().join(Company.class).where("name IS NULL AND age = 3").group("url");
 		
 		TableNameConverter converter = manager.getTableNameConverter();
-		DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider("", "", "");
+		DatabaseProvider provider = getEmbeddedDerbyDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
@@ -94,7 +104,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = new HSQLDatabaseProvider("", "", "");
+		provider = getHsqlDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
@@ -122,7 +132,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = new JTDSSQLServerDatabaseProvider("", "", "");
+		provider = getJtdsMsSqlDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
@@ -150,7 +160,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = new MySQLDatabaseProvider("", "", "");
+		provider = getMySqlDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
@@ -178,7 +188,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = new OracleDatabaseProvider("", "", "");
+		provider = getOrableDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
@@ -206,7 +216,7 @@ public class QueryTest extends DataTest {
 		assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", 
 				query8.toSQL(Person.class, provider, converter, getFieldNameConverter(), true));
 		
-		provider = new PostgreSQLDatabaseProvider("", "", "");
+		provider = DatabaseProviders.getPostgreSqlDatabaseProvider(dataSource);
 		
 		assertEquals("SELECT id FROM " + personTableName, query1.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));
 		assertEquals("SELECT id,firstName,lastName FROM " + personTableName, query2.toSQL(Person.class, provider, converter, getFieldNameConverter(), false));

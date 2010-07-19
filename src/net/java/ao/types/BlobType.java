@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 import net.java.ao.Common;
+import net.java.ao.Database;
 import net.java.ao.EntityManager;
 
 /**
@@ -48,7 +49,7 @@ class BlobType extends DatabaseType<Object> {
 
 	@Override
 	public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<?> type, String field) throws SQLException {
-		if (manager.getProvider().getURI().startsWith("jdbc:postgres")) {
+		if (Database.POSTGRES.equals(manager.getProvider().getDatabase())) {
 			if (type.equals(InputStream.class)) {
 				return res.getBinaryStream(field);
 			} else if (type.equals(byte[].class)) {
@@ -62,7 +63,7 @@ class BlobType extends DatabaseType<Object> {
 		
 		if (type.equals(InputStream.class)) {
 			// derby handles BLOBs oddly
-			if (manager.getProvider().getURI().startsWith("jdbc:derby")) {
+			if (Database.DERBY.equals(manager.getProvider().getDatabase())) {
 				return new ByteArrayInputStream(blob.getBytes(1, (int) blob.length()));
 			}
 			

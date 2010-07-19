@@ -505,7 +505,7 @@ public class EntityManagerTest extends DataTest
     public void testNullTypeMapper()
     {
         EntityManager manager =
-                EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null).build();
+                EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null).dbPool().build();
         try
         {
             manager.setPolymorphicTypeMapper(null);
@@ -513,7 +513,7 @@ public class EntityManagerTest extends DataTest
         }
         finally
         {
-            manager.getProvider().dispose();
+//            manager.getProvider().dispose();
         }
     }
 }

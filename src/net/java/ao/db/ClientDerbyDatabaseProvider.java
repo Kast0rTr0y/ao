@@ -15,6 +15,10 @@
  */
 package net.java.ao.db;
 
+import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.Database;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
@@ -22,18 +26,21 @@ import java.sql.SQLException;
 /**
  * @author Daniel Spiewak
  */
-public class ClientDerbyDatabaseProvider extends DerbyDatabaseProvider {
+public class ClientDerbyDatabaseProvider extends DerbyDatabaseProvider
+{
+    public ClientDerbyDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
 
-	public ClientDerbyDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-	}
+    @Override
+    public Class<? extends Driver> getDriverClass() throws ClassNotFoundException
+    {
+        return (Class<? extends Driver>) Class.forName("org.apache.derby.jdbc.ClientDriver");
+    }
 
-	@Override
-	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
-		return (Class<? extends Driver>) Class.forName("org.apache.derby.jdbc.ClientDriver");
-	}
-	
-	@Override
-	protected void setPostConnectionProperties(Connection conn) throws SQLException {
-	}
+    @Override
+    protected void setPostConnectionProperties(Connection conn) throws SQLException
+    {
+    }
 }

@@ -98,7 +98,7 @@ public abstract class DataTest {
 		String user = Configuration.get().getUserName();
 		String pass = Configuration.get().getPassword();
 
-        manager = EntityManagerBuilder.url(uri + '_' + ordinal + suffix).username(user).password(pass).build();
+        manager = EntityManagerBuilder.url(uri + '_' + ordinal + suffix).username(user).password(pass).dbPool().build();
         sql = new Sql(manager.getEventManager());
 
 		manager.setTableNameConverter(tableConverter);
@@ -114,16 +114,11 @@ public abstract class DataTest {
 		prepareData(this);
 	}
 
-	@After
-	public void tearDown() {
-		manager.getProvider().dispose();
-	}
-
 	private static void prepareData(DataTest test) throws SQLException {
 		EntityManager manager = test.manager;
 
-		if (prepared.containsKey(manager.getProvider().getURI())) {
-			applyStruct(test, prepared.get(manager.getProvider().getURI()));
+		if (prepared.containsKey(manager.getProvider().getDataSource().getUrl())) {
+			applyStruct(test, prepared.get(manager.getProvider().getDataSource().getUrl()));
 			return;
 		}
 
@@ -133,7 +128,7 @@ public abstract class DataTest {
 
 		DataStruct data = TestUtilities.setUpEntityManager(manager);
 		applyStruct(test, data);
-		prepared.put(manager.getProvider().getURI(), data);
+		prepared.put(manager.getProvider().getDataSource().getUrl(), data);
 	}
 
 	private static void applyStruct(DataTest test, DataStruct data) {

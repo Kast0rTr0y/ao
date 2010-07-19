@@ -73,7 +73,7 @@ public class SearchTest {
 		String pass = Configuration.get().getPassword();
 		
 
-		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass)
+		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass).dbPool()
                 .withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
 
 		try {
@@ -303,7 +303,7 @@ public class SearchTest {
 	public static void tearDown() throws SQLException {
 		TestUtilities.tearDownEntityManager(manager);
 		
-		manager.getProvider().dispose();
+//		manager.getProvider().dispose();
 		deleteDir(TEST_INDEX);
 	}
 	

@@ -15,6 +15,10 @@
  */
 package net.java.ao.db;
 
+import net.java.ao.ActiveObjectsDataSource;
+import net.java.ao.Database;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -24,39 +28,25 @@ import java.util.Properties;
 /**
  * @author Daniel Spiewak
  */
-public class EmbeddedDerbyDatabaseProvider extends DerbyDatabaseProvider {
-	private Properties dbProperties;
+public class EmbeddedDerbyDatabaseProvider extends DerbyDatabaseProvider
+{
+    public EmbeddedDerbyDatabaseProvider(Database database, ActiveObjectsDataSource dataSource)
+    {
+        super(database, dataSource);
+    }
 
-	public EmbeddedDerbyDatabaseProvider(String uri, String username, String password) {
-		super(uri, username, password);
-		
-		dbProperties = new Properties();
-		dbProperties.setProperty("user", username);
-		dbProperties.setProperty("password", password);
-	}
-
-	@Override
+    @Override
 	public Class<? extends Driver> getDriverClass() throws ClassNotFoundException {
 		return (Class<? extends Driver>) Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
 	}
 	
-	@Override
-	protected Connection getConnectionImpl() throws SQLException {
-		try {
-			getDriverClass();
-		} catch (ClassNotFoundException e) {
-			return null;
-		}
-		
-		return DriverManager.getConnection(getURI(), dbProperties);
-	}
-	
+
 	@Override
 	public void dispose() {
 		Connection conn = null;
 		try {
 			getDriverClass();
-			conn = DriverManager.getConnection(getURI() + ";shutdown=true");
+			conn = DriverManager.getConnection(/* TODO: getURI() + */";shutdown=true");
 		} catch (SQLException e) {
 		} catch (ClassNotFoundException e) {
 		} finally {
