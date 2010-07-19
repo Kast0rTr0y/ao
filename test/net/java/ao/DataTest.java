@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
