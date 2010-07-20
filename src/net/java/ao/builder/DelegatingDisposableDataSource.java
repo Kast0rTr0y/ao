@@ -33,16 +33,6 @@ public abstract class DelegatingDisposableDataSource implements DisposableDataSo
         return delegate.getConnection(username, password);
     }
 
-    public <T> T unwrap(Class<T> iface) throws SQLException
-    {
-        return delegate.unwrap(iface);
-    }
-
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
-    {
-        return delegate.isWrapperFor(iface);
-    }
-
     public PrintWriter getLogWriter() throws SQLException
     {
         return delegate.getLogWriter();
