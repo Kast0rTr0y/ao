@@ -138,9 +138,9 @@ public abstract class Transaction<T> {
 		
 		try {
 			conn = manager.getProvider().getConnection();
-			((DelegateConnection) conn).setCloseable(false);
-			
-			conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            setCloseable(conn, false);
+
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
 			conn.setAutoCommit(false);
 			
 			state = TransactionState.RUNNING;
@@ -161,17 +161,23 @@ public abstract class Transaction<T> {
 			
 			try {
 				conn.setAutoCommit(true);
-				((DelegateConnection) conn).setCloseable(true);
-				
-				conn.close();
+                setCloseable(conn, true);
+
+                conn.close();
 			} catch (SQLException e) {
 			}
 		}
 		
 		return back;
 	}
-	
-	/**
+
+    private void setCloseable(Connection connection, boolean closeable)
+    {
+        if (connection instanceof DelegateConnection)
+            ((DelegateConnection) connection).setCloseable(closeable);
+    }
+
+    /**
 	 * <p>Called internally by {@link #execute()} to actually perform the actions
 	 * within the transaction.  Any <code>SQLException(s)</code> should be
 	 * allowed to propogate back up to the calling method, which will ensure
