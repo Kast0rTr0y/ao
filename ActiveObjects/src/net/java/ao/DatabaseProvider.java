@@ -727,7 +727,7 @@ public abstract class DatabaseProvider
      * @return A new connection to the database
      */
     // TODO? move this in a datasource implementation, delegate?
-    public final Connection getConnection() throws SQLException
+    public Connection getConnection() throws SQLException
     {
         connectionsLock.writeLock().lock();
         try
