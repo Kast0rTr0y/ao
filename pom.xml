@@ -4,15 +4,15 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects</artifactId>
-    <version>0.9-SNAPSHOT</version>
+    <version>0.9-m5</version>
 
     <name>ActiveObjects</name>
     <inceptionYear>2007</inceptionYear>
 
     <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk/ActiveObjects</url>
+        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/v0.9-m5</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/v0.9-m5</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/tags/v0.9-m5</url>
     </scm>
 
     <issueManagement>
