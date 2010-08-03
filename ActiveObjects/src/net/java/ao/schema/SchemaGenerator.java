@@ -15,22 +15,9 @@
  */
 package net.java.ao.schema;
 
-import net.java.ao.AnnotationDelegate;
-import net.java.ao.Common;
-import net.java.ao.DatabaseFunction;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.ManyToMany;
-import net.java.ao.OneToMany;
-import net.java.ao.OneToOne;
-import net.java.ao.Polymorphic;
-import net.java.ao.RawEntity;
+import net.java.ao.*;
 import net.java.ao.event.sql.SqlEvent;
-import net.java.ao.schema.ddl.DDLAction;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.schema.ddl.SchemaReader;
+import net.java.ao.schema.ddl.*;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -39,15 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -57,11 +36,11 @@ import java.util.Set;
  */
 public final class SchemaGenerator {
 	
-	public static void migrate(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
-			Class<? extends RawEntity<?>>... classes) throws SQLException {
+	public static void migrate(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+                               Class<? extends RawEntity<?>>... classes) throws SQLException {
 		String[] statements = null;
 		try {
-			statements = generateImpl(provider, nameConverter, fieldConverter, SchemaGenerator.class.getClassLoader(), classes);
+			statements = generateImpl(provider, schemaConfiguration, nameConverter, fieldConverter, SchemaGenerator.class.getClassLoader(), classes);
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 			return;
@@ -84,12 +63,12 @@ public final class SchemaGenerator {
 		}
 	}
 	
-	private static String[] generateImpl(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
-			ClassLoader classloader, Class<? extends RawEntity<?>>... classes) throws ClassNotFoundException, SQLException {
+	private static String[] generateImpl(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+                                         ClassLoader classloader, Class<? extends RawEntity<?>>... classes) throws ClassNotFoundException, SQLException {
 		List<String> back = new ArrayList<String>();
 		
-		DDLTable[] parsedTables = parseDDL(provider, nameConverter, fieldConverter, classloader, classes);
-		DDLTable[] readTables = SchemaReader.readSchema(provider);
+		DDLTable[] parsedTables = parseDDL(nameConverter, fieldConverter, classloader, classes);
+		DDLTable[] readTables = SchemaReader.readSchema(provider, schemaConfiguration);
 		
 		DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(parsedTables, readTables, provider.isCaseSensetive()));
 		for (DDLAction action : actions) {
@@ -99,8 +78,8 @@ public final class SchemaGenerator {
 		return back.toArray(new String[back.size()]);
 	}
 	
-	static DDLTable[] parseDDL(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
-			ClassLoader classloader, Class<? extends RawEntity<?>>... classes) {
+	static DDLTable[] parseDDL(TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+                               ClassLoader classloader, Class<? extends RawEntity<?>>... classes) {
 		Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps = 
 			new HashMap<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>>();
 		Set<Class<? extends RawEntity<?>>> roots = new LinkedHashSet<Class<? extends RawEntity<?>>>();
@@ -121,7 +100,7 @@ public final class SchemaGenerator {
 			
 			Class<? extends RawEntity<?>> clazz = rootsArray[0];
 			if (clazz.getAnnotation(Polymorphic.class) == null) {
-				parsedTables.add(parseInterface(provider, nameConverter, fieldConverter, clazz));
+				parsedTables.add(parseInterface(nameConverter, fieldConverter, clazz));
 			}
 			
 			List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();
@@ -176,8 +155,8 @@ public final class SchemaGenerator {
 		}
 	}
 	
-	private static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter,
-			FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz) {
+	private static DDLTable parseInterface(TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
+    {
 		String sqlName = nameConverter.getName(clazz);
 		
 		DDLTable table = new DDLTable();

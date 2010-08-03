@@ -1,10 +1,7 @@
 package net.java.ao.builder;
 
-import net.java.ao.EntityManagerConfiguration;
 import net.java.ao.EntityManager;
 import net.java.ao.LuceneConfiguration;
-import net.java.ao.event.EventManager;
-import net.java.ao.event.EventManagerImpl;
 import org.apache.lucene.store.Directory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -17,29 +14,17 @@ import static net.java.ao.builder.DatabaseProviderFactory.getDatabaseProvider;
  * @see EntityManagerBuilderWithUrl
  * @see EntityManagerBuilderWithUrlAndUsername
  */
-public final class EntityManagerBuilderWithDatabaseProperties
+public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEntityManagerBuilderWithDatabaseProperties<EntityManagerBuilderWithDatabaseProperties>
 {
-    private final DatabaseProperties databaseProperties;
-    private final BuilderEntityManagerConfiguration configuration;
-    private final EventManager eventManager;
-
     EntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties)
     {
-        this.databaseProperties = checkNotNull(databaseProperties);
-        this.configuration = new BuilderEntityManagerConfiguration();
-        this.eventManager = new EventManagerImpl();
-    }
-
-    public EntityManagerBuilderWithDatabaseProperties useWeakCache()
-    {
-        configuration.setUseWeakCache(true);
-        return this;
+        super(databaseProperties);
     }
 
     public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final Directory indexDir)
     {
         checkNotNull(indexDir);
-        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(databaseProperties, configuration, eventManager, new LuceneConfiguration()
+        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), getEventManager(), new LuceneConfiguration()
         {
             public Directory getIndexDirectory()
             {
@@ -50,22 +35,6 @@ public final class EntityManagerBuilderWithDatabaseProperties
 
     public EntityManager build()
     {
-        return new EntityManager(getDatabaseProvider(databaseProperties), configuration, new EventManagerImpl());
-    }
-
-
-    private static class BuilderEntityManagerConfiguration implements EntityManagerConfiguration
-    {
-        private boolean useWeakCache = false;
-
-        public boolean useWeakCache()
-        {
-            return useWeakCache;
-        }
-
-        public void setUseWeakCache(boolean useWeakCache)
-        {
-            this.useWeakCache = useWeakCache;
-        }
+        return new EntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration(), getEventManager());
     }
 }

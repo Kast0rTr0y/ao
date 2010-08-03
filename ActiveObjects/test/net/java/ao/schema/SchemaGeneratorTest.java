@@ -15,28 +15,21 @@
  */
 package net.java.ao.schema;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.SQLException;
-import java.sql.Types;
-
 import net.java.ao.DataTest;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-
 import org.junit.Test;
-
 import test.schema.Company;
 import test.schema.Pen;
 import test.schema.Person;
 import test.schema.PersonSuit;
+
+import java.sql.SQLException;
+import java.sql.Types;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Daniel Spiewak
@@ -54,7 +47,7 @@ public class SchemaGeneratorTest extends DataTest {
 		String[] expectedIndexes = {"age", "companyID"};
 		
 		TableNameConverter tableNameConverter = manager.getTableNameConverter();
-		DDLTable[] parsedTables = SchemaGenerator.parseDDL(manager.getProvider(), tableNameConverter, 
+		DDLTable[] parsedTables = SchemaGenerator.parseDDL(tableNameConverter,
 				manager.getFieldNameConverter(), SchemaGeneratorTest.class.getClassLoader(), PersonSuit.class, Pen.class);
 		
 		assertEquals(6, parsedTables.length);

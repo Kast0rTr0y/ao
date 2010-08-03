@@ -15,32 +15,20 @@
  */
 package net.java.ao.schema;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.sql.SQLException;
-import java.sql.Types;
-
 import net.java.ao.Common;
 import net.java.ao.DataTest;
-import net.java.ao.schema.ddl.DDLAction;
-import net.java.ao.schema.ddl.DDLActionType;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.schema.ddl.SchemaReader;
-
+import net.java.ao.DefaultSchemaConfiguration;
+import net.java.ao.schema.ddl.*;
 import org.junit.Test;
-
 import test.schema.Company;
 import test.schema.Pen;
 import test.schema.Person;
 import test.schema.PersonSuit;
+
+import java.sql.SQLException;
+import java.sql.Types;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Daniel Spiewak
@@ -56,7 +44,7 @@ public class SchemaReaderTest extends DataTest {
 	public void testReadSchema() throws SQLException {
 		String[] expectedFields = {"id", "firstName", "lastName", "profession", "age", "url", "favoriteClass", "companyID", "image", "active", "modified"};
 		
-		DDLTable[] parsedTables = SchemaReader.readSchema(manager.getProvider());
+		DDLTable[] parsedTables = SchemaReader.readSchema(manager.getProvider(), new DefaultSchemaConfiguration());
 		
 		assertEquals(22, parsedTables.length);
 		
@@ -144,9 +132,9 @@ public class SchemaReaderTest extends DataTest {
 
 	@Test
 	public void testDiffSchema() {
-		DDLTable[] ddl1 = SchemaGenerator.parseDDL(manager.getProvider(), manager.getTableNameConverter(), 
+		DDLTable[] ddl1 = SchemaGenerator.parseDDL(manager.getTableNameConverter(),
 				manager.getFieldNameConverter(), SchemaGeneratorTest.class.getClassLoader(), PersonSuit.class, Pen.class);
-		DDLTable[] ddl2 = SchemaGenerator.parseDDL(manager.getProvider(), manager.getTableNameConverter(), 
+		DDLTable[] ddl2 = SchemaGenerator.parseDDL(manager.getTableNameConverter(),
 				manager.getFieldNameConverter(), SchemaGeneratorTest.class.getClassLoader(), PersonSuit.class, Pen.class);
 		
 		assertEquals(0, SchemaReader.diffSchema(ddl1, ddl2, true).length);
