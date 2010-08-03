@@ -16,12 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
-import net.java.ao.schema.CamelCaseFieldNameConverter;
-import net.java.ao.schema.CamelCaseTableNameConverter;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.PluralizedNameConverter;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.UnderscoreTableNameConverter;
+import net.java.ao.schema.*;
 import net.java.ao.test.Configuration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
@@ -30,15 +25,7 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import test.schema.Book;
-import test.schema.Distribution;
-import test.schema.EmailAddress;
-import test.schema.Magazine;
-import test.schema.OnlineDistribution;
-import test.schema.Photo;
-import test.schema.Post;
-import test.schema.PostalAddress;
-import test.schema.PrintDistribution;
+import test.schema.*;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -93,11 +80,9 @@ public abstract class DataTest {
     public DataTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
 
         connectionUrl = getConnectionUrl(ordinal);
-        manager = getEntityManager(connectionUrl);
+        manager = getEntityManager(connectionUrl, tableConverter, fieldConverter);
         sql = new Sql(manager.getEventManager());
 
-        manager.setTableNameConverter(tableConverter);
-        manager.setFieldNameConverter(fieldConverter);
         manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, Post.class, Book.class,
                 Magazine.class, PrintDistribution.class, OnlineDistribution.class, EmailAddress.class, PostalAddress.class));
 
@@ -119,10 +104,13 @@ public abstract class DataTest {
                 .toString();
     }
 
-    private EntityManager getEntityManager(String url)
+    private EntityManager getEntityManager(String url, TableNameConverter tableConverter, FieldNameConverter fieldConverter)
     {
         final Configuration conf = Configuration.get();
-        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).auto().build();
+        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).auto()
+                .tableNameConverter(tableConverter)
+                .fieldNameConverter(fieldConverter)
+                .build();
     }
 
     @Before

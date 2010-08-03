@@ -15,25 +15,14 @@
  */
 package net.java.ao.schema.ddl;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import net.java.ao.Common;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
+import net.java.ao.SchemaConfiguration;
 import net.java.ao.types.TypeManager;
+
+import java.sql.*;
+import java.util.*;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -51,7 +40,7 @@ public final class SchemaReader {
 	 * 	<li>setUnique</li>
 	 * </ul>
 	 */
-	public static DDLTable[] readSchema(DatabaseProvider provider) throws SQLException {
+	public static DDLTable[] readSchema(DatabaseProvider provider, SchemaConfiguration schemaConfiguration) throws SQLException {
 		Connection conn = provider.getConnection();
 		DatabaseMetaData dbmd = conn.getMetaData();
 		ResultSet res = provider.getTables(conn);
@@ -64,10 +53,14 @@ public final class SchemaReader {
 		List<DDLTable> tables = new ArrayList<DDLTable>();
 		
 		while (res.next()) {
-			DDLTable table = new DDLTable();
-			table.setName(res.getString("TABLE_NAME"));
-			tables.add(table);
-		}
+            final String tableName = res.getString("TABLE_NAME");
+            if (schemaConfiguration.shouldManageTable(tableName))
+            {
+                DDLTable table = new DDLTable();
+                table.setName(tableName);
+                tables.add(table);
+            }
+        }
 		res.close();
 		
 		for (DDLTable table : tables) {
