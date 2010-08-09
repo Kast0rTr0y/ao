@@ -54,7 +54,7 @@ public final class SchemaReader {
 		
 		while (res.next()) {
             final String tableName = res.getString("TABLE_NAME");
-            if (schemaConfiguration.shouldManageTable(tableName))
+            if (schemaConfiguration.shouldManageTable(tableName, provider.isCaseSensetive()))
             {
                 DDLTable table = new DDLTable();
                 table.setName(tableName);

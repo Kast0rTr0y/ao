@@ -10,9 +10,10 @@ public class DefaultSchemaConfiguration implements SchemaConfiguration
      * Always returns {@code true}
      *
      * @param tableName the name of the table to be managed (or not)
+     * @param caseSensitive whether or not the case of the table name should be taken in account
      * @return {@code true}
      */
-    public boolean shouldManageTable(String tableName)
+    public boolean shouldManageTable(String tableName, boolean caseSensitive)
     {
         return true;
     }
