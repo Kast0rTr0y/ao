@@ -41,10 +41,6 @@ import test.schema.Person;
  */
 public class QueryTest extends DataTest {
 	
-	public QueryTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
-
     private DisposableDataSource dataSource;
 	private FieldNameConverter converter;
 	

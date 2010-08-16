@@ -9,7 +9,7 @@ import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 
-public class Sql
+public final class Sql
 {
     private final EventManager eventManager;
 
@@ -54,7 +54,7 @@ public class Sql
             sqlStatements.add(sql);
         }
 
-        boolean isSqlExecuted()
+        public boolean isSqlExecuted()
         {
             return !sqlStatements.isEmpty();
         }

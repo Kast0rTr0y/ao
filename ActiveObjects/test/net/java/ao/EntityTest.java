@@ -15,8 +15,6 @@
  */
 package net.java.ao;
 
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.TableNameConverter;
 import org.junit.Test;
 import test.schema.Author;
 import test.schema.Authorship;
@@ -67,11 +65,7 @@ import static org.junit.Assert.fail;
  * @author Daniel Spiewak
  */
 public class EntityTest extends DataTest {
-	
-	public EntityTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
-	
+
 	@Test
 	public void testGetEntityManager() {
 		assertEquals(manager, manager.get(Company.class, companyID).getEntityManager());
@@ -1556,9 +1550,5 @@ public class EntityTest extends DataTest {
 		} finally {
 			EntityProxy.ignorePreload = false;
 		}
-	}
-	
-	public static final void assertNotEquals(Object expected, Object actual) {
-		assertFalse(expected.equals(actual));
 	}
 }

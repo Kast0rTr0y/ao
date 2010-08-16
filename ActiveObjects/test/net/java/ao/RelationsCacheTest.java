@@ -30,10 +30,6 @@ import java.sql.SQLException;
  */
 public class RelationsCacheTest extends DataTest {
 	
-	public RelationsCacheTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
-
 	@Test
 	public void testOneToManyDestinationCreation() throws Exception
     {

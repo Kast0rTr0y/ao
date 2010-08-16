@@ -16,7 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
-import net.java.ao.test.JdbcConfiguration;
+import net.java.ao.test.config.JdbcConfiguration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
 import org.apache.lucene.index.CorruptIndexException;

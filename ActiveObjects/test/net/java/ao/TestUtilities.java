@@ -2,7 +2,7 @@ package net.java.ao;
 
 import junit.framework.JUnit4TestAdapter;
 import junit.framework.Test;
-import net.java.ao.test.JdbcConfiguration;
+import net.java.ao.test.config.JdbcConfiguration;
 import test.schema.Address;
 import test.schema.Author;
 import test.schema.Authorship;
@@ -61,14 +61,14 @@ public abstract class TestUtilities {
 
 	private static String uri = JdbcConfiguration.get().getUrl();
 
-	public static final Test asTest(Class<?> clazz) {
+	public static Test asTest(Class<?> clazz) {
 		return new JUnit4TestAdapter(clazz);
 	}
 
-	public static final DataStruct setUpEntityManager(EntityManager manager) throws SQLException {
-		DataStruct back = new DataStruct();
+	public static DataStruct setUpEntityManager(EntityManager manager) throws SQLException {
 
-        manager.migrate(); // clean up the database first
+        DataStruct back = new DataStruct();
+
         manager.migrate(PersonSuit.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class,
                 Authorship.class, Book.class, Magazine.class,
                 PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,

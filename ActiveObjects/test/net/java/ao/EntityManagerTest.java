@@ -41,12 +41,6 @@ import static org.junit.Assert.fail;
  */
 public class EntityManagerTest extends DataTest
 {
-
-    public EntityManagerTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException
-    {
-        super(ordinal, tableConverter, fieldConverter);
-    }
-
     @Test
     public void testGetCheckID()
     {

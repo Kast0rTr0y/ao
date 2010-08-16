@@ -260,6 +260,8 @@
     <properties>
         <proxool.version>0.9.1</proxool.version>
         <dbpool.version>4.9.3-jdbc3</dbpool.version>
+        <!-- the combintation of test paramaters to use when running tests -->
+        <test.parameters>1</test.parameters>
     </properties>
 
     <distributionManagement>

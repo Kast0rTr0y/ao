@@ -17,30 +17,24 @@ package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.schema.*;
-import net.java.ao.test.JdbcConfiguration;
+import net.java.ao.test.config.JdbcConfiguration;
+import net.java.ao.test.config.Parameters;
+import net.java.ao.test.config.ParametersLoader;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import test.schema.*;
 
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import static net.java.ao.TestUtilities.setUpEntityManager;
 
 /**
  * @author Daniel Spiewak
  */
-@RunWith(Parameterized.class)
 public abstract class DataTest {
-	private static final Map<String, DataStruct> PREPARED_DATA = new HashMap<String, DataStruct>();
+	private static DataStruct preparedData = null;
 
     protected final String connectionUrl;
 	protected final EntityManager manager;
@@ -77,30 +71,16 @@ public abstract class DataTest {
 	protected int[] addressIDs;
 	protected int[] messageIDs;
 
-    public DataTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
+    public DataTest() {
+        
+        final Parameters parameters = ParametersLoader.get();
 
-        connectionUrl = getConnectionUrl(ordinal);
-        manager = getEntityManager(connectionUrl, tableConverter, fieldConverter);
+        connectionUrl = JdbcConfiguration.get().getUrl();
+        manager = getEntityManager(connectionUrl, parameters.getTableNameConverter(), parameters.getFieldNameConverter());
         sql = new Sql(manager.getEventManager());
 
         manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, Post.class, Book.class,
                 Magazine.class, PrintDistribution.class, OnlineDistribution.class, EmailAddress.class, PostalAddress.class));
-
-        // prepare the test data and cache it
-        if (!PREPARED_DATA.containsKey(connectionUrl))
-        {
-            PREPARED_DATA.put(connectionUrl, setUpEntityManager(manager));
-        }
-    }
-
-    private String getConnectionUrl(int ordinal)
-    {
-        final JdbcConfiguration conf = JdbcConfiguration.get();
-        return new StringBuilder()
-                .append(conf.getUrl())
-                .append('_')
-                .append(ordinal)
-                .toString();
     }
 
     private EntityManager getEntityManager(String url, TableNameConverter tableConverter, FieldNameConverter fieldConverter)
@@ -113,16 +93,13 @@ public abstract class DataTest {
     }
 
     @Before
-	public void setUp() throws SQLException
+	public final void setUp() throws SQLException
     {
-        if (PREPARED_DATA.containsKey(connectionUrl))
+        if (preparedData == null)
         {
-            applyStruct(this, PREPARED_DATA.get(connectionUrl));
+            preparedData =  setUpEntityManager(manager);
         }
-        else
-        {
-            throw new RuntimeException("Could not find any prepared data for this test");
-        }
+        applyStruct(this, preparedData);
     }
 
     private static void applyStruct(DataTest test, DataStruct data) {
@@ -149,29 +126,8 @@ public abstract class DataTest {
 		test.messageIDs = data.messageIDs;
 	}
 
-	@Parameters
-	public static Collection<Object[]> data() {
-		CamelCaseTableNameConverter camelCaseTableNameConverter = new CamelCaseTableNameConverter();
-		UnderscoreTableNameConverter underscoreTableNameConverter = new UnderscoreTableNameConverter(false);
-		UnderscoreTableNameConverter underscoreTableNameConverter2 = new UnderscoreTableNameConverter(true);
-
-		PluralizedNameConverter pluralizedCamelNameConverter = new PluralizedNameConverter(camelCaseTableNameConverter);
-		PluralizedNameConverter pluralizedUnderscore2NameConverter = new PluralizedNameConverter(underscoreTableNameConverter2);
-
-		CamelCaseFieldNameConverter camelCaseFieldNameConverter = new CamelCaseFieldNameConverter();
-
-		// try all combinations, just for fun
-		return Arrays.asList(new Object[][] {
-			{0, camelCaseTableNameConverter, camelCaseFieldNameConverter},
-			{1, underscoreTableNameConverter, camelCaseFieldNameConverter},
-			{2, pluralizedCamelNameConverter, camelCaseFieldNameConverter},
-			{3, pluralizedUnderscore2NameConverter, camelCaseFieldNameConverter}
-		});
-	}
-
 	@BeforeClass
 	public static void classSetup() throws SQLException {
-        PREPARED_DATA.clear();
 		TypeManager.getInstance().addType(new ClassType());
 	}
 }

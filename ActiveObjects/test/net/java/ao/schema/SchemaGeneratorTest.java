@@ -26,7 +26,6 @@ import test.schema.Pen;
 import test.schema.Person;
 import test.schema.PersonSuit;
 
-import java.sql.SQLException;
 import java.sql.Types;
 
 import static org.junit.Assert.*;
@@ -35,10 +34,6 @@ import static org.junit.Assert.*;
  * @author Daniel Spiewak
  */
 public class SchemaGeneratorTest extends DataTest {
-
-	public SchemaGeneratorTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
 
 	@SuppressWarnings("null")
 	@Test

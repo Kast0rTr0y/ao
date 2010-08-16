@@ -35,10 +35,6 @@ import static org.junit.Assert.*;
  */
 public class SchemaReaderTest extends DataTest {
 
-	public SchemaReaderTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
-
 	@SuppressWarnings("null")
 	@Test
 	public void testReadSchema() throws SQLException {

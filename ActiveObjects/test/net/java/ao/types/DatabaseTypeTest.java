@@ -15,9 +15,9 @@
  */
 package net.java.ao.types;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import net.java.ao.DataTest;
+import org.junit.Test;
+import test.schema.Person;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -29,22 +29,14 @@ import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import net.java.ao.DataTest;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.TableNameConverter;
-
-import org.junit.Test;
-
-import test.schema.Person;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Daniel Spiewak
  */
 public class DatabaseTypeTest extends DataTest {
-
-	public DatabaseTypeTest(int ordinal, TableNameConverter tableConverter, FieldNameConverter fieldConverter) throws SQLException {
-		super(ordinal, tableConverter, fieldConverter);
-	}
 
 	@Test
 	public void testIsHandlerForInt() {
@@ -107,6 +99,7 @@ public class DatabaseTypeTest extends DataTest {
 			stmt.close();
 		} finally {
 			conn.close();
+            reset();
 		}
 	}
 
@@ -147,10 +140,18 @@ public class DatabaseTypeTest extends DataTest {
 			stmt.close();
 		} finally {
 			conn.close();
-		}
+            reset();
+        }
 	}
 
-	@Test
+    private void reset()
+    {
+        final Person person = manager.get(Person.class, personID);
+        person.setFirstName("Daniel");
+        person.save();
+    }
+
+    @Test
 	public void testDefaultParseValue() throws MalformedURLException {
 		assertEquals(123, new IntegerType().defaultParseValue("123").intValue());
 		assertEquals(123.456d, new DoubleType().defaultParseValue("123.456"), Double.MIN_VALUE);
