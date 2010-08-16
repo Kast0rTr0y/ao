@@ -2,7 +2,7 @@ package net.java.ao;
 
 import junit.framework.JUnit4TestAdapter;
 import junit.framework.Test;
-import net.java.ao.test.Configuration;
+import net.java.ao.test.JdbcConfiguration;
 import test.schema.Address;
 import test.schema.Author;
 import test.schema.Authorship;
@@ -59,7 +59,7 @@ import java.sql.Statement;
 public class TestUtilities {
 	private static int priorID = -1;	// ugly hack for postgresql and oracle
 	
-	private static String uri = Configuration.get().getUriPrefix();
+	private static String uri = JdbcConfiguration.get().getUrl();
 	
 	public static final Test asTest(Class<?> clazz) {
 		return new JUnit4TestAdapter(clazz);

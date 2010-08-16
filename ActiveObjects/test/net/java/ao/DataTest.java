@@ -17,7 +17,7 @@ package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.schema.*;
-import net.java.ao.test.Configuration;
+import net.java.ao.test.JdbcConfiguration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
 import org.junit.Before;
@@ -95,19 +95,18 @@ public abstract class DataTest {
 
     private String getConnectionUrl(int ordinal)
     {
-        final Configuration conf = Configuration.get();
+        final JdbcConfiguration conf = JdbcConfiguration.get();
         return new StringBuilder()
-                .append(conf.getUriPrefix())
+                .append(conf.getUrl())
                 .append('_')
                 .append(ordinal)
-                .append(conf.getUriSuffix())
                 .toString();
     }
 
     private EntityManager getEntityManager(String url, TableNameConverter tableConverter, FieldNameConverter fieldConverter)
     {
-        final Configuration conf = Configuration.get();
-        return EntityManagerBuilder.url(url).username(conf.getUserName()).password(conf.getPassword()).auto()
+        final JdbcConfiguration conf = JdbcConfiguration.get();
+        return EntityManagerBuilder.url(url).username(conf.getUsername()).password(conf.getPassword()).auto()
                 .tableNameConverter(tableConverter)
                 .fieldNameConverter(fieldConverter)
                 .build();

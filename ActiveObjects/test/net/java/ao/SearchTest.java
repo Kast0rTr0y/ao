@@ -16,7 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
-import net.java.ao.test.Configuration;
+import net.java.ao.test.JdbcConfiguration;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
 import org.apache.lucene.index.CorruptIndexException;
@@ -67,13 +67,12 @@ public class SearchTest {
 	public static void setUp() throws IOException, SQLException {
 		TypeManager.getInstance().addType(new ClassType());
 		
-		String uri = Configuration.get().getUriPrefix();
-		String suffix = Configuration.get().getUriSuffix();
-		String user = Configuration.get().getUserName();
-		String pass = Configuration.get().getPassword();
+		String url = JdbcConfiguration.get().getUrl();
+		String user = JdbcConfiguration.get().getUsername();
+		String pass = JdbcConfiguration.get().getPassword();
 		
 
-		manager = EntityManagerBuilder.url(uri + '_' + 0 + suffix).username(user).password(pass).auto()
+		manager = EntityManagerBuilder.url(url + '_' + 0).username(user).password(pass).auto()
                 .withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
 
 		try {
