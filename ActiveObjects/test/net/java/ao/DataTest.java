@@ -159,31 +159,19 @@ public abstract class DataTest {
 		PluralizedNameConverter pluralizedUnderscore2NameConverter = new PluralizedNameConverter(underscoreTableNameConverter2);
 
 		CamelCaseFieldNameConverter camelCaseFieldNameConverter = new CamelCaseFieldNameConverter();
-//		UnderscoreFieldNameConverter underscoreFieldNameConverter = new UnderscoreFieldNameConverter(false);
-//		UnderscoreFieldNameConverter underscoreFieldNameConverter2 = new UnderscoreFieldNameConverter(true);
 
 		// try all combinations, just for fun
 		return Arrays.asList(new Object[][] {
 			{0, camelCaseTableNameConverter, camelCaseFieldNameConverter},
-//			{camelCaseTableNameConverter, underscoreFieldNameConverter},
-//			{camelCaseTableNameConverter, underscoreFieldNameConverter2},
-
 			{1, underscoreTableNameConverter, camelCaseFieldNameConverter},
-//			{underscoreTableNameConverter, underscoreFieldNameConverter},
-//			{underscoreTableNameConverter, underscoreFieldNameConverter2},
-
 			{2, pluralizedCamelNameConverter, camelCaseFieldNameConverter},
-//			{pluralizedCamelNameConverter, underscoreFieldNameConverter},
-//			{pluralizedCamelNameConverter, underscoreFieldNameConverter2},
-
 			{3, pluralizedUnderscore2NameConverter, camelCaseFieldNameConverter}
-//			{pluralizedUnderscore2NameConverter, underscoreFieldNameConverter},
-//			{pluralizedUnderscore2NameConverter, underscoreFieldNameConverter2}
 		});
 	}
 
 	@BeforeClass
 	public static void classSetup() throws SQLException {
+        PREPARED_DATA.clear();
 		TypeManager.getInstance().addType(new ClassType());
 	}
 }

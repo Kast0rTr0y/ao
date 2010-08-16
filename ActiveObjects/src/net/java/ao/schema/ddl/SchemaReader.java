@@ -174,10 +174,7 @@ public final class SchemaReader {
 		}
 		
 		for (DDLTable table : fromArray) {
-			String tableName = table.getName();
-			if (!caseSensetive) {
-				tableName = tableName.toLowerCase();
-			}
+            String tableName = transform(table.getName(), caseSensetive);
 			
 			if (onto.containsKey(tableName)) {
 				alterTables.add(table);
@@ -187,10 +184,7 @@ public final class SchemaReader {
 		}
 		
 		for (DDLTable table : ontoArray) {
-			String tableName = table.getName();
-			if (!caseSensetive) {
-				tableName = tableName.toLowerCase();
-			}
+            String tableName = transform(table.getName(), caseSensetive);
 			
 			if (!from.containsKey(tableName)) {
 				dropTables.add(table);
@@ -202,18 +196,34 @@ public final class SchemaReader {
 			action.setTable(table);
 			actions.add(action);
 		}
-		
+
+
+        List<DDLForeignKey> dropKeys = new ArrayList<DDLForeignKey>();
+
 		for (DDLTable table : dropTables) {
 			DDLAction action = new DDLAction(DDLActionType.DROP);
 			action.setTable(table);
 			actions.add(action);
+
+            // remove all foreign keys on that table
+            dropKeys.addAll(Arrays.asList(table.getForeignKeys()));
+
+            // remove all foreign to that table
+            for (DDLTable alterTable : alterTables)
+            {
+                for (DDLForeignKey fKey : alterTable.getForeignKeys())
+                {
+                    if (equals(fKey.getTable(), table.getName(), caseSensetive))
+                    {
+                        dropKeys.add(fKey);
+                    }
+                }
+            }
 		}
 		
 		for (DDLTable fromTable : alterTables) {
-			String tableName = fromTable.getName();
-			if (!caseSensetive) {
-				tableName = tableName.toLowerCase();
-			}
+            final String s = fromTable.getName();
+            String tableName = transform(s, caseSensetive);
 			
 			DDLTable ontoTable = onto.get(tableName);
 			
@@ -225,27 +235,18 @@ public final class SchemaReader {
 			Map<String, DDLField> ontoFields = new HashMap<String, DDLField>();
 			
 			for (DDLField field : fromTable.getFields()) {
-				String fieldName = field.getName();
-				if (!caseSensetive) {
-					fieldName = fieldName.toLowerCase();
-				}
+                String fieldName = transform(field.getName(), caseSensetive);
 				
 				fromFields.put(fieldName, field);
 			}
 			for (DDLField field : ontoTable.getFields()) {
-				String fieldName = field.getName();
-				if (!caseSensetive) {
-					fieldName = fieldName.toLowerCase();
-				}
+                String fieldName = transform(field.getName(), caseSensetive);
 				
 				ontoFields.put(fieldName, field);
 			}
 			
 			for (DDLField field : fromTable.getFields()) {
-				String fieldName = field.getName();
-				if (!caseSensetive) {
-					fieldName = fieldName.toLowerCase();
-				}
+                String fieldName = transform(field.getName(), caseSensetive);
 				
 				if (ontoFields.containsKey(fieldName)) {
 					alterFields.add(field);
@@ -255,10 +256,7 @@ public final class SchemaReader {
 			}
 			
 			for (DDLField field : ontoTable.getFields()) {
-				String fieldName = field.getName();
-				if (!caseSensetive) {
-					fieldName = fieldName.toLowerCase();
-				}
+                String fieldName = transform(field.getName(), caseSensetive);
 				
 				if (!fromFields.containsKey(fieldName)) {
 					dropFields.add(field);
@@ -280,10 +278,7 @@ public final class SchemaReader {
 			}
 			
 			for (DDLField fromField : alterFields) {
-				String fieldName = fromField.getName();
-				if (!caseSensetive) {
-					fieldName = fieldName.toLowerCase();
-				}
+                String fieldName = transform(fromField.getName(), caseSensetive);
 				
 				DDLField ontoField = ontoFields.get(fieldName);
 				
@@ -313,7 +308,6 @@ public final class SchemaReader {
 			
 			// foreign keys
 			List<DDLForeignKey> addKeys = new ArrayList<DDLForeignKey>();
-			List<DDLForeignKey> dropKeys = new ArrayList<DDLForeignKey>();
 			
 			for (DDLForeignKey fromKey : fromTable.getForeignKeys()) {
 				for (DDLForeignKey ontoKey : ontoTable.getForeignKeys()) {
@@ -343,12 +337,6 @@ public final class SchemaReader {
 				actions.add(action);
 			}
 
-			for (DDLForeignKey key : dropKeys) {
-				DDLAction action = new DDLAction(DDLActionType.ALTER_DROP_KEY);
-				action.setKey(key);
-				actions.add(action);
-			}
-			
 			// field indexes
 //			List<DDLIndex> addIndexes = new ArrayList<DDLIndex>();
 //			List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
@@ -397,11 +385,32 @@ public final class SchemaReader {
 //				actions.add(action);
 //			}
 		}
-		
+
+        for (DDLForeignKey key : dropKeys)
+        {
+            DDLAction action = new DDLAction(DDLActionType.ALTER_DROP_KEY);
+            action.setKey(key);
+            actions.add(action);
+        }
+
 		return actions.toArray(new DDLAction[actions.size()]);
 	}
-	
-	public static DDLAction[] sortTopologically(DDLAction[] actions) {
+
+    private static boolean equals(String s, String s1, boolean caseSensitive)
+    {
+        return transform(s, caseSensitive).equals(transform(s1, caseSensitive));
+    }
+
+    private static String transform(String s, boolean caseSensitive)
+    {
+        String tableName = s;
+        if (!caseSensitive) {
+            tableName = tableName.toLowerCase();
+        }
+        return tableName;
+    }
+
+    public static DDLAction[] sortTopologically(DDLAction[] actions) {
 		List<DDLAction> back = new LinkedList<DDLAction>();
 		Map<DDLAction, Set<DDLAction>> deps = new HashMap<DDLAction, Set<DDLAction>>();
 		Set<DDLAction> roots = new HashSet<DDLAction>();
@@ -691,8 +700,8 @@ public final class SchemaReader {
 			}
 		}
 	}
-	
-	private static DDLAction createColumnAlterAction(DDLTable table, DDLField oldField, DDLField field) {
+
+    private static DDLAction createColumnAlterAction(DDLTable table, DDLField oldField, DDLField field) {
 		DDLAction action = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
 		action.setTable(table);
 		action.setField(field);

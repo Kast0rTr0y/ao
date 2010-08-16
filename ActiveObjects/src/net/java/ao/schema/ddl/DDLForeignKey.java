@@ -81,7 +81,7 @@ public class DDLForeignKey {
 		if (obj instanceof DDLForeignKey) {
 			DDLForeignKey key = (DDLForeignKey) obj;
 			
-			if (key.field.equals(field) && key.foreignField.equals(foreignField) && key.table.equals(table)) {
+			if (key.field.equals(field) && key.foreignField.equals(foreignField) && key.table.equals(table) && key.domesticTable.equals(domesticTable)) {
 				return true;
 			}
 		}
@@ -91,7 +91,7 @@ public class DDLForeignKey {
 	
 	@Override
 	public int hashCode() {
-		return field.hashCode() + table.hashCode() + foreignField.hashCode();
+		return field.hashCode() + table.hashCode() + foreignField.hashCode() + domesticTable.hashCode();
 	}
 	
 	@Override
