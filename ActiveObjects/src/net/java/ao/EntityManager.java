@@ -965,7 +965,7 @@ public class EntityManager
 			throw new RuntimeException("Entities can only be used with a single EntityManager instance");
 		}
 	}
-	
+
 	private static interface Function<R, F> {
 		public R invoke(F formals);
 	}

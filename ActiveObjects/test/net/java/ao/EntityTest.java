@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import net.java.ao.test.config.JdbcConfiguration;
 import org.junit.Test;
 import test.schema.Author;
 import test.schema.Authorship;
@@ -510,7 +511,7 @@ public class EntityTest extends DataTest {
 	@Test
 	public void testOnUpdate() throws Exception
     {
-		if (connectionUrl.trim().startsWith("jdbc:hsqldb")) {
+		if (JdbcConfiguration.get().getUrl().trim().startsWith("jdbc:hsqldb")) {
 			return;		// hsqldb doesn't support @OnUpdate
 		}
 		

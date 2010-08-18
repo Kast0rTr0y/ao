@@ -37,7 +37,7 @@ public class C3poDataSourceFactory implements DataSourceFactory
             {
                 try
                 {
-                    DataSources.destroy(getDelegate());
+                    DataSources.destroy(cpds);
                 }
                 catch (SQLException ignored)
                 {

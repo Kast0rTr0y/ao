@@ -240,6 +240,95 @@
         </profile>
         <profile>
             <id>mysql</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>2.4.3</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${build.directory}/sql</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>test-sql</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sql-maven-plugin</artifactId>
+                        <version>1.4</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>${mysql.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <driver>com.mysql.jdbc.Driver</driver>
+                            <url>${jdbc.url}</url>
+                            <username>${db.admin}</username>
+                            <password>${db.password}</password>
+                            <autocommit>true</autocommit>
+                        </configuration>
+                        <executions>
+                            <!-- create a clean db -->
+                            <execution>
+                                <id>sql-prepapre-drop</id>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <url>jdbc:mysql://localhost:3306/mysql</url>
+                                    <srcFiles>
+                                        <srcFile>${build.directory}/sql/mysql-drop.sql</srcFile>
+                                    </srcFiles>
+                                    <onError>continue</onError>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>sql-prepapre-create</id>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <url>jdbc:mysql://localhost:3306/mysql</url>
+                                    <srcFiles>
+                                        <srcFile>${build.directory}/sql/mysql-create.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                            <!-- clean up the clean db -->
+                            <execution>
+                                <id>sql-clean</id>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <phase>test</phase>
+                                <configuration>
+                                    <url>jdbc:mysql://localhost:3306/mysql</url>
+                                    <srcFiles>
+                                        <srcFile>${build.directory}/sql/mysql-drop.sql</srcFile>
+                                    </srcFiles>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
             <dependencies>
                 <dependency>
                     <groupId>mysql</groupId>
@@ -250,7 +339,10 @@
             </dependencies>
             <properties>
                 <mysql.version>5.1.13</mysql.version>
-                <jdbc.url>jdbc:mysql://localhost:3306/ao_test</jdbc.url>
+                <db.admin>root</db.admin>
+                <db.password></db.password>
+                <db.name>ao_test</db.name>
+                <jdbc.url>jdbc:mysql://localhost:3306/${db.name}?autoReconnect=true</jdbc.url>
                 <jdbc.username>ao_user</jdbc.username>
                 <jdbc.password>ao_pwd</jdbc.password>
             </properties>

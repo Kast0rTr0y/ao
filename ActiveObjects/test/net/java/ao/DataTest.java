@@ -16,12 +16,12 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
-import net.java.ao.schema.*;
 import net.java.ao.test.config.JdbcConfiguration;
 import net.java.ao.test.config.Parameters;
 import net.java.ao.test.config.ParametersLoader;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import test.schema.*;
@@ -36,9 +36,8 @@ import static net.java.ao.TestUtilities.setUpEntityManager;
 public abstract class DataTest {
 	private static DataStruct preparedData = null;
 
-    protected final String connectionUrl;
-	protected final EntityManager manager;
-    protected final Sql sql;
+	protected EntityManager manager;
+    protected Sql sql;
 
 	protected int personID;
 	protected int noseID;
@@ -71,35 +70,40 @@ public abstract class DataTest {
 	protected int[] addressIDs;
 	protected int[] messageIDs;
 
-    public DataTest() {
-        
-        final Parameters parameters = ParametersLoader.get();
-
-        connectionUrl = JdbcConfiguration.get().getUrl();
-        manager = getEntityManager(connectionUrl, parameters.getTableNameConverter(), parameters.getFieldNameConverter());
-        sql = new Sql(manager.getEventManager());
-
-        manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, Post.class, Book.class,
-                Magazine.class, PrintDistribution.class, OnlineDistribution.class, EmailAddress.class, PostalAddress.class));
-    }
-
-    private EntityManager getEntityManager(String url, TableNameConverter tableConverter, FieldNameConverter fieldConverter)
-    {
-        final JdbcConfiguration conf = JdbcConfiguration.get();
-        return EntityManagerBuilder.url(url).username(conf.getUsername()).password(conf.getPassword()).auto()
-                .tableNameConverter(tableConverter)
-                .fieldNameConverter(fieldConverter)
-                .build();
-    }
-
     @Before
 	public final void setUp() throws SQLException
     {
+        manager = getEntityManager();
+        sql = new Sql(manager.getEventManager());
+        
         if (preparedData == null)
         {
             preparedData =  setUpEntityManager(manager);
         }
         applyStruct(this, preparedData);
+    }
+
+    @After
+    public final void tearDown() throws Exception
+    {
+        if (!JdbcConfiguration.get().getUrl().startsWith("jdbc:hsql"))
+        {
+            manager.getProvider().dispose();
+        }
+    }
+
+    private EntityManager getEntityManager()
+    {
+        final JdbcConfiguration conf = JdbcConfiguration.get();
+        final Parameters parameters = ParametersLoader.get();
+
+        final EntityManager manager = EntityManagerBuilder.url(conf.getUrl()).username(conf.getUsername()).password(conf.getPassword()).auto()
+                .tableNameConverter(parameters.getTableNameConverter())
+                .fieldNameConverter(parameters.getFieldNameConverter())
+                .build();
+        manager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Photo.class, Post.class, Book.class,
+                Magazine.class, PrintDistribution.class, OnlineDistribution.class, EmailAddress.class, PostalAddress.class));
+        return manager;
     }
 
     private static void applyStruct(DataTest test, DataStruct data) {

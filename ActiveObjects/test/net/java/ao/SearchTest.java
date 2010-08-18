@@ -70,10 +70,8 @@ public class SearchTest {
 		String url = JdbcConfiguration.get().getUrl();
 		String user = JdbcConfiguration.get().getUsername();
 		String pass = JdbcConfiguration.get().getPassword();
-		
-
-		manager = EntityManagerBuilder.url(url + '_' + 0).username(user).password(pass).auto()
-                .withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
+        
+        manager = EntityManagerBuilder.url(url).username(user).password(pass).auto().withIndex(FSDirectory.getDirectory(TEST_INDEX)).build();
 
 		try {
 			TestUtilities.tearDownEntityManager(manager);
@@ -301,7 +299,7 @@ public class SearchTest {
 	@AfterClass
 	public static void tearDown() throws SQLException {
 		TestUtilities.tearDownEntityManager(manager);
-		
+		manager.getProvider().dispose();
 //		manager.getProvider().dispose();
 		deleteDir(TEST_INDEX);
 	}

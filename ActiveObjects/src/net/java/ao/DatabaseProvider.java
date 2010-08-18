@@ -16,6 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.event.EventManager;
+import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
@@ -49,8 +50,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.closeQuietly;
@@ -1902,7 +1901,7 @@ public abstract class DatabaseProvider
             throws SQLException
     {
         T back = null;
-        Logger.getLogger("net.java.ao").log(Level.INFO, sql);
+        manager.getEventManager().publish(new SqlEvent(sql));
         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
         for (int i = 0; i < params.length; i++)
