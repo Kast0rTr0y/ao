@@ -16,8 +16,6 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.TableNameConverter;
 import org.junit.Test;
 import test.schema.Company;
 import test.schema.Pen;
@@ -31,7 +29,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
-import static net.java.ao.TestUtilities.postgresName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -79,18 +76,15 @@ public class EntityManagerTest extends DataTest
             }
         });
 
-        String companyTableName = manager.getTableNameConverter().getName(Company.class);
-        companyTableName = manager.getProvider().processID(companyTableName);
-
-        String personTableName = manager.getTableNameConverter().getName(Person.class);
-        personTableName = manager.getProvider().processID(personTableName);
+        final String companyTableName = getTableName(Company.class);
+        final String personTableName = getTableName(Person.class);
 
         Connection conn = manager.getProvider().getConnection();
         try
         {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("companyID")
-                    + " FROM " + postgresName(companyTableName)
-                    + " WHERE " + postgresName("companyID") + " = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("companyID")
+                    + " FROM " + companyTableName
+                    + " WHERE " + processId("companyID") + " = ?");
             stmt.setLong(1, company.getCompanyID());
 
             ResultSet res = stmt.executeQuery();
@@ -113,8 +107,8 @@ public class EntityManagerTest extends DataTest
         conn = manager.getProvider().getConnection();
         try
         {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") + " FROM " + postgresName(companyTableName)
-                    + " WHERE " + postgresName("companyID") + " = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("name") + " FROM " + companyTableName
+                    + " WHERE " + processId("companyID") + " = ?");
             stmt.setLong(1, company.getCompanyID());
 
             ResultSet res = stmt.executeQuery();
@@ -149,8 +143,8 @@ public class EntityManagerTest extends DataTest
         conn = manager.getProvider().getConnection();
         try
         {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("url") + " FROM "
-                    + postgresName(personTableName) + " WHERE " + postgresName("id") + " = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("url") + " FROM "
+                    + personTableName + " WHERE " + processId("id") + " = ?");
             stmt.setInt(1, person.getID());
 
             ResultSet res = stmt.executeQuery();
@@ -178,11 +172,8 @@ public class EntityManagerTest extends DataTest
     @Test
     public void testCreateWithMap() throws Exception
     {
-        String companyTableName = manager.getTableNameConverter().getName(Company.class);
-        companyTableName = manager.getProvider().processID(companyTableName);
-
-        String personTableName = manager.getTableNameConverter().getName(Person.class);
-        personTableName = manager.getProvider().processID(personTableName);
+        final String companyTableName = getTableName(Company.class);
+        final String personTableName = getTableName(Person.class);
 
         Company company = sql.checkExecuted(new Command<Company>()
         {
@@ -198,9 +189,8 @@ public class EntityManagerTest extends DataTest
         Connection conn = manager.getProvider().getConnection();
         try
         {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") + " FROM "
-                    + postgresName(companyTableName)
-                    + " WHERE " + postgresName("companyID") + " = ?");
+            final String sql = "SELECT " + processId("name") + " FROM " + companyTableName + " WHERE " + processId("companyID") + " = ?";
+            PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setLong(1, company.getCompanyID());
 
             ResultSet res = stmt.executeQuery();
@@ -238,8 +228,8 @@ public class EntityManagerTest extends DataTest
         conn = manager.getProvider().getConnection();
         try
         {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("url") + " FROM "
-                    + postgresName(personTableName) + " WHERE " + postgresName("id") + " = ?");
+            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("url") + " FROM "
+                    + personTableName + " WHERE " + processId("id") + " = ?");
             stmt.setInt(1, person.getID());
 
             ResultSet res = stmt.executeQuery();
@@ -280,7 +270,7 @@ public class EntityManagerTest extends DataTest
     @Test
     public void testFindCheckIDs() throws SQLException
     {
-        Company[] coolCompanies = manager.find(Company.class, postgresName("cool") + " = ?", true);
+        Company[] coolCompanies = manager.find(Company.class, processId("cool") + " = ?", true);
 
         assertEquals(coolCompanyIDs.length, coolCompanies.length);
 
@@ -329,7 +319,7 @@ public class EntityManagerTest extends DataTest
             }
         }
 
-        Person[] people = manager.find(Person.class, postgresName("profession") + " = ?", Profession.DEVELOPER);
+        Person[] people = manager.find(Person.class, processId("profession") + " = ?", Profession.DEVELOPER);
 
         assertEquals(1, people.length);
         assertEquals(personID, people[0].getID());
@@ -368,8 +358,7 @@ public class EntityManagerTest extends DataTest
     @Test
     public void testFindCheckDefinedPrecache() throws Exception
     {
-        final Person[] people = manager.find(Person.class, Query.select(postgresName("id") + ", "
-                + postgresName("firstName") + ", " + postgresName("lastName")));
+        final Person[] people = manager.find(Person.class, Query.select("id, firstName, lastName"));
 
         sql.checkNotExecuted(new Command<Void>()
         {
@@ -401,15 +390,12 @@ public class EntityManagerTest extends DataTest
     @Test
     public void testFindWithSQL() throws SQLException
     {
-        String companyTableName = manager.getTableNameConverter().getName(Company.class);
-        companyTableName = manager.getProvider().processID(companyTableName);
-
-        String personTableName = manager.getTableNameConverter().getName(Person.class);
-        personTableName = manager.getProvider().processID(personTableName);
+        final String companyTableName = getTableName(Company.class);
+        final String personTableName = getTableName(Person.class);
 
         Company[] coolCompanies = manager.findWithSQL(Company.class,
-                "companyID", "SELECT " + postgresName("companyID") + " FROM "
-                        + postgresName(companyTableName) + " WHERE " + postgresName("cool") + " = ?", true);
+                "companyID", "SELECT " + processId("companyID") + " FROM "
+                        + companyTableName + " WHERE " + processId("cool") + " = ?", true);
 
         assertEquals(coolCompanyIDs.length, coolCompanies.length);
 
@@ -431,8 +417,8 @@ public class EntityManagerTest extends DataTest
             }
         }
 
-        Company[] companies = manager.findWithSQL(Company.class, "companyID", "SELECT " + postgresName("companyID")
-                + " FROM " + postgresName(companyTableName));
+        Company[] companies = manager.findWithSQL(Company.class, "companyID", "SELECT " + processId("companyID")
+                + " FROM " + companyTableName);
 
         assertEquals(coolCompanyIDs.length + 1, companies.length);
 
@@ -460,9 +446,9 @@ public class EntityManagerTest extends DataTest
         }
 
         Company company = manager.get(Company.class, companyID);
-        Person[] people = manager.findWithSQL(Person.class, "id", "SELECT " + postgresName("id") + " FROM "
-                + postgresName(personTableName)
-                + " WHERE " + postgresName("companyID") + " = ?", company);
+        Person[] people = manager.findWithSQL(Person.class, "id", "SELECT " + processId("id") + " FROM "
+                + personTableName
+                + " WHERE " + processId("companyID") + " = ?", company);
         Person[] companyPeople = company.getPeople();
 
         assertEquals(companyPeople.length, people.length);
@@ -489,7 +475,7 @@ public class EntityManagerTest extends DataTest
     @Test
     public void testCount() throws SQLException
     {
-        assertEquals(coolCompanyIDs.length, manager.count(Company.class, postgresName("cool") + " = ?", true));
+        assertEquals(coolCompanyIDs.length, manager.count(Company.class, processId("cool") + " = ?", true));
         assertEquals(penIDs.length, manager.count(Pen.class));
         assertEquals(1, manager.count(Person.class));
         assertEquals(0, manager.count(Select.class));

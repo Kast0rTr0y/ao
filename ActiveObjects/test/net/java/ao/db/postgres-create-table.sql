@@ -8,14 +8,18 @@ CREATE TABLE person (
     height DOUBLE PRECISION DEFAULT 62.3,
     companyID BIGINT,
     cool BOOLEAN DEFAULT TRUE,
-    created TIMESTAMP DEFAULT now(),
+    modified TIMESTAMP DEFAULT now(),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )
 
-CREATE FUNCTION person_created_onupdate() RETURNS trigger AS $$
+CREATE FUNCTION person_modified_onupdate() RETURNS trigger AS $person_modified_onupdate$
 BEGIN
-    NEW.created := now();
+    NEW.modified := now();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql
+$person_modified_onupdate$ LANGUAGE plpgsql
+
+CREATE TRIGGER person_modified_onupdate
+ BEFORE UPDATE OR INSERT ON person
+    FOR EACH ROW EXECUTE PROCEDURE person_modified_onupdate()

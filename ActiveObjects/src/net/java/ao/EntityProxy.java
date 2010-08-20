@@ -571,7 +571,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(provider.processID(where)).append(")");
+					sql.append(" AND (").append(where).append(")");
 				}
 				
 				if (thisPolyNames != null) {

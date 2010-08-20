@@ -53,7 +53,6 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashMap;
 
-import static net.java.ao.TestUtilities.postgresName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -235,9 +234,9 @@ public class EntityTest extends DataTest {
 		boolean cool = false;
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
-					+ ", " + postgresName("cool") + " FROM " + companyTableName 
-					+ " WHERE " + postgresName("companyID") + " = ?");
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("name")
+					+ ", " + processId("cool") + " FROM " + companyTableName
+					+ " WHERE " + processId("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -267,9 +266,9 @@ public class EntityTest extends DataTest {
 
 		conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("name") 
-					+ ", " + postgresName("cool") + " FROM " + companyTableName 
-					+ " WHERE " + postgresName("companyID") + " = ?");
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("name")
+					+ ", " + processId("cool") + " FROM " + companyTableName
+					+ " WHERE " + processId("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -303,8 +302,8 @@ public class EntityTest extends DataTest {
 		conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = conn.prepareStatement("SELECT " 
-					+ postgresName("profession") + " FROM " + personTableName 
-					+ " WHERE " + postgresName("id") + " = ?");
+					+ processId("profession") + " FROM " + personTableName
+					+ " WHERE " + processId("id") + " = ?");
 			stmt.setInt(1, person.getID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -401,9 +400,9 @@ public class EntityTest extends DataTest {
 		
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("commentableID") + ", " 
-					+ postgresName("commentableType") + " FROM " 
-					+ commentTableName + " WHERE " + postgresName("id") + " = ?");
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("commentableID") + ", "
+					+ processId("commentableType") + " FROM "
+					+ commentTableName + " WHERE " + processId("id") + " = ?");
 			stmt.setInt(1, comment.getID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -429,9 +428,9 @@ public class EntityTest extends DataTest {
 		
 		conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("commentableID") 
-					+ ", " + postgresName("commentableType") + " FROM " 
-					+ commentTableName + " WHERE " + postgresName("id") + " = ?");
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("commentableID")
+					+ ", " + processId("commentableType") + " FROM "
+					+ commentTableName + " WHERE " + processId("id") + " = ?");
 			stmt.setInt(1, comment.getID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -455,8 +454,8 @@ public class EntityTest extends DataTest {
 		
 		conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("commentableID") 
-					+ ", " + postgresName("commentableType") + " FROM " 
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("commentableID")
+					+ ", " + processId("commentableType") + " FROM "
 					+ commentTableName + " WHERE id = ?");
 			stmt.setInt(1, comment.getID());
 			
@@ -664,9 +663,9 @@ public class EntityTest extends DataTest {
 		
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("motivation") + " FROM " 
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("motivation") + " FROM "
 					+ companyTableName 
-					+ " WHERE " + postgresName("companyID") + " = ?");
+					+ " WHERE " + processId("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
 			ResultSet res = stmt.executeQuery();
@@ -703,9 +702,9 @@ public class EntityTest extends DataTest {
 
         Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement("SELECT " + postgresName("companyID") 
+			PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("companyID")
 					+ " FROM " + companyTableName 
-					+ " WHERE " + postgresName("companyID") + " = ?");
+					+ " WHERE " + processId("companyID") + " = ?");
 			stmt.setLong(1, company.getCompanyID());
 			
 			ResultSet res = stmt.executeQuery();

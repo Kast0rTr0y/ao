@@ -233,10 +233,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
 
-			back.append("CREATE FUNCTION ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + "()");
-			back.append(" RETURNS trigger AS $$\nBEGIN\n");
+            final String triggerName = triggerName(table, field);
+
+            back.append("CREATE FUNCTION ").append(triggerName).append("()");
+            back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
 			back.append("    NEW.").append(processID(field.getName())).append(" := ").append(renderValue(onUpdate));
-			back.append(";\n    RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql");
+            back.append(";\n    RETURN NEW;\nEND;\n$").append(triggerName).append("$ LANGUAGE plpgsql");
 
 			return back.toString();
 		}
@@ -244,20 +246,29 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return super.renderFunctionForField(table, field);
 	}
 
-	@Override
+    @Override
 	protected String renderTriggerForField(DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
 
-			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + '\n');
-			back.append(" BEFORE UPDATE OR INSERT ON ").append(processID(field.getName())).append('\n');
+            final String triggerName = triggerName(table, field);
+
+            back.append("CREATE TRIGGER ").append(triggerName).append('\n');
+            back.append(" BEFORE UPDATE OR INSERT ON ").append(processID(table.getName())).append('\n');
 			back.append("    FOR EACH ROW EXECUTE PROCEDURE ");
-			back.append(processID(table.getName() + '_' + field.getName() + "_onupdate") + "()");
+            back.append(triggerName).append("()");
+
+            return back.toString();
 		}
 
 		return super.renderTriggerForField(table, field);
 	}
+
+    private String triggerName(DDLTable table, DDLField field)
+    {
+        return table.getName() + '_' + field.getName() + "_onupdate";
+    }
 
 	@Override
 	protected String renderOnUpdate(DDLField field) {
@@ -485,9 +496,6 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	protected boolean shouldQuoteID(String id) {
-		if ("*".equals(id)) {
-			return false;
-		}
-		return true;		// to make identifiers case-sensetive
-	}
+        return !"*".equals(id);
+    }
 }

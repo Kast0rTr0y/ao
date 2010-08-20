@@ -3,14 +3,11 @@ package net.java.ao;
 import junit.framework.JUnit4TestAdapter;
 import junit.framework.Test;
 import net.java.ao.test.config.JdbcConfiguration;
-import test.schema.Address;
 import test.schema.Author;
 import test.schema.Authorship;
 import test.schema.Book;
 import test.schema.Comment;
-import test.schema.Commentable;
 import test.schema.Company;
-import test.schema.CompanyAddressInfo;
 import test.schema.Distribution;
 import test.schema.EmailAddress;
 import test.schema.Magazine;
@@ -25,7 +22,6 @@ import test.schema.Photo;
 import test.schema.Post;
 import test.schema.PostalAddress;
 import test.schema.PrintDistribution;
-import test.schema.Publication;
 import test.schema.PublicationToDistribution;
 import test.schema.Select;
 import test.schema.UserBase;
@@ -74,87 +70,29 @@ public abstract class TestUtilities {
                 PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,
                 Message.class, EmailAddress.class, PostalAddress.class, Select.class, UserBase.class);
 
-		String addressTableName = manager.getTableNameConverter().getName(Address.class);
-		addressTableName = manager.getProvider().processID(addressTableName);
-
-		String authorTableName = manager.getTableNameConverter().getName(Author.class);
-		authorTableName = manager.getProvider().processID(authorTableName);
-
-		String authorshipTableName = manager.getTableNameConverter().getName(Authorship.class);
-		authorshipTableName = manager.getProvider().processID(authorshipTableName);
-
-		String bookTableName = manager.getTableNameConverter().getName(Book.class);
-		bookTableName = manager.getProvider().processID(bookTableName);
-
-		String commentTableName = manager.getTableNameConverter().getName(Comment.class);
-		commentTableName = manager.getProvider().processID(commentTableName);
-
-		String commentableTableName = manager.getTableNameConverter().getName(Commentable.class);
-		commentableTableName = manager.getProvider().processID(commentableTableName);
-
-		String companyTableName = manager.getTableNameConverter().getName(Company.class);
-		companyTableName = manager.getProvider().processID(companyTableName);
-
-		String companyAddressInfoTableName = manager.getTableNameConverter().getName(CompanyAddressInfo.class);
-		companyAddressInfoTableName = manager.getProvider().processID(companyAddressInfoTableName);
-
-		String distributionTableName = manager.getTableNameConverter().getName(Distribution.class);
-		distributionTableName = manager.getProvider().processID(distributionTableName);
-
-		String emailAddressTableName = manager.getTableNameConverter().getName(EmailAddress.class);
-		emailAddressTableName = manager.getProvider().processID(emailAddressTableName);
-
-		String magazineTableName = manager.getTableNameConverter().getName(Magazine.class);
-		magazineTableName = manager.getProvider().processID(magazineTableName);
-
-		String messageTableName = manager.getTableNameConverter().getName(Message.class);
-		messageTableName = manager.getProvider().processID(messageTableName);
-
-		String noseTableName = manager.getTableNameConverter().getName(Nose.class);
-		noseTableName = manager.getProvider().processID(noseTableName);
-
-		String onlineDistributionTableName = manager.getTableNameConverter().getName(OnlineDistribution.class);
-		onlineDistributionTableName = manager.getProvider().processID(onlineDistributionTableName);
-
-		String penTableName = manager.getTableNameConverter().getName(Pen.class);
-		penTableName = manager.getProvider().processID(penTableName);
-
-		String personTableName = manager.getTableNameConverter().getName(Person.class);
-		personTableName = manager.getProvider().processID(personTableName);
-
-		String personLegalDefenceTableName = manager.getTableNameConverter().getName(PersonLegalDefence.class);
-		personLegalDefenceTableName = manager.getProvider().processID(personLegalDefenceTableName);
-
-		String personSuitTableName = manager.getTableNameConverter().getName(PersonSuit.class);
-		personSuitTableName = manager.getProvider().processID(personSuitTableName);
-
-		String photoTableName = manager.getTableNameConverter().getName(Photo.class);
-		photoTableName = manager.getProvider().processID(photoTableName);
-
-		String postTableName = manager.getTableNameConverter().getName(Post.class);
-		postTableName = manager.getProvider().processID(postTableName);
-
-		String postalAddressTableName = manager.getTableNameConverter().getName(PostalAddress.class);
-		postalAddressTableName = manager.getProvider().processID(postalAddressTableName);
-
-		String printDistributionTableName = manager.getTableNameConverter().getName(PrintDistribution.class);
-		printDistributionTableName = manager.getProvider().processID(printDistributionTableName);
-
-		String publicationTableName = manager.getTableNameConverter().getName(Publication.class);
-		publicationTableName = manager.getProvider().processID(publicationTableName);
-
-		String publicationToDistributionTableName = manager.getTableNameConverter().getName(PublicationToDistribution.class);
-		publicationToDistributionTableName = manager.getProvider().processID(publicationToDistributionTableName);
-
-		String selectTableName = manager.getTableNameConverter().getName(Select.class);
-		selectTableName = manager.getProvider().processID(selectTableName);
+        final String authorTableName = getTableName(manager, Author.class);
+        final String authorshipTableName = getTableName(manager, Authorship.class);
+        final String bookTableName = getTableName(manager, Book.class);
+        final String commentTableName = getTableName(manager, Comment.class);
+        final String companyTableName = getTableName(manager, Company.class);
+        final String emailAddressTableName = getTableName(manager, EmailAddress.class);
+        final String magazineTableName = getTableName(manager, Magazine.class);
+        final String messageTableName = getTableName(manager, Message.class);
+        final String noseTableName = getTableName(manager, Nose.class);
+        final String penTableName = getTableName(manager, Pen.class);
+        final String personTableName = getTableName(manager, Person.class);
+        final String personLegalDefenceTableName = getTableName(manager, PersonLegalDefence.class);
+        final String personSuitTableName = getTableName(manager, PersonSuit.class);
+        final String photoTableName = getTableName(manager, Photo.class);
+        final String postTableName = getTableName(manager, Post.class);
+        final String publicationToDistributionTableName = getTableName(manager, PublicationToDistribution.class);
 
 		//_________________________________________________________________________________________
 		Connection conn = manager.getProvider().getConnection();
 		try {
 			PreparedStatement stmt = prepareStatement(conn, "INSERT INTO " + companyTableName
-					+ " (" + postgresName("companyID") + ", " + postgresName("name") + ", "
-					+ postgresName("cool") + ", " + postgresName("image") + ") VALUES (?,?,?,?)");
+					+ " (" + processId(manager, "companyID") + ", " + processId(manager, "name") + ", "
+					+ processId(manager, "cool") + ", " + processId(manager, "image") + ") VALUES (?,?,?,?)");
 
 			stmt.setLong(1, back.companyID = System.currentTimeMillis());
 			stmt.setString(2, "Company Name");
@@ -173,8 +111,8 @@ public abstract class TestUtilities {
 			back.coolCompanyIDs = new long[3];
 
 			stmt = prepareStatement(conn, "INSERT INTO " + companyTableName + " ("
-					+ postgresName("companyID") + ", " + postgresName("name") + ", "
-					+ postgresName("cool") +") VALUES (?,?,?)");
+					+ processId(manager, "companyID") + ", " + processId(manager, "name") + ", "
+					+ processId(manager, "cool") +") VALUES (?,?,?)");
 
 			stmt.setLong(1, back.coolCompanyIDs[index++] = System.currentTimeMillis());
 			stmt.setString(2, "Cool Company");
@@ -203,8 +141,8 @@ public abstract class TestUtilities {
 			assignPriorID(manager, conn, "person");
 
 			stmt = prepareStatement(conn, "INSERT INTO " + personTableName
-					+ " (" + postgresName("firstName") + ", " + postgresName("profession")
-					+ ", " + postgresName("companyID") + ", " + postgresName("image") + ") VALUES (?, ?, ?, ?)");
+					+ " (" + processId(manager, "firstName") + ", " + processId(manager, "profession")
+					+ ", " + processId(manager, "companyID") + ", " + processId(manager, "image") + ") VALUES (?, ?, ?, ?)");
 
 			stmt.setString(1, "Daniel");
 			stmt.setInt(2, 0);
@@ -223,7 +161,7 @@ public abstract class TestUtilities {
 			assignPriorID(manager, conn, "nose");
 
 			stmt = prepareStatement(conn, "INSERT INTO " + noseTableName
-					+ " (" + postgresName("length") + ", " + postgresName("personID") + ") VALUES (?,?)");
+					+ " (" + processId(manager, "length") + ", " + processId(manager, "personID") + ") VALUES (?,?)");
 
 			stmt.setInt(1, 2);
 			stmt.setInt(2, back.personID);
@@ -237,7 +175,7 @@ public abstract class TestUtilities {
 
 			back.penIDs = new int[3];
 			stmt = prepareStatement(conn, "INSERT INTO " + penTableName
-					+ " (" + postgresName("width") + ", " + postgresName("personID")
+					+ " (" + processId(manager, "width") + ", " + processId(manager, "personID")
 					+ ") VALUES (?,?)");
 
 			index = 0;
@@ -270,7 +208,7 @@ public abstract class TestUtilities {
 
 			back.defenceIDs = new int[3];
 			stmt = prepareStatement(conn, "INSERT INTO " + personLegalDefenceTableName + " ("
-					+ postgresName("severity") + ") VALUES (?)");
+					+ processId(manager, "severity") + ") VALUES (?)");
 
 			index = 0;
 
@@ -299,7 +237,7 @@ public abstract class TestUtilities {
 
 			back.suitIDs = new int[3];
 			stmt = prepareStatement(conn, "INSERT INTO " + personSuitTableName
-					+ " (" + postgresName("personID") + ", " + postgresName("personLegalDefenceID") + ") VALUES (?,?)");
+					+ " (" + processId(manager, "personID") + ", " + processId(manager, "personLegalDefenceID") + ") VALUES (?,?)");
 
 			index = 0;
 
@@ -329,7 +267,7 @@ public abstract class TestUtilities {
 
 			assignPriorID(manager, conn, "post");
 
-			stmt = prepareStatement(conn, "INSERT INTO " + postTableName + " (" + postgresName("title") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + postTableName + " (" + processId(manager, "title") + ") VALUES (?)");
 
 			stmt.setString(1, "Test Post");
 			stmt.executeUpdate();
@@ -340,7 +278,7 @@ public abstract class TestUtilities {
 
 			assignPriorID(manager, conn, "photo");
 
-			stmt = prepareStatement(conn, "INSERT INTO " + photoTableName + " (" + postgresName("depth") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + photoTableName + " (" + processId(manager, "depth") + ") VALUES (?)");
 
 			stmt.setInt(1, 256);
 
@@ -353,8 +291,8 @@ public abstract class TestUtilities {
 			assignPriorID(manager, conn, "comment");
 
 			stmt = prepareStatement(conn, "INSERT INTO " + commentTableName
-					+ " (" + postgresName("title") + ", " + postgresName("text")
-					+ ", " + postgresName("commentableID") + ", " + postgresName("commentableType")
+					+ " (" + processId(manager, "title") + ", " + processId(manager, "text")
+					+ ", " + processId(manager, "commentableID") + ", " + processId(manager, "commentableType")
 					+ ") VALUES (?,?,?,?)");
 
 			back.postCommentIDs = new int[3];
@@ -424,7 +362,7 @@ public abstract class TestUtilities {
 			assignPriorID(manager, conn, "book");
 
 			stmt = prepareStatement(conn, "INSERT INTO " + bookTableName
-					+ " (" + postgresName("title") + ", " + postgresName("hardcover") + ") VALUES (?,?)");
+					+ " (" + processId(manager, "title") + ", " + processId(manager, "hardcover") + ") VALUES (?,?)");
 
 			stmt.setString(1, "Test Book 1");
 			stmt.setBoolean(2, true);
@@ -447,7 +385,7 @@ public abstract class TestUtilities {
 
 			assignPriorID(manager, conn, "magazine");
 
-			stmt = prepareStatement(conn, "INSERT INTO " + magazineTableName + " (" + postgresName("title") + ") VALUES (?)");
+			stmt = prepareStatement(conn, "INSERT INTO " + magazineTableName + " (" + processId(manager, "title") + ") VALUES (?)");
 
 			stmt.setString(1, "Test Magazine 1");
 			stmt.executeUpdate();
@@ -471,7 +409,7 @@ public abstract class TestUtilities {
 					assignPriorID(manager, conn, "author");
 
 					stmt = prepareStatement(conn, "INSERT INTO " + authorTableName
-							+ " (" + postgresName("name") + ") VALUES (?)");
+							+ " (" + processId(manager, "name") + ") VALUES (?)");
 
 					stmt.setString(1, "Test Book Author " + (subIndex + 1));
 					stmt.executeUpdate();
@@ -481,8 +419,8 @@ public abstract class TestUtilities {
 					stmt.close();
 
 					stmt = prepareStatement(conn, "INSERT INTO " + authorshipTableName
-							+ " (" + postgresName("publicationID") + ", " + postgresName("publicationType")
-							+ ", " + postgresName("authorID") + ") VALUES (?,?,?)");
+							+ " (" + processId(manager, "publicationID") + ", " + processId(manager, "publicationType")
+							+ ", " + processId(manager, "authorID") + ") VALUES (?,?,?)");
 
 					stmt.setInt(1, back.bookIDs[i]);
 					stmt.setString(2, manager.getPolymorphicTypeMapper().convert(Book.class));
@@ -500,7 +438,7 @@ public abstract class TestUtilities {
 					assignPriorID(manager, conn, "author");
 
 					stmt = prepareStatement(conn, "INSERT INTO " + authorTableName
-							+ " (" + postgresName("name") + ") VALUES (?)");
+							+ " (" + processId(manager, "name") + ") VALUES (?)");
 
 					stmt.setString(1, "Test Magazine Author " + (subIndex + 1));
 					stmt.executeUpdate();
@@ -510,8 +448,8 @@ public abstract class TestUtilities {
 					stmt.close();
 
 					stmt = prepareStatement(conn, "INSERT INTO " + authorshipTableName
-							+ " (" + postgresName("publicationID") + ", " + postgresName("publicationType")
-							+ ", " + postgresName("authorID") + ") VALUES (?,?,?)");
+							+ " (" + processId(manager, "publicationID") + ", " + processId(manager, "publicationType")
+							+ ", " + processId(manager, "authorID") + ") VALUES (?,?,?)");
 
 					stmt.setInt(1, back.magazineIDs[i]);
 					stmt.setString(2, manager.getPolymorphicTypeMapper().convert(Magazine.class));
@@ -533,16 +471,16 @@ public abstract class TestUtilities {
 					String params = null;
 
 					if (distType == PrintDistribution.class) {
-						params = " (" + postgresName("copies") + ") VALUES (?)";
+						params = " (" + processId(manager, "copies") + ") VALUES (?)";
 					} else if (distType == OnlineDistribution.class) {
-						params = " (" + postgresName("url") + ") VALUES (?)";
+						params = " (" + processId(manager, "url") + ") VALUES (?)";
 					}
 
 					back.bookDistributionTypes[i][subIndex] = distType;
 
 					assignPriorID(manager, conn, distTableName);
 
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(distTableName) + ' ' + params);
+					stmt = prepareStatement(conn, "INSERT INTO " + processId(manager, distTableName) + ' ' + params);
 
 					if (distType == PrintDistribution.class) {
 						stmt.setInt(1, 20);
@@ -556,8 +494,8 @@ public abstract class TestUtilities {
 					stmt.close();
 
 					stmt = prepareStatement(conn, "INSERT INTO " + publicationToDistributionTableName +
-							" (" + postgresName("publicationID") + ", " + postgresName("publicationType")
-							+ ", " + postgresName("distributionID") + ", " + postgresName("distributionType") + ") VALUES (?,?,?,?)");
+							" (" + processId(manager, "publicationID") + ", " + processId(manager, "publicationType")
+							+ ", " + processId(manager, "distributionID") + ", " + processId(manager, "distributionType") + ") VALUES (?,?,?,?)");
 
 					stmt.setInt(1, back.bookIDs[i]);
 					stmt.setString(2, manager.getPolymorphicTypeMapper().convert(Book.class));
@@ -580,16 +518,16 @@ public abstract class TestUtilities {
 					String params = null;
 
 					if (distType == PrintDistribution.class) {
-						params = " (" + postgresName("copies") + ") VALUES (?)";
+						params = " (" + processId(manager, "copies") + ") VALUES (?)";
 					} else if (distType == OnlineDistribution.class) {
-						params = " (" + postgresName("url") + ") VALUES (?)";
+						params = " (" + processId(manager, "url") + ") VALUES (?)";
 					}
 
 					back.magazineDistributionTypes[i][subIndex] = distType;
 
 					assignPriorID(manager, conn, distTableName);
 
-					stmt = prepareStatement(conn, "INSERT INTO " + postgresName(distTableName) + ' ' + params);
+					stmt = prepareStatement(conn, "INSERT INTO " + processId(manager, distTableName) + ' ' + params);
 
 					if (distType == PrintDistribution.class) {
 						stmt.setInt(1, 20);
@@ -603,8 +541,8 @@ public abstract class TestUtilities {
 					stmt.close();
 
 					stmt = prepareStatement(conn, "INSERT INTO " + publicationToDistributionTableName +
-							" (" + postgresName("publicationID") + ", " + postgresName("publicationType")
-							+ ", " + postgresName("distributionID") + ", " + postgresName("distributionType")
+							" (" + processId(manager, "publicationID") + ", " + processId(manager, "publicationType")
+							+ ", " + processId(manager, "distributionID") + ", " + processId(manager, "distributionType")
 							+ ") VALUES (?,?,?,?)");
 
 					stmt.setInt(1, back.magazineIDs[i]);
@@ -618,7 +556,7 @@ public abstract class TestUtilities {
 					back.addressIDs = new int[2];
 
 					stmt = prepareStatement(conn, "INSERT INTO " + emailAddressTableName
-							+ " (" + postgresName("email") + ") VALUES (?)");
+							+ " (" + processId(manager, "email") + ") VALUES (?)");
 
 					assignPriorID(manager, conn, "emailAddress");
 
@@ -638,12 +576,12 @@ public abstract class TestUtilities {
 
 					back.messageIDs = new int[3];
 
-					String contentsName = manager.getProvider().processID("contents");
+					String contentsName = processId(manager, "contents");
 
 					stmt = prepareStatement(conn, "INSERT INTO " + messageTableName
 							+ " (" + contentsName
-							+ ", " + postgresName("fromID") + ", " + postgresName("fromType")
-							+ ", " + postgresName("toID") + ", " + postgresName("toType") + ")"
+							+ ", " + processId(manager, "fromID") + ", " + processId(manager, "fromType")
+							+ ", " + processId(manager, "toID") + ", " + processId(manager, "toType") + ")"
 							+ " VALUES (?,?,?,?,?)");
 
 					assignPriorID(manager, conn, "message");
@@ -693,12 +631,12 @@ public abstract class TestUtilities {
 				String params = null;
 
 				if (distType == PrintDistribution.class) {
-					params = " (" + postgresName("copies") + ") VALUES (?)";
+					params = " (" + processId(manager, "copies") + ") VALUES (?)";
 				} else if (distType == OnlineDistribution.class) {
-					params = " (" + postgresName("url") + ") VALUES (?)";
+					params = " (" + processId(manager, "url") + ") VALUES (?)";
 				}
 
-				stmt = prepareStatement(conn, "INSERT INTO " + postgresName(distTableName) + ' ' + params);
+				stmt = prepareStatement(conn, "INSERT INTO " + processId(manager, distTableName) + ' ' + params);
 
 				if (distType == PrintDistribution.class) {
 					stmt.setInt(1, 20);
@@ -721,7 +659,19 @@ public abstract class TestUtilities {
 		return back;
 	}
 
-	private static final PreparedStatement prepareStatement(Connection conn, String sql) throws SQLException {
+    private static String getTableName(EntityManager manager, Class<? extends RawEntity<?>> entityType)
+    {
+        String commentableTableName = manager.getTableNameConverter().getName(entityType);
+        commentableTableName = processId(manager, commentableTableName);
+        return commentableTableName;
+    }
+
+    private static String processId(EntityManager manager, String id)
+    {
+        return manager.getProvider().processID(id);
+    }
+
+    private static final PreparedStatement prepareStatement(Connection conn, String sql) throws SQLException {
 		if (uri.startsWith("jdbc:hsqldb") || uri.startsWith("jdbc:postgres")) {
 			return conn.prepareStatement(sql);
 		}
@@ -744,7 +694,7 @@ public abstract class TestUtilities {
 			res.close();
 			stmt.close();
 		} else if (uri.startsWith("jdbc:oracle")) {
-			String sequence = manager.getProvider().processID(table + "_id_seq");
+			String sequence = processId(manager, table + "_id_seq");
 			String sql = "SELECT " + sequence + ".NEXTVAL FROM dual";
 
 			PreparedStatement stmt = conn.prepareStatement(sql);
@@ -785,14 +735,6 @@ public abstract class TestUtilities {
 		return back;
 	}
 
-	public static final String postgresName(String id) {
-		if (uri.startsWith("jdbc:postgres")) {
-			return '"' + id + '"';
-		}
-
-		return id;
-	}
-
 	public static final void tearDownEntityManager(EntityManager manager) throws SQLException {
 		Connection conn = manager.getProvider().getConnection();
 		try {
@@ -804,80 +746,26 @@ public abstract class TestUtilities {
 				suffix = " PURGE";
 			}
 
-			String addressTableName = manager.getTableNameConverter().getName(Address.class);
-			addressTableName = manager.getProvider().processID(addressTableName);
-
-			String authorTableName = manager.getTableNameConverter().getName(Author.class);
-			authorTableName = manager.getProvider().processID(authorTableName);
-
-			String authorshipTableName = manager.getTableNameConverter().getName(Authorship.class);
-			authorshipTableName = manager.getProvider().processID(authorshipTableName);
-
-			String bookTableName = manager.getTableNameConverter().getName(Book.class);
-			bookTableName = manager.getProvider().processID(bookTableName);
-
-			String commentTableName = manager.getTableNameConverter().getName(Comment.class);
-			commentTableName = manager.getProvider().processID(commentTableName);
-
-			String commentableTableName = manager.getTableNameConverter().getName(Commentable.class);
-			commentableTableName = manager.getProvider().processID(commentableTableName);
-
-			String companyTableName = manager.getTableNameConverter().getName(Company.class);
-			companyTableName = manager.getProvider().processID(companyTableName);
-
-			String companyAddressInfoTableName = manager.getTableNameConverter().getName(CompanyAddressInfo.class);
-			companyAddressInfoTableName = manager.getProvider().processID(companyAddressInfoTableName);
-
-			String distributionTableName = manager.getTableNameConverter().getName(Distribution.class);
-			distributionTableName = manager.getProvider().processID(distributionTableName);
-
-			String emailAddressTableName = manager.getTableNameConverter().getName(EmailAddress.class);
-			emailAddressTableName = manager.getProvider().processID(emailAddressTableName);
-
-			String magazineTableName = manager.getTableNameConverter().getName(Magazine.class);
-			magazineTableName = manager.getProvider().processID(magazineTableName);
-
-			String messageTableName = manager.getTableNameConverter().getName(Message.class);
-			messageTableName = manager.getProvider().processID(messageTableName);
-
-			String noseTableName = manager.getTableNameConverter().getName(Nose.class);
-			noseTableName = manager.getProvider().processID(noseTableName);
-
-			String onlineDistributionTableName = manager.getTableNameConverter().getName(OnlineDistribution.class);
-			onlineDistributionTableName = manager.getProvider().processID(onlineDistributionTableName);
-
-			String penTableName = manager.getTableNameConverter().getName(Pen.class);
-			penTableName = manager.getProvider().processID(penTableName);
-
-			String personTableName = manager.getTableNameConverter().getName(Person.class);
-			personTableName = manager.getProvider().processID(personTableName);
-
-			String personLegalDefenceTableName = manager.getTableNameConverter().getName(PersonLegalDefence.class);
-			personLegalDefenceTableName = manager.getProvider().processID(personLegalDefenceTableName);
-
-			String personSuitTableName = manager.getTableNameConverter().getName(PersonSuit.class);
-			personSuitTableName = manager.getProvider().processID(personSuitTableName);
-
-			String photoTableName = manager.getTableNameConverter().getName(Photo.class);
-			photoTableName = manager.getProvider().processID(photoTableName);
-
-			String postTableName = manager.getTableNameConverter().getName(Post.class);
-			postTableName = manager.getProvider().processID(postTableName);
-
-			String postalAddressTableName = manager.getTableNameConverter().getName(PostalAddress.class);
-			postalAddressTableName = manager.getProvider().processID(postalAddressTableName);
-
-			String printDistributionTableName = manager.getTableNameConverter().getName(PrintDistribution.class);
-			printDistributionTableName = manager.getProvider().processID(printDistributionTableName);
-
-			String publicationTableName = manager.getTableNameConverter().getName(Publication.class);
-			publicationTableName = manager.getProvider().processID(publicationTableName);
-
-			String publicationToDistributionTableName = manager.getTableNameConverter().getName(PublicationToDistribution.class);
-			publicationToDistributionTableName = manager.getProvider().processID(publicationToDistributionTableName);
-
-			String selectTableName = manager.getTableNameConverter().getName(Select.class);
-			selectTableName = manager.getProvider().processID(selectTableName);
+            final String authorTableName = getTableName(manager, Author.class);
+            final String authorshipTableName = getTableName(manager, Authorship.class);
+            final String bookTableName = getTableName(manager, Book.class);
+            final String commentTableName = getTableName(manager, Comment.class);
+            final String companyTableName = getTableName(manager, Company.class);
+            final String emailAddressTableName = getTableName(manager, EmailAddress.class);
+            final String magazineTableName = getTableName(manager, Magazine.class);
+            final String messageTableName = getTableName(manager, Message.class);
+            final String noseTableName = getTableName(manager, Nose.class);
+            final String onlineDistributionTableName = getTableName(manager, OnlineDistribution.class);
+            final String penTableName = getTableName(manager, Pen.class);
+            final String personTableName = getTableName(manager, Person.class);
+            final String personLegalDefenceTableName = getTableName(manager, PersonLegalDefence.class);
+            final String personSuitTableName = getTableName(manager, PersonSuit.class);
+            final String photoTableName = getTableName(manager, Photo.class);
+            final String postTableName = getTableName(manager, Post.class);
+            final String postalAddressTableName = getTableName(manager, PostalAddress.class);
+            final String printDistributionTableName = getTableName(manager, PrintDistribution.class);
+            final String publicationToDistributionTableName = getTableName(manager, PublicationToDistribution.class);
+            final String selectTableName = getTableName(manager, Select.class);
 
 			//_____________________________________________________________________________________
 			stmt.executeUpdate("DELETE FROM " + penTableName + suffix);

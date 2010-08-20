@@ -8,13 +8,13 @@ CREATE TABLE person (
     height DECIMAL(32,6) DEFAULT 62.3,
     companyID BIGINT,
     cool INTEGER DEFAULT 1,
-    created DATETIME DEFAULT GetDate(),
+    modified DATETIME DEFAULT GetDate(),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )
 
-CREATE TRIGGER person_created_onupdate
+CREATE TRIGGER person_modified_onupdate
 ON person
 FOR UPDATE
 AS
-    UPDATE person SET created = GetDate() WHERE id = (SELECT id FROM inserted)
+    UPDATE person SET modified = GetDate() WHERE id = (SELECT id FROM inserted)

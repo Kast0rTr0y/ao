@@ -149,8 +149,7 @@ public class SchemaGeneratorTest extends DataTest {
 		
 		assertNotNull(cidKey);
 		
-		assertEquals(manager.getProvider().processID(tableNameConverter.getName(Person.class)),
-				cidKey.getDomesticTable());
+		assertEquals(tableNameConverter.getName(Person.class), cidKey.getDomesticTable());
 		assertEquals("companyID", cidKey.getField());
 		assertEquals("companyID", cidKey.getForeignField());
 		assertEquals(tableNameConverter.getName(Company.class), cidKey.getTable());

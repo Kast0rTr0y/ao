@@ -8,7 +8,7 @@ CREATE TABLE person (
     height NUMBER(32,6) DEFAULT 62.3,
     companyID NUMBER,
     cool NUMBER DEFAULT 1,
-    created TIMESTAMP DEFAULT SYSDATE,
+    modified TIMESTAMP DEFAULT SYSDATE,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )
@@ -22,10 +22,10 @@ BEGIN
     SELECT person_id_seq.NEXTVAL INTO :NEW.id FROM DUAL; 
 END;
 
-CREATE TRIGGER person_created_onupdate
+CREATE TRIGGER person_modified_onupdate
 BEFORE UPDATE
     ON person
     FOR EACH ROW
 BEGIN
-    :NEW.created := SYSDATE;
+    :NEW.modified := SYSDATE;
 END

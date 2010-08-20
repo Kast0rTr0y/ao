@@ -70,8 +70,17 @@ public class DatabaseTypeTest extends DataTest {
 		
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement(
-					"UPDATE " + personTableName + " SET firstName = ?, age = ?, url = ?, favoriteClass = ? WHERE id = ?");
+            final String firstName = "firstName";
+            final String age = "age";
+            final String url = "url";
+            final String favoriteClass = "favoriteClass";
+            final String id = "id";
+
+            PreparedStatement stmt = conn.prepareStatement("UPDATE " + personTableName + " SET " + processId(firstName) + " = ?, "
+                    + processId(age) + " = ?, "
+                    + processId(url) + " = ?, "
+                    + processId(favoriteClass) + " = ? "
+                    + "WHERE " + processId(id) + " = ?");
 			
 			int index = 1;
 			
@@ -85,15 +94,21 @@ public class DatabaseTypeTest extends DataTest {
 			stmt.executeUpdate();
 			stmt.close();
 			
-			stmt = conn.prepareStatement("SELECT firstName,age,url,favoriteClass FROM " + personTableName + " WHERE id = ?");
+			stmt = conn.prepareStatement("SELECT " + processId(firstName) + ","
+                    + processId(age) + ","
+                    + processId(url) + ","
+                    + processId(favoriteClass)
+                    + " FROM " + personTableName
+                    + " WHERE " + processId(id) + " = ?");
+
 			stmt.setInt(1, personID);
 			
 			ResultSet res = stmt.executeQuery();
 			if (res.next()) {
-				assertEquals("JoeJoe", res.getString("firstName"));
-				assertEquals(123, res.getInt("age"));
-				assertEquals("http://www.google.com", res.getString("url"));
-				assertEquals("net.java.ao.types.DatabaseTypeTest", res.getString("favoriteClass"));
+				assertEquals("JoeJoe", res.getString(firstName));
+				assertEquals(123, res.getInt(age));
+				assertEquals("http://www.google.com", res.getString(url));
+				assertEquals("net.java.ao.types.DatabaseTypeTest", res.getString(favoriteClass));
 			}
 			res.close();
 			stmt.close();
@@ -111,8 +126,18 @@ public class DatabaseTypeTest extends DataTest {
 		
 		Connection conn = manager.getProvider().getConnection();
 		try {
-			PreparedStatement stmt = conn.prepareStatement(
-					"UPDATE " + personTableName + " SET firstName = ?, age = ?, url = ?, favoriteClass = ? WHERE id = ?");
+
+            final String firstName = "firstName";
+            final String age = "age";
+            final String url = "url";
+            final String favoriteClass = "favoriteClass";
+            final String id = "id";
+
+			PreparedStatement stmt = conn.prepareStatement("UPDATE " + personTableName + " SET " + processId(firstName) + " = ?, "
+                    + processId(age) + " = ?, "
+                    + processId(url) + " = ?, "
+                    + processId(favoriteClass) + " = ? "
+                    + "WHERE " + processId(id) + " = ?");
 	
 			int index = 1;
 			
@@ -126,7 +151,13 @@ public class DatabaseTypeTest extends DataTest {
 			stmt.executeUpdate();
 			stmt.close();
 			
-			stmt = conn.prepareStatement("SELECT firstName,age,url,favoriteClass FROM " + personTableName + " WHERE id = ?");
+			stmt = conn.prepareStatement("SELECT " + processId(firstName) + ","
+                    + processId(age) + ","
+                    + processId(url) + ","
+                    + processId(favoriteClass)
+                    + " FROM " + personTableName
+                    + " WHERE " + processId(id) + " = ?");
+            
 			stmt.setInt(1, personID);
 			
 			ResultSet res = stmt.executeQuery();

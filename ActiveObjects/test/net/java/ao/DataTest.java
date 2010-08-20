@@ -16,6 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.builder.EntityManagerBuilder;
+import net.java.ao.schema.TableNameConverter;
 import net.java.ao.test.config.JdbcConfiguration;
 import net.java.ao.test.config.Parameters;
 import net.java.ao.test.config.ParametersLoader;
@@ -130,7 +131,22 @@ public abstract class DataTest {
 		test.messageIDs = data.messageIDs;
 	}
 
-	@BeforeClass
+    protected final String getTableName(Class<? extends RawEntity<?>> entityType)
+    {
+        return getTableName(manager.getProvider(), manager.getTableNameConverter(), entityType);
+    }
+
+    protected final String getTableName(DatabaseProvider provider, TableNameConverter tableNameConverter, Class<? extends RawEntity<?>> entityType)
+    {
+        return provider.processID(tableNameConverter.getName(entityType));
+    }
+
+    protected final String processId(String id)
+    {
+        return manager.getProvider().processID(id);
+    }
+
+    @BeforeClass
 	public static void classSetup() throws SQLException {
 		TypeManager.getInstance().addType(new ClassType());
 	}

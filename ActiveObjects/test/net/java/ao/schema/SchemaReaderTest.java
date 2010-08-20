@@ -119,8 +119,7 @@ public class SchemaReaderTest extends DataTest {
 		
 		assertNotNull(cidKey);
 		
-		assertTrue(manager.getProvider().processID(
-				manager.getTableNameConverter().getName(Person.class)).equalsIgnoreCase(cidKey.getDomesticTable()));
+		assertTrue(manager.getTableNameConverter().getName(Person.class).equalsIgnoreCase(cidKey.getDomesticTable()));
 		assertTrue("companyID".equalsIgnoreCase(cidKey.getField()));
 		assertTrue("companyID".equalsIgnoreCase(cidKey.getForeignField()));
 		assertTrue(manager.getTableNameConverter().getName(Company.class).equalsIgnoreCase(cidKey.getTable()));

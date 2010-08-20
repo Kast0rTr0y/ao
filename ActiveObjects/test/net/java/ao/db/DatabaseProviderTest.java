@@ -240,7 +240,7 @@ public class DatabaseProviderTest {
 		fields[8].setDefaultValue(true);
 		
 		fields[9] = new DDLField();
-		fields[9].setName("created");
+		fields[9].setName("modified");
 		fields[9].setType(tm.getType(Calendar.class));
 		fields[9].setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
 		fields[9].setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);

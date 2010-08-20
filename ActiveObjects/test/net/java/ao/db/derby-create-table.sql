@@ -8,14 +8,14 @@ CREATE TABLE person (
     height DOUBLE DEFAULT 62.3,
     companyID BIGINT,
     cool SMALLINT DEFAULT 1,
-    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )
 
-CREATE TRIGGER person_created_onupdate
+CREATE TRIGGER person_modified_onupdate
     AFTER UPDATE ON person
     REFERENCING NEW AS inserted
     FOR EACH ROW MODE DB2SQL
-        UPDATE person SET created = CURRENT_TIMESTAMP
-            WHERE id = inserted.id AND inserted.created <> CURRENT_TIMESTAMP
+        UPDATE person SET modified = CURRENT_TIMESTAMP
+            WHERE id = inserted.id AND inserted.modified <> CURRENT_TIMESTAMP
