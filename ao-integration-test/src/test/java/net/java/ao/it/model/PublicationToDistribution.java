@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+public interface PublicationToDistribution extends Entity {
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	public Publication getPublication();
+	public void setPublication(Publication publication);
+	
+	public Distribution getDistribution();
+	public void setDistribution(Distribution distribution);
 }

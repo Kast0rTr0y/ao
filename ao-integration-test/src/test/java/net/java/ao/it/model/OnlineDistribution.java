@@ -13,16 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Accessor;
+import net.java.ao.Mutator;
+import net.java.ao.Preload;
+
+import java.net.URL;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+@Preload("url")
+public interface OnlineDistribution extends Distribution
+{
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	@Accessor("url")
+	public URL getURL();
+	
+	@Mutator("url")
+	public void setURL(URL url);
 }

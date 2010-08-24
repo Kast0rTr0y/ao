@@ -13,16 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
+import net.java.ao.Preload;
+import net.java.ao.schema.SQLType;
+
+import java.sql.Types;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+@Preload("title")
+public interface Comment extends Entity {
+	public String getTitle();
+	public void setTitle(String title);
 	
-	public void setCloseable(boolean closeable);
+	@SQLType(Types.CLOB)
+	public String getText();
 
-	public boolean isCloseable();
+	@SQLType(Types.CLOB)
+	public void setText(String text);
+	
+	public Commentable getCommentable();
+	public void setCommentable(Commentable commentable);
 }

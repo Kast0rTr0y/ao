@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.EntityManager;
+import net.java.ao.ValueGenerator;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
-	
-	public void setCloseable(boolean closeable);
+public class MotivationGenerator implements ValueGenerator<String>
+{
+    public static final String MOTIVATION = "Work smarter, not harder";
 
-	public boolean isCloseable();
+    public String generateValue(EntityManager manager)
+    {
+        return MOTIVATION;
+    }
 }

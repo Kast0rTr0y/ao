@@ -3,6 +3,10 @@ package net.java.ao.builder;
 import net.java.ao.EntityManager;
 import net.java.ao.LuceneConfiguration;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+
+import java.io.File;
+import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.builder.DatabaseProviderFactory.getDatabaseProvider;
@@ -21,14 +25,21 @@ public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEn
         super(databaseProperties);
     }
 
-    public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final Directory indexDir)
+    public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final File indexDir)
     {
         checkNotNull(indexDir);
         return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), getEventManager(), new LuceneConfiguration()
         {
             public Directory getIndexDirectory()
             {
-                return indexDir;
+                try
+                {
+                    return FSDirectory.getDirectory(indexDir);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }

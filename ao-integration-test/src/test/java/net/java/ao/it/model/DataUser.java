@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Daniel Spiewak
+ * Copyright 2008 Daniel Spiewak
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -13,16 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.schema.NotNull;
+import net.java.ao.schema.Unique;
 
 /**
- * @author Daniel Spiewak
+ * @author daniel
  */
-public interface DelegateConnection extends Connection {
+public interface DataUser {
+	@NotNull
+	public byte[] getPasswordHash();
+	public void setPasswordHash(byte[] passwordHash);
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	@NotNull
+	@Unique
+	public String getUsername();
+	public void setUsername(String username);
+	
+	public String getRoleString();
+	public void setRoleString(String roleString);
 }

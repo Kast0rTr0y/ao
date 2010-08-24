@@ -80,8 +80,10 @@ import java.sql.SQLException;
  */
 public abstract class Transaction<T> {
 	private EntityManager manager;
-	
-	private enum TransactionState {
+
+
+
+    private enum TransactionState {
 		START,
 		RUNNING,
 		COMMITTED

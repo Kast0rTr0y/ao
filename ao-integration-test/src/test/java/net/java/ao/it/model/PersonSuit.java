@@ -13,16 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
+import net.java.ao.schema.Default;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+public interface PersonSuit extends Entity {
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	public Person getPerson();
+	public void setPerson(Person person);
+	
+	public PersonLegalDefence getPersonLegalDefence();
+	public void setPersonLegalDefence(PersonLegalDefence defence);
+	
+	@Default("false")
+	public boolean isDeleted();
+	@Default("false")
+	public void setDeleted(boolean deleted);
 }

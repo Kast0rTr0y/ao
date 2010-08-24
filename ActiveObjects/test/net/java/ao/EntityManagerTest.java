@@ -15,479 +15,65 @@
  */
 package net.java.ao;
 
-import net.java.ao.builder.EntityManagerBuilder;
+import net.java.ao.event.EventManager;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.TableNameConverter;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import test.schema.Company;
-import test.schema.Pen;
-import test.schema.Person;
-import test.schema.Profession;
-import test.schema.Select;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Daniel Spiewak
  */
-public class EntityManagerTest extends DataTest
+@RunWith(MockitoJUnitRunner.class)
+public class EntityManagerTest
 {
-    @Test
-    public void testGetCheckID()
+    @Mock
+    private DatabaseProvider databaseProvider;
+
+    @Mock
+    private EventManager eventManager;
+
+    private EntityManager entityManager;
+
+    @Before
+    public void setUp()
     {
-        assertNull(manager.get(Person.class, personID + 1));
+        entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration(), eventManager);
     }
 
-    @Test
-    public void testGetCache() throws Exception
+    @After
+    public void tearDown()
     {
-        manager.get(Person.class, personID);
-
-        sql.checkNotExecuted(new Command<Void>()
-        {
-            public Void run()
-            {
-                manager.get(Person.class, personID);
-                return null;
-            }
-        });
-    }
-
-    @Test
-    public void testReservedGet()
-    {
-        assertNull(manager.get(Select.class, 123));
-    }
-
-    @Test
-    public void testCreate() throws Exception
-    {
-        Company company = sql.checkExecuted(new Command<Company>()
-        {
-            public Company run() throws Exception
-            {
-                return manager.create(Company.class);
-            }
-        });
-
-        final String companyTableName = getTableName(Company.class);
-        final String personTableName = getTableName(Person.class);
-
-        Connection conn = manager.getProvider().getConnection();
-        try
-        {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("companyID")
-                    + " FROM " + companyTableName
-                    + " WHERE " + processId("companyID") + " = ?");
-            stmt.setLong(1, company.getCompanyID());
-
-            ResultSet res = stmt.executeQuery();
-            if (!res.next())
-            {
-                fail("Unable to find INSERTed company row");
-            }
-            res.close();
-            stmt.close();
-        }
-        finally
-        {
-            conn.close();
-        }
-
-        manager.delete(company);
-
-        company = manager.create(Company.class, new DBParam("name", null));
-
-        conn = manager.getProvider().getConnection();
-        try
-        {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("name") + " FROM " + companyTableName
-                    + " WHERE " + processId("companyID") + " = ?");
-            stmt.setLong(1, company.getCompanyID());
-
-            ResultSet res = stmt.executeQuery();
-
-            if (res.next())
-            {
-                assertEquals(null, res.getString("name"));
-            }
-            else
-            {
-                fail("Unable to find INSERTed company row");
-            }
-
-            res.close();
-            stmt.close();
-        }
-        finally
-        {
-            conn.close();
-        }
-
-        manager.delete(company);
-
-        Person person = sql.checkExecuted(new Command<Person>()
-        {
-            public Person run() throws Exception
-            {
-                return manager.create(Person.class, new DBParam("url", "http://www.codecommit.com"));
-            }
-        });
-
-        conn = manager.getProvider().getConnection();
-        try
-        {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("url") + " FROM "
-                    + personTableName + " WHERE " + processId("id") + " = ?");
-            stmt.setInt(1, person.getID());
-
-            ResultSet res = stmt.executeQuery();
-
-            if (res.next())
-            {
-                assertEquals("http://www.codecommit.com", res.getString("url"));
-            }
-            else
-            {
-                fail("Unable to find INSERTed person row");
-            }
-
-            res.close();
-            stmt.close();
-        }
-        finally
-        {
-            conn.close();
-        }
-
-        manager.delete(person);
-    }
-
-    @Test
-    public void testCreateWithMap() throws Exception
-    {
-        final String companyTableName = getTableName(Company.class);
-        final String personTableName = getTableName(Person.class);
-
-        Company company = sql.checkExecuted(new Command<Company>()
-        {
-            public Company run() throws Exception
-            {
-                return manager.create(Company.class, new HashMap<String, Object>()
-                {{
-                        put("name", null);
-                    }});
-            }
-        });
-
-        Connection conn = manager.getProvider().getConnection();
-        try
-        {
-            final String sql = "SELECT " + processId("name") + " FROM " + companyTableName + " WHERE " + processId("companyID") + " = ?";
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            stmt.setLong(1, company.getCompanyID());
-
-            ResultSet res = stmt.executeQuery();
-
-            if (res.next())
-            {
-                assertEquals(null, res.getString("name"));
-            }
-            else
-            {
-                fail("Unable to find INSERTed company row");
-            }
-
-            res.close();
-            stmt.close();
-        }
-        finally
-        {
-            conn.close();
-        }
-
-        manager.delete(company);
-
-        final Person person = sql.checkExecuted(new Command<Person>()
-        {
-            public Person run() throws Exception
-            {
-                return manager.create(Person.class, new HashMap<String, Object>()
-                {{
-                        put("url", "http://www.codecommit.com");
-                    }});
-            }
-        });
-
-        conn = manager.getProvider().getConnection();
-        try
-        {
-            PreparedStatement stmt = conn.prepareStatement("SELECT " + processId("url") + " FROM "
-                    + personTableName + " WHERE " + processId("id") + " = ?");
-            stmt.setInt(1, person.getID());
-
-            ResultSet res = stmt.executeQuery();
-
-            if (res.next())
-            {
-                assertEquals("http://www.codecommit.com", res.getString("url"));
-            }
-            else
-            {
-                fail("Unable to find INSERTed person row");
-            }
-
-            res.close();
-            stmt.close();
-        }
-        finally
-        {
-            conn.close();
-        }
-
-        manager.delete(person);
-    }
-
-    @Test
-    public void testDelete() throws Exception
-    {
-        sql.checkNotExecuted(new Command<Void>()
-        {
-            public Void run() throws Exception
-            {
-                manager.delete();
-                return null;
-            }
-        });
-    }
-
-    @Test
-    public void testFindCheckIDs() throws SQLException
-    {
-        Company[] coolCompanies = manager.find(Company.class, processId("cool") + " = ?", true);
-
-        assertEquals(coolCompanyIDs.length, coolCompanies.length);
-
-        for (Company c : coolCompanies)
-        {
-            boolean found = false;
-            for (long id : coolCompanyIDs)
-            {
-                if (c.getCompanyID() == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                fail("Unable to find key=" + c.getCompanyID());
-            }
-        }
-
-        Company[] companies = manager.find(Company.class);
-
-        assertEquals(coolCompanyIDs.length + 1, companies.length);
-
-        for (Company c : companies)
-        {
-            boolean found = false;
-            for (long id : coolCompanyIDs)
-            {
-                if (c.getCompanyID() == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (c.getCompanyID() == companyID)
-            {
-                found = true;
-            }
-
-            if (!found)
-            {
-                fail("Unable to find key=" + c.getCompanyID());
-            }
-        }
-
-        Person[] people = manager.find(Person.class, processId("profession") + " = ?", Profession.DEVELOPER);
-
-        assertEquals(1, people.length);
-        assertEquals(personID, people[0].getID());
-    }
-
-    @Test
-    public void testFindCheckPreload() throws Exception
-    {
-        final Pen[] pens = manager.find(Pen.class);
-
-        sql.checkNotExecuted(new Command<Void>()
-        {
-            public Void run() throws Exception
-            {
-                for (Pen pen : pens)
-                {
-                    pen.getWidth();
-                }
-                return null;
-            }
-        });
-
-        sql.checkExecuted(new Command<Void>()
-        {
-            public Void run() throws Exception
-            {
-                for (Pen pen : pens)
-                {
-                    pen.getPerson();
-                }
-                return null;
-            }
-        });
-    }
-
-    @Test
-    public void testFindCheckDefinedPrecache() throws Exception
-    {
-        final Person[] people = manager.find(Person.class, Query.select("id, firstName, lastName"));
-
-        sql.checkNotExecuted(new Command<Void>()
-        {
-            public Void run() throws Exception
-            {
-                for (Person person : people)
-                {
-                    person.getFirstName();
-                    person.getLastName();
-                }
-                return null;
-            }
-        });
-
-        sql.checkExecuted(new Command<Void>()
-        {
-            public Void run() throws Exception
-            {
-                for (Person person : people)
-                {
-                    person.getURL();
-                    person.getCompany();
-                }
-                return null;
-            }
-        });
-    }
-
-    @Test
-    public void testFindWithSQL() throws SQLException
-    {
-        final String companyTableName = getTableName(Company.class);
-        final String personTableName = getTableName(Person.class);
-
-        Company[] coolCompanies = manager.findWithSQL(Company.class,
-                "companyID", "SELECT " + processId("companyID") + " FROM "
-                        + companyTableName + " WHERE " + processId("cool") + " = ?", true);
-
-        assertEquals(coolCompanyIDs.length, coolCompanies.length);
-
-        for (Company c : coolCompanies)
-        {
-            boolean found = false;
-            for (long id : coolCompanyIDs)
-            {
-                if (c.getCompanyID() == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                fail("Unable to find key=" + c.getCompanyID());
-            }
-        }
-
-        Company[] companies = manager.findWithSQL(Company.class, "companyID", "SELECT " + processId("companyID")
-                + " FROM " + companyTableName);
-
-        assertEquals(coolCompanyIDs.length + 1, companies.length);
-
-        for (Company c : companies)
-        {
-            boolean found = false;
-            for (long id : coolCompanyIDs)
-            {
-                if (c.getCompanyID() == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (c.getCompanyID() == companyID)
-            {
-                found = true;
-            }
-
-            if (!found)
-            {
-                fail("Unable to find key=" + c.getCompanyID());
-            }
-        }
-
-        Company company = manager.get(Company.class, companyID);
-        Person[] people = manager.findWithSQL(Person.class, "id", "SELECT " + processId("id") + " FROM "
-                + personTableName
-                + " WHERE " + processId("companyID") + " = ?", company);
-        Person[] companyPeople = company.getPeople();
-
-        assertEquals(companyPeople.length, people.length);
-
-        for (Person p : people)
-        {
-            boolean found = false;
-            for (Person expectedPerson : companyPeople)
-            {
-                if (p.equals(expectedPerson))
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                fail("Unable to find key=" + p.getID());
-            }
-        }
-    }
-
-    @Test
-    public void testCount() throws SQLException
-    {
-        assertEquals(coolCompanyIDs.length, manager.count(Company.class, processId("cool") + " = ?", true));
-        assertEquals(penIDs.length, manager.count(Pen.class));
-        assertEquals(1, manager.count(Person.class));
-        assertEquals(0, manager.count(Select.class));
+        entityManager = null;
     }
 
     @Test(expected = RuntimeException.class)
     public void testNullTypeMapper()
     {
-        EntityManager manager = EntityManagerBuilder.url("jdbc:hsqldb:mem:other_testdb").username(null).password(null)
-                .auto().build();
+        entityManager.setPolymorphicTypeMapper(null);
+        entityManager.getPolymorphicTypeMapper();
+    }
 
-        manager.setPolymorphicTypeMapper(null);
-        manager.getPolymorphicTypeMapper();
+    private EntityManagerConfiguration getEntityManagerConfiguration()
+    {
+        final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
+        final FieldNameConverter fieldNameConverter = mock(FieldNameConverter.class);
+        final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
+
+        final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
+        when(configuration.getTableNameConverter()).thenReturn(tableNameConverter);
+        when(configuration.getFieldNameConverter()).thenReturn(fieldNameConverter);
+        when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
+        return configuration;
     }
 }

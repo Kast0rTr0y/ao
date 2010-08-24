@@ -13,16 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
-
-import java.sql.Connection;
+package net.java.ao.it.model;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
-	
-	public void setCloseable(boolean closeable);
+public class PersonImpl
+{
+    public static final String LAST_NAME = "Smith";
+    public static boolean enableOverride = false;
 
-	public boolean isCloseable();
+    private Person person;
+
+    public PersonImpl(Person person)
+    {
+        this.person = person;
+    }
+
+    public String getLastName()
+    {
+        if (enableOverride)
+        {
+            return LAST_NAME;
+        }
+        return person.getLastName();
+    }
+
+    public void setLastName(String lastName)
+    {
+        person.setLastName(lastName);
+    }
 }

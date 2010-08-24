@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
+import net.java.ao.ManyToMany;
+import net.java.ao.Polymorphic;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+@Polymorphic
+public interface Publication extends Entity {
+	public String getTitle();
+	public void setTitle(String title);
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	@ManyToMany(Authorship.class)
+	public Author[] getAuthors();
+	
+	@ManyToMany(PublicationToDistribution.class)
+	public Distribution[] getDistributions();
 }

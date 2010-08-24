@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Daniel Spiewak
+ * Copyright 2008 Daniel Spiewak
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+public interface Select extends Entity {
+	public String getWhere();
+	public void setWhere(String where);
 	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+	public boolean isAnd();
+	public void setAnd(boolean and);
 }

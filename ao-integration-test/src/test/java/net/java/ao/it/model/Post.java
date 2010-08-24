@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
-
-import java.sql.Connection;
+package net.java.ao.it.model;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
-	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+public interface Post extends Commentable
+{
+	public String getTitle();
+	public void setTitle(String title);
 }

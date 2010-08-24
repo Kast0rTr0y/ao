@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
+import net.java.ao.Preload;
+import net.java.ao.schema.Table;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
-	
-	public void setCloseable(boolean closeable);
-
-	public boolean isCloseable();
+@Table("personDefence")
+@Preload("severity")
+public interface PersonLegalDefence extends Entity {
+	public int getSeverity();
+	public void setSeverity(int severity);
 }

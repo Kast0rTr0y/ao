@@ -2,28 +2,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.java.dev.activeobjects</groupId>
+    <parent>
+        <groupId>net.java.dev.activeobjects</groupId>
+        <artifactId>activeobjects-parent</artifactId>
+        <version>0.9-SNAPSHOT</version>
+    </parent>
+
     <artifactId>activeobjects</artifactId>
-    <version>0.9-SNAPSHOT</version>
-
-    <name>ActiveObjects</name>
-    <inceptionYear>2007</inceptionYear>
-
-    <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk/ActiveObjects</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk/ActiveObjects</url>
-    </scm>
-
-    <issueManagement>
-        <system>BugZilla</system>
-        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
-    </issueManagement>
-
-    <ciManagement>
-        <system>Bamboo</system>
-        <url>http://opensource.bamboo.atlassian.com/browse/AO</url>
-    </ciManagement>
+    <name>Active Objects - The library</name>
 
     <build>
         <sourceDirectory>src</sourceDirectory>
@@ -51,87 +37,6 @@
                 </excludes>
             </testResource>
         </testResources>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>com.atlassian.maven.plugins</groupId>
-                    <artifactId>maven-repository-bundle-plugin</artifactId>
-                    <version>0.1</version>
-                    <configuration>
-                        <repositoryDirectory>${basedir}/repository</repositoryDirectory>
-                        <artifacts>
-                            <artifact>proxool:proxool:${proxool.version}</artifact>
-                            <artifact>proxool:proxool-cglib:${proxool.version}</artifact>
-                            <artifact>snaq.db.dbpool:dbpool:${dbpool.version}</artifact>
-                        </artifacts>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-eclipse-plugin</artifactId>
-                    <configuration>
-                        <downloadSources>true</downloadSources>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.0-beta-1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-maven</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <version>[2.1.0,)</version>
-                                </requireMavenVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.1</version>
-                <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.5</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-        <extensions>
-            <extension>
-                <groupId>org.jvnet.wagon-svn</groupId>
-                <artifactId>wagon-svn</artifactId>
-                <version>1.9</version>
-            </extension>
-        </extensions>
     </build>
 
     <dependencies>
@@ -208,6 +113,12 @@
             <version>1.8.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.4</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>log4j</groupId>
@@ -216,260 +127,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>hsqldb</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>hsqldb</groupId>
-                    <artifactId>hsqldb</artifactId>
-                    <version>${hsqldb.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <hsqldb.version>1.8.0.5</hsqldb.version>
-                <jdbc.url>jdbc:hsqldb:mem:ao_test</jdbc.url>
-                <jdbc.username>sa</jdbc.username>
-                <jdbc.password></jdbc.password>
-            </properties>
-        </profile>
-        <profile>
-            <id>mysql</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.4.3</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${build.directory}/sql</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>test-sql</directory>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sql-maven-plugin</artifactId>
-                        <version>1.4</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>mysql</groupId>
-                                <artifactId>mysql-connector-java</artifactId>
-                                <version>${mysql.version}</version>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                            <driver>com.mysql.jdbc.Driver</driver>
-                            <url>${jdbc.url}</url>
-                            <username>${db.admin}</username>
-                            <password>${db.password}</password>
-                            <autocommit>true</autocommit>
-                        </configuration>
-                        <executions>
-                            <!-- create a clean db -->
-                            <execution>
-                                <id>sql-prepapre-drop</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <url>jdbc:mysql://localhost:3306/mysql</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/mysql-drop.sql</srcFile>
-                                    </srcFiles>
-                                    <onError>continue</onError>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>sql-prepapre-create</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <url>jdbc:mysql://localhost:3306/mysql</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/mysql-create.sql</srcFile>
-                                    </srcFiles>
-                                </configuration>
-                            </execution>
-                            <!-- clean up the clean db -->
-                            <execution>
-                                <id>sql-clean</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>test</phase>
-                                <configuration>
-                                    <url>jdbc:mysql://localhost:3306/mysql</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/mysql-drop.sql</srcFile>
-                                    </srcFiles>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                    <version>${mysql.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <mysql.version>5.1.13</mysql.version>
-                <db.admin>root</db.admin>
-                <db.password></db.password>
-                <db.name>ao_test</db.name>
-                <jdbc.url>jdbc:mysql://localhost:3306/${db.name}?autoReconnect=true</jdbc.url>
-                <jdbc.username>ao_user</jdbc.username>
-                <jdbc.password>ao_pwd</jdbc.password>
-            </properties>
-        </profile>
-        <profile>
-            <id>postgres</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>2.4.3</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${build.directory}/sql</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>test-sql</directory>
-                                            <filtering>true</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sql-maven-plugin</artifactId>
-                        <version>1.4</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>postgresql</groupId>
-                                <artifactId>postgresql</artifactId>
-                                <version>${postgres.version}</version>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                            <driver>org.postgresql.Driver</driver>
-                            <url>${jdbc.url}</url>
-                            <username>${db.admin}</username>
-                            <password>${db.password}</password>
-                            <autocommit>true</autocommit>
-                        </configuration>
-                        <executions>
-                            <!-- create a clean db -->
-                            <execution>
-                                <id>sql-prepapre-drop</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <url>jdbc:postgresql://localhost:5432/postgres</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/postgres-drop.sql</srcFile>
-                                    </srcFiles>
-                                    <onError>continue</onError>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>sql-prepapre-create</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>process-test-resources</phase>
-                                <configuration>
-                                    <url>jdbc:postgresql://localhost:5432/postgres</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/postgres-create.sql</srcFile>
-                                    </srcFiles>
-                                </configuration>
-                            </execution>
-                            <!-- clean up the clean db -->
-                            <execution>
-                                <id>sql-clean</id>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <phase>test</phase>
-                                <configuration>
-                                    <url>jdbc:postgresql://localhost:5432/postgres</url>
-                                    <srcFiles>
-                                        <srcFile>${build.directory}/sql/postgres-drop.sql</srcFile>
-                                    </srcFiles>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-            <dependencies>
-                <dependency>
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgres.version}</version>
-                </dependency>
-            </dependencies>
-            <properties>
-                <postgres.version>8.4-701.jdbc3</postgres.version>
-                <db.admin>postgres</db.admin>
-                <db.password>postgres</db.password>
-                <db.name>ao_test</db.name>
-                <jdbc.url>jdbc:postgresql://localhost:5432/${db.name}</jdbc.url>
-                <jdbc.username>ao_user</jdbc.username>
-                <jdbc.password>ao_pwd</jdbc.password>
-            </properties>
-        </profile>
-    </profiles>
-
-    <properties>
-        <proxool.version>0.9.1</proxool.version>
-        <dbpool.version>4.9.3-jdbc3</dbpool.version>
-        <!-- the combintation of test paramaters to use when running tests -->
-        <test.parameters>1</test.parameters>
-    </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>java.net-maven2-repository</id>
-            <url>java-net:/maven2-repository/trunk/repository/</url>
-            <uniqueVersion>false</uniqueVersion>
-        </repository>
-    </distributionManagement>
 </project>
 

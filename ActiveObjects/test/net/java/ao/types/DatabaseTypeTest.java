@@ -15,16 +15,10 @@
  */
 package net.java.ao.types;
 
-import net.java.ao.DataTest;
 import org.junit.Test;
-import test.schema.Person;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -36,8 +30,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Daniel Spiewak
  */
-public class DatabaseTypeTest extends DataTest {
-
+public class DatabaseTypeTest
+{
 	@Test
 	public void testIsHandlerForInt() {
 		assertTrue(new IntegerType().isHandlerFor(Types.INTEGER));
@@ -52,135 +46,16 @@ public class DatabaseTypeTest extends DataTest {
 	public void testIsHandlerForClass() {
 		assertTrue(new IntegerType().isHandlerFor(int.class));
 		assertTrue(new IntegerType().isHandlerFor(Integer.class));
-		
+
 		assertTrue(new DoubleType().isHandlerFor(double.class));
 		assertTrue(new DoubleType().isHandlerFor(Double.class));
-		
+
 		assertTrue(new URLType().isHandlerFor(URL.class));
 		assertTrue(new VarcharType().isHandlerFor(String.class));
 		assertTrue(new TimestampType().isHandlerFor(Calendar.class));
-		
+
 		assertFalse(new GenericType(Types.ARRAY).isHandlerFor(Object.class));
 	}
-
-	@Test
-	public void testPutToDatabase() throws SQLException, MalformedURLException {
-		String personTableName = manager.getTableNameConverter().getName(Person.class);
-		personTableName = manager.getProvider().processID(personTableName);
-		
-		Connection conn = manager.getProvider().getConnection();
-		try {
-            final String firstName = "firstName";
-            final String age = "age";
-            final String url = "url";
-            final String favoriteClass = "favoriteClass";
-            final String id = "id";
-
-            PreparedStatement stmt = conn.prepareStatement("UPDATE " + personTableName + " SET " + processId(firstName) + " = ?, "
-                    + processId(age) + " = ?, "
-                    + processId(url) + " = ?, "
-                    + processId(favoriteClass) + " = ? "
-                    + "WHERE " + processId(id) + " = ?");
-			
-			int index = 1;
-			
-			new VarcharType().putToDatabase(manager, stmt, index++, "JoeJoe");
-			new IntegerType().putToDatabase(manager, stmt, index++, 123);
-			new URLType().putToDatabase(manager, stmt, index++, new URL("http://www.google.com"));
-			new ClassType().putToDatabase(manager, stmt, index++, getClass());
-			
-			stmt.setInt(index++, personID);
-			
-			stmt.executeUpdate();
-			stmt.close();
-			
-			stmt = conn.prepareStatement("SELECT " + processId(firstName) + ","
-                    + processId(age) + ","
-                    + processId(url) + ","
-                    + processId(favoriteClass)
-                    + " FROM " + personTableName
-                    + " WHERE " + processId(id) + " = ?");
-
-			stmt.setInt(1, personID);
-			
-			ResultSet res = stmt.executeQuery();
-			if (res.next()) {
-				assertEquals("JoeJoe", res.getString(firstName));
-				assertEquals(123, res.getInt(age));
-				assertEquals("http://www.google.com", res.getString(url));
-				assertEquals("net.java.ao.types.DatabaseTypeTest", res.getString(favoriteClass));
-			}
-			res.close();
-			stmt.close();
-		} finally {
-			conn.close();
-            reset();
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Test
-	public void testConvert() throws SQLException, MalformedURLException {
-		String personTableName = manager.getTableNameConverter().getName(Person.class);
-		personTableName = manager.getProvider().processID(personTableName);
-		
-		Connection conn = manager.getProvider().getConnection();
-		try {
-
-            final String firstName = "firstName";
-            final String age = "age";
-            final String url = "url";
-            final String favoriteClass = "favoriteClass";
-            final String id = "id";
-
-			PreparedStatement stmt = conn.prepareStatement("UPDATE " + personTableName + " SET " + processId(firstName) + " = ?, "
-                    + processId(age) + " = ?, "
-                    + processId(url) + " = ?, "
-                    + processId(favoriteClass) + " = ? "
-                    + "WHERE " + processId(id) + " = ?");
-	
-			int index = 1;
-			
-			stmt.setString(index++, "JoeJoe");
-			stmt.setInt(index++, 123);
-			stmt.setString(index++, "http://www.google.com");
-			stmt.setString(index++, "net.java.ao.types.DatabaseTypeTest");
-			
-			stmt.setInt(index++, personID);
-			
-			stmt.executeUpdate();
-			stmt.close();
-			
-			stmt = conn.prepareStatement("SELECT " + processId(firstName) + ","
-                    + processId(age) + ","
-                    + processId(url) + ","
-                    + processId(favoriteClass)
-                    + " FROM " + personTableName
-                    + " WHERE " + processId(id) + " = ?");
-            
-			stmt.setInt(1, personID);
-			
-			ResultSet res = stmt.executeQuery();
-			if (res.next()) {
-				assertEquals("JoeJoe", new VarcharType().pullFromDatabase(manager, res, String.class, "firstName"));
-				assertEquals(123, new IntegerType().pullFromDatabase(manager, res, int.class, "age").intValue());
-				assertEquals(new URL("http://www.google.com"), new URLType().pullFromDatabase(manager, res, URL.class, "url"));
-				assertEquals(getClass(), new ClassType().pullFromDatabase(manager, res, (Class) Class.class, "favoriteClass"));
-			}
-			res.close();
-			stmt.close();
-		} finally {
-			conn.close();
-            reset();
-        }
-	}
-
-    private void reset()
-    {
-        final Person person = manager.get(Person.class, personID);
-        person.setFirstName("Daniel");
-        person.save();
-    }
 
     @Test
 	public void testDefaultParseValue() throws MalformedURLException {
@@ -193,16 +68,16 @@ public class DatabaseTypeTest extends DataTest {
 		assertEquals(String.class, new ClassType().defaultParseValue("java.lang.String"));
 		assertEquals((short) 123, new TinyIntType().defaultParseValue("123").shortValue());
 		assertEquals('c', new CharType().defaultParseValue("c").charValue());
-		
+
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
+
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.MILLISECOND, 0);
-		
+
 		assertEquals(cal, new TimestampType().defaultParseValue(dateFormatter.format(cal.getTime())));
 		assertEquals(cal.getTime(), new TimestampDateType().defaultParseValue(dateFormatter.format(cal.getTime())));
 	}
-	
+
 	@Test
 	public void testValueToString() throws MalformedURLException {
 		assertEquals("123", new IntegerType().valueToString(123));
@@ -214,13 +89,13 @@ public class DatabaseTypeTest extends DataTest {
 		assertEquals("java.lang.String", new ClassType().valueToString(String.class));
 		assertEquals("123", new TinyIntType().valueToString(123));
 		assertEquals("c", new CharType().valueToString('c'));
-		
+
 
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		
+
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.MILLISECOND, 0);
-		
+
 		assertEquals(dateFormatter.format(cal.getTime()), new TimestampType().valueToString(cal));
 		assertEquals(dateFormatter.format(cal.getTime()), new TimestampDateType().valueToString(cal.getTime()));
 	}

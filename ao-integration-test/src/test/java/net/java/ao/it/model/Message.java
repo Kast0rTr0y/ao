@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Daniel Spiewak
+ * Copyright 2008 Daniel Spiewak
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.java.ao;
+package net.java.ao.it.model;
 
-import java.sql.Connection;
+import net.java.ao.Entity;
+import net.java.ao.schema.NotNull;
 
 /**
  * @author Daniel Spiewak
  */
-public interface DelegateConnection extends Connection {
+public interface Message extends Entity {
 	
-	public void setCloseable(boolean closeable);
+	@NotNull
+	public String getContents();
+	public void setContents(String contents);
 
-	public boolean isCloseable();
+	public Address getFrom();
+	public void setFrom(Address from);
+
+	public Address getTo();
+	public void setTo(Address to);
 }
