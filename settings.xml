@@ -59,17 +59,6 @@
                     </snapshots>
                 </repository>
                 <repository>
-                    <id>leberrigaud-repository</id>
-                    <url>http://leberrigaud-repository.googlecode.com/svn/releases/</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </snapshots>
-                </repository>
-                <repository>
                     <id>local</id>
                     <url>file://${basedir}/repository</url>
                     <releases>
@@ -85,6 +74,17 @@
                 <pluginRepository>
                     <id>sonatype-public</id>
                     <url>http://repository.sonatype.org/content/groups/public/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                        <updatePolicy>never</updatePolicy>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>leberrigaud-repository</id>
+                    <url>http://leberrigaud-repository.googlecode.com/svn/releases/</url>
                     <releases>
                         <enabled>true</enabled>
                     </releases>
