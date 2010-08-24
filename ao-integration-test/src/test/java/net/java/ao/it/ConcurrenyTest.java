@@ -98,7 +98,7 @@ public class ConcurrenyTest extends ActiveObjectsIntegrationTest
         }
         finally
         {
-            entityManager.delete(person, company);
+            entityManager.delete(company, person);
         }
     }
 
