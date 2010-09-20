@@ -4,7 +4,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>0.9-m8</version>
+    <version>0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
@@ -17,9 +17,9 @@
     </modules>
 
     <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/0.9-m8</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/0.9-m8</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/tags/0.9-m8</url>
+        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk</url>
     </scm>
 
     <issueManagement>
