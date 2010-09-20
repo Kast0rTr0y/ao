@@ -25,6 +25,7 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.DDLValue;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
@@ -245,6 +246,8 @@ public abstract class DatabaseProvider
             case DROP_INDEX:
                 back.add(renderDropIndex(action.getIndex()));
                 break;
+            case INSERT:
+                back.add(renderInsert(action.getTable(), action.getValues()));
         }
 
         return back.toArray(new String[back.size()]);
@@ -267,11 +270,11 @@ public abstract class DatabaseProvider
      * However, on SQL Server, this same Query would render as
      * <code>SELECT TOP 10 id FROM people</code></p>
      *
-     * @param query     The database-agnostic Query object to be rendered in a
-     *                  potentially database-specific way.
+     * @param query The database-agnostic Query object to be rendered in a
+     * potentially database-specific way.
      * @param converter Used to convert {@link Entity} classes into table names.
-     * @param count     If <code>true</code>, render the Query as a <code>SELECT COUNT(*)</code>
-     *                  rather than a standard field-data query.
+     * @param count If <code>true</code>, render the Query as a <code>SELECT COUNT(*)</code>
+     * rather than a standard field-data query.
      * @return A syntactically complete SQL statement potentially specific to the
      *         database.
      * @see #renderQuerySelect(Query, TableNameConverter, boolean)
@@ -306,10 +309,10 @@ public abstract class DatabaseProvider
      * confuses the purpose of this class.  Do not rely upon it heavily.  (better yet, don't rely on it
      * at all from external code.  It's not designed to be part of the public API)</p>
      *
-     * @param type  The JDBC integer type of the database field against which to parse the
-     *              value.
+     * @param type The JDBC integer type of the database field against which to parse the
+     * value.
      * @param value The database-agnostic String value to parse into a proper Java object
-     *              with respect to the specified SQL type.
+     * with respect to the specified SQL type.
      * @return A Java value which corresponds to the specified String.
      */
     public Object parseValue(int type, String value)
@@ -427,10 +430,10 @@ public abstract class DatabaseProvider
      * <p/>
      * <p>This method is only called on SELECTs.</p>
      *
-     * @param stmt  The instance against which the properties
-     *              should be set.
+     * @param stmt The instance against which the properties
+     * should be set.
      * @param query The query which is being executed against
-     *              the statement instance.
+     * the statement instance.
      */
     public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException
     {
@@ -443,9 +446,9 @@ public abstract class DatabaseProvider
      * databases that don't support it (such as Oracle, Derby,
      * etc).
      *
-     * @param res   The <code>ResultSet</code> to modify.
+     * @param res The <code>ResultSet</code> to modify.
      * @param query The query instance which was run to produce
-     *              the result set.
+     * the result set.
      */
     public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException
     {
@@ -466,7 +469,7 @@ public abstract class DatabaseProvider
      *
      * @param conn The connection to use in retrieving the database tables.
      * @return A result set of tables (and meta) corresponding in fields
-     * to the JDBC specification.
+     *         to the JDBC specification.
      * @see java.sql.DatabaseMetaData#getTables(String, String, String, String[])
      */
     public ResultSet getTables(Connection conn) throws SQLException
@@ -486,10 +489,10 @@ public abstract class DatabaseProvider
      * <p>There is usually no need to call this method directly.  Under normal
      * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
      *
-     * @param query     The Query instance from which to determine the SELECT properties.
+     * @param query The Query instance from which to determine the SELECT properties.
      * @param converter The name converter to allow conversion of the query entity
-     *                  interface into a proper table name.
-     * @param count     Whether or not the query should be rendered as a <code>SELECT COUNT(*)</code>.
+     * interface into a proper table name.
+     * @param count Whether or not the query should be rendered as a <code>SELECT COUNT(*)</code>.
      * @return The database-specific SQL rendering of the SELECT portion of the query.
      */
     protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count)
@@ -549,9 +552,9 @@ public abstract class DatabaseProvider
      * <p>There is usually no need to call this method directly.  Under normal
      * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
      *
-     * @param query     The Query instance from which to determine the JOIN properties.
+     * @param query The Query instance from which to determine the JOIN properties.
      * @param converter The name converter to allow conversion of the query entity
-     *                  interface into a proper table name.
+     * interface into a proper table name.
      * @return The database-specific SQL rendering of the JOIN portion of the query.
      */
     protected String renderQueryJoins(Query query, TableNameConverter converter)
@@ -793,7 +796,7 @@ public abstract class DatabaseProvider
      * the connection is created.
      *
      * @param conn The connection to modify according to the database
-     *             requirements.
+     * requirements.
      */
     protected void setPostConnectionProperties(Connection conn) throws SQLException
     {
@@ -806,9 +809,9 @@ public abstract class DatabaseProvider
      * actual rendering is done in a second delegate method.
      *
      * @param table The database-agnostic DDL representation of the table
-     *              in question.
+     * in question.
      * @return The String rendering of <i>all</i> of the foreign keys for
-     * the table.
+     *         the table.
      * @see #renderForeignKey(DDLForeignKey)
      */
     protected String renderConstraintsForTable(DDLTable table)
@@ -831,7 +834,7 @@ public abstract class DatabaseProvider
      *
      * @param key The database-agnostic foreign key representation.
      * @return The database-pecific DDL fragment corresponding to the
-     * foreign key in question.
+     *         foreign key in question.
      */
     protected String renderForeignKey(DDLForeignKey key)
     {
@@ -871,7 +874,7 @@ public abstract class DatabaseProvider
      *
      * @param table The database-agnostic table representation.
      * @return The database-specific DDL statements which correspond to the
-     * specified table creation.
+     *         specified table creation.
      */
     protected String renderTable(DDLTable table)
     {
@@ -919,6 +922,25 @@ public abstract class DatabaseProvider
         return back.toString();
     }
 
+    protected String renderInsert(DDLTable ddlTable, DDLValue[] ddlValues)
+    {
+        final StringBuilder columns = new StringBuilder();
+        final StringBuilder values = new StringBuilder();
+        for (DDLValue v : ddlValues)
+        {
+            columns.append(v.getField().getName()).append(",");
+            values.append(renderValue(v.getValue())).append(",");
+        }
+        columns.deleteCharAt(columns.length() - 1);
+        values.deleteCharAt(values.length() - 1);
+
+        return new StringBuilder()
+                .append("INSERT INTO ").append(ddlTable.getName())
+                .append("(").append(columns).append(")")
+                .append(" VALUES (").append(values).append(")")
+                .toString();
+    }
+
     /**
      * Generates the appropriate database-specific DDL statement to
      * drop the specified table representation.  The default implementation
@@ -929,7 +951,7 @@ public abstract class DatabaseProvider
      *
      * @param table The table representation which is to be dropped.
      * @return A database-specific DDL statement which drops the specified
-     * table.
+     *         table.
      */
     protected String renderDropTable(DDLTable table)
     {
@@ -947,9 +969,9 @@ public abstract class DatabaseProvider
      * the functions associated with the triggers themselves.
      *
      * @param table The table representation against which all functions which
-     *              correspond (directly or indirectly) must be dropped.
+     * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
-     * required functions.
+     *         required functions.
      */
     protected String[] renderDropFunctions(DDLTable table)
     {
@@ -970,9 +992,9 @@ public abstract class DatabaseProvider
      * not be dealt with in this method's implementation.
      *
      * @param table The table representation against which all triggers which
-     *              correspond (directly or indirectly) must be dropped.
+     * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
-     * required triggers.
+     *         required triggers.
      */
     protected String[] renderDropTriggers(DDLTable table)
     {
@@ -986,7 +1008,7 @@ public abstract class DatabaseProvider
      * method used for primary key management
      *
      * @param table The table representation against which all triggers which
-     *              correspond (directly or indirectly) must be dropped.
+     * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
      *         required triggers.
      */
@@ -1135,9 +1157,9 @@ public abstract class DatabaseProvider
      * {@link #renderAlterTableChangeColumnStatement(DDLTable, DDLField, DDLField)}
      * method.</p>
      *
-     * @param table    The table containing the column to change.
+     * @param table The table containing the column to change.
      * @param oldField The old column definition.
-     * @param field    The new column definition (defining the resultant DDL).
+     * @param field The new column definition (defining the resultant DDL).
      * @return An array of DDL statements to be executed.
      * @see #getTriggerNameForField(DDLTable, DDLField)
      * @see #getFunctionNameForField(DDLTable, DDLField)
@@ -1193,9 +1215,9 @@ public abstract class DatabaseProvider
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
-     * @param table    The table containing the column to change.
+     * @param table The table containing the column to change.
      * @param oldField The old column definition.
-     * @param field    The new column definition (defining the resultant DDL).
+     * @param field The new column definition (defining the resultant DDL).
      * @return A single DDL statement which is to be executed.
      * @see #renderField(DDLField)
      */
@@ -1261,8 +1283,8 @@ public abstract class DatabaseProvider
      * <code>null</code> value returned.
      *
      * @param key The foreign key to be added.  As this instance contains
-     *            all necessary data (such as domestic table, field, etc), no
-     *            additional parameters are required.
+     * all necessary data (such as domestic table, field, etc), no
+     * additional parameters are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      * @see #renderForeignKey(DDLForeignKey)
      */
@@ -1286,8 +1308,8 @@ public abstract class DatabaseProvider
      * method.
      *
      * @param key The foreign key to be removed.  As this instance contains
-     *            all necessary data (such as domestic table, field, etc), no
-     *            additional parameters are required.
+     * all necessary data (such as domestic table, field, etc), no
+     * additional parameters are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
     protected String renderAlterTableDropKey(DDLForeignKey key)
@@ -1303,8 +1325,8 @@ public abstract class DatabaseProvider
      * be printed to stderr and <code>null</code> returned.
      *
      * @param index The index to create.  This single instance contains all
-     *              of the data necessary to create the index, thus no separate
-     *              parameters (such as a <code>DDLTable</code>) are required.
+     * of the data necessary to create the index, thus no separate
+     * parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
     protected String renderCreateIndex(DDLIndex index)
@@ -1325,8 +1347,8 @@ public abstract class DatabaseProvider
      * be printed to stderr and <code>null</code> returned.
      *
      * @param index The index to drop.  This single instance contains all
-     *              of the data necessary to drop the index, thus no separate
-     *              parameters (such as a <code>DDLTable</code>) are required.
+     * of the data necessary to drop the index, thus no separate
+     * parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
     protected String renderDropIndex(DDLIndex index)
@@ -1482,7 +1504,7 @@ public abstract class DatabaseProvider
      *
      * @param value The Java instance to be rendered as a database literal.
      * @return The database-specific String rendering of the instance in
-     * question.
+     *         question.
      * @see #renderCalendar(Calendar)
      * @see #renderFunction(DatabaseFunction)
      */
@@ -1591,7 +1613,7 @@ public abstract class DatabaseProvider
      *
      * @param func The abstract function to be rendered.
      * @return The database-specific DDL representation of the function
-     * in question.
+     *         in question.
      */
     protected String renderFunction(DatabaseFunction func)
     {
@@ -1616,7 +1638,7 @@ public abstract class DatabaseProvider
      * an empty String and implement the functionality using triggers.
      *
      * @param field The field for which the ON UPDATE clause should
-     *              be rendered.
+     * be rendered.
      * @return The database-specific ON UPDATE field clause.
      */
     protected String renderOnUpdate(DDLField field)
@@ -1657,8 +1679,8 @@ public abstract class DatabaseProvider
      * release.</p>
      *
      * @param field The field for which precision should/shouldn't be rendered.
-     * @return    <code>true</code> if precision should be rendered, otherwise
-     * <code>false</code>.
+     * @return <code>true</code> if precision should be rendered, otherwise
+     *         <code>false</code>.
      */
     protected boolean considerPrecision(DDLField field)
     {
@@ -1674,11 +1696,11 @@ public abstract class DatabaseProvider
      * ON UPDATE).  The default implementation returns <code>null</code>.
      *
      * @param table The table which contains the field for which a trigger
-     *              may or may not exist.
+     * may or may not exist.
      * @param field The field for which a previous migration may have
-     *              created a trigger.
+     * created a trigger.
      * @return The unique name of the trigger which was created for the
-     * field, or <code>null</code> if none.
+     *         field, or <code>null</code> if none.
      * @see #renderTriggerForField(DDLTable, DDLField)
      */
     protected String getTriggerNameForField(DDLTable table, DDLField field)
@@ -1693,11 +1715,11 @@ public abstract class DatabaseProvider
      * UPDATE.  The default implementation returns <code>null</code>.
      *
      * @param table The table containing the field for which a trigger
-     *              may need to be rendered.
+     * may need to be rendered.
      * @param field The field for which the trigger should be rendered,
-     *              if any.
+     * if any.
      * @return A database-specific DDL statement creating a trigger for
-     * the field in question, or <code>null</code>.
+     *         the field in question, or <code>null</code>.
      * @see #getTriggerNameForField(DDLTable, DDLField)
      */
     protected String renderTriggerForField(DDLTable table, DDLField field)
@@ -1715,11 +1737,11 @@ public abstract class DatabaseProvider
      * implementation of this method, which returns <code>null</code>.
      *
      * @param table The table which contains the field for which a function
-     *              may or may not exist.
+     * may or may not exist.
      * @param field The field for which a previous migration may have
-     *              created a function.
+     * created a function.
      * @return The unique name of the function which was created for the
-     * field, or <code>null</code> if none.
+     *         field, or <code>null</code> if none.
      */
     protected String getFunctionNameForField(DDLTable table, DDLField field)
     {
@@ -1734,11 +1756,11 @@ public abstract class DatabaseProvider
      * default implementation returns <code>null</code>.
      *
      * @param table The table containing the field for which a function
-     *              may need to be rendered.
+     * may need to be rendered.
      * @param field The field for which the function should be rendered,
-     *              if any.
+     * if any.
      * @return A database-specific DDL statement creating a function for
-     * the field in question, or <code>null</code>.
+     *         the field in question, or <code>null</code>.
      * @see #getFunctionNameForField(DDLTable, DDLField)
      */
     protected String renderFunctionForField(DDLTable table, DDLField field)
@@ -1778,24 +1800,24 @@ public abstract class DatabaseProvider
      * prepare for the INSERTion (as in the case of MS SQL Server which requires
      * some config parameters to be set on the database itself prior to INSERT).</p>
      *
-     * @param manager    The <code>EntityManager</code> which was used to dispatch
-     *                   the INSERT in question.
-     * @param conn       The connection to be used in the eventual execution of the
-     *                   generated SQL statement.
-     * @param pkType     The Java type of the primary key value.  Can be used to
-     *                   perform a linear search for a specified primary key value in the
-     *                   <code>params</code> list.  The return value of the method must be of
-     *                   the same type.
-     * @param pkField    The database field which is the primary key for the
-     *                   table in question.  Can be used to perform a linear search for a
-     *                   specified primary key value in the <code>params</code> list.
+     * @param manager The <code>EntityManager</code> which was used to dispatch
+     * the INSERT in question.
+     * @param conn The connection to be used in the eventual execution of the
+     * generated SQL statement.
+     * @param pkType The Java type of the primary key value.  Can be used to
+     * perform a linear search for a specified primary key value in the
+     * <code>params</code> list.  The return value of the method must be of
+     * the same type.
+     * @param pkField The database field which is the primary key for the
+     * table in question.  Can be used to perform a linear search for a
+     * specified primary key value in the <code>params</code> list.
      * @param pkIdentity Flag indicating whether or not the primary key field
-     *                   is auto-incremented by the database (IDENTITY field).
-     * @param table      The name of the table into which the row is to be INSERTed.
-     * @param params     A varargs array of parameters to be passed to the
-     *                   INSERT statement.  This may include a specified value for the
-     *                   primary key.
-     * @throws SQLException    If the INSERT fails in the delegate method, or
+     * is auto-incremented by the database (IDENTITY field).
+     * @param table The name of the table into which the row is to be INSERTed.
+     * @param params A varargs array of parameters to be passed to the
+     * INSERT statement.  This may include a specified value for the
+     * primary key.
+     * @throws SQLException If the INSERT fails in the delegate method, or
      * if any additional statements fail with an exception.
      * @see #executeInsertReturningKey(EntityManager, Connection, Class, String, String, DBParam...)
      */
@@ -1881,18 +1903,18 @@ public abstract class DatabaseProvider
      * entity creation algorithm to fail at a higher level up the stack.</p>
      *
      * @param manager The <code>EntityManager</code> which was used to dispatch
-     *                the INSERT in question.
-     * @param conn    The database connection to use in executing the INSERT statement.
-     * @param pkType  The Java class type of the primary key field (for use both in
-     *                searching the <code>params</code> as well as performing value conversion
-     *                of auto-generated DB values into proper Java instances).
+     * the INSERT in question.
+     * @param conn The database connection to use in executing the INSERT statement.
+     * @param pkType The Java class type of the primary key field (for use both in
+     * searching the <code>params</code> as well as performing value conversion
+     * of auto-generated DB values into proper Java instances).
      * @param pkField The database field which is the primary key for the
-     *                table in question.  Can be used to perform a linear search for a
-     *                specified primary key value in the <code>params</code> list.
-     * @param params  A varargs array of parameters to be passed to the
-     *                INSERT statement.  This may include a specified value for the
-     *                primary key.
-     * @throws SQLException    If the INSERT fails in the delegate method, or
+     * table in question.  Can be used to perform a linear search for a
+     * specified primary key value in the <code>params</code> list.
+     * @param params A varargs array of parameters to be passed to the
+     * INSERT statement.  This may include a specified value for the
+     * primary key.
+     * @throws SQLException If the INSERT fails in the delegate method, or
      * if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
@@ -1953,7 +1975,7 @@ public abstract class DatabaseProvider
      * passing <code>null</code> as a value.  Databases which require a
      * different implementation (e.g. PostgreSQL) should override this method.
      *
-     * @param stmt  The statement in which to store the <code>NULL</code> value.
+     * @param stmt The statement in which to store the <code>NULL</code> value.
      * @param index The index of the parameter which should be assigned <code>NULL</code>.
      */
     public void putNull(PreparedStatement stmt, int index) throws SQLException
@@ -1969,7 +1991,7 @@ public abstract class DatabaseProvider
      * for such databases should override this method to store boolean values in
      * the relevant fashion.
      *
-     * @param stmt  The statement in which to store the <code>BOOLEAN</code> value.
+     * @param stmt The statement in which to store the <code>BOOLEAN</code> value.
      * @param index The index of the parameter which should be assigned.
      * @param value The value to be stored in the relevant field.
      */
@@ -1987,8 +2009,8 @@ public abstract class DatabaseProvider
      * should be suitable for every conceivable use-case.
      *
      * @param type The JDBC type which is to be tested.
-     * @return    <code>true</code> if the specified type represents a numeric
-     * type, otherwise <code>false</code>.
+     * @return <code>true</code> if the specified type represents a numeric
+     *         type, otherwise <code>false</code>.
      */
     protected boolean isNumericType(int type)
     {
@@ -2047,7 +2069,7 @@ public abstract class DatabaseProvider
      *
      * @param id The identifier to process.
      * @return A unique identifier corresponding with the input which is
-     * guarenteed to function within the underlying database.
+     *         guarenteed to function within the underlying database.
      * @see #getMaxIDLength()
      * @see #shouldQuoteID(String)
      */
@@ -2082,8 +2104,8 @@ public abstract class DatabaseProvider
      * method.
      *
      * @param id The identifier to check against the quoting rules.
-     * @return    <code>true</code> if the specified identifier is invalid under
-     * the relevant quoting rules, otherwise <code>false</code>.
+     * @return <code>true</code> if the specified identifier is invalid under
+     *         the relevant quoting rules, otherwise <code>false</code>.
      */
     protected boolean shouldQuoteID(String id)
     {
@@ -2112,7 +2134,7 @@ public abstract class DatabaseProvider
      * will suffer greatly.
      *
      * @return A set of <i>upper case</i> reserved words specific
-     * to the database.
+     *         to the database.
      */
     protected abstract Set<String> getReservedWords();
 
@@ -2124,7 +2146,7 @@ public abstract class DatabaseProvider
      * return <code>true</code> for better all-around compatibility.
      *
      * @return boolean <code>true</code> if identifiers are case-sensetive,
-     * <code>false</code> otherwise.
+     *         <code>false</code> otherwise.
      */
     public boolean isCaseSensetive()
     {

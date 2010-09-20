@@ -32,5 +32,6 @@ public enum DDLActionType {
 	ALTER_ADD_KEY,
 	ALTER_DROP_KEY,
 	CREATE_INDEX,
-	DROP_INDEX
+    DROP_INDEX,
+    INSERT
 }

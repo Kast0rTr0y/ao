@@ -157,7 +157,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         }
     }
 
-    private void updateDatabase()
+    private void updateDatabase() throws Exception
     {
         if (getTestClass().isAnnotationPresent(Data.class))
         {

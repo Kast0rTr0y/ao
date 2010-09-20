@@ -15,13 +15,15 @@
  */
 package net.java.ao.schema.ddl;
 
+import java.util.Arrays;
+
 /**
  * <p>Database-agnostic representation of any supported DDL action
  * (usually one or two statements).  The idea behind this class
  * is to allow ActiveObjects to internally represent actions to
  * be taken on a database schema without coupling to a
  * database-specific rendering of the action.</p>
- * 
+ *
  * <p>As this class is meant to be a generic container of different
  * action types, some fields may not be relevant to certain action
  * types, and thus these fields will contain <code>null</code>
@@ -29,17 +31,21 @@ package net.java.ao.schema.ddl;
  * action will return <code>null</code> for {@link #getIndex()}.
  * However, code should not depend on this behavior; instead testing
  * the action type and only retrieving relevant data.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 public class DDLAction {
 	private DDLActionType actionType;
-	
+
 	private DDLTable table;
 	private DDLField oldField, field;
 	private DDLForeignKey key;
 	private DDLIndex index;
-	
+    private DDLValue[] values;
+
+    private DDLAction()
+    {}
+
 	public DDLAction(DDLActionType actionType) {
 		this.actionType = actionType;
 	}
@@ -71,7 +77,7 @@ public class DDLAction {
 	public DDLActionType getActionType() {
 		return actionType;
 	}
-	
+
 
 	public DDLField getOldField() {
 		return oldField;
@@ -80,19 +86,29 @@ public class DDLAction {
 	public void setOldField(DDLField oldField) {
 		this.oldField = oldField;
 	}
-	
+
 	public DDLIndex getIndex() {
 		return index;
 	}
-	
+
 	public void setIndex(DDLIndex index) {
 		this.index = index;
 	}
-	
-	@Override
+
+    public DDLValue[] getValues()
+    {
+        return values;
+    }
+
+    public void setValues(DDLValue[] values)
+    {
+        this.values = values;
+    }
+
+    @Override
 	public int hashCode() {
 		int back = 0;
-		
+
 		if (actionType != null) {
 			back += actionType.hashCode();
 		}
@@ -111,11 +127,14 @@ public class DDLAction {
 		if (index != null) {
 			back += index.hashCode();
 		}
+        if (values != null) {
+            back += Arrays.hashCode(values);
+        }
 		back %= 2 << 15;
-		
+
 		return back;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof DDLAction) {
@@ -123,19 +142,20 @@ public class DDLAction {
 			if (action == this) {
 				return true;
 			}
-			
+
 			if ((action.getTable() == null || action.getTable().equals(table))
 					&& (action.getActionType() == actionType)
 					&& (action.getOldField() == null || action.getOldField().equals(oldField))
 					&& (action.getField() == null || action.getField().equals(field))
 					&& (action.getKey() == null || action.getKey().equals(key))
-					&& (action.getIndex() == null || action.getIndex().equals(index))) {
+					&& (action.getIndex() == null || action.getIndex().equals(index))
+                    && (action.getValues() == null || Arrays.equals(action.getValues(), values))) {
 				return true;
 			}
-			
+
 			return false;
 		}
-		
+
 		return super.equals(obj);
 	}
 }
