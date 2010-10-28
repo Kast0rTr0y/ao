@@ -3,30 +3,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- in order to deploy to central via Sonatype, we inherit their POM -->
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>5</version>
+    </parent>
+
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
     <version>0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
+    <description>ActiveObjects is an intuitive, pure-Java ORM. AO is designed from the ground up to be extremely simple and easy to use from an API standpoint.</description>
+    <url>https://activeobjects.dev.java.net/</url>
     <inceptionYear>2007</inceptionYear>
-
-    <modules>
-        <module>ActiveObjects</module>
-        <module>ao-test</module>
-        <module>ao-integration-test</module>
-    </modules>
-
-    <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk</url>
-    </scm>
-
-    <issueManagement>
-        <system>BugZilla</system>
-        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
-    </issueManagement>
 
     <licenses>
         <license>
@@ -35,15 +27,47 @@
             <distribution>repo</distribution>
             <comments>A business-friendly OSS license</comments>
         </license>
-    </licenses>
-    
-    <distributionManagement>
-        <repository>
-            <id>java.net-maven2-repository</id>
-            <url>java-net:/maven2-repository/trunk/repository/</url>
-            <uniqueVersion>false</uniqueVersion>
-        </repository>
-    </distributionManagement>
+    </licenses>    
+
+    <scm>
+        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>djspiewak</id>
+            <name>Daniel Spiewak</name>
+            <roles>
+                <role>Creator</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>sleberrig</id>
+            <name>Samuel Le Berrigaud</name>
+            <email>sam(at)leberrigaud(dot)org</email>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <id>mrdon</id>
+            <name>Don Brown</name>
+            <timezone>+10</timezone>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>BugZilla</system>
+        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
+    </issueManagement>
+
+    <modules>
+        <module>activeobjects-core</module>
+        <module>activeobjects-test</module>
+        <module>activeobjects-integration-test</module>
+        <module>activeobjects-ant-task</module>
+        <module>activeobjects</module>
+    </modules>
 
     <build>
         <pluginManagement>
@@ -75,27 +99,7 @@
                 <plugin>
                     <groupId>org.leberrigaud.maven.plugins</groupId>
                     <artifactId>database-maven-plugin</artifactId>
-                    <version>0.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>com.atlassian.maven.plugins</groupId>
-                    <artifactId>maven-repository-bundle-plugin</artifactId>
-                    <version>0.1</version>
-                    <configuration>
-                        <repositoryDirectory>${basedir}/repository</repositoryDirectory>
-                        <artifacts>
-                            <artifact>proxool:proxool:${proxool.version}</artifact>
-                            <artifact>proxool:proxool-cglib:${proxool.version}</artifact>
-                            <artifact>snaq.db.dbpool:dbpool:${dbpool.version}</artifact>
-                        </artifacts>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-eclipse-plugin</artifactId>
-                    <configuration>
-                        <downloadSources>true</downloadSources>
-                    </configuration>
+                    <version>0.3</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -124,30 +128,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
-        <extensions>
-            <extension>
-                <groupId>org.jvnet.wagon-svn</groupId>
-                <artifactId>wagon-svn</artifactId>
-                <version>1.9</version>
-            </extension>
-        </extensions>
     </build>
-    <properties>
-        <proxool.version>0.9.1</proxool.version>
-        <dbpool.version>4.9.3-jdbc3</dbpool.version>
-    </properties>
 </project>
