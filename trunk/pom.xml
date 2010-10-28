@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- in order to deploy to central via Sonatype, we inherit their POM -->
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>5</version>
+    </parent>
+
+    <groupId>net.java.dev.activeobjects</groupId>
+    <artifactId>activeobjects-parent</artifactId>
+    <version>0.9-m8</version>
+    <packaging>pom</packaging>
+
+    <name>Active Objects - Parent POM</name>
+    <description>ActiveObjects is an intuitive, pure-Java ORM. AO is designed from the ground up to be extremely simple and easy to use from an API standpoint.</description>
+    <url>https://activeobjects.dev.java.net/</url>
+    <inceptionYear>2007</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>    
+
+    <scm>
+        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/0.9-m8</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/0.9-m8</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/tags/0.9-m8</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>djspiewak</id>
+            <name>Daniel Spiewak</name>
+            <roles>
+                <role>Creator</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>sleberrig</id>
+            <name>Samuel Le Berrigaud</name>
+            <email>sam(at)leberrigaud(dot)org</email>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <id>mrdon</id>
+            <name>Don Brown</name>
+            <timezone>+10</timezone>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>BugZilla</system>
+        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
+    </issueManagement>
+
+    <modules>
+        <module>activeobjects-core</module>
+        <module>activeobjects-test</module>
+        <module>activeobjects-integration-test</module>
+        <module>activeobjects-ant-task</module>
+        <module>activeobjects</module>
+    </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>2.1</version>
+                    <configuration>
+                        <source>1.5</source>
+                        <target>1.5</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>2.1.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>1.0-beta-1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.leberrigaud.maven.plugins</groupId>
+                    <artifactId>database-maven-plugin</artifactId>
+                    <version>0.3</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <message>You must use maven 2.2.1 or above to build Active Objects</message>
+                                    <version>[2.2.1,)</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <message>You must use JDK 1.5 to build Active Objects. This is because of differences in the JDBC APIs between JDK 1.5 and JDK 1.6</message>
+                                    <version>[1.5,1.6)</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
