@@ -449,9 +449,6 @@ public final class SchemaReader
 
         performSort(actions, deps, roots);
 
-        System.out.println("##" + roots);
-        System.out.println("%%"+ deps);
-
         while (!roots.isEmpty())
         {
             DDLAction[] rootsArray = roots.toArray(new DDLAction[roots.size()]);
@@ -558,8 +555,6 @@ public final class SchemaReader
 
         roots.addAll(dropKeys);
         roots.addAll(dropIndexes);
-
-        System.out.println("^^" + roots);
 
         for (DDLAction action : dropColumns)
         {
