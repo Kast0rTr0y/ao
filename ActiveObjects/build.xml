@@ -530,8 +530,8 @@ ActiveObjects ${activeobjects.version}
 		<copy todir="${dist.path}">
 			<fileset dir="${activeobjects.dir}">
 				<include name="BUGS"/>
-				<include name="CONTRIBUTORS"/>
-				<include name="LICENSE"/>
+				<include name="CONTRIBUTORS.txt"/>
+				<include name="LICENSE.txt"/>
 			</fileset>
 		</copy>
 		

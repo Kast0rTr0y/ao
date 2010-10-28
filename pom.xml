@@ -28,6 +28,15 @@
         <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
     </issueManagement>
 
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+    
     <distributionManagement>
         <repository>
             <id>java.net-maven2-repository</id>

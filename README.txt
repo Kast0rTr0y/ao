@@ -1,6 +1,6 @@
 The active objects project uses maven for its build. To build:
 
-1. Install maven:
+1. Install maven (2.2.1 or above):
 - you can find all about maven at http://maven.apache.org/
 - install instructions are at http://maven.apache.org/download.html#Installation
 
