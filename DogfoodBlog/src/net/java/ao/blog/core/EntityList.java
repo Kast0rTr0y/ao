@@ -46,7 +46,7 @@ public abstract class EntityList<T extends Entity> extends AbstractList<T> imple
 	}
 
 	public T get(int index) {
-		return getEntityManager().get(type, delegate.get(index));		// TODO	implement
+		return getEntityManager().get(type, delegate.get(index));
 	}
 
 	public int hashCode() {
@@ -62,7 +62,7 @@ public abstract class EntityList<T extends Entity> extends AbstractList<T> imple
 	}
 
 	public T remove(int index) {
-		return getEntityManager().get(type, delegate.remove(index));		// TODO	implement
+		return getEntityManager().get(type, delegate.remove(index));
 	}
 
 	public boolean remove(Object o) {

@@ -165,7 +165,7 @@ public abstract class DatabaseProvider
      * @see #renderAlterTableAddKey(DDLForeignKey)
      * @see #renderAlterTableDropKey(DDLForeignKey)
      */
-    public String[] renderAction(DDLAction action)
+    public final String[] renderAction(DDLAction action)
     {
         List<String> back = new ArrayList<String>();
 
@@ -894,6 +894,7 @@ public abstract class DatabaseProvider
             }
         }
 
+        // TODO commented out contraints
         append.append(renderConstraintsForTable(table));
 
         back.append(append);

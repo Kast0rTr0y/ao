@@ -8,6 +8,7 @@ import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.DDLValue;
 import net.java.ao.schema.ddl.SchemaReader;
@@ -21,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Lists.*;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 public class BackupRestoreImpl implements BackupRestore
@@ -30,17 +31,20 @@ public class BackupRestoreImpl implements BackupRestore
     {
         try
         {
-            final DDLTable[] tables = SchemaReader.readSchema(provider, schemaConfiguration);
+            final DDLTable[] tablesWithForeignKeys = SchemaReader.readSchema(provider, schemaConfiguration, true);
+            final DDLTable[] tablesWithoutForeignKeys = SchemaReader.readSchema(provider, schemaConfiguration, false);
 
             final List<DDLAction> allActions = Lists.newLinkedList();
 
             // adding drop for all tables
-            allActions.addAll(getDropActions(tables));
+            allActions.addAll(getDropActions(provider, tablesWithForeignKeys));
 
             // schema creation
-            allActions.addAll(getSchemaActions(provider, tables));
+            allActions.addAll(getSchemaActions(provider, tablesWithoutForeignKeys));
 
-            allActions.addAll(getDataActions(provider, tables));
+            allActions.addAll(getDataActions(provider, tablesWithoutForeignKeys));
+
+            allActions.addAll(getForeignKeysActions(tablesWithForeignKeys));
 
             return allActions;
         }
@@ -48,6 +52,21 @@ public class BackupRestoreImpl implements BackupRestore
         {
             throw new ActiveObjectSqlException(e);
         }
+    }
+
+    private List<? extends DDLAction> getForeignKeysActions(DDLTable[] tablesWithForeignKeys)
+    {
+        final List<DDLAction> foreignKeyActions = newLinkedList();
+        for (DDLTable table : tablesWithForeignKeys)
+        {
+            for (DDLForeignKey ddlForeignKey : table.getForeignKeys())
+            {
+                final DDLAction a = new DDLAction(DDLActionType.ALTER_ADD_KEY);
+                a.setKey(ddlForeignKey);
+                foreignKeyActions.add(a);
+            }
+        }
+        return foreignKeyActions;
     }
 
     private List<? extends DDLAction> getDataActions(DatabaseProvider provider, DDLTable[] tables) throws SQLException
@@ -91,16 +110,9 @@ public class BackupRestoreImpl implements BackupRestore
         return data;
     }
 
-    private List<DDLAction> getDropActions(DDLTable[] tables)
+    private List<DDLAction> getDropActions(DatabaseProvider provider, DDLTable[] tables)
     {
-        final List<DDLAction> allActions = Lists.newLinkedList();
-        for (DDLTable table : tables)
-        {
-            DDLAction a = new DDLAction(DDLActionType.DROP);
-            a.setTable(table);
-            allActions.add(a);
-        }
-        return allActions;
+        return Arrays.asList(SchemaReader.sortTopologically(SchemaReader.diffSchema(new DDLTable[]{}, tables, provider.isCaseSensetive())));
     }
 
     private List<DDLAction> getSchemaActions(DatabaseProvider provider, DDLTable[] tables)
@@ -145,7 +157,9 @@ public class BackupRestoreImpl implements BackupRestore
     private boolean ignoreExceptionForAction(DDLAction action)
     {
         return action.getActionType().equals(DDLActionType.DROP)
-                || action.getActionType().equals(DDLActionType.DROP_INDEX);
+                || action.getActionType().equals(DDLActionType.DROP_INDEX)
+                || action.getActionType().equals(DDLActionType.ALTER_DROP_KEY)
+                || action.getActionType().equals(DDLActionType.ALTER_DROP_COLUMN);
     }
 
     private static void executeSql(Statement stmt, String sql, boolean ignoreException)

@@ -3,9 +3,13 @@ package net.java.ao.schema;
 import com.google.common.collect.ImmutableList;
 import net.java.ao.EntityManager;
 import net.java.ao.it.model.backup.Animal;
+import net.java.ao.it.model.backup.AnimalClass;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 
+import java.util.Collection;
 import java.util.List;
+
+import static com.google.common.collect.Lists.newLinkedList;
 
 /**
  *
@@ -18,45 +22,88 @@ public class BackupRestoreDatabaseUpdater implements DatabaseUpdater
         entityManager.migrate();
 
         // creating the schema
-        entityManager.migrate(Animal.class);
+        entityManager.migrate(Animal.class, AnimalClass.class);
 
-        addAnimals(entityManager);
+
+        final AnimalClass mammals = addClass(entityManager, "Mammals");
+        addAnimal(entityManager, "Horse", mammals);
+        addAnimal(entityManager, "Whale", mammals);
+
+        final AnimalClass birds = addClass(entityManager, "Birds");
+        addAnimal(entityManager, "Pelican", birds);
     }
 
-    private void addAnimals(EntityManager entityManager) throws Exception
+    private AnimalClass addClass(EntityManager entityManager, String className) throws Exception
     {
-        for (AnimalData animalData : AnimalData.ALL)
-        {
-            addAnimal(entityManager, animalData);
-        }
+        final AnimalClass animalClass = entityManager.create(AnimalClass.class);
+        animalClass.setName(className);
+        animalClass.save();
+
+        AnimalClassData.add(className);
+
+        return animalClass;
     }
 
-    private void addAnimal(EntityManager entityManager, AnimalData animalData) throws Exception
+    private Animal addAnimal(EntityManager entityManager, String name, AnimalClass animalClass) throws Exception
     {
         final Animal animal = entityManager.create(Animal.class);
-        animal.setName(animalData.name);
+        animal.setName(name);
+        animal.setAnimalClass(animalClass);
         animal.save();
+
+        AnimalData.add(name, animalClass.getID());
+
+        return animal;
+    }
+
+    static final class AnimalClassData
+    {
+        private static final Collection<AnimalClassData> ALL = newLinkedList();
+        public final String name;
+
+        public AnimalClassData(String name)
+        {
+            this.name = name;
+        }
+
+        public static List<AnimalClassData> all()
+        {
+            return ImmutableList.copyOf(ALL);
+        }
+
+        static void add(String name)
+        {
+            ALL.add(new AnimalClassData(name));
+        }
     }
 
     static final class AnimalData
     {
+        private static final Collection<AnimalData> ALL = newLinkedList();
+
         public final String name;
+        public final int classId;
 
-        public static final List<AnimalData> ALL = ImmutableList.<AnimalData>builder()
-                .add(new AnimalData("Horse"))
-                .add(new AnimalData("Pelican"))
-                .add(new AnimalData("Whale"))
-                .build();
-
-        private AnimalData(String name)
+        private AnimalData(String name, int classId)
         {
             this.name = name;
+            this.classId = classId;
         }
 
         @Override
         public String toString()
         {
             return "Animal : " + name;
+        }
+
+        public static List<AnimalData> all()
+        {
+            return ImmutableList.copyOf(ALL);
+        }
+
+        static void add(String name, int classId)
+        {
+            ALL.add(new AnimalData(name, classId));
         }
     }
 }

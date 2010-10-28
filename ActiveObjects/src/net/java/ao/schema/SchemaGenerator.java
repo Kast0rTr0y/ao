@@ -53,8 +53,8 @@ public final class SchemaGenerator {
 			for (String statement : statements) {
 				if (!statement.trim().equals("")) {
                     provider.getEventManager().publish(new SqlEvent(statement));
-					stmt.executeUpdate(statement);
-				}
+                    executeUpdate(stmt, statement);
+                }
 			}
 			
 			stmt.close();
@@ -62,8 +62,20 @@ public final class SchemaGenerator {
 			conn.close();
 		}
 	}
-	
-	private static String[] generateImpl(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+
+    private static void executeUpdate(Statement stmt, String sql) throws SQLException
+    {
+        try
+        {
+            stmt.executeUpdate(sql);
+        }
+        catch (SQLException e)
+        {
+            throw e;
+        }
+    }
+
+    private static String[] generateImpl(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
                                          ClassLoader classloader, Class<? extends RawEntity<?>>... classes) throws ClassNotFoundException, SQLException {
 		List<String> back = new ArrayList<String>();
 		
