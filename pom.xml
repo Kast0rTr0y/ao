@@ -64,6 +64,7 @@
         <module>activeobjects-core</module>
         <module>activeobjects-test</module>
         <module>activeobjects-integration-test</module>
+        <module>activeobjects-integration-test-model</module>
         <module>activeobjects-ant-task</module>
         <module>activeobjects</module>
     </modules>
