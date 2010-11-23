@@ -3,7 +3,6 @@ package net.java.ao.schema.helper;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.SchemaConfiguration;
-import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -12,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 
@@ -131,7 +131,14 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private int getFieldPrecision(ResultSetMetaData resultSetMetaData, int fieldIndex) throws SQLException
     {
-        final int precision = resultSetMetaData.getPrecision(fieldIndex);
+        int precision = resultSetMetaData.getPrecision(fieldIndex);
+
+        // HSQL reports this for VARCHAR
+        if (precision == Integer.MAX_VALUE && Types.VARCHAR == resultSetMetaData.getColumnType(fieldIndex))
+        {
+            precision = resultSetMetaData.getColumnDisplaySize(fieldIndex);
+        }
+
         return precision <= 0 ? -1 : precision;
     }
 
