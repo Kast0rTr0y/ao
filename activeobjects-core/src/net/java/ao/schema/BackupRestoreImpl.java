@@ -23,6 +23,7 @@ import java.util.List;
 
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Lists.*;
+import static net.java.ao.schema.ddl.DDLActions.*;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 public class BackupRestoreImpl implements BackupRestore
@@ -59,11 +60,9 @@ public class BackupRestoreImpl implements BackupRestore
         final List<DDLAction> foreignKeyActions = newLinkedList();
         for (DDLTable table : tablesWithForeignKeys)
         {
-            for (DDLForeignKey ddlForeignKey : table.getForeignKeys())
+            for (DDLForeignKey key : table.getForeignKeys())
             {
-                final DDLAction a = new DDLAction(DDLActionType.ALTER_ADD_KEY);
-                a.setKey(ddlForeignKey);
-                foreignKeyActions.add(a);
+                foreignKeyActions.add(newAlterAddKey(key));
             }
         }
         return foreignKeyActions;
@@ -84,8 +83,6 @@ public class BackupRestoreImpl implements BackupRestore
                 resultSet = stmt.executeQuery("select * from " + table.getName());
                 while (resultSet.next())
                 {
-                    final DDLAction ddlAction = new DDLAction(DDLActionType.INSERT);
-                    ddlAction.setTable(table);
 
                     List<DDLValue> values = Lists.newArrayList();
                     for (DDLField field : table.getFields())
@@ -96,8 +93,7 @@ public class BackupRestoreImpl implements BackupRestore
                         values.add(val);
                     }
 
-                    ddlAction.setValues(values.toArray(new DDLValue[values.size()]));
-                    data.add(ddlAction);
+                    data.add(newInsert(table, values.toArray(new DDLValue[values.size()])));
                 }
             }
             finally
