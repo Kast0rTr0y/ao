@@ -4,9 +4,9 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.it.config.DynamicJdbcConfiguration;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Hsql;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.Before;
@@ -19,7 +19,7 @@ import java.util.List;
 import static net.java.ao.sql.SqlUtils.*;
 import static org.junit.Assert.*;
 
-@Jdbc(Hsql.class)
+@Jdbc(DynamicJdbcConfiguration.class)
 @Data
 @RunWith(ActiveObjectsJUnitRunner.class)
 public abstract class AbstractBackupRestoreTest

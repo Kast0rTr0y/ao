@@ -1,5 +1,6 @@
 package net.java.ao.it.config;
 
+import net.java.ao.test.jdbc.AbstractJdbcConfiguration;
 import net.java.ao.test.jdbc.Hsql;
 import net.java.ao.test.jdbc.JdbcConfiguration;
 import net.java.ao.test.jdbc.MySql;
@@ -11,7 +12,7 @@ import java.util.Map;
 /**
  *
  */
-public final class DynamicJdbcConfiguration implements JdbcConfiguration
+public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 {
     private static final Map<String, JdbcConfiguration> AVAILABLE = new HashMap<String, JdbcConfiguration>()
     {{

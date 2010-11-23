@@ -23,8 +23,8 @@ import java.util.Map;
  */
 public class ActiveObjectTransactionMethodRule implements MethodRule
 {
-    private static final Map<Class<? extends JdbcConfiguration>, Class<? extends DatabaseUpdater>> DATABASES =
-            new HashMap<Class<? extends JdbcConfiguration>, Class<? extends DatabaseUpdater>>();
+    private static final Map<JdbcConfiguration, Class<? extends DatabaseUpdater>> DATABASES =
+            new HashMap<JdbcConfiguration, Class<? extends DatabaseUpdater>>();
 
     private final Object test;
     private final JdbcConfiguration jdbc;
@@ -173,14 +173,14 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         if (getTestClass().isAnnotationPresent(Data.class))
         {
             final Class<? extends DatabaseUpdater> databaseUpdater = getTestClass().getAnnotation(Data.class).value();
-            if (DATABASES.get(jdbc.getClass()) == null
-                    || !DATABASES.get(jdbc.getClass()).equals(databaseUpdater))
+            if (!DATABASES.containsKey(jdbc)
+                    || !DATABASES.get(jdbc).equals(databaseUpdater))
             {
                 System.out.println("### Updating: " + jdbc + " with " + databaseUpdater);
 
                 entityManager.migrate(); // empty the database
                 newInstance(databaseUpdater).update(entityManager);
-                DATABASES.put(jdbc.getClass(), databaseUpdater);
+                DATABASES.put(jdbc, databaseUpdater);
             }
         }
     }
