@@ -27,4 +27,38 @@ public class DDLValue
     {
         this.field = field;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        final DDLValue ddlValue = (DDLValue) o;
+
+        if (field != null ? !field.equals(ddlValue.field) : ddlValue.field != null)
+        {
+            return false;
+        }
+        if (value != null ? !value.equals(ddlValue.value) : ddlValue.value != null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = field != null ? field.hashCode() : 0;
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
 }

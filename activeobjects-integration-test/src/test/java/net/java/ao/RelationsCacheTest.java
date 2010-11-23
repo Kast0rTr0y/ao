@@ -28,8 +28,7 @@ import org.junit.Test;
 
 import java.util.concurrent.Callable;
 
-import static net.java.ao.it.Database.PersonData;
-import static net.java.ao.it.Database.PersonSuitData;
+import static net.java.ao.it.DatabaseProcessor.*;
 
 /**
  * @author Daniel Spiewak

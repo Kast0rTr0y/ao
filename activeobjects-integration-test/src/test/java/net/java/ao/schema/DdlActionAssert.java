@@ -1,8 +1,17 @@
 package net.java.ao.schema;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLValue;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -12,21 +21,74 @@ public final class DdlActionAssert
     {
     }
 
-    public static void assertIsDropTable(String expectedTableName, DDLAction action, boolean caseSensitive)
+    public static void assertIsDropTables(Iterator<DDLAction> actions, boolean caseSensitive, String... expectedTableNames)
+    {
+        final Collection<String> names = Lists.newArrayList(expectedTableNames);
+        while (!names.isEmpty())
+        {
+            assertIsDropTable(actions.next(), caseSensitive, names);
+        }
+    }
+
+    public static void assertIsCreateTables(Iterator<DDLAction> actions, boolean caseSensitive, String... expectedTableNames)
+    {
+        final Collection<String> names = Lists.newArrayList(expectedTableNames);
+        while (!names.isEmpty())
+        {
+            assertIsCreateTable(actions.next(), caseSensitive, names);
+        }
+    }
+
+    private static void assertIsDropTable(final DDLAction action, final boolean caseSensitive, Collection<String> names)
     {
         assertEquals(DDLActionType.DROP, action.getActionType());
-        assertTableNameEquals(expectedTableName, action, caseSensitive);
+        find(action.getTable().getName(), names, caseSensitive);
     }
 
-    public static void assertIsCreateTable(String expectedTableName, DDLAction action, boolean caseSensitive)
+    private static void assertIsCreateTable(final DDLAction action, final boolean caseSensitive, Collection<String> names)
     {
         assertEquals(DDLActionType.CREATE, action.getActionType());
-        assertTableNameEquals(expectedTableName, action, caseSensitive);
+        find(action.getTable().getName(), names, caseSensitive);
     }
 
-    private static void assertTableNameEquals(String expectedTableName, DDLAction action, boolean caseSensitive)
+    private static void find(String name, Collection<String> names, boolean caseSensitive)
     {
-        assertEqualsAccordingToCaseSensitivity(expectedTableName, tableName(action), caseSensitive);
+        final String expectedTableName = Iterables.find(names, new StringEqualsPredicate(name, caseSensitive));
+        assertNotNull(expectedTableName);
+        names.remove(expectedTableName);
+    }
+
+    public static void assertIsDropForeignKey(DDLAction action, String fromTable, String toTable, boolean caseSensitive)
+    {
+        assertEquals(DDLActionType.ALTER_DROP_KEY, action.getActionType());
+        assertEqualsAccordingToCaseSensitivity(fromTable, action.getKey().getDomesticTable(), caseSensitive);
+        assertEqualsAccordingToCaseSensitivity(toTable, action.getKey().getTable(), caseSensitive);
+    }
+
+    public static void assertIsCreateForeignKey(DDLAction action, String fromTable, String toTable, boolean caseSensitive)
+    {
+        assertEquals(DDLActionType.ALTER_ADD_KEY, action.getActionType());
+        assertEqualsAccordingToCaseSensitivity(fromTable, action.getKey().getDomesticTable(), caseSensitive);
+        assertEqualsAccordingToCaseSensitivity(toTable, action.getKey().getTable(), caseSensitive);
+    }
+
+    public static void assertIsInsert(DDLAction action, boolean caseSensitive, String tableName, Map<String, Object> values)
+    {
+        assertEquals(DDLActionType.INSERT, action.getActionType());
+        assertEqualsAccordingToCaseSensitivity(tableName, action.getTable().getName(), caseSensitive);
+
+        final Map<String, Object> copy = Maps.newHashMap(values);
+        for (DDLValue value : action.getValues())
+        {
+            final String fieldName = value.getField().getName();
+            final Map<String, Object> filtered = Maps.filterKeys(copy, new StringEqualsPredicate(fieldName, caseSensitive));
+            assertEquals("There should be one and only one entry for key " + fieldName, 1, filtered.size());
+            Map.Entry<String, Object> entry = filtered.entrySet().iterator().next();
+            assertEquals("Wrong value for field " + fieldName, entry.getValue(), value.getValue());
+
+            copy.remove(entry.getKey());
+        }
+        assertTrue("Not all expected values were defined", copy.isEmpty());
     }
 
     public static void assertFieldEquals(String expectedName, int expectedType, int expectedPrecision, DDLField field, boolean caseSensitive)
@@ -34,6 +96,31 @@ public final class DdlActionAssert
         assertEqualsAccordingToCaseSensitivity(expectedName, fieldName(field), caseSensitive);
         assertEquals(expectedType, field.getType().getType());
         assertEquals(expectedPrecision, field.getPrecision());
+    }
+
+    public static void assertActionsEquals(Iterable<DDLAction> expected, Iterable<DDLAction> actual)
+    {
+        assertActionsEquals(expected.iterator(), actual.iterator());
+    }
+
+    private static void assertActionsEquals(Iterator<DDLAction> expected, Iterator<DDLAction> actual)
+    {
+        int index = 0;
+        while (expected.hasNext() || actual.hasNext())
+        {
+            if (!expected.hasNext())
+            {
+                fail("Actual collections of action has more elements than expected, current index is " + index);
+            }
+            if (!actual.hasNext())
+            {
+                fail("Expected more actions than actually available, current index is " + index);
+            }
+            final DDLAction expectedAction = expected.next();
+            final DDLAction actualAction = actual.next();
+            assertEquals("Actions at index " + index + " do not match!", expectedAction, actualAction);
+            index++;
+        }
     }
 
     private static String fieldName(DDLField field)
@@ -57,6 +144,30 @@ public final class DdlActionAssert
         {
             assertTrue("Expected <" + expected + "> equals <" + actual + "> respecting the case.",
                     expected.equals(actual));
+        }
+    }
+
+    private static class StringEqualsPredicate implements Predicate<String>
+    {
+        private final String string;
+        private final boolean caseSensitive;
+
+        public StringEqualsPredicate(String string, boolean caseSensitive)
+        {
+            this.string = string;
+            this.caseSensitive = caseSensitive;
+        }
+
+        public boolean apply(String name)
+        {
+            if (caseSensitive)
+            {
+                return string.equals(name);
+            }
+            else
+            {
+                return string.equalsIgnoreCase(name);
+            }
         }
     }
 }

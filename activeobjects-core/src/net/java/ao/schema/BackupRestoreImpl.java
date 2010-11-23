@@ -80,7 +80,7 @@ public class BackupRestoreImpl implements BackupRestore
             {
                 conn = provider.getConnection();
                 stmt = conn.createStatement();
-                resultSet = stmt.executeQuery("select * from " + table.getName());
+                resultSet = stmt.executeQuery("select * from " + provider.processID(table.getName()));
                 while (resultSet.next())
                 {
 
@@ -169,10 +169,6 @@ public class BackupRestoreImpl implements BackupRestore
             if (!ignoreException)
             {
                 throw new ActiveObjectSqlException(e);
-            }
-            else
-            {
-
             }
         }
     }

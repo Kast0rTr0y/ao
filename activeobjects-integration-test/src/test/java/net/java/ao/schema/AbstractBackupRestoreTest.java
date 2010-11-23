@@ -59,11 +59,6 @@ public abstract class AbstractBackupRestoreTest
         return entityManager.getTableNameConverter();
     }
 
-    protected final DatabaseProvider getProvider()
-    {
-        return entityManager.getProvider();
-    }
-
     protected final void emptyDatabase() throws Exception
     {
         entityManager.migrate(); // removes all data from the database
@@ -96,5 +91,15 @@ public abstract class AbstractBackupRestoreTest
             closeQuietly(tables);
             closeQuietly(connection);
         }
+    }
+
+    private DatabaseProvider getProvider()
+    {
+        return entityManager.getProvider();
+    }
+
+    protected final boolean isCaseSensitive()
+    {
+        return getProvider().isCaseSensetive();
     }
 }

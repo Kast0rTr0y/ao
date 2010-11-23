@@ -4,6 +4,7 @@ import net.java.ao.EntityManager;
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
 import net.java.ao.test.jdbc.Data;
+import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
 import net.java.ao.test.jdbc.NonTransactional;
 import net.java.ao.test.tx.Transaction;
@@ -14,12 +15,17 @@ import org.junit.runners.model.Statement;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
  */
 public class ActiveObjectTransactionMethodRule implements MethodRule
 {
+    private static final Map<Class<? extends JdbcConfiguration>, Class<? extends DatabaseUpdater>> DATABASES =
+            new HashMap<Class<? extends JdbcConfiguration>, Class<? extends DatabaseUpdater>>();
+
     private final Object test;
     private final JdbcConfiguration jdbc;
     private final boolean withIndex;
@@ -89,6 +95,11 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             transaction.rollback();
             transaction = null;
         }
+        else
+        {
+            DATABASES.remove(jdbc.getClass()); // make sure that the next test gets a clean database
+        }
+
         entityManager = null;
         removeIndexDir();
     }
@@ -161,7 +172,14 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     {
         if (getTestClass().isAnnotationPresent(Data.class))
         {
-            newInstance(getTestClass().getAnnotation(Data.class).value()).update(entityManager);
+            final Class<? extends DatabaseUpdater> databaseUpdater = getTestClass().getAnnotation(Data.class).value();
+            if (DATABASES.get(jdbc.getClass()) == null
+                    || !DATABASES.get(jdbc.getClass()).equals(databaseUpdater))
+            {
+                entityManager.migrate(); // empty the database
+                newInstance(databaseUpdater).update(entityManager);
+                DATABASES.put(jdbc.getClass(), databaseUpdater);
+            }
         }
     }
 

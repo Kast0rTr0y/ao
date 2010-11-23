@@ -12,8 +12,8 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static net.java.ao.it.Database.PersonData;
-import static org.junit.Assert.assertEquals;
+import static net.java.ao.it.DatabaseProcessor.*;
+import static org.junit.Assert.*;
 
 /**
  *

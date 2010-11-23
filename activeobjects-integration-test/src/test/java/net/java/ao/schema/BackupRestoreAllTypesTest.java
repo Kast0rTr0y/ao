@@ -1,5 +1,6 @@
 package net.java.ao.schema;
 
+import com.google.common.collect.Iterators;
 import net.java.ao.RawEntity;
 import net.java.ao.it.model.backup.EntityWithBooleanType;
 import net.java.ao.it.model.backup.EntityWithStringType;
@@ -33,18 +34,16 @@ public final class BackupRestoreAllTypesTest extends AbstractBackupRestoreTest
 
     private void backupTableWithField(Class<? extends RawEntity<?>> entityClass, String fieldName, int sqlType, int precision) throws Exception
     {
-        final boolean caseSensitive = getProvider().isCaseSensetive();
-
         entityManager.migrate(entityClass);
 
         final List<DDLAction> backup = backup();
         final Iterator<DDLAction> actions = backup.iterator();
 
-        assertIsDropTable(getTableName(entityClass), actions.next(), caseSensitive);
+        assertIsDropTables(actions, isCaseSensitive(), getTableName(entityClass));
 
         final DDLAction createTableAction = actions.next();
-        assertIsCreateTable(getTableName(entityClass), createTableAction, caseSensitive);
-        assertFieldEquals(fieldName, sqlType, precision, getField(createTableAction), caseSensitive);
+        assertIsCreateTables(Iterators.forArray(createTableAction), isCaseSensitive(), getTableName(entityClass));
+        assertFieldEquals(fieldName, sqlType, precision, getField(createTableAction), isCaseSensitive());
 
         emptyDatabase();
 

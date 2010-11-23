@@ -8,6 +8,7 @@ import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
 import net.java.ao.it.model.PostalAddress;
 import net.java.ao.it.model.UserBase;
+import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.types.ClassType;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Commentable;
@@ -39,35 +40,15 @@ import java.net.URL;
 /**
  *
  */
-public final class Database
+public final class DatabaseProcessor implements DatabaseUpdater
 {
     static
     {
         TypeManager.getInstance().addType(new ClassType());
     }
 
-    // the singleton
-    private static Database database;
-
-    private Database()
+    public void update(EntityManager entityManager) throws Exception
     {
-    }
-
-    public static Database get(EntityManager entityManager) throws Exception
-    {
-        if (database == null)
-        {
-            database = new Database();
-            database.initialise(entityManager);
-        }
-        return database;
-    }
-
-    private void initialise(EntityManager entityManager) throws Exception
-    {
-        // dropping all the tables
-        entityManager.migrate();
-
         // creating the schema
         entityManager.migrate(PersonSuit.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class, Authorship.class,
                 Book.class, Magazine.class, PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,

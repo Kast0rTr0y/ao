@@ -19,9 +19,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import static net.java.ao.it.Database.CompanyData;
-import static net.java.ao.it.Database.PenData;
-import static net.java.ao.it.Database.PersonData;
+import static net.java.ao.it.DatabaseProcessor.CompanyData;
+import static net.java.ao.it.DatabaseProcessor.PenData;
+import static net.java.ao.it.DatabaseProcessor.PersonData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
