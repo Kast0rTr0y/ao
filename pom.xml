@@ -124,8 +124,8 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <message>You must use maven 2.2.1 or above to build Active Objects</message>
-                                    <version>[2.2.1,)</version>
+                                    <message>You must use maven 2.1.0 or above to build Active Objects</message>
+                                    <version>[2.1.0,)</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <message>You must use JDK 1.5 to build Active Objects. This is because of differences in the JDBC APIs between JDK 1.5 and JDK 1.6</message>
