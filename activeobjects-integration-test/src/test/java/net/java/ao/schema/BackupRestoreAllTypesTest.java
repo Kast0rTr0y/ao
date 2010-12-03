@@ -1,6 +1,7 @@
 package net.java.ao.schema;
 
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
 import net.java.ao.RawEntity;
 import net.java.ao.it.model.backup.EntityWithBooleanType;
 import net.java.ao.it.model.backup.EntityWithStringType;
@@ -10,9 +11,10 @@ import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.sql.Types;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
+import static com.google.common.collect.Sets.newHashSet;
+import static java.util.Collections.singleton;
 import static net.java.ao.schema.DdlActionAssert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -29,10 +31,16 @@ public final class BackupRestoreAllTypesTest extends AbstractBackupRestoreTest
     @NonTransactional
     public void backupRestoreTableWithBooleanField() throws Exception
     {
-        backupTableWithField(EntityWithBooleanType.class, "condition", Types.BOOLEAN, 1);
+        final HashSet<Integer> sqlTypes = newHashSet(Types.BOOLEAN, Types.BIT); // MySQL uses BIT for boolean type
+        backupTableWithField(EntityWithBooleanType.class, "condition", sqlTypes, 1);
     }
 
     private void backupTableWithField(Class<? extends RawEntity<?>> entityClass, String fieldName, int sqlType, int precision) throws Exception
+    {
+        backupTableWithField(entityClass, fieldName, singleton(sqlType), precision);
+    }
+
+    private void backupTableWithField(Class<? extends RawEntity<?>> entityClass, String fieldName, Set<Integer> sqlTypes, int precision) throws Exception
     {
         entityManager.migrate(entityClass);
 
@@ -43,7 +51,7 @@ public final class BackupRestoreAllTypesTest extends AbstractBackupRestoreTest
 
         final DDLAction createTableAction = actions.next();
         assertIsCreateTables(Iterators.forArray(createTableAction), isCaseSensitive(), getTableName(entityClass));
-        assertFieldEquals(fieldName, sqlType, precision, getField(createTableAction), isCaseSensitive());
+        assertFieldEquals(fieldName, sqlTypes, precision, getField(createTableAction), isCaseSensitive());
 
         emptyDatabase();
 

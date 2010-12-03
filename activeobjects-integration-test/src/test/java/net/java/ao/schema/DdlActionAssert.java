@@ -9,9 +9,7 @@ import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLValue;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -82,7 +80,9 @@ public final class DdlActionAssert
         {
             final String fieldName = value.getField().getName();
             final Map<String, Object> filtered = Maps.filterKeys(copy, new StringEqualsPredicate(fieldName, caseSensitive));
-            assertEquals("There should be one and only one entry for key " + fieldName, 1, filtered.size());
+            assertEquals("There should be one and only one entry for key " + fieldName
+                    + ". Here are the actual values: " + valuesAsString(action.getValues()),
+                    1, filtered.size());
             Map.Entry<String, Object> entry = filtered.entrySet().iterator().next();
             assertEquals("Wrong value for field " + fieldName, entry.getValue(), value.getValue());
 
@@ -91,10 +91,21 @@ public final class DdlActionAssert
         assertTrue("Not all expected values were defined", copy.isEmpty());
     }
 
-    public static void assertFieldEquals(String expectedName, int expectedType, int expectedPrecision, DDLField field, boolean caseSensitive)
+    private static String valuesAsString(DDLValue[] values)
+    {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (DDLValue value : values) {
+            sb.append(value.getField().getName()).append(":").append(value.getValue()).append(",");
+        }
+        return sb.append("]").toString();
+    }
+
+    public static void assertFieldEquals(String expectedName, Set<Integer> expectedTypes, int expectedPrecision, DDLField field, boolean caseSensitive)
     {
         assertEqualsAccordingToCaseSensitivity(expectedName, fieldName(field), caseSensitive);
-        assertEquals(expectedType, field.getType().getType());
+        final int sqlType = field.getType().getType();
+        assertTrue(expectedTypes + "", expectedTypes.contains(sqlType));
         assertEquals(expectedPrecision, field.getPrecision());
     }
 
