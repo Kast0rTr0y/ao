@@ -81,7 +81,8 @@ public final class DdlActionAssert
             final String fieldName = value.getField().getName();
             final Map<String, Object> filtered = Maps.filterKeys(copy, new StringEqualsPredicate(fieldName, caseSensitive));
             assertEquals("There should be one and only one entry for key " + fieldName
-                    + ". Here are the actual values: " + valuesAsString(action.getValues()),
+                    + ". Here are the actual values: " + valuesAsString(action.getValues())
+                    + " and the expected ones: " + copy,
                     1, filtered.size());
             Map.Entry<String, Object> entry = filtered.entrySet().iterator().next();
             assertEquals("Wrong value for field " + fieldName, entry.getValue(), value.getValue());
@@ -173,8 +174,6 @@ public final class DdlActionAssert
 
         public boolean apply(String name)
         {
-            System.out.println("#$ Comparing <" + name + "> to <" + string + "> with case? <" + caseSensitive + ">");
-
             if (caseSensitive)
             {
                 return string.equals(name);

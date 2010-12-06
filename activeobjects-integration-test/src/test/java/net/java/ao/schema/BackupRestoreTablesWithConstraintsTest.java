@@ -36,7 +36,7 @@ public final class BackupRestoreTablesWithConstraintsTest extends AbstractBackup
         assertIsCreateTables(actions, isCaseSensitive(), entityWithNameTableName, entityWithManyToOneTableName);
 
         assertIsInsert(actions.next(), isCaseSensitive(), entityWithManyToOneTableName,
-                ImmutableMap.<String, Object>of("id", ENTITY_WITH_MANY_TO_ONE_ID, "entityWithNameId", ENTITY_WITH_NAME_ID));
+                ImmutableMap.<String, Object>of("id", ENTITY_WITH_MANY_TO_ONE_ID, "entityWithNameID", ENTITY_WITH_NAME_ID));
 
         assertIsInsert(actions.next(), isCaseSensitive(), entityWithNameTableName,
                 ImmutableMap.<String, Object>of("id", ENTITY_WITH_NAME_ID, "name", BackupRestoreTablesWithConstraintsTestDatabaseUpdater.NAME));
