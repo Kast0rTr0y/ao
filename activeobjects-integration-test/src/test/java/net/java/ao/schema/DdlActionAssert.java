@@ -95,9 +95,11 @@ public final class DdlActionAssert
     {
         final StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (DDLValue value : values) {
+        for (DDLValue value : values)
+        {
             sb.append(value.getField().getName()).append(":").append(value.getValue()).append(",");
         }
+        sb.deleteCharAt(sb.length() - 1);
         return sb.append("]").toString();
     }
 
@@ -171,6 +173,8 @@ public final class DdlActionAssert
 
         public boolean apply(String name)
         {
+            System.out.println("#$ Comparing <" + name + "> to <" + string + "> with case? <" + caseSensitive + ">");
+
             if (caseSensitive)
             {
                 return string.equals(name);
