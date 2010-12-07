@@ -175,9 +175,12 @@
                                 <goals><goal>run</goal></goals>
                                 <configuration>
                                     <target>
-                                        <exec executable="createlang">
+                                        <exec executable="su" failonerror="true">
+                                            <arg value="-"/>
+                                            <arg value="postgres"/>
+                                        </exec>
+                                        <exec executable="createlang" failonerror="true">
                                             <arg value="plpgsql"/>
-                                            <arg value="ao_test"/>
                                         </exec>
                                     </target>
                                 </configuration>
