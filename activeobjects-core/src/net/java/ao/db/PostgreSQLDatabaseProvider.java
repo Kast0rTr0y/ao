@@ -403,7 +403,23 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return back.toString();
 	}
 
-	@Override
+    protected String[] renderDropFunctions(DDLTable table)
+    {
+        final List<String> dropFunctions = new ArrayList<String>();
+        for (DDLField field : table.getFields())
+        {
+            field.setOnUpdate(new Object()); // kind of a hack
+            dropFunctions.add(renderDropFunction(getFunctionNameForField(table, field)));
+        }
+        return dropFunctions.toArray(new String[dropFunctions.size()]);
+    }
+
+    private String renderDropFunction(String functionName)
+    {
+        return "DROP FUNCTION IF EXISTS " + functionName + " CASCADE";
+    }
+
+    @Override
 	protected String getFunctionNameForField(DDLTable table, DDLField field) {
 		if (field.getOnUpdate() != null) {
 			return table.getName() + '_' + field.getName() + "_onupdate()";

@@ -929,14 +929,14 @@ public abstract class DatabaseProvider
         final StringBuilder values = new StringBuilder();
         for (DDLValue v : ddlValues)
         {
-            columns.append(v.getField().getName()).append(",");
+            columns.append(processID(v.getField().getName())).append(",");
             values.append(renderValue(v.getValue())).append(",");
         }
         columns.deleteCharAt(columns.length() - 1);
         values.deleteCharAt(values.length() - 1);
 
         return new StringBuilder()
-                .append("INSERT INTO ").append(ddlTable.getName())
+                .append("INSERT INTO ").append(processID(ddlTable.getName()))
                 .append("(").append(columns).append(")")
                 .append(" VALUES (").append(values).append(")")
                 .toString();

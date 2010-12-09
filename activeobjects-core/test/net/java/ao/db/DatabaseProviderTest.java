@@ -90,7 +90,7 @@ public class DatabaseProviderTest {
         testRenderAction(ddl, action, getMsSqlDatabaseProvider(dataSource));
         testRenderAction(ddl, action, getMySqlDatabaseProvider(dataSource));
         testRenderAction("oracle-drop-table.sql", action, getOrableDatabaseProvider(dataSource));
-        testRenderAction(ddl, action, getPostgreSqlDatabaseProvider(dataSource));
+        testRenderAction("postgres-drop-table.sql", action, getPostgreSqlDatabaseProvider(dataSource));
     }
 
     @Test
