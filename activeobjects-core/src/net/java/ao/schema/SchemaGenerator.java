@@ -53,7 +53,7 @@ public final class SchemaGenerator {
 			for (String statement : statements) {
 				if (!statement.trim().equals("")) {
                     provider.getEventManager().publish(new SqlEvent(statement));
-                    executeUpdate(stmt, statement);
+                    executeUpdate(stmt, statement, provider);
                 }
 			}
 			
@@ -63,7 +63,7 @@ public final class SchemaGenerator {
 		}
 	}
 
-    private static void executeUpdate(Statement stmt, String sql) throws SQLException
+    private static void executeUpdate(Statement stmt, String sql, DatabaseProvider provider) throws SQLException
     {
         try
         {
@@ -71,7 +71,7 @@ public final class SchemaGenerator {
         }
         catch (SQLException e)
         {
-            throw e;
+            provider.handleUpdateError(e);
         }
     }
 

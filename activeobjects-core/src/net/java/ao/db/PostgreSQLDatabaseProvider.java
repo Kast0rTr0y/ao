@@ -416,7 +416,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION IF EXISTS " + functionName + " CASCADE";
+        return "DROP FUNCTION " + functionName + " CASCADE";
     }
 
     @Override
@@ -513,5 +513,14 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected boolean shouldQuoteID(String id) {
         return !"*".equals(id);
+    }
+
+    @Override
+    public void handleUpdateError(SQLException e) throws SQLException
+    {
+        if (!e.getSQLState().equals("42883") || !e.getMessage().contains("does not exist"))
+        {
+            throw e;
+        }
     }
 }

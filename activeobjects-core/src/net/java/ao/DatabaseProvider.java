@@ -2154,6 +2154,18 @@ public abstract class DatabaseProvider
         return true;
     }
 
+    /**
+     * Tells whether this exception should be ignored when running an updated statement. Typically, errors on dropping
+     * non-existing objects should be ignored.
+     *
+     * @param e the {@link SQLException} that occured.
+     * @throws SQLException throws the SQLException if it should not be ignored.
+     */
+    public void handleUpdateError(SQLException e) throws SQLException
+    {
+        throw e;
+    }
+
     public void setEventManager(EventManager eventManager)
     {
         this.eventManager = eventManager;
