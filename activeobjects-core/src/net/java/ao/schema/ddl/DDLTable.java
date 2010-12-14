@@ -15,6 +15,10 @@
  */
 package net.java.ao.schema.ddl;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+
 /**
  * Database-agnostic representation of a table within the schema.  A
  * table logically contains fields, keys and indexes (as represented
@@ -42,7 +46,8 @@ public class DDLTable {
 	}
 
 	public void setFields(DDLField[] fields) {
-		this.fields = fields;
+		Arrays.sort(fields, new FieldComparator());
+        this.fields = fields;
 	}
 
 	public DDLForeignKey[] getForeignKeys() {
@@ -94,4 +99,15 @@ public class DDLTable {
 		
 		return super.equals(obj);
 	}
+
+    private static class FieldComparator implements Comparator<DDLField>
+    {
+        public int compare(DDLField f1, DDLField f2)
+        {
+            if (f1 == null && f2 == null) return 0;
+            if (f1 == null) return -1;
+            if (f2 == null) return +1;
+            return f1.getName().compareTo(f2.getName());
+        }
+    }
 }

@@ -61,13 +61,15 @@ public final class BackupRestoreAllTypesTest extends AbstractBackupRestoreTest
 
     /**
      * Gets the field of the table associated to the action, assuming that this table exists and
-     * has one and only one field.
+     * has one and only one field (apart from the ID).
      *
      * @param action the action to look up the field for
      * @return a field
      */
     private DDLField getField(DDLAction action)
     {
-        return action.getTable().getFields()[0];
+        final DDLField[] fields = action.getTable().getFields();
+        assertEquals(2, fields.length);
+        return fields[0].getName().equalsIgnoreCase("ID") ? fields[1] : fields[0];
     }
 }
