@@ -27,6 +27,7 @@ import java.beans.PropertyChangeListener;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -48,8 +49,8 @@ import java.util.regex.Pattern;
  * @author Daniel Spiewak
  */
 public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
-	private static final Pattern WHERE_PATTERN = Pattern.compile("([\\d\\w]+)\\s*(=|>|<|LIKE|IS)");
-	
+	private static final Pattern WHERE_PATTERN = Pattern.compile("([\\d\\w]+)(?=\\s*(=|>|<|LIKE|IS))");
+
 	static boolean ignorePreload = false;	// hack for testing
 	
 	private final K key;
@@ -408,6 +409,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	
 				if (instanceOf(value, type)) {
 					return handleNullReturn((V) value, type);
+                } else if (isBigDecimal(value, type)) { // Oracle for example returns BigDecimal when we expect doubles
+                    return (V) handleBigDecimal(value, type);
 				} else if (Common.interfaceInheritsFrom(type, RawEntity.class) 
 						&& instanceOf(value, Common.getPrimaryKeyClassType((Class<? extends RawEntity<K>>) type))) {
 					value = getManager().peer((Class<? extends RawEntity<Object>>) type, value);
@@ -571,7 +574,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(where).append(")");
+					sql.append(" AND (").append(processWhere(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -632,7 +635,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(where).append(")");
+					sql.append(" AND (").append(processWhere(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -665,7 +668,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(where).append(")");
+					sql.append(" AND (").append(processWhere(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -717,7 +720,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						sql.append(provider.processID(inMap)).append(" = ?");
 						
 						if (!where.trim().equals("")) {
-							sql.append(" AND (").append(where).append(")");
+							sql.append(" AND (").append(processWhere(where)).append(")");
 						}
 						
 						sql.append(" UNION ");
@@ -828,8 +831,13 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		
 		return cached;
 	}
-	
-	private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
+
+    private String processWhere(String where)
+    {
+        return WHERE_PATTERN.matcher(where).replaceAll(getManager().getProvider().processID("$1"));
+    }
+
+    private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
 		List<String> back = new ArrayList<String>();
 		back.addAll(Arrays.asList(outMapFields));
 		
@@ -899,6 +907,43 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 		return false;
 	}
+
+    /**
+     * Some DB (Oracle) return BigDecimal for about any number
+     */
+    private boolean isBigDecimal(Object value, Class<?> type)
+    {
+        if (!(value instanceof BigDecimal))
+        {
+            return false;
+        }
+        return type.equals(int.class) || type.equals(long.class) || type.equals(float.class) || type.equals(double.class);
+    }
+
+    private Object handleBigDecimal(Object value, Class<?> type)
+    {
+        final BigDecimal bd = (BigDecimal) value;
+        if (type.equals(int.class))
+        {
+            return bd.intValue();
+        }
+        else if (type.equals(long.class))
+        {
+            return bd.longValue();
+        }
+        else if (type.equals(float.class))
+        {
+            return bd.floatValue();
+        }
+        else if (type.equals(double.class))
+        {
+            return bd.doubleValue();
+        }
+        else
+        {
+            throw new RuntimeException("Could not resolve actual type for object :" + value + ", expected type is " + type);
+        }
+    }
 
 	private void checkConstraints(Method method, Object[] args) {
 		AnnotationDelegate annotations = Common.getAnnotationDelegate(getManager().getFieldNameConverter(), method);

@@ -62,6 +62,12 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>oracle-jdbc14</artifactId>
+            <version>10.2.0.4</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
             <version>0.9.1.1</version>

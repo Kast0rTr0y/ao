@@ -38,7 +38,7 @@ import java.util.Calendar;
  */
 @Implementation(PersonImpl.class)
 public interface Person extends Entity {
-	
+
 	@Searchable
 	public String getFirstName();
 	public void setFirstName(String firstName);
@@ -70,7 +70,7 @@ public interface Person extends Entity {
 	
 	public Company getCompany();
 	public void setCompany(Company company);
-	
+
 	public byte[] getImage();
 	public void setImage(byte[] image);
 	

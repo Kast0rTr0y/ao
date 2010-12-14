@@ -459,7 +459,7 @@ public abstract class DatabaseProvider
      * meta) in the database.  The fields of the result set must
      * correspond with those specified in the
      * <code>DatabaseMetaData#getTables(String, String, String, String[])</code>
-     * method.  In fact, the default implementation meerly calls
+     * method.  In fact, the default implementation merely calls
      * this method passing <code>(null, null, "", null)</code>.
      * For databases (such as PostgreSQL) where this is unsuitable,
      * different parameters can be specified to the <code>getTables</code>
@@ -474,7 +474,12 @@ public abstract class DatabaseProvider
      */
     public ResultSet getTables(Connection conn) throws SQLException
     {
-        return conn.getMetaData().getTables(null, null, "", null);
+        return conn.getMetaData().getTables(null, null, "", new String[]{"TABLE"});
+    }
+
+    public ResultSet getSequences(Connection conn) throws SQLException
+    {
+        return conn.getMetaData().getTables(null, null, "", new String[]{"SEQUENCE"});
     }
 
     /**
@@ -1920,8 +1925,7 @@ public abstract class DatabaseProvider
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
     protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
-                                              String pkField, String sql, DBParam... params)
-            throws SQLException
+                                              String pkField, String sql, DBParam... params)    throws SQLException
     {
         T back = null;
         manager.getEventManager().publish(new SqlEvent(sql));
@@ -2070,7 +2074,7 @@ public abstract class DatabaseProvider
      *
      * @param id The identifier to process.
      * @return A unique identifier corresponding with the input which is
-     *         guarenteed to function within the underlying database.
+     *         guaranteed to function within the underlying database.
      * @see #getMaxIDLength()
      * @see #shouldQuoteID(String)
      */

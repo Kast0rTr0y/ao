@@ -1,10 +1,6 @@
 package net.java.ao.it.config;
 
-import net.java.ao.test.jdbc.AbstractJdbcConfiguration;
-import net.java.ao.test.jdbc.Hsql;
-import net.java.ao.test.jdbc.JdbcConfiguration;
-import net.java.ao.test.jdbc.MySql;
-import net.java.ao.test.jdbc.Postgres;
+import net.java.ao.test.jdbc.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +15,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             put("hsql", new Hsql());
             put("mysql", new MySql());
             put("postgres", new Postgres());
+            put("oracle", new Oracle());
         }};
 
     private final JdbcConfiguration delegate;
@@ -26,11 +23,15 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
     public DynamicJdbcConfiguration()
     {
         final String database = ConfigurationProperties.get("ao.test.database", "hsql");
-        delegate = AVAILABLE.get(database);
+        delegate = get(database);
         if (delegate == null)
         {
-            throw new IllegalStateException("Could not find appropriate database configuation for " + database);
+            throw new IllegalStateException("Could not find appropriate database configuration for " + database);
         }
+    }
+
+    private JdbcConfiguration get(String database) {
+        return AVAILABLE.get(database);
     }
 
     public String getUrl()

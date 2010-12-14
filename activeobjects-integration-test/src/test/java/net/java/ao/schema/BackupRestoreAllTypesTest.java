@@ -1,7 +1,6 @@
 package net.java.ao.schema;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
 import net.java.ao.RawEntity;
 import net.java.ao.it.model.backup.EntityWithBooleanType;
 import net.java.ao.it.model.backup.EntityWithStringType;
@@ -31,7 +30,7 @@ public final class BackupRestoreAllTypesTest extends AbstractBackupRestoreTest
     @NonTransactional
     public void backupRestoreTableWithBooleanField() throws Exception
     {
-        final HashSet<Integer> sqlTypes = newHashSet(Types.BOOLEAN, Types.BIT); // MySQL uses BIT for boolean type
+        final HashSet<Integer> sqlTypes = newHashSet(Types.BOOLEAN, Types.BIT, Types.NUMERIC); // MySQL uses BIT for boolean type, Oracle uses NUMERIC
         backupTableWithField(EntityWithBooleanType.class, "condition", sqlTypes, 1);
     }
 

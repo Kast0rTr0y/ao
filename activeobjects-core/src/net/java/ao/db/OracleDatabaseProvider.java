@@ -29,18 +29,17 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
+import oracle.jdbc.OraclePreparedStatement;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.net.URL;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * @author Daniel Spiewak
@@ -126,18 +125,36 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         super(dataSource);
     }
 
-	@Override
-	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
-		if (query.getOffset() > 0) {
-			res.absolute(query.getOffset() + 1);
+    @Override
+	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
+		int limit = query.getLimit();
+		if (limit >= 0) {
+			stmt.setFetchSize(query.getOffset() + limit);
+			stmt.setMaxRows(query.getOffset() + limit);
 		}
 	}
 
+
 	@Override
-	public ResultSet getTables(Connection conn) throws SQLException {
-        DatabaseMetaData metaData = conn.getMetaData();
-		return metaData.getTables(null, metaData.getUserName(), "%", new String[] {"TABLE"});
+	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
+		if (query.getOffset() > 0) {
+			res.absolute(query.getOffset());
+		}
 	}
+
+    @Override
+    public ResultSet getTables(Connection conn) throws SQLException
+    {
+        DatabaseMetaData metaData = conn.getMetaData();
+        return metaData.getTables(null, metaData.getUserName(), "%", new String[] {"TABLE"});
+    }
+
+    @Override
+    public ResultSet getSequences(Connection conn) throws SQLException
+    {
+        DatabaseMetaData metaData = conn.getMetaData();
+        return metaData.getTables(null, metaData.getUserName(), "%", new String[]{"SEQUENCE"});
+    }
 
 	@Override
 	protected String convertTypeToString(DatabaseType<?> type) {
@@ -215,7 +232,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + '\n');
 			back.append("BEFORE UPDATE\n").append("    ON ").append(processID(table.getName())).append("\n    FOR EACH ROW\n");
 			back.append("BEGIN\n");
-			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND");
+			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
 
 			return back.toString();
 		} else if (field.isAutoIncrement()) {
@@ -224,8 +241,8 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	        back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_autoinc") +  '\n');
 	        back.append("BEFORE INSERT\n").append("    ON ").append(processID(table.getName())).append("   FOR EACH ROW\n");
 	        back.append("BEGIN\n");
-	        back.append("    SELECT ").append(processID(table.getName() + '_' + field.getName() + "_seq") + ".NEXTVAL");
-	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL; \nEND;");
+	        back.append("    SELECT ").append(processID(table.getName() + '_' + field.getName() + "_SEQ") + ".NEXTVAL");
+	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
 	        
 	        return back.toString();
 		}
@@ -256,44 +273,67 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
     
 	@Override
-	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException {
-		T back = null;
+	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException
+    {
+        OraclePreparedStatement stmt = null;
+        ResultSet res = null;
+        try
+        {
+            final String oracleSql = sql + " returning " + processID(pkField) + " into ?";
+            eventManager.publish(new SqlEvent(oracleSql));
 
-        eventManager.publish(new SqlEvent(sql));
-		String[] generatedColumns = { pkField };
+            stmt = (OraclePreparedStatement) conn.prepareCall(oracleSql);
+            T back = setParameters(stmt, params, pkField, pkType);
 
-		PreparedStatement stmt = conn.prepareStatement(sql, generatedColumns);
+            stmt.executeUpdate();
 
-		for (int i = 0; i < params.length; i++) {
-			Object value = params[i].getValue();
+            if (back == null)
+            {
+                res =  stmt.getReturnResultSet();
+                if (res.next())
+                {
+                    back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
+                }
+            }
+            return back;
+        }
+        finally
+        {
+            closeQuietly(res);
+            closeQuietly(stmt);
+        }
+    }
 
-			if (value instanceof RawEntity<?>) {
-				value = Common.getPrimaryKeyValue((RawEntity<?>) value);
-			}
+    private <T> T setParameters(OraclePreparedStatement stmt, DBParam[] params, String pkField, Class<T> pkType) throws SQLException
+    {
+        T back = null;
+        int i = 0;
+        for (; i < params.length; i++)
+        {
+            Object value = params[i].getValue();
+            if (value instanceof RawEntity<?>)
+            {
+                value = Common.getPrimaryKeyValue((RawEntity<?>) value);
+            }
+            if (value instanceof URL)
+            {
+                stmt.setURL(i + 1, (URL) value);
+            }
+            else
+            {
+                stmt.setObject(i + 1, value);
+            }
 
-			if (params[i].getField().equalsIgnoreCase(pkField)) {
-				back = (T) value;
-			}
+            if (params[i].getField().equalsIgnoreCase(pkField))
+            {
+                back = (T) value;
+            }
+        }
+        stmt.registerReturnParameter(i + 1, TypeManager.getInstance().getType(pkType).getType());
+        return back;
+    }
 
-			stmt.setObject(i + 1, value);
-		}
-
-		stmt.executeUpdate();
-
-		if (back == null) {
-			ResultSet res = stmt.getGeneratedKeys();
-			if (res.next()) {
-				back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
-			}
-			res.close();
-		}
-
-		stmt.close();
-
-		return back;
-	}
-
-	@Override
+    @Override
 	protected String[] renderTriggers(DDLTable table) {
         List<String> back = new ArrayList<String>();
         
@@ -329,7 +369,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         for (DDLField field : table.getFields()) {
         	if (field.isAutoIncrement()) {
                 StringBuilder seq = new StringBuilder();
-                seq.append("DROP SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_seq"));
+                seq.append("DROP SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_SEQ"));
                 back.add(seq.toString());
         	}
         }
@@ -344,7 +384,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         for (DDLField field : table.getFields()) {
         	if (field.isAutoIncrement()) {
                 StringBuilder seq = new StringBuilder();
-                seq.append("CREATE SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_seq"));
+                seq.append("CREATE SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_SEQ"));
                 seq.append(" INCREMENT BY 1 START WITH 1 ");
                 seq.append("NOMAXVALUE").append(" MINVALUE 1");
                 back.add(seq.toString());
@@ -356,7 +396,8 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	protected boolean shouldQuoteID(String id) {
-		return id.toUpperCase().startsWith("SYS_") || super.shouldQuoteID(id);
+        return !"*".equals(id);
+//		return id.toUpperCase().startsWith("SYS_") || super.shouldQuoteID(id);
 	}
 	
 	@Override

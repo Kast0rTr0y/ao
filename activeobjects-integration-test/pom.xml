@@ -64,6 +64,11 @@
                         <artifactId>postgresql</artifactId>
                         <version>${postgres.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>com.oracle</groupId>
+                        <artifactId>oracle-jdbc14</artifactId>
+                        <version>${oracle.version}</version>
+                    </dependency>
                 </dependencies>
             </plugin>
         </plugins>
@@ -125,6 +130,7 @@
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
+        <oracle.version>10.2.0.4</oracle.version>
     </properties>
 
     <profiles>
@@ -172,6 +178,22 @@
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
                     <version>${postgres.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>oracle</id>
+            <properties>
+                <ao.test.database>oracle</ao.test.database>
+                <db.username>sys</db.username>
+                <db.password>oracle</db.password>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>oracle-jdbc14</artifactId>
+                    <version>10.2.0.4</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

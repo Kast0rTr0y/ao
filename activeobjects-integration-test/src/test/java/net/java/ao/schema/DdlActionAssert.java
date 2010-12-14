@@ -85,7 +85,15 @@ public final class DdlActionAssert
                     + " and the expected ones: " + copy,
                     1, filtered.size());
             Map.Entry<String, Object> entry = filtered.entrySet().iterator().next();
-            assertEquals("Wrong value for field " + fieldName, entry.getValue(), value.getValue());
+
+            if (entry.getValue() instanceof Number)
+            {
+                assertEquals("Wrong value for field " + fieldName, ((Number)entry.getValue()).doubleValue(), ((Number)value.getValue()).doubleValue(), 0);
+            }
+            else
+            {
+                assertEquals("Wrong value for field " + fieldName, entry.getValue(), value.getValue());
+            }
 
             copy.remove(entry.getKey());
         }
@@ -108,7 +116,7 @@ public final class DdlActionAssert
     {
         assertEqualsAccordingToCaseSensitivity(expectedName, fieldName(field), caseSensitive);
         final int sqlType = field.getType().getType();
-        assertTrue(expectedTypes + "", expectedTypes.contains(sqlType));
+        assertTrue("Excepted on of " + expectedTypes + " but got " + sqlType, expectedTypes.contains(sqlType));
         assertEquals(expectedPrecision, field.getPrecision());
     }
 

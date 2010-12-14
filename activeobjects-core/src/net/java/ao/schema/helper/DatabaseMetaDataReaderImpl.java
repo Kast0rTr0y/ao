@@ -3,6 +3,8 @@ package net.java.ao.schema.helper;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.SchemaConfiguration;
+import net.java.ao.it.config.java.sql.AbstractCloseableResultSetMetaData;
+import net.java.ao.it.config.java.sql.CloseableResultSetMetaData;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -61,18 +63,21 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
     public Iterable<? extends Field> getFields(DatabaseMetaData databaseMetaData, String tableName)
     {
         final TypeManager manager = TypeManager.getInstance();
+        final List<String> sequenceNames = getSequenceNames(databaseMetaData);
+
         final Map<String, FieldImpl> fields = newHashMap();
 
+        CloseableResultSetMetaData rsmd = null;
         try
         {
-            final ResultSetMetaData rsmd = getResultSetMetaData(databaseMetaData, tableName);
+            rsmd = getResultSetMetaData(databaseMetaData, tableName);
             for (int i = 1; i < rsmd.getColumnCount() + 1; i++)
             {
                 final String fieldName = rsmd.getColumnName(i);
                 final DatabaseType<?> databaseType = manager.getType(rsmd.getColumnType(i));
                 final int precision = getFieldPrecision(rsmd, i);
                 final int scale = getScale(rsmd, i);
-                final boolean autoIncrement = rsmd.isAutoIncrement(i);
+                final boolean autoIncrement = isAutoIncrement(rsmd, i, sequenceNames, tableName, fieldName);
                 final boolean notNull = isNotNull(rsmd, i);
 
                 fields.put(fieldName, newField(fieldName, databaseType, precision, scale, autoIncrement, notNull));
@@ -111,6 +116,52 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            if (rsmd != null)
+            {
+                rsmd.close();
+            }
+        }
+    }
+
+    private List<String> getSequenceNames(DatabaseMetaData metaData)
+    {
+        ResultSet rs = null;
+        try
+        {
+            rs = databaseProvider.getSequences(metaData.getConnection());
+
+            final List<String> sequenceNames = newLinkedList();
+            while (rs.next())
+            {
+                sequenceNames.add(databaseProvider.processID(rs.getString("TABLE_NAME")));
+            }
+            return sequenceNames;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            closeQuietly(rs);
+        }
+    }
+
+    private boolean isAutoIncrement(ResultSetMetaData rsmd, int i, List<String> sequenceNames, String tableName, String fieldName) throws SQLException
+    {
+        boolean autoIncrement = rsmd.isAutoIncrement(i);
+        if (!autoIncrement)
+        {
+            autoIncrement = isUsingSequence(sequenceNames, tableName, fieldName);
+        }
+        return autoIncrement;
+    }
+
+    private boolean isUsingSequence(List<String> sequenceNames, String tableName, String fieldName)
+    {
+        return sequenceNames.contains(databaseProvider.processID(tableName + '_' + fieldName + "_SEQ"));
     }
 
     private FieldImpl newField(String fieldName, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull)
@@ -142,25 +193,22 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return precision <= 0 ? -1 : precision;
     }
 
-    private ResultSetMetaData getResultSetMetaData(DatabaseMetaData metaData, String tableName) throws SQLException
+    private CloseableResultSetMetaData getResultSetMetaData(DatabaseMetaData metaData, String tableName) throws SQLException
     {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try
-        {
-            final Query query = Query.select("*").from(tableName).limit(1);
+        final Query query = Query.select("*").from(tableName).limit(1);
+        final PreparedStatement stmt = metaData.getConnection().prepareStatement(databaseProvider.renderQuery(query, null, false));
 
-            stmt = metaData.getConnection().prepareStatement(databaseProvider.renderQuery(query, null, false));
-            databaseProvider.setQueryStatementProperties(stmt, query);
-            rs = stmt.executeQuery();
+        databaseProvider.setQueryStatementProperties(stmt, query);
+        final ResultSet rs = stmt.executeQuery();
 
-            return rs.getMetaData();
-        }
-        finally
+        return new AbstractCloseableResultSetMetaData(rs.getMetaData())
         {
-            closeQuietly(rs);
-            closeQuietly(stmt);
-        }
+            public void close()
+            {
+                closeQuietly(rs);
+                closeQuietly(stmt);
+            }
+        };
     }
 
     public Iterable<ForeignKey> getForeignKeys(DatabaseMetaData metaData, String tableName)
