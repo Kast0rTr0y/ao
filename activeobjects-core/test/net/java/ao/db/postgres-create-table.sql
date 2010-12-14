@@ -7,7 +7,7 @@ CREATE TABLE person (
     favoriteClass VARCHAR(255),
     height DOUBLE PRECISION DEFAULT 62.3,
     companyID BIGINT,
-    cool BOOLEAN(1) DEFAULT TRUE,
+    cool BOOLEAN DEFAULT TRUE,
     modified TIMESTAMP DEFAULT now(),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)

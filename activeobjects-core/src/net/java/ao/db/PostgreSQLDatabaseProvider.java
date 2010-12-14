@@ -118,10 +118,9 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	protected boolean considerPrecision(DDLField field) {
 		switch (field.getType().getType()) {
 			case Types.INTEGER:
-				return false;
-
 			case Types.DOUBLE:
-				return false;
+			case Types.BOOLEAN:
+                return false;
 		}
 
 		return super.considerPrecision(field);
