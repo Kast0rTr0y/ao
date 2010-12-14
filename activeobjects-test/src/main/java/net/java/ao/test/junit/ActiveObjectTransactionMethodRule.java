@@ -176,8 +176,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             if (!DATABASES.containsKey(jdbc)
                     || !DATABASES.get(jdbc).equals(databaseUpdater))
             {
-                System.out.println("### Updating: " + jdbc + " with " + databaseUpdater);
-
                 entityManager.migrate(); // empty the database
                 newInstance(databaseUpdater).update(entityManager);
                 DATABASES.put(jdbc, databaseUpdater);
