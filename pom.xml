@@ -11,7 +11,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>0.9-m10</version>
+    <version>0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
@@ -29,9 +29,9 @@
     </licenses>    
 
     <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/v0.9-m10</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/tags/v0.9-m10</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/tags/v0.9-m10</url>
+        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</connection>
+        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</developerConnection>
+        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk</url>
     </scm>
 
     <developers>
