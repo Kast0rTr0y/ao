@@ -54,27 +54,31 @@ public final class SchemaReader
 
     public static DDLTable[] readSchema(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
     {
-        final DatabaseMetaDataReader databaseMetaDataReader = new DatabaseMetaDataReaderImpl(provider, schemaConfiguration);
         Connection connection = null;
         try
         {
             connection = provider.getConnection();
-
-            final DatabaseMetaData databaseMetaData = connection.getMetaData();
-            final List<DDLTable> tables = newArrayList(Iterables.transform(databaseMetaDataReader.getTableNames(databaseMetaData), new Function<String, DDLTable>()
-            {
-                public DDLTable apply(String tableName)
-                {
-                    return readTable(databaseMetaDataReader, databaseMetaData, tableName, includeForeignKeys);
-                }
-            }));
-
-            return tables.toArray(new DDLTable[tables.size()]);
+            return readSchema(connection, provider, schemaConfiguration, includeForeignKeys);
         }
         finally
         {
             SqlUtils.closeQuietly(connection);
         }
+    }
+
+    public static DDLTable[] readSchema(Connection connection, DatabaseProvider provider, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
+    {
+        final DatabaseMetaDataReader databaseMetaDataReader = new DatabaseMetaDataReaderImpl(provider, schemaConfiguration);
+        final DatabaseMetaData databaseMetaData = connection.getMetaData();
+        final List<DDLTable> tables = newArrayList(Iterables.transform(databaseMetaDataReader.getTableNames(databaseMetaData), new Function<String, DDLTable>()
+        {
+            public DDLTable apply(String tableName)
+            {
+                return readTable(databaseMetaDataReader, databaseMetaData, tableName, includeForeignKeys);
+            }
+        }));
+
+        return tables.toArray(new DDLTable[tables.size()]);
     }
 
     private static DDLTable readTable(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName, boolean includeForeignKeys)
