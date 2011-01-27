@@ -16,7 +16,7 @@
 
     <name>Active Objects - Parent POM</name>
     <description>ActiveObjects is an intuitive, pure-Java ORM. AO is designed from the ground up to be extremely simple and easy to use from an API standpoint.</description>
-    <url>https://activeobjects.dev.java.net/</url>
+    <url>http://activeobjects.java.net/</url>
     <inceptionYear>2007</inceptionYear>
 
     <licenses>
@@ -29,9 +29,9 @@
     </licenses>    
 
     <scm>
-        <connection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</connection>
-        <developerConnection>scm:svn:https://activeobjects.dev.java.net/svn/activeobjects/trunk</developerConnection>
-        <url>https://activeobjects.dev.java.net/source/browse/activeobjects/trunk</url>
+        <connection>scm:svn:https://svn.java.net/svn/activeobjects~svn</connection>
+        <developerConnection>scm:svn:https://svn.java.net/svn/activeobjects~svn/trunk</developerConnection>
+        <url>http://java.net/projects/activeobjects/sources/svn/show/trunk</url>
     </scm>
 
     <developers>
@@ -56,8 +56,8 @@
     </developers>
 
     <issueManagement>
-        <system>BugZilla</system>
-        <url>https://activeobjects.dev.java.net/servlets/ProjectIssues</url>
+        <system>JIRA</system>
+        <url>http://java.net/jira/browse/ACTIVEOBJECTS</url>
     </issueManagement>
 
     <modules>
