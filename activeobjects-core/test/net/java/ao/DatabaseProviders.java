@@ -7,35 +7,59 @@ import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+
+import static org.mockito.Mockito.*;
+
 public class DatabaseProviders
 {
-    public static HSQLDatabaseProvider getHsqlDatabaseProvider(DisposableDataSource source)
+    public static HSQLDatabaseProvider getHsqlDatabaseProvider()
     {
-        return new HSQLDatabaseProvider(source);
+        return new HSQLDatabaseProvider(newDataSource(""));
     }
 
-    public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider(DisposableDataSource source)
+    public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
     {
-        return new PostgreSQLDatabaseProvider(source);
+        return new PostgreSQLDatabaseProvider(newDataSource("'"));
     }
 
-    public static OracleDatabaseProvider getOrableDatabaseProvider(DisposableDataSource source)
+    public static OracleDatabaseProvider getOracleDatabaseProvider()
     {
-        return new OracleDatabaseProvider(source);
+        return new OracleDatabaseProvider(newDataSource(""));
     }
 
-    public static MySQLDatabaseProvider getMySqlDatabaseProvider(DisposableDataSource source)
+    public static MySQLDatabaseProvider getMySqlDatabaseProvider()
     {
-        return new MySQLDatabaseProvider(source);
+        return new MySQLDatabaseProvider(newDataSource(""));
     }
 
-    public static SQLServerDatabaseProvider getMsSqlDatabaseProvider(DisposableDataSource source)
+    public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()
     {
-        return new SQLServerDatabaseProvider(source);
+        return new SQLServerDatabaseProvider(newDataSource(""));
     }
 
-    public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider(DisposableDataSource source)
+    public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider()
     {
-        return new EmbeddedDerbyDatabaseProvider(source, "");
+        return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "");
+    }
+
+    private static DisposableDataSource newDataSource(String quote)
+    {
+        final DisposableDataSource dataSource = mock(DisposableDataSource.class);
+        final Connection connection = mock(Connection.class);
+        final DatabaseMetaData metaData = mock(DatabaseMetaData.class);
+        try
+        {
+            when(dataSource.getConnection()).thenReturn(connection);
+            when(connection.getMetaData()).thenReturn(metaData);
+            when(metaData.getIdentifierQuoteString()).thenReturn(quote);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        return dataSource;
     }
 }

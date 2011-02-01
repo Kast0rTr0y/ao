@@ -34,14 +34,14 @@ import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/**
- * @author Daniel Spiewak
- */
+/** @author Daniel Spiewak */
 @Jdbc(DynamicJdbcConfiguration.class)
 @Data(DatabaseProcessor.class)
 public class QueryTest extends ActiveObjectsIntegrationTest
@@ -55,7 +55,6 @@ public class QueryTest extends ActiveObjectsIntegrationTest
     private static final Query QUERY_7 = Query.select().where("name IS NULL AND age = 3").limit(4).group("age");
     private static final Query QUERY_8 = Query.select().join(Company.class).where("name IS NULL AND age = 3").group("url");
 
-    private DisposableDataSource dataSource;
     private TableNameConverter tableNameConverter;
     private FieldNameConverter fieldNameConverter;
 
@@ -64,13 +63,12 @@ public class QueryTest extends ActiveObjectsIntegrationTest
     {
         tableNameConverter = entityManager.getTableNameConverter();
         fieldNameConverter = entityManager.getFieldNameConverter();
-        dataSource = mock(DisposableDataSource.class);
     }
 
     @Test
     public void testToSQL()
     {
-        DatabaseProvider provider = new EmbeddedDerbyDatabaseProvider(dataSource, "");
+        DatabaseProvider provider = DatabaseProviders.getEmbeddedDerbyDatabaseProvider();
         String personTableName = getTableName(provider, tableNameConverter, Person.class);
         String companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
@@ -92,7 +90,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
 
-        provider = new HSQLDatabaseProvider(dataSource);
+        provider = DatabaseProviders.getHsqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
@@ -114,7 +112,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals("SELECT LIMIT 0 4 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
 
-        provider = new SQLServerDatabaseProvider(dataSource);
+        provider = DatabaseProviders.getMsSqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
@@ -136,7 +134,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals("SELECT TOP 4 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
 
-        provider = new MySQLDatabaseProvider(dataSource);
+        provider = DatabaseProviders.getMySqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
@@ -158,7 +156,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
 
-        provider = new OracleDatabaseProvider(dataSource);
+        provider = DatabaseProviders.getOracleDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
@@ -180,27 +178,27 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
 
-        provider = new PostgreSQLDatabaseProvider(dataSource);
+        provider = DatabaseProviders.getPostgreSqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id','firstName','lastName' FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertEquals("SELECT 'id' FROM " + personTableName + " JOIN " + companyTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
 
         assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
         assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
     }
 
     @Test
@@ -220,5 +218,56 @@ public class QueryTest extends ActiveObjectsIntegrationTest
     private String getTableName(DatabaseProvider provider, TableNameConverter converter, Class<? extends RawEntity<?>> entityType)
     {
         return provider.processID(converter.getName(entityType));
+    }
+
+    private static class DatabaseProviders
+    {
+        public static HSQLDatabaseProvider getHsqlDatabaseProvider()
+        {
+            return new HSQLDatabaseProvider(newDataSource(""));
+        }
+
+        public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
+        {
+            return new PostgreSQLDatabaseProvider(newDataSource("'"));
+        }
+
+        public static OracleDatabaseProvider getOracleDatabaseProvider()
+        {
+            return new OracleDatabaseProvider(newDataSource(""));
+        }
+
+        public static MySQLDatabaseProvider getMySqlDatabaseProvider()
+        {
+            return new MySQLDatabaseProvider(newDataSource(""));
+        }
+
+        public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()
+        {
+            return new SQLServerDatabaseProvider(newDataSource(""));
+        }
+
+        public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider()
+        {
+            return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "");
+        }
+
+        private static DisposableDataSource newDataSource(String quote)
+        {
+            final DisposableDataSource dataSource = mock(DisposableDataSource.class);
+            final Connection connection = mock(Connection.class);
+            final DatabaseMetaData metaData = mock(DatabaseMetaData.class);
+            try
+            {
+                when(dataSource.getConnection()).thenReturn(connection);
+                when(connection.getMetaData()).thenReturn(metaData);
+                when(metaData.getIdentifierQuoteString()).thenReturn(quote);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+            return dataSource;
+        }
     }
 }

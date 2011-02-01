@@ -19,6 +19,7 @@ import net.java.ao.cache.CacheLayer;
 import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.OnUpdate;
+import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -43,15 +44,13 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author Daniel Spiewak
  */
-public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler {
-	private static final Pattern WHERE_PATTERN = Pattern.compile("([\\d\\w]+)(?=\\s*(=|>|<|LIKE|IS))");
-
-	static boolean ignorePreload = false;	// hack for testing
+public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
+{
+    static boolean ignorePreload = false;	// hack for testing
 	
 	private final K key;
 	private final Method pkAccessor;
@@ -574,7 +573,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(processWhere(where)).append(")");
+                    sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -635,7 +634,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(processWhere(where)).append(")");
+                    sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -668,7 +667,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
 				if (!where.trim().equals("")) {
-					sql.append(" AND (").append(processWhere(where)).append(")");
+                    sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 				}
 				
 				if (thisPolyNames != null) {
@@ -720,7 +719,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						sql.append(provider.processID(inMap)).append(" = ?");
 						
 						if (!where.trim().equals("")) {
-							sql.append(" AND (").append(processWhere(where)).append(")");
+                            sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 						}
 						
 						sql.append(" UNION ");
@@ -832,11 +831,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return cached;
 	}
 
-    private String processWhere(String where)
-    {
-        return WHERE_PATTERN.matcher(where).replaceAll(getManager().getProvider().processID("$1"));
-    }
-
     private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
 		List<String> back = new ArrayList<String>();
 		back.addAll(Arrays.asList(outMapFields));
@@ -847,7 +841,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 		}
 		
-		Matcher matcher = WHERE_PATTERN.matcher(where);
+		Matcher matcher = SqlUtils.WHERE_CLAUSE.matcher(where);
 		while (matcher.find()) {
 			back.add(matcher.group(1));
 		}

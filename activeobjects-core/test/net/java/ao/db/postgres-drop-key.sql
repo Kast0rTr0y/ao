@@ -1,1 +1,1 @@
-ALTER TABLE person DROP CONSTRAINT fk_person_companyid
+ALTER TABLE 'person' DROP CONSTRAINT 'fk_person_companyid'

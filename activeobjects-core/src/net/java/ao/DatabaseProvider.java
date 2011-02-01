@@ -27,6 +27,7 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.DDLValue;
 import net.java.ao.schema.ddl.SchemaReader;
+import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -104,30 +105,28 @@ public abstract class DatabaseProvider
 
     private synchronized void loadQuoteString()
     {
-        if (quote == null)
+        if (quote != null)
         {
-            Connection conn = null;
-            try
-            {
-                conn = dataSource.getConnection();
+            return;
+        }
 
-                if (conn == null)
-                {        // probably a unit test
-                    quote = "";
-                }
-                else
-                {
-                    quote = conn.getMetaData().getIdentifierQuoteString();
-                }
-            }
-            catch (SQLException e)
+        Connection conn = null;
+        try
+        {
+            conn = dataSource.getConnection();
+            if (conn == null)
             {
-                throw new RuntimeException("Unable to query the database", e);
+                throw new IllegalStateException("Could not get connection to load quote String");
             }
-            finally
-            {
-                closeQuietly(conn);
-            }
+            quote = conn.getMetaData().getIdentifierQuoteString();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException("Unable to query the database", e);
+        }
+        finally
+        {
+            closeQuietly(conn);
         }
     }
 
@@ -606,7 +605,7 @@ public abstract class DatabaseProvider
         if (whereClause != null)
         {
             sql.append(" WHERE ");
-            sql.append(whereClause);
+            sql.append(processWhereClause(whereClause));
         }
 
         return sql.toString();
@@ -1925,7 +1924,7 @@ public abstract class DatabaseProvider
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
     protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
-                                              String pkField, String sql, DBParam... params)    throws SQLException
+                                              String pkField, String sql, DBParam... params) throws SQLException
     {
         T back = null;
         manager.getEventManager().publish(new SqlEvent(sql));
@@ -2044,6 +2043,19 @@ public abstract class DatabaseProvider
         }
 
         return false;
+    }
+
+    /**
+     * Processes the where clause to make it compatible with the given database. By default it simply escapes IDs that
+     * need to be.
+     *
+     * @param where the raw where clause,
+     * @return the processed where clause compatible with the database in use.
+     * @see #processID(String)
+     */
+    public String processWhereClause(String where)
+    {
+        return SqlUtils.WHERE_CLAUSE.matcher(where).replaceAll(processID("$1"));
     }
 
     /**
