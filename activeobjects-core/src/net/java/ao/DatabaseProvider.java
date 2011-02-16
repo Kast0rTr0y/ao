@@ -118,7 +118,7 @@ public abstract class DatabaseProvider
             {
                 throw new IllegalStateException("Could not get connection to load quote String");
             }
-            quote = conn.getMetaData().getIdentifierQuoteString();
+            quote = conn.getMetaData().getIdentifierQuoteString().trim();
         }
         catch (SQLException e)
         {
