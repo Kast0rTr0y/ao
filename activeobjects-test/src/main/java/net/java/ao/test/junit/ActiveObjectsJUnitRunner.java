@@ -1,5 +1,8 @@
 package net.java.ao.test.junit;
 
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.test.NameConverters;
 import net.java.ao.test.jdbc.Hsql;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.JdbcConfiguration;
@@ -18,11 +21,15 @@ public class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
 {
     private final JdbcConfiguration jdbcConfiguration;
     private final boolean withIndex;
+    private TableNameConverter tableNameConverter;
+    private FieldNameConverter fieldNameConverter;
 
     public ActiveObjectsJUnitRunner(Class<?> klass) throws InitializationError
     {
         super(klass);
         jdbcConfiguration = resolveJdbcConfiguration(klass);
+        tableNameConverter = tableNameConverter(klass);
+        fieldNameConverter = fieldNameConverter(klass);
         withIndex = withIndex(klass);
     }
 
@@ -30,7 +37,7 @@ public class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
     protected List<MethodRule> rules(Object test)
     {
         final LinkedList<MethodRule> methodRules = new LinkedList<MethodRule>(super.rules(test));
-        methodRules.add(new ActiveObjectTransactionMethodRule(test, jdbcConfiguration, withIndex));
+        methodRules.add(new ActiveObjectTransactionMethodRule(test, jdbcConfiguration, withIndex, tableNameConverter, fieldNameConverter));
         return methodRules;
     }
 
@@ -39,24 +46,47 @@ public class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
         return klass.isAnnotationPresent(WithIndex.class);
     }
 
+    private TableNameConverter tableNameConverter(Class<?> klass)
+    {
+        if (klass.isAnnotationPresent(NameConverters.class))
+        {
+            return newInstance(klass.getAnnotation(NameConverters.class).table());
+        }
+        return null;
+    }
+
+    private FieldNameConverter fieldNameConverter(Class<?> klass)
+    {
+        if (klass.isAnnotationPresent(NameConverters.class))
+        {
+            return newInstance(klass.getAnnotation(NameConverters.class).field());
+        }
+        return null;
+    }
+
     private JdbcConfiguration resolveJdbcConfiguration(Class<?> klass)
     {
         if (klass.isAnnotationPresent(Jdbc.class))
         {
-            try
-            {
-                return klass.getAnnotation(Jdbc.class).value().newInstance();
-            }
-            catch (InstantiationException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return newInstance(klass.getAnnotation(Jdbc.class).value());
         }
         return getDefaultJdbcConfiguration();
+    }
+
+    private <T> T newInstance(Class<T> type)
+    {
+        try
+        {
+            return type.newInstance();
+        }
+        catch (InstantiationException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     private JdbcConfiguration getDefaultJdbcConfiguration()

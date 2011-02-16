@@ -3,6 +3,8 @@ package net.java.ao.test.junit;
 import net.java.ao.EntityManager;
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.TableNameConverter;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
@@ -29,16 +31,20 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private final Object test;
     private final JdbcConfiguration jdbc;
     private final boolean withIndex;
+    private final TableNameConverter tableNameConverter;
+    private final FieldNameConverter fieldNameConverter;
 
     private EntityManager entityManager;
     private Transaction transaction;
     private File indexDirectory;
 
-    public ActiveObjectTransactionMethodRule(Object test, JdbcConfiguration jdbc, boolean withIndex)
+    public ActiveObjectTransactionMethodRule(Object test, JdbcConfiguration jdbc, boolean withIndex, TableNameConverter tableNameConverter, FieldNameConverter fieldNameConverter)
     {
         this.test = test;
         this.jdbc = jdbc;
         this.withIndex = withIndex;
+        this.tableNameConverter = tableNameConverter;
+        this.fieldNameConverter = fieldNameConverter;
     }
 
     public final Statement apply(final Statement base, final FrameworkMethod method, final Object target)
@@ -143,6 +149,15 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private EntityManager createEntityManager()
     {
         EntityManagerBuilderWithDatabaseProperties entityManagerBuilder = EntityManagerBuilder.url(jdbc.getUrl()).username(jdbc.getUsername()).password(jdbc.getPassword()).auto();
+
+        if (tableNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.tableNameConverter(tableNameConverter);
+        }
+        if (fieldNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.fieldNameConverter(fieldNameConverter);
+        }
         return withIndex ? entityManagerBuilder.withIndex(indexDirectory).build() : entityManagerBuilder.build();
     }
 
