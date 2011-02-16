@@ -25,6 +25,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
 
 /**
  * @author Daniel Spiewak
@@ -105,8 +106,18 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 	protected String renderAppend() {
 		return "ENGINE=InnoDB";
 	}
-	
-	@Override
+
+    @Override
+    protected String renderFieldType(DDLField field)
+    {
+        if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
+        {
+            field.setType(TypeManager.getInstance().getType(Types.INTEGER));
+        }
+        return super.renderFieldType(field);
+    }
+
+    @Override
 	protected String renderCreateIndex(DDLIndex index) {
 		StringBuilder back = new StringBuilder("CREATE INDEX ");
 		back.append(processID(index.getName())).append(" ON ");
