@@ -1,4 +1,4 @@
-package net.java.ao.it.config;
+package net.java.ao.test.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;

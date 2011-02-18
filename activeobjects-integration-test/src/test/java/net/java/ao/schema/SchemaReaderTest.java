@@ -18,7 +18,7 @@ package net.java.ao.schema;
 import net.java.ao.Common;
 import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.it.config.DynamicJdbcConfiguration;
+import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;

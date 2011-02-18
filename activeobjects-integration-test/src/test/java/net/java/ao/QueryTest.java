@@ -22,7 +22,7 @@ import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.it.config.DynamicJdbcConfiguration;
+import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Person;

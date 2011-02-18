@@ -3,7 +3,7 @@ package net.java.ao.it;
 import net.java.ao.DBParam;
 import net.java.ao.EntityProxyConfigurator;
 import net.java.ao.RawEntity;
-import net.java.ao.it.config.DynamicJdbcConfiguration;
+import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;

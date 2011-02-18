@@ -1,12 +1,13 @@
-package net.java.ao.it.config;
-
-import net.java.ao.test.jdbc.*;
+package net.java.ao.test.jdbc;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * <p>A JDBC configuration that can be configured through either system properties or a configuration file.</p>
+ * <p>The default database used if no configuration was found is {@link Hsql}</p>
  *
+ * @see ConfigurationProperties
  */
 public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 {
@@ -30,7 +31,8 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
         }
     }
 
-    private JdbcConfiguration get(String database) {
+    private JdbcConfiguration get(String database)
+    {
         return AVAILABLE.get(database);
     }
 

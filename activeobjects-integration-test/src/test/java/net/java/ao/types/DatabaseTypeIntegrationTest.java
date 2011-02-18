@@ -1,7 +1,7 @@
 package net.java.ao.types;
 
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.it.config.DynamicJdbcConfiguration;
+import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
