@@ -179,16 +179,21 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return "";
 	}
 
-	@Override
-	protected String renderFieldType(DDLField field) {
-		if (field.isAutoIncrement()) {
-			return "SERIAL";
-		}
+    @Override
+    protected String renderFieldType(DDLField field)
+    {
+        if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
+        {
+            field.setType(TypeManager.getInstance().getType(Types.INTEGER));
+        }
+        if (field.isAutoIncrement())
+        {
+            return "SERIAL";
+        }
+        return super.renderFieldType(field);
+    }
 
-		return super.renderFieldType(field);
-	}
-
-	@Override
+    @Override
 	protected String convertTypeToString(DatabaseType<?> type) {
 		if (type.getType() == Types.CLOB) {
 			return "TEXT";
