@@ -5,7 +5,7 @@ CREATE TABLE person (
     age INTEGER,
     url VARCHAR(255) NOT NULL,
     favoriteClass VARCHAR(255),
-    height DOUBLE(32,6) DEFAULT 62.3,
+    height DOUBLE DEFAULT 62.3,
     companyID BIGINT,
     cool BOOLEAN DEFAULT TRUE,
     modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -337,6 +337,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		switch (field.getType().getType()) {
 			case Types.INTEGER:
             case Types.BOOLEAN:
+            case Types.DOUBLE:
 				return false;
 		}
 
