@@ -156,41 +156,41 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         return metaData.getTables(null, metaData.getUserName(), "%", new String[]{"SEQUENCE"});
     }
 
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.BIGINT:
-				return "NUMBER";
+    @Override
+    protected String convertTypeToString(DatabaseType<?> type)
+    {
+        switch (type.getType())
+        {
+            case Types.BIGINT:
+            case Types.BOOLEAN:
+            case Types.INTEGER:
+            case Types.NUMERIC:
+            case Types.SMALLINT:
+            case Types.DECIMAL:
+            case Types.FLOAT:
+            case Types.DOUBLE:
+            case Types.REAL:
+                return "NUMBER";
+        }
+        return super.convertTypeToString(type);
+    }
 
-			case Types.BOOLEAN:
-				return "NUMBER";
+    @Override
+    protected String renderFieldPrecision(DDLField field)
+    {
+        switch (field.getType().getType())
+        {
+            case Types.DECIMAL:
+            case Types.FLOAT:
+            case Types.DOUBLE:
+            case Types.REAL:
+                field.setPrecision(32);
+                field.setScale(16);
+        }
+        return super.renderFieldPrecision(field);
+    }
 
-			case Types.INTEGER:
-				return "NUMBER";
-
-			case Types.NUMERIC:
-				return "NUMBER";
-
-			case Types.DECIMAL:
-				return "NUMBER";
-
-			case Types.SMALLINT:
-				return "NUMBER";
-
-			case Types.FLOAT:
-				return "NUMBER";
-
-			case Types.DOUBLE:
-				return "NUMBER";
-
-			case Types.REAL:
-				return "NUMBER";
-		}
-
-		return super.convertTypeToString(type);
-	}
-
-	@Override
+    @Override
 	protected String renderQueryLimit(Query query) {
 		return "";
 	}
@@ -397,7 +397,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected boolean shouldQuoteID(String id) {
         return !"*".equals(id);
-//		return id.toUpperCase().startsWith("SYS_") || super.shouldQuoteID(id);
 	}
 	
 	@Override
