@@ -136,4 +136,10 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 	protected Set<String> getReservedWords() {
 		return RESERVED_WORDS;
 	}
+
+    @Override
+    public boolean isCaseSensetive()
+    {
+        return FileSystemUtils.isCaseSensitive();
+    }
 }
