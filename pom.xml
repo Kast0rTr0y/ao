@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- in order to deploy to central via Sonatype, we inherit their POM -->
@@ -15,7 +16,9 @@
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
-    <description>ActiveObjects is an intuitive, pure-Java ORM. AO is designed from the ground up to be extremely simple and easy to use from an API standpoint.</description>
+    <description>ActiveObjects is an intuitive, pure-Java ORM. AO is designed from the ground up to be extremely simple
+        and easy to use from an API standpoint.
+    </description>
     <url>http://activeobjects.java.net/</url>
     <inceptionYear>2007</inceptionYear>
 
@@ -26,7 +29,7 @@
             <distribution>repo</distribution>
             <comments>A business-friendly OSS license</comments>
         </license>
-    </licenses>    
+    </licenses>
 
     <scm>
         <connection>scm:svn:https://svn.java.net/svn/activeobjects~svn</connection>
@@ -62,12 +65,39 @@
 
     <modules>
         <module>activeobjects-core</module>
+        <module>activeobjects-builder</module>
         <module>activeobjects-test</module>
         <module>activeobjects-integration-test</module>
         <module>activeobjects-integration-test-model</module>
         <module>activeobjects-ant-task</module>
         <module>activeobjects</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>2.2.0</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queries</artifactId>
+                <version>2.2.0</version>
+                <optional>true</optional>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- dependencies shared across all modules -->
+    <dependencies>
+        <dependency>
+            <groupId>com.google.collections</groupId>
+            <artifactId>google-collections</artifactId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <pluginManagement>
@@ -128,7 +158,9 @@
                                     <version>[2.1.0,)</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <message>You must use JDK 1.5 to build Active Objects. This is because of differences in the JDBC APIs between JDK 1.5 and JDK 1.6</message>
+                                    <message>You must use JDK 1.5 to build Active Objects. This is because of
+                                        differences in the JDBC APIs between JDK 1.5 and JDK 1.6
+                                    </message>
                                     <version>[1.5,1.6)</version>
                                 </requireJavaVersion>
                             </rules>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>net.java.dev.activeobjects</groupId>
+        <artifactId>activeobjects-parent</artifactId>
+        <version>0.9-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>activeobjects-builder</artifactId>
+    <name>Active Objects - Builder</name>
+
+    <properties>
+        <proxool.version>0.9.1</proxool.version>
+        <dbpool.version>4.9.3-jdbc3</dbpool.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.java.dev.activeobjects</groupId>
+            <artifactId>activeobjects-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+        </dependency>
+
+        <!--
+            connection pools
+        -->
+        <dependency>
+            <groupId>c3p0</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.1.1</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbcp</groupId>
+            <artifactId>commons-dbcp</artifactId>
+            <version>1.3</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- need to make that a non-system dependency -->
+        <dependency>
+            <groupId>proxool</groupId>
+            <artifactId>proxool</artifactId>
+            <version>${proxool.version}</version>
+            <optional>true</optional>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/repository/proxool/proxool/0.9.1/proxool-0.9.1.jar</systemPath>
+        </dependency>
+        <dependency>
+            <!-- used by proxool -->
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.0.4</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- need to make that a non-system dependency -->
+        <dependency>
+            <groupId>snaq.db.dbpool</groupId>
+            <artifactId>dbpool</artifactId>
+            <version>4.9.3-jdbc3</version>
+            <optional>true</optional>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/repository/snaq/db/dbpool/dbpool/4.9.3-jdbc3/dbpool-4.9.3-jdbc3.jar
+            </systemPath>
+        </dependency>
+    </dependencies>
+</project>
+

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -10,12 +11,19 @@
 
     <artifactId>activeobjects</artifactId>
     <name>Active Objects - The library</name>
-    <description>This is the full Active Object library, if you don't know which one to use, you probably want this one.</description>
+    <description>
+        This is the full Active Object library, if you don't know which one to use, you probably want this one.
+    </description>
 
     <dependencies>
         <dependency>
             <groupId>net.java.dev.activeobjects</groupId>
             <artifactId>activeobjects-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.activeobjects</groupId>
+            <artifactId>activeobjects-builder</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -33,11 +41,13 @@
                             <include>net.java.dev.activeobjects:*</include>
                         </includes>
                     </artifactSet>
-                </configuration>                
+                </configuration>
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals><goal>shade</goal></goals>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

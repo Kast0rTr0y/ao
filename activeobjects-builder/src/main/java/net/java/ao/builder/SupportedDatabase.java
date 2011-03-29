@@ -115,7 +115,7 @@ enum SupportedDatabase
     {
         try
         {
-            return (Class<? extends Driver>) Class.forName(driverClassName);
+            return getDriverClass(driverClassName);
         }
         catch (ClassNotFoundException e)
         {
@@ -123,7 +123,13 @@ enum SupportedDatabase
         }
     }
 
-    static SupportedDatabase getFromUri(String uri)
+    @Override
+    public String toString()
+    {
+        return new StringBuilder().append("Database with prefix ").append(uriPrefix).append(" and driver ").append(driverClassName).toString();
+    }
+
+    static SupportedDatabase fromUri(String uri)
     {
         for (SupportedDatabase supported : values())
         {
@@ -135,9 +141,9 @@ enum SupportedDatabase
         throw new ActiveObjectsException("Could not resolve database for database connection URI <" + uri + ">, are you sure this database is supported");
     }
 
-    @Override
-    public String toString()
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Driver> getDriverClass(String driverClassName) throws ClassNotFoundException
     {
-        return new StringBuilder().append("Database with prefix ").append(uriPrefix).append(" and driver ").append(driverClassName).toString();
+        return (Class<? extends Driver>) Class.forName(driverClassName);
     }
 }

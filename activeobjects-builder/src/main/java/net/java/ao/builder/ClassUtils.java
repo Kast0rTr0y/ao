@@ -1,7 +1,11 @@
 package net.java.ao.builder;
 
-public class ClassUtils
+public final class ClassUtils
 {
+    private ClassUtils()
+    {
+    }
+
     public static Class loadClass(String className)
     {
         try

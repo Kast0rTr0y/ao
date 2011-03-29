@@ -6,7 +6,7 @@ class DatabaseProviderFactory
 {
     static DatabaseProvider getDatabaseProvider(DatabaseProperties databaseProperties)
     {
-        final SupportedDatabase supportedDb = SupportedDatabase.getFromUri(databaseProperties.getUrl());
+        final SupportedDatabase supportedDb = SupportedDatabase.fromUri(databaseProperties.getUrl());
         return supportedDb.getDatabaseProvider(
                 databaseProperties.getConnectionPool(),
                 databaseProperties.getUrl(),
