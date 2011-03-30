@@ -9,6 +9,7 @@ import net.java.ao.event.EventManagerImpl;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.TableAnnotationTableNameConverter;
 import net.java.ao.schema.TableNameConverter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -99,12 +100,22 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
 
         public TableNameConverter getTableNameConverter()
         {
-            return tableNameConverter != null ? tableNameConverter : new CamelCaseTableNameConverter();
+            return tableNameConverter != null ? tableNameConverter : defaultTableNameConverter();
+        }
+
+        private static TableNameConverter defaultTableNameConverter()
+        {
+            return new TableAnnotationTableNameConverter(new CamelCaseTableNameConverter());
         }
 
         public FieldNameConverter getFieldNameConverter()
         {
-            return fieldNameConverter != null ? fieldNameConverter : new CamelCaseFieldNameConverter();
+            return fieldNameConverter != null ? fieldNameConverter : defaultFieldNameConverter();
+        }
+
+        private static CamelCaseFieldNameConverter defaultFieldNameConverter()
+        {
+            return new CamelCaseFieldNameConverter();
         }
 
         public void setUseWeakCache(boolean useWeakCache)

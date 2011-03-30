@@ -30,36 +30,69 @@ import java.util.regex.Pattern;
 
 /**
  * TODO	convert this to use {@link LinkedHashMap}
- * 
+ *
  * @author Daniel Spiewak
  */
-class OrderedProperties extends HashMap<String, String> implements Iterable<String> {
-	private static final long serialVersionUID = 1L;
-	private List<String> keyList;
-	
-	public OrderedProperties() {
-		keyList = new LinkedList<String>();
-	}
+class OrderedProperties extends HashMap<String, String> implements Iterable<String>
+{
+    private static final long serialVersionUID = 2L;
+    private final List<String> keyList;
 
-	public void load(InputStream inStream) throws IOException {
-		load(new InputStreamReader(inStream));
-	}
+    private OrderedProperties()
+    {
+        keyList = new LinkedList<String>();
+    }
 
-	public void load(Reader reader) throws IOException {
-		 BufferedReader bufferedReader = new BufferedReader(reader);
-		 Pattern pattern = Pattern.compile("([^#].+)=([^#\\r\\n]+)");
-		 
-		 String line = null;
-		 while ((line = bufferedReader.readLine()) != null) {
-			 Matcher matcher = pattern.matcher(line);
-			 if (matcher.find()) {
-				 keyList.add(matcher.group(1).trim());
-				 put(matcher.group(1).trim(), matcher.group(2).trim());
-			 }
-		 }
-	}
+    static OrderedProperties load(String resource)
+    {
+        final OrderedProperties p = new OrderedProperties();
+        final InputStream is = OrderedProperties.class.getResourceAsStream(resource);
+        try
+        {
+            p.load(is);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException(e);
+        }
+        finally
+        {
+            try
+            {
+                is.close();
+            }
+            catch (IOException e)
+            {
+                // ignored
+            }
+        }
+        return p;
+    }
 
-	public Iterator<String> iterator() {
-		return keyList.iterator();
-	}
+    private void load(InputStream inStream) throws IOException
+    {
+        load(new InputStreamReader(inStream));
+    }
+
+    private void load(Reader reader) throws IOException
+    {
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        Pattern pattern = Pattern.compile("([^#].+)=([^#\\r\\n]+)");
+
+        String line;
+        while ((line = bufferedReader.readLine()) != null)
+        {
+            Matcher matcher = pattern.matcher(line);
+            if (matcher.find())
+            {
+                keyList.add(matcher.group(1).trim());
+                put(matcher.group(1).trim(), matcher.group(2).trim());
+            }
+        }
+    }
+
+    public Iterator<String> iterator()
+    {
+        return keyList.iterator();
+    }
 }

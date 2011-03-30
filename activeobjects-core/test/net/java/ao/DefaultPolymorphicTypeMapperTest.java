@@ -15,12 +15,10 @@
  */
 package net.java.ao;
 
-import static org.junit.Assert.assertEquals;
-import net.java.ao.schema.PluralizedNameConverter;
-
+import net.java.ao.schema.CamelCaseTableNameConverter;
+import net.java.ao.schema.PluralizedTableNameConverter;
 import org.junit.Before;
 import org.junit.Test;
-
 import test.schema.Commentable;
 import test.schema.Company;
 import test.schema.Distribution;
@@ -31,6 +29,8 @@ import test.schema.Photo;
 import test.schema.Post;
 import test.schema.PrintDistribution;
 
+import static org.junit.Assert.*;
+
 /**
  * @author Daniel Spiewak
  */
@@ -40,7 +40,7 @@ public class DefaultPolymorphicTypeMapperTest {
 	@Before
 	public void setUp() {
 		mapper = new DefaultPolymorphicTypeMapper(Person.class, Company.class, Post.class, Photo.class, Pen.class);
-		mapper.resolveMappings(new PluralizedNameConverter());
+		mapper.resolveMappings(new PluralizedTableNameConverter(new CamelCaseTableNameConverter()));
 	}
 
 	@Test

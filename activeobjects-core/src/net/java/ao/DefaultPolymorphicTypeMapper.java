@@ -15,13 +15,13 @@
  */
 package net.java.ao;
 
+import net.java.ao.schema.PluralizedTableNameConverter;
+import net.java.ao.schema.TableNameConverter;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import net.java.ao.schema.PluralizedNameConverter;
-import net.java.ao.schema.TableNameConverter;
 
 /**
  * <p>Boiler-plate implementation of {@link PolymorphicTypeMapper} which requires
@@ -100,8 +100,8 @@ public class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper {
 			return;
 		}
 		
-		while (converter instanceof PluralizedNameConverter) {
-			converter = ((PluralizedNameConverter) converter).getDelegate();
+		while (converter instanceof PluralizedTableNameConverter) {
+			converter = ((PluralizedTableNameConverter) converter).getDelegate();
 		}
 		
 		for (Class<? extends RawEntity<?>> type : types) {

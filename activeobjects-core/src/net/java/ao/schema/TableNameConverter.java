@@ -30,11 +30,6 @@ import net.java.ao.RawEntity;
  * the table name converter even in ORM-external operations, the developers can
  * control table names in a single location and ensure that the conventions
  * need only be maintained in one spot.</p>
- * <p/>
- * <p>Most new implementations of table name converters should extend
- * {@link AbstractTableNameConverter} rather than implementing this interface
- * directly.  This allows third-party converters to take advantage of boiler-plate
- * conversion code which would otherwise have to be duplicated in every converter.</p>
  *
  * @author Daniel Spiewak
  */

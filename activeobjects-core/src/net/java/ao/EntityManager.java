@@ -19,6 +19,7 @@ import net.java.ao.cache.*;
 import net.java.ao.event.EventManager;
 import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.CachingTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
@@ -122,7 +123,7 @@ public class EntityManager
 		cache = new RAMCache();
 		valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
 
-		tableNameConverter = checkNotNull(configuration.getTableNameConverter());
+		tableNameConverter = new CachingTableNameConverter(checkNotNull(configuration.getTableNameConverter()));
 		fieldNameConverter = checkNotNull(configuration.getFieldNameConverter());
         schemaConfiguration = checkNotNull(configuration.getSchemaConfiguration());
 
