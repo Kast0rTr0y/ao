@@ -15,181 +15,174 @@
  */
 package net.java.ao.schema;
 
-import java.lang.reflect.Method;
-
-import net.java.ao.Accessor;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import net.java.ao.Common;
-import net.java.ao.ManyToMany;
-import net.java.ao.Mutator;
-import net.java.ao.OneToMany;
-import net.java.ao.OneToOne;
 import net.java.ao.RawEntity;
 
+import java.lang.reflect.Method;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Lists.*;
+
 /**
- * An abstract implementation of {@link FieldNameConverter} which handles common 
+ * An abstract implementation of {@link FieldNameConverter} which handles common
  * tasks for the name converter (i.e. relations annotations, accessor/mutator
  * annotations, etc).  For most tasks, custom field name converters should extend
  * this class, rather than directly implementing <code>FieldNameConverter</code>.
- * 
+ *
  * @author Daniel Spiewak
  */
-public abstract class AbstractFieldNameConverter implements FieldNameConverter {
-	
-	/**
-	 * Dummy constructor with protected visibility.  Does nothing.
-	 */
-	protected AbstractFieldNameConverter() {}
+public abstract class AbstractFieldNameConverter implements FieldNameConverter
+{
+    private final List<FieldNameResolver> fieldNameResolvers;
 
-	/**
-	 * <p>Handles operations which should be common to all field name converters
-	 * such as overriding of the generated field name through annotations, etc.
-	 * This method also handles the converting through the Java Bean method
-	 * prefix convention (get/set/is), allowing the implementing class to only
-	 * concern itself with converting one <code>String</code> (from the method
-	 * name) into another.</p>
-	 * 
-	 * <p>This method delegates the actual conversion logic to the
-	 * {@link #convertName(String, boolean, boolean)} method.  There is rarely a need
-	 * for subclasses to override this method.</p>
-	 * @param method	The method for which a field name must be generated.
-	 * 
-	 * @return	A valid database identifier to be used as the field name representative
-	 * 		of the method in question.
-	 * @see net.java.ao.schema.FieldNameConverter#getName(Method)
-	 */
-	public String getName(Method method) {
-		return getNameImpl(method, false);
-	}
-	
-	/**
-	 * Docuentation on the {@link #getName(Method)} method.
-	 * 
-	 * @return	A valid database identifier to be used as the field name representative
-	 * 		of the method in question.
-	 * @see net.java.ao.schema.FieldNameConverter#getPolyTypeName(Method)
-	 */
-	public String getPolyTypeName(Method method) {
-		return getNameImpl(method, true);
-	}
-	
-	private String getNameImpl(Method method, boolean polyType) {
-		if (method == null) {
-			throw new IllegalArgumentException("Problem in ActiveObjects core, looking for field name for null method");
-		}
-		
-		String attributeName = null;
-		Class<?> type = Common.getAttributeTypeFromMethod(method);
-		
-		Mutator mutatorAnnotation = method.getAnnotation(Mutator.class);
-		Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
-		PrimaryKey primaryKeyAnnotation = method.getAnnotation(PrimaryKey.class);
-		OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
-		OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
-		ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
-		
-		if (mutatorAnnotation != null) {
-			attributeName = mutatorAnnotation.value();
-			
-			if (!polyType) {
-				return attributeName;
-			}
-		} else if (accessorAnnotation != null) {
-			attributeName = accessorAnnotation.value();
-			
-			if (!polyType) {
-				return attributeName;
-			}
-		} else if (primaryKeyAnnotation != null && !primaryKeyAnnotation.value().trim().equals("")) {
-			attributeName = primaryKeyAnnotation.value();
-			
-			if (!polyType) {
-				return attributeName;
-			}
-		} else if (oneToOneAnnotation != null) {
-			return null;
-		} else if (oneToManyAnnotation != null) {
-			return null;
-		} else if (manyToManyAnnotation != null) {
-			return null;
-		} else if (method.getName().startsWith("get") || method.getName().startsWith("set")) {
-			attributeName = method.getName().substring(3);
-		} else if (method.getName().startsWith("is")) {
-			attributeName = method.getName().substring(2);
-		} else {
-			return null;
-		}
-		
-		return convertName(attributeName, Common.interfaceInheritsFrom(type, RawEntity.class), polyType);
-	}
-	
-	/**
-	 * <p>Performs the actual conversion logic between a method name (or, more normally
-	 * a trimmed method name) and the corresponding database field identifier.  This
-	 * method may impose conventions such as camelCase, all-lowercase with underscores
-	 * and so on.  There is no need for this method to concern itself with method
-	 * prefixes such as get, set or is.  All of these should be handled within the
-	 * {@link #getName(Method)} method.</p>
-	 * 
-	 * <p>Some examples of input and their corresponding return values for this method
-	 * (assuming the {@link CamelCaseFieldNameConverter} is in use):</p>
-	 * 
-	 * <table border="1">
-	 * 		<tr>
-	 * 			<td><b>Actual Method Name</b></td>
-	 * 			<td><b>Param: name</b></td>
-	 * 			<td><b>Param: entity</b></td>
-	 * 			<td><b>Param: polyType</b></td>
-	 * 			<td><b>Return Value</b></td>
-	 * 		</tr>
-	 * 		<tr>
-	 * 			<td>getFirstName</td>
-	 * 			<td>FirstName</td>
-	 * 			<td><code>false</code></td>
-	 * 			<td><code>false</code></td>
-	 * 			<td>firstName</td>
-	 * 		</tr>
-	 * 		<tr>
-	 * 			<td>getCompany</td>
-	 * 			<td>Company</td>
-	 * 			<td><code>true</code></td>
-	 * 			<td><code>false</code></td>
-	 * 			<td>companyID</td>
-	 * 		</tr>
-	 * 		<tr>
-	 * 			<td>getCompany</td>
-	 * 			<td>Company</td>
-	 * 			<td><code>true</code></td>
-	 * 			<td><code>true</code></td>
-	 * 			<td>companyType</td>
-	 * 		</tr>
-	 * 		<tr>
-	 * 			<td>isCool</td>
-	 * 			<td>Cool</td>
-	 * 			<td><code>false</code></td>
-	 * 			<td><code>false</code></td>
-	 * 			<td>cool</td>
-	 * 		</tr>
-	 * 		<tr>
-	 * 			<td>setLastName</td>
-	 * 			<td>LastName</td>
-	 * 			<td><code>false</code></td>
-	 * 			<td><code>false</code></td>
-	 * 			<td>lastName</td>
-	 * 		</tr>
-	 * </table>
-	 * 
-	 * <p>The implementation of this method must execute extremely quickly and be
-	 * totally thread-safe (stateless if possible).  This is because this method will
-	 * be called many times for some operations.  A slow algorithm here will dramaticly
-	 * affect the execution time of basic tasks.</p>
-	 * 
-	 * @param name	The (often trimmed) method name for which a field name is reqiured.
-	 * @param entity	Indicates whether or not the method in question returns an
-	 * 		entity value.
-	 * @param polyType	Indicates whether or not the field in question is a polymorphic
-	 * 		type flagging field.
-	 * @return	A valid database field name which uniquely corresponds to the method
-	 *		name in question.  Should <i>never</i> return <code>null</code>.
-	 */
-	protected abstract String convertName(String name, boolean entity, boolean polyType);
+    /**
+     * Default constructor implementing the default behaviour for active objects.
+     *
+     * @see
+     */
+    protected AbstractFieldNameConverter()
+    {
+        this(Lists.<FieldNameResolver>newArrayList(
+                new RelationalFieldNameResolver(),
+                new MutatorFieldNameResolver(),
+                new AccessorFieldNameResolver(),
+                new PrimaryKeyFieldNameResolver(),
+                new GetterFieldNameResolver(),
+                new SetterFieldNameResolver(),
+                new IsAFieldNameResolver(),
+                new NullFieldNameResolver()
+        ));
+    }
+
+    protected AbstractFieldNameConverter(List<FieldNameResolver> fieldNameResolvers)
+    {
+        this.fieldNameResolvers = checkNotNull(fieldNameResolvers);
+    }
+
+    /**
+     * <p>Handles operations which should be common to all field name converters
+     * such as overriding of the generated field name through annotations, etc.
+     * This method also handles the converting through the Java Bean method
+     * prefix convention (get/set/is), allowing the implementing class to only
+     * concern itself with converting one <code>String</code> (from the method
+     * name) into another.</p>
+     *
+     * <p>This method delegates the actual conversion logic to the
+     * {@link #convertName(String)} method.  There is rarely a need
+     * for subclasses to override this method.</p>
+     *
+     * @param method The method for which a field name must be generated.
+     * @return A valid database identifier to be used as the field name representative
+     *         of the method in question.
+     * @see net.java.ao.schema.FieldNameConverter#getName(Method)
+     */
+    public final String getName(Method method)
+    {
+        return getNameInternal(method, PolyTypeHandler.STRAIGHT);
+    }
+
+    /**
+     * Documentation on the {@link #getName(Method)} method.
+     *
+     * @return A valid database identifier to be used as the field name representative
+     *         of the method in question.
+     * @see net.java.ao.schema.FieldNameConverter#getPolyTypeName(Method)
+     */
+    public final String getPolyTypeName(Method method)
+    {
+        return getNameInternal(method, PolyTypeHandler.POLY);
+    }
+
+    private String getNameInternal(final Method method, final PolyTypeHandler polyTypeHandler)
+    {
+        final FieldNameResolver fieldNameResolver = findFieldNameResolver(checkNotNull(method));
+        final String resolved = fieldNameResolver.resolve(method);
+
+        if (resolved == null)
+        {
+            return null;
+        }
+
+        if (!fieldNameResolver.transform())
+        {
+            return resolved;
+        }
+
+        if (polyTypeHandler.equals(PolyTypeHandler.POLY))
+        {
+            return convertName(polyTypeHandler.handle(resolved));
+        }
+        else
+        {
+            final EntityFieldNameHandler from = EntityFieldNameHandler.from(method);
+            return convertName(from.handle(polyTypeHandler.handle(resolved)));
+        }
+    }
+
+    private static enum PolyTypeHandler
+    {
+        STRAIGHT, POLY
+            {
+                @Override
+                String handle(String s)
+                {
+                    return s + "Type";
+                }
+            };
+
+        String handle(String s)
+        {
+            return s;
+        }
+    }
+
+    private static enum EntityFieldNameHandler
+    {
+        PRIMITIVE, ENTITY
+            {
+                @Override
+                String handle(String s)
+                {
+                    return s + "ID";
+                }
+            };
+
+        String handle(String s)
+        {
+            return s;
+        }
+
+        static EntityFieldNameHandler from(Method m)
+        {
+            return from(isAttributeOfTypeEntity(m));
+        }
+
+        static EntityFieldNameHandler from(boolean isEntity)
+        {
+            return isEntity ? ENTITY : PRIMITIVE;
+        }
+    }
+
+
+    private FieldNameResolver findFieldNameResolver(final Method method)
+    {
+        return Iterables.find(fieldNameResolvers, new Predicate<FieldNameResolver>()
+        {
+            public boolean apply(FieldNameResolver input)
+            {
+                return input.accept(method);
+            }
+        });
+    }
+
+    private static boolean isAttributeOfTypeEntity(Method method)
+    {
+        return Common.interfaceInheritsFrom(Common.getAttributeTypeFromMethod(method), RawEntity.class);
+    }
+
+    protected abstract String convertName(String name);
 }

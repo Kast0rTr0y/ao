@@ -33,8 +33,10 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 /**
- * WARNING: <i>Not</i> part of the public API.  This class is public only
+ * WARNING: <strong>Not</strong> part of the public API.  This class is public only
  * to allow its use within other packages in the ActiveObjects library.
  *
  * @author Daniel Spiewak
@@ -123,82 +125,84 @@ public final class Common {
 		return MethodFinder.getInstance().findCounterpart(converter, method);
 	}
 
-	public static boolean isAccessor(Method method) {
-		if (method.getAnnotation(Accessor.class) != null) {
-			return true;
-		}
+    public static boolean isMutator(Method method)
+    {
+        return (isAnnotatedMutator(method) || isNamedAsSetter(method)) && isValidMutator(method);
+    }
 
-		if (method.getName().startsWith("get") || method.getName().startsWith("is")) {
-			return method.getReturnType() != Void.TYPE && method.getParameterTypes().length == 0;
-		}
+    public static boolean isAnnotatedMutator(Method method)
+    {
+        return method.isAnnotationPresent(Mutator.class);
+    }
 
-		return false;
-	}
+    private static boolean isNamedAsSetter(Method method)
+    {
+        return method.getName().startsWith("set");
+    }
 
-	public static boolean isMutator(Method method) {
-		if (method.getAnnotation(Mutator.class) != null) {
-			return true;
-		}
+    private static boolean isValidMutator(Method method)
+    {
+        return method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 1;
+    }
 
-		if (method.getName().startsWith("set")) {
-			return method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 1;
-		}
+    public static boolean isAccessor(Method method)
+    {
+        return (isAnnotatedAccessor(method) || isNamedAsGetter(method)) && isValidAccessor(method);
+    }
 
-		return false;
-	}
+    private static boolean isAnnotatedAccessor(Method method)
+    {
+        return method.isAnnotationPresent(Accessor.class);
+    }
 
-	public static Class<?> getAttributeTypeFromMethod(Method method) {
-		Mutator mutatorAnnotation = method.getAnnotation(Mutator.class);
-		Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
-		OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
-		OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
-		ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
+    private static boolean isNamedAsGetter(Method method)
+    {
+        return method.getName().startsWith("get")
+                || method.getName().startsWith("is");
+    }
 
-		Class<?> type = null;
-		Class<?>[] parameterTypes = method.getParameterTypes();
+    private static boolean isValidAccessor(Method method)
+    {
+        return method.getReturnType() != Void.TYPE && method.getParameterTypes().length == 0;
+    }
 
-		if (mutatorAnnotation != null) {
-			if (parameterTypes.length != 1) {
-				throw new IllegalArgumentException("Invalid method signature: " + method.toGenericString());
-			}
+    public static boolean isAnnotatedAsRelational(Method method)
+    {
+        return method.isAnnotationPresent(OneToOne.class)
+                || method.isAnnotationPresent(OneToMany.class)
+                || method.isAnnotationPresent(ManyToMany.class);
+    }
 
-			type = parameterTypes[0];
-		} else if (accessorAnnotation != null) {
-			if (method.getReturnType() == Void.TYPE) {
-				throw new IllegalArgumentException("Invalid method signature: " + method.toGenericString());
-			}
+    public static Class<?> getAttributeTypeFromMethod(Method method)
+    {
+        if (isAnnotatedAsRelational(method))
+        {
+            return null;
+        }
+        if (isMutator(method))
+        {
+            return getMutatorParameterType(method);
+        }
+        if (isAccessor(method))
+        {
+            return getAccessorReturnType(method);
+        }
+        return null;
+    }
 
-			type = method.getReturnType();
-		} else if (oneToOneAnnotation != null) {
-			return null;
-		} else if (oneToManyAnnotation != null) {
-			return null;
-		} else if (manyToManyAnnotation != null) {
-			return null;
-		} else if (method.getName().startsWith("get")) {
-			if (method.getReturnType() == Void.TYPE) {
-				throw new IllegalArgumentException("Invalid method signature: " + method.toGenericString());
-			}
+    private static Class<?> getMutatorParameterType(Method method)
+    {
+        checkArgument(isValidMutator(method), "Method '%s' on class '%s' is not a valid mutator", method.getName(), method.getDeclaringClass().getCanonicalName());
+        return method.getParameterTypes()[0];
+    }
 
-			type = method.getReturnType();
-		} else if (method.getName().startsWith("is")) {
-			if (method.getReturnType() == Void.TYPE) {
-				throw new IllegalArgumentException("Invalid method signature: " + method.toGenericString());
-			}
+    private static Class<?> getAccessorReturnType(Method method)
+    {
+        checkArgument(isValidAccessor(method), "Method '%s' on class '%s' is not a valid accessor", method.getName(), method.getDeclaringClass().getCanonicalName());
+        return method.getReturnType();
+    }
 
-			type = method.getReturnType();
-		} else if (method.getName().startsWith("set")) {
-			if (parameterTypes.length != 1) {
-				throw new IllegalArgumentException("Invalid method signature: " + method.toGenericString());
-			}
-
-			type = parameterTypes[0];
-		}
-
-		return type;
-	}
-
-   public static Class<?> getCallingClass(int depth) {
+    public static Class<?> getCallingClass(int depth) {
         StackTraceElement[] stack = new Exception().getStackTrace();
         try {
             return Class.forName(stack[depth + 2].getClassName());

@@ -3,7 +3,6 @@ package net.java.ao.schema;
 import net.java.ao.RawEntity;
 import org.junit.Test;
 
-import static net.java.ao.schema.UnderscoreTableNameConverter.*;
 import static org.junit.Assert.*;
 
 public final class PluralizedTableNameConverterTest

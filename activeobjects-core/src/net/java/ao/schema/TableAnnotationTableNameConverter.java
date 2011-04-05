@@ -15,10 +15,17 @@ public final class TableAnnotationTableNameConverter implements TableNameConvert
     public static final Class<Table> TABLE_ANNOTATION = Table.class;
 
     private final TableNameConverter delegateTableNameConverter;
+    private final CanonicalClassNameTableNameConverter postProcessingTableNameConverter;
 
     public TableAnnotationTableNameConverter(TableNameConverter delegateTableNameConverter)
     {
+        this(delegateTableNameConverter, new IdentityTableNameConverter());
+    }
+
+    public TableAnnotationTableNameConverter(TableNameConverter delegateTableNameConverter, CanonicalClassNameTableNameConverter postProcessingTableNameConverter)
+    {
         this.delegateTableNameConverter = checkNotNull(delegateTableNameConverter);
+        this.postProcessingTableNameConverter = checkNotNull(postProcessingTableNameConverter);
     }
 
     /**
@@ -34,7 +41,7 @@ public final class TableAnnotationTableNameConverter implements TableNameConvert
     {
         if (entityClass.isAnnotationPresent(TABLE_ANNOTATION))
         {
-            return validate(entityClass.getAnnotation(TABLE_ANNOTATION).value());
+            return postProcessingTableNameConverter.getName(validate(entityClass.getAnnotation(TABLE_ANNOTATION).value()));
         }
         else
         {
@@ -46,5 +53,14 @@ public final class TableAnnotationTableNameConverter implements TableNameConvert
     {
         checkState(value != null && !value.equals(""), "Value %s for table annotation is not valid.", value);
         return value;
+    }
+
+    private static class IdentityTableNameConverter extends CanonicalClassNameTableNameConverter
+    {
+        @Override
+        protected String getName(String entityClassCanonicalName)
+        {
+            return entityClassCanonicalName;
+        }
     }
 }

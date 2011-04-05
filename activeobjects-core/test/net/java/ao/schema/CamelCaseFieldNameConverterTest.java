@@ -20,8 +20,6 @@ import static org.junit.Assert.assertNull;
 
 import java.net.URL;
 
-import net.java.ao.schema.CamelCaseFieldNameConverter;
-
 import org.junit.Test;
 
 import test.schema.Company;
@@ -33,7 +31,7 @@ import test.schema.PersonSuit;
 /**
  * @author Daniel Spiewak
  */
-public class CamelCaseFieldNameConverterTest {
+public final class CamelCaseFieldNameConverterTest {
 
 	@Test
 	public void testGetName() throws SecurityException, NoSuchMethodException {

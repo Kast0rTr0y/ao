@@ -359,7 +359,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         comment.setCommentable(commentable);
         comment.save();
 
-        executeStatement("SELECT " + escapeKeyword("commentableID") + ", " + escapeKeyword("commentableType")
+        executeStatement("SELECT " + escapeKeyword("commentableId") + ", " + escapeKeyword("commentableType")
                 + " FROM " + getTableName(Comment.class) + " WHERE " + escapeKeyword("id") + " = ?",
                 new StatementCallback()
                 {

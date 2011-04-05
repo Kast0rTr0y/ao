@@ -17,6 +17,8 @@ package net.java.ao.schema;
 
 import net.java.ao.Common;
 
+import java.util.List;
+
 /**
  * <p>Imposes a standard camelCase convention upon field names.  This will
  * convert field in the following way:</p>
@@ -57,17 +59,20 @@ import net.java.ao.Common;
  * 
  * @author Daniel Spiewak
  */
-public class CamelCaseFieldNameConverter extends AbstractFieldNameConverter {
-	@Override
-	protected String convertName(String name, boolean entity, boolean polyType) {
-		name = Common.convertDowncaseName(name);
-		
-		if (polyType) {
-			name += "Type";
-		} else if (entity) {
-			name += "ID";
-		}
-		
-		return name;
-	}
+public final class CamelCaseFieldNameConverter extends AbstractFieldNameConverter
+{
+    public CamelCaseFieldNameConverter()
+    {
+    }
+
+    public CamelCaseFieldNameConverter(List<FieldNameResolver> fieldNameResolvers)
+    {
+        super(fieldNameResolvers);
+    }
+
+    @Override
+    protected String convertName(String name)
+    {
+        return Common.convertDowncaseName(name);
+    }
 }

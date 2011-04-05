@@ -1,12 +1,8 @@
 package net.java.ao.schema;
 
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import net.java.ao.Common;
-
 import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.Common.convertSimpleClassName;
+import static net.java.ao.schema.UnderScoreUtils.camelCaseToUnderScore;
 
 /**
  * <p>Imposes an underscore word-separation convention on table
@@ -48,40 +44,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class UnderscoreTableNameConverter extends CanonicalClassNameTableNameConverter
 {
-    private static final Pattern WORD_PATTERN = Pattern.compile("([a-z\\d])([A-Z\\d])");
+    private final Case tableNameCase;
 
-    private final Case tableNamesCase;
-
-    public UnderscoreTableNameConverter(Case tableNamesCase)
+    public UnderscoreTableNameConverter(Case tableNameCase)
     {
-        this.tableNamesCase = checkNotNull(tableNamesCase);
+        this.tableNameCase = checkNotNull(tableNameCase);
     }
 
     @Override
     protected String getName(String entityClassCanonicalName)
     {
-        final Matcher matcher = WORD_PATTERN.matcher(Common.convertSimpleClassName(entityClassCanonicalName));
-        return tableNamesCase.apply(matcher.replaceAll("$1_$2"));
-    }
-
-    public static enum Case
-    {
-        UPPER
-                {
-                    String apply(String tableName)
-                    {
-                        return tableName.toUpperCase(Locale.ENGLISH);
-                    }
-                },
-        LOWER
-                {
-                    @Override
-                    String apply(String tableName)
-                    {
-                        return tableName.toLowerCase(Locale.ENGLISH);
-                    }
-                };
-
-        abstract String apply(String tableName);
+        return tableNameCase.apply(camelCaseToUnderScore(convertSimpleClassName(entityClassCanonicalName)));
     }
 }

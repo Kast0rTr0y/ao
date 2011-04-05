@@ -20,8 +20,6 @@ import static org.junit.Assert.assertNull;
 
 import java.net.URL;
 
-import net.java.ao.schema.UnderscoreFieldNameConverter;
-
 import org.junit.Test;
 
 import test.schema.Company;
@@ -37,7 +35,7 @@ public class UnderscoreFieldNameConverterTest {
 
 	@Test
 	public void testGetNameLowercase() throws SecurityException, NoSuchMethodException {
-		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(false);
+		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.LOWER);
 		
 		assertEquals("first_name", converter.getName(Person.class.getMethod("getFirstName")));
 		assertEquals("first_name", converter.getName(Person.class.getMethod("setFirstName", String.class)));
@@ -67,7 +65,7 @@ public class UnderscoreFieldNameConverterTest {
 
 	@Test
 	public void testGetNameUppercase() throws SecurityException, NoSuchMethodException {
-		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(true);
+		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.UPPER);
 		
 		assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("getFirstName")));
 		assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("setFirstName", String.class)));
