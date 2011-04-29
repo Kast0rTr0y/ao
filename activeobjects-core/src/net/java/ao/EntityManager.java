@@ -674,37 +674,44 @@ public class EntityManager
 		}
 
 		Connection conn = getProvider().getConnection();
-		try {
-			final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
+        try
+        {
+            final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
 
             eventManager.publish(new SqlEvent(sql));
 
-			PreparedStatement stmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			provider.setQueryStatementProperties(stmt, query);
+            PreparedStatement stmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            provider.setQueryStatementProperties(stmt, query);
 
-			query.setParameters(this, stmt);
+            query.setParameters(this, stmt);
 
-			ResultSet res = stmt.executeQuery();
-			provider.setQueryResultSetProperties(res, query);
+            ResultSet res = stmt.executeQuery();
+            provider.setQueryResultSetProperties(res, query);
 
-			while (res.next()) {
-				T entity = peer(type, Common.getPrimaryKeyType(type).pullFromDatabase(this, res, Common.getPrimaryKeyClassType(type), field));
-				CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
+            final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
+            final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
+            final String[] canonicalFields = query.getCanonicalFields(type, fieldNameConverter);
+            while (res.next())
+            {
+                final T entity = peer(type, primaryKeyType.pullFromDatabase(this, res, primaryKeyClassType, field));
+                final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
 
-				for (String cacheField : query.getCanonicalFields(type, fieldNameConverter)) {
-					cacheLayer.put(cacheField, res.getObject(cacheField));
-				}
+                for (String cacheField : canonicalFields)
+                {
+                    cacheLayer.put(cacheField, res.getObject(cacheField));
+                }
 
-				back.add(entity);
-			}
-			res.close();
-			stmt.close();
-		} finally {
-			conn.close();
-		}
-
-		return back.toArray((T[]) Array.newInstance(type, back.size()));
-	}
+                back.add(entity);
+            }
+            res.close();
+            stmt.close();
+        }
+        finally
+        {
+            conn.close();
+        }
+        return back.toArray((T[]) Array.newInstance(type, back.size()));
+    }
 
 	/**
 	 * <p>Executes the specified SQL and extracts the given key field, wrapping each
