@@ -135,6 +135,7 @@ public final class PluralizedTableNameConverterTest
         assertEquals("banks", converter.getName("bank"));
         assertEquals("halls", converter.getName("hall"));
         assertEquals("regions", converter.getName("region"));
+        assertEquals("data", converter.getName("data"));
     }
 
     @Test
