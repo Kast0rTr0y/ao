@@ -2,7 +2,7 @@ package net.java.ao.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.convertSimpleClassName;
-import static net.java.ao.schema.UnderScoreUtils.camelCaseToUnderScore;
+import static net.java.ao.schema.UnderScoreUtils.*;
 
 /**
  * <p>Imposes an underscore word-separation convention on table

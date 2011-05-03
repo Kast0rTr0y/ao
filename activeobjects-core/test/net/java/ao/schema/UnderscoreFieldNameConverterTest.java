@@ -58,8 +58,8 @@ public class UnderscoreFieldNameConverterTest {
 		assertEquals("person_legal_defence_id", 
 				converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
 
-		assertEquals("address_line_1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
-		assertEquals("address_line_1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1", 
+		assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
+		assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
 				String.class)));
 	}
 
@@ -88,8 +88,8 @@ public class UnderscoreFieldNameConverterTest {
 		assertEquals("PERSON_LEGAL_DEFENCE_ID", 
 				converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
 
-		assertEquals("ADDRESS_LINE_1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
-		assertEquals("ADDRESS_LINE_1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1", 
+		assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
+		assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
 				String.class)));
 	}
 }

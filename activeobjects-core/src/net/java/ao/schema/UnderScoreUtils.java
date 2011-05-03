@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 final class UnderScoreUtils
 {
-    private static final Pattern WORD_PATTERN = Pattern.compile("([a-z\\d])([A-Z\\d])");
+    private static final Pattern WORD_PATTERN = Pattern.compile("([a-z\\d])([A-Z])");
 
     private UnderScoreUtils()
     {
