@@ -199,59 +199,46 @@ public final class SchemaGenerator {
 		List<DDLField> fields = new ArrayList<DDLField>();
 		List<String> attributes = new LinkedList<String>();
 		
-		for (Method method : clazz.getMethods()) {
-			AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldConverter, method);
-			
-			if (annotations.getAnnotation(Ignore.class) != null
-					|| annotations.getAnnotation(OneToOne.class) != null
-					|| annotations.getAnnotation(OneToMany.class) != null
-					|| annotations.getAnnotation(ManyToMany.class) != null) {
-				continue;
-			}
-			
+		for (Method method : Common.getValueFieldsMethods(clazz, fieldConverter))
+        {
 			String attributeName = fieldConverter.getName(method);
-			Class<?> type = Common.getAttributeTypeFromMethod(method);
+			final Class<?> type = Common.getAttributeTypeFromMethod(method);
 			
-			if (attributeName != null && type != null) {
+			if (attributeName != null && type != null)
+            {
 				if (attributes.contains(attributeName)) {
 					continue;
 				}
 				attributes.add(attributeName);
-				
-				DatabaseType<?> sqlType = getSQLTypeFromMethod(type, annotations);
-				int precision = getPrecisionFromMethod(type, method, fieldConverter);
-				int scale = getScaleFromMethod(type, method, fieldConverter);
-				
-				DDLField field = new DDLField();
-				
-				field.setName(attributeName);
-				field.setType(sqlType);
-				field.setPrecision(precision);
-				field.setScale(scale);
-				
-				if (annotations.getAnnotation(PrimaryKey.class) != null) {
-					field.setPrimaryKey(true);
-				}
-				
-				if (annotations.getAnnotation(NotNull.class) != null) {
-					field.setNotNull(true);
-				}
-				
-				if (annotations.getAnnotation(Unique.class) != null) {
-					field.setUnique(true);
-				}
-				
-				if (annotations.getAnnotation(AutoIncrement.class) != null) {
-					field.setAutoIncrement(true);
-				} else if (annotations.getAnnotation(Default.class) != null) {
-					field.setDefaultValue(convertStringValue(annotations.getAnnotation(Default.class).value(), sqlType));
-				}
-				
-				if (annotations.getAnnotation(OnUpdate.class) != null) {
-					field.setOnUpdate(convertStringValue(annotations.getAnnotation(OnUpdate.class).value(), sqlType));
-				}
-				
-				if (field.isPrimaryKey()) {
+
+                final AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldConverter, method);
+
+                DDLField field = new DDLField();
+                field.setName(attributeName);
+
+                final DatabaseType<?> sqlType = getSQLTypeFromMethod(type, annotations);
+                field.setType(sqlType);
+
+                field.setPrecision(getPrecisionFromMethod(type, method, fieldConverter));
+                field.setScale(getScaleFromMethod(type, method, fieldConverter));
+                field.setPrimaryKey(annotations.isAnnotationPresent(PrimaryKey.class));
+                field.setNotNull(annotations.isAnnotationPresent(NotNull.class));
+                field.setUnique(annotations.isAnnotationPresent(Unique.class));
+
+                final boolean isAutoIncrement = annotations.isAnnotationPresent(AutoIncrement.class);
+                field.setAutoIncrement(isAutoIncrement);
+
+                if (!isAutoIncrement && annotations.isAnnotationPresent(Default.class))
+                {
+                    field.setDefaultValue(convertStringValue(annotations.getAnnotation(Default.class).value(), sqlType));
+                }
+
+                if (annotations.isAnnotationPresent(OnUpdate.class))
+                {
+                    field.setOnUpdate(convertStringValue(annotations.getAnnotation(OnUpdate.class).value(), sqlType));
+                }
+
+                if (field.isPrimaryKey()) {
 					fields.add(0, field);
 				} else {
 					fields.add(field);

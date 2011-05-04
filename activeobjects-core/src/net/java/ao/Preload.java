@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -74,13 +75,16 @@ import java.lang.annotation.Target;
  * @author Daniel Spiewak
  * @see #value()
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Preload {
-	
-	/**
-	 * Contains the list of fields to be preloaded.  This can be a single field (e.g. 
-	 * "name", "*", etc) or an array of fields (e.g. {"firstName", "lastName"}).
-	 */
-	String[] value() default {"*"};
+public @interface Preload
+{
+    String ALL = "*";
+
+    /**
+     * Contains the list of fields to be preloaded.  This can be a single field (e.g.
+     * "name", "*", etc) or an array of fields (e.g. {"firstName", "lastName"}).
+     */
+    String[] value() default {ALL};
 }

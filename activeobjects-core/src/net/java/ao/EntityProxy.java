@@ -154,7 +154,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 		// check annotations first, they trump all
 		if (mutatorAnnotation != null) {
-			invokeSetter((T) proxy, mutatorAnnotation.value(), args[0], onUpdateAnnotation != null, polyFieldName);
+			invokeSetter((T) proxy, mutatorAnnotation.value(), args[0], polyFieldName);
 			return Void.TYPE;
 		} else if (accessorAnnotation != null) {
 			return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, accessorAnnotation.value(), polyFieldName, 
@@ -191,8 +191,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, getManager().getFieldNameConverter().getName(method), 
 					polyFieldName, method.getReturnType(), onUpdateAnnotation == null && transientAnnotation == null);
 		} else if (Common.isMutator(method)) {
-			invokeSetter((T) proxy, getManager().getFieldNameConverter().getName(method), args[0], 
-					onUpdateAnnotation == null, polyFieldName);
+			invokeSetter((T) proxy, getManager().getFieldNameConverter().getName(method), args[0], polyFieldName);
 
 			return Void.TYPE;
 		}
@@ -483,7 +482,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return null;
 	}
 
-	private void invokeSetter(T entity, String name, Object value, boolean shouldCache, String polyName) throws Throwable {
+	private void invokeSetter(T entity, String name, Object value, String polyName) throws Throwable {
 		CacheLayer cacheLayer = getCacheLayer(entity);
 		
 		getLock(name).writeLock().lock();
@@ -516,13 +515,19 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return retrieveRelations(entity, inMapFields, outMapFields, type, type, where, thisPolyNames, null);
 	}
 
-	private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity, String[] inMapFields, 
-			String[] outMapFields, Class<? extends RawEntity<?>> type, Class<V> finalType, String where, 
-					String[] thisPolyNames, String[] thatPolyNames) throws SQLException {
+    private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity,
+                                                           String[] inMapFields,
+                                                           String[] outMapFields,
+                                                           Class<? extends RawEntity<?>> type,
+                                                           Class<V> finalType,
+                                                           String where,
+                                                           String[] thisPolyNames,
+                                                           String[] thatPolyNames) throws SQLException
+    {
 		if (inMapFields == null || inMapFields.length == 0) {
 			inMapFields = Common.getMappingFields(getManager().getFieldNameConverter(), type, this.type);
 		}
-		String[] fields = getFields(Common.getPrimaryKeyField(finalType, getManager().getFieldNameConverter()), 
+		final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getManager().getFieldNameConverter()),
 				inMapFields, outMapFields, where);
 		
 		V[] cached = getManager().getRelationsCache().get(entity, finalType, type, fields);
@@ -536,10 +541,10 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		
 		String table = getManager().getTableNameConverter().getName(type);
 		boolean oneToMany = type.equals(finalType);
-		Preload preloadAnnotation = finalType.getAnnotation(Preload.class);
+		final Preload preloadAnnotation = finalType.getAnnotation(Preload.class);
 		
-		Connection conn = getConnectionImpl();
-		DatabaseProvider provider = getManager().getProvider();
+		final Connection conn = getConnectionImpl();
+		final DatabaseProvider provider = getManager().getProvider();
 
 		try {
 			StringBuilder sql = new StringBuilder();
@@ -556,8 +561,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				selectFields.add(outMapFields[0]);
 				selectFields.addAll(Arrays.asList(preloadAnnotation.value()));
 				
-				if (selectFields.contains("*")) {
-					sql.append('*');
+				if (selectFields.contains(Preload.ALL)) {
+					sql.append(Preload.ALL);
 				} else {
 					for (String field : selectFields) {
 						sql.append(provider.processID(field)).append(',');
@@ -581,59 +586,60 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				
 				numParams++;
 				returnField = outMapFields[0];
-			} else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1 
+			} else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1
 					&& preloadAnnotation != null && !ignorePreload) {
 				String finalTable = getManager().getTableNameConverter().getName(finalType);		// many-to-many preload
-				
+
 				returnField = finalTable + "__aointernal__id";
 				throughField = table + "__aointernal__id";
-				
+
 				sql.append("SELECT ");
-				
+
 				String finalPKField = Common.getPrimaryKeyField(finalType, getManager().getFieldNameConverter());
-				
+
 				selectFields.add(finalPKField);
 				selectFields.addAll(Arrays.asList(preloadAnnotation.value()));
-				
-				if (selectFields.contains("*")) {
-					returnField = finalPKField;
-				} else {
-					sql.append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
-					sql.append(" AS ").append(provider.processID(returnField)).append(',');
-					
-					selectFields.remove(finalPKField);
-				}
-				
-				sql.append(provider.processID(table)).append('.').append(
-						provider.processID(Common.getPrimaryKeyField(type, getManager().getFieldNameConverter())));
+
+               if (selectFields.contains(Preload.ALL))
+                {
+                    selectFields.remove(Preload.ALL);
+                    selectFields.addAll(Common.getValueFieldsNames(finalType, getManager().getFieldNameConverter()));
+                }
+
+                sql.append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
+                sql.append(" AS ").append(provider.processID(returnField)).append(',');
+
+                selectFields.remove(finalPKField);
+
+				sql.append(provider.processID(table)).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getManager().getFieldNameConverter())));
 				sql.append(" AS ").append(provider.processID(throughField)).append(',');
-				
+
 				for (String field : selectFields) {
 					sql.append(provider.processID(finalTable)).append('.').append(provider.processID(field)).append(',');
 				}
 				sql.setLength(sql.length() - 1);
-				
+
 				if (thatPolyNames != null) {
 					for (String name : thatPolyNames) {
 						String toAppend = table + '.' + name;
-						
+
 						resPolyNames.add(toAppend);
 						sql.append(',').append(provider.processID(toAppend));
 					}
 				}
-				
+
 				sql.append(" FROM ").append(provider.processID(table)).append(" INNER JOIN ");
 				sql.append(provider.processID(finalTable)).append(" ON ");
 				sql.append(provider.processID(table)).append('.').append(provider.processID(outMapFields[0]));
 				sql.append(" = ").append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
-				
+
 				sql.append(" WHERE ").append(provider.processID(table)).append('.').append(
 						provider.processID(inMapFields[0])).append(" = ?");
-				
+
 				if (!where.trim().equals("")) {
                     sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 				}
-				
+
 				if (thisPolyNames != null) {
 					for (String name : thisPolyNames) {
 						sql.append(" AND ").append(provider.processID(name)).append(" = ?");
@@ -644,14 +650,14 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			} else if (inMapFields.length == 1 && outMapFields.length == 1) {	// 99% case (1-* & *-*)
 				sql.append("SELECT ").append(provider.processID(outMapFields[0]));
 				selectFields.add(outMapFields[0]);
-				
+
 				if (!oneToMany) {
 					throughField = Common.getPrimaryKeyField(type, getManager().getFieldNameConverter());
-					
+
 					sql.append(',').append(provider.processID(throughField));
 					selectFields.add(throughField);
 				}
-				
+
 				if (thatPolyNames != null) {
 					for (String name : thatPolyNames) {
 						resPolyNames.add(name);
@@ -659,26 +665,26 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						selectFields.add(name);
 					}
 				}
-				
+
 				sql.append(" FROM ").append(provider.processID(table));
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
-				
+
 				if (!where.trim().equals("")) {
                     sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 				}
-				
+
 				if (thisPolyNames != null) {
 					for (String name : thisPolyNames) {
 						sql.append(" AND ").append(provider.processID(name)).append(" = ?");
 					}
 				}
-				
+
 				numParams++;
 				returnField = outMapFields[0];
 			} else {
 				sql.append("SELECT DISTINCT a.outMap AS outMap");
 				selectFields.add("outMap");
-				
+
 				if (thatPolyNames != null) {
 					for (String name : thatPolyNames) {
 						resPolyNames.add(name);
@@ -687,10 +693,10 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						selectFields.add(name);
 					}
 				}
-				
+
 				sql.append(" FROM (");
 				returnField = "outMap";
-				
+
 				for (String outMap : outMapFields) {
 					for (String inMap : inMapFields) {
 						sql.append("SELECT ");
@@ -698,27 +704,27 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						sql.append(" AS outMap,");
 						sql.append(provider.processID(inMap));
 						sql.append(" AS inMap");
-						
+
 						if (thatPolyNames != null) {
 							for (String name : thatPolyNames) {
 								sql.append(',').append(provider.processID(name));
 							}
 						}
-						
+
 						if (thisPolyNames != null) {
 							for (String name : thisPolyNames) {
 								sql.append(',').append(provider.processID(name));
 							}
 						}
-						
+
 						sql.append(" FROM ").append(provider.processID(table));
 						sql.append(" WHERE ");
 						sql.append(provider.processID(inMap)).append(" = ?");
-						
+
 						if (!where.trim().equals("")) {
                             sql.append(" AND (").append(getManager().getProvider().processWhereClause(where)).append(")");
 						}
-						
+
 						sql.append(" UNION ");
 
 						numParams++;
@@ -727,22 +733,22 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 				sql.setLength(sql.length() - " UNION ".length());
 				sql.append(") a");
-				
+
 				if (thatPolyNames != null) {
 					if (thatPolyNames.length > 0) {
 						sql.append(" WHERE (");
 					}
-					
+
 					for (String name : thatPolyNames) {
 						sql.append("a.").append(provider.processID(name)).append(" = ?").append(" OR ");
 					}
-					
+
 					if (thatPolyNames.length > 0) {
 						sql.setLength(sql.length() - " OR ".length());
 						sql.append(')');
 					}
 				}
-				
+
 				if (thisPolyNames != null) {
 					if (thisPolyNames.length > 0) {
 						if (thatPolyNames == null) {
@@ -751,11 +757,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 							sql.append(" AND (");
 						}
 					}
-					
+
 					for (String name : thisPolyNames) {
 						sql.append("a.").append(provider.processID(name)).append(" = ?").append(" OR ");
 					}
-					
+
 					if (thisPolyNames.length > 0) {
 						sql.setLength(sql.length() - " OR ".length());
 						sql.append(')');
@@ -764,8 +770,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 
 			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
-			
-			DatabaseType<K> dbType = (DatabaseType<K>) TypeManager.getInstance().getType(key.getClass());
+
+            DatabaseType<K> dbType =  TypeManager.getInstance().getType(getClass(key));
 			int index = 0;
 			for (; index < numParams; index++) {
 				dbType.putToDatabase(getManager(), stmt, index + 1, key);
@@ -778,7 +784,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 
 			dbType = Common.getPrimaryKeyType(finalType);
-			DatabaseType<Object> throughDBType = Common.getPrimaryKeyType((Class<? extends RawEntity<Object>>) type);
+			final DatabaseType<Object> throughDBType = Common.getPrimaryKeyType((Class<? extends RawEntity<Object>>) type);
 			
 			ResultSet res = stmt.executeQuery();
 			while (res.next()) {
@@ -826,6 +832,17 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		
 		return cached;
 	}
+
+    /**
+     * Gets the generic class of the given type
+     * @param object the type for which to get the class
+     * @return the generic class
+     */
+    @SuppressWarnings("unchecked")
+    private static <O> Class<O> getClass(O object)
+    {
+        return (Class<O>) object.getClass();
+    }
 
     private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
 		List<String> back = new ArrayList<String>();

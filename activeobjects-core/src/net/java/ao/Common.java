@@ -28,7 +28,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.Ignore;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
@@ -68,8 +73,8 @@ public final class Common {
 		return otherType.isAssignableFrom(type);
 	}
 
-	public static String[] getMappingFields(FieldNameConverter converter,
-			Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to) {
+	public static String[] getMappingFields(FieldNameConverter converter, Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to)
+    {
 		Set<String> back = new LinkedHashSet<String>();
 
 		for (Method method : from.getMethods()) {
@@ -368,6 +373,39 @@ public final class Common {
 
 		return typeA == typeB;
 	}
+
+    /**
+     * Gets all the methods of an entity that correspond to a value field. This means fields that are stored as values
+     * in the database as opposed to fields (IDs) that define a relationship to another table in the database.
+     * @param entity the entity to look up the methods from
+     * @param converter the field name converter currently in use for entities
+     * @return the set of method found
+     */
+    public static Set<Method> getValueFieldsMethods(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)
+    {
+        return Sets.filter(Sets.newHashSet(entity.getMethods()), new Predicate<Method>()
+        {
+            public boolean apply(Method m)
+            {
+                final AnnotationDelegate annotations = getAnnotationDelegate(converter, m);
+                return !annotations.isAnnotationPresent(Ignore.class)
+                        && !annotations.isAnnotationPresent(OneToOne.class)
+                        && !annotations.isAnnotationPresent(OneToMany.class)
+                        && !annotations.isAnnotationPresent(ManyToMany.class);
+            }
+        });
+    }
+
+    public static Set<String> getValueFieldsNames(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)
+    {
+        return Sets.newHashSet(Iterables.transform(getValueFieldsMethods(entity, converter), new Function<Method, String>()
+        {
+            public String apply(Method m)
+            {
+                return converter.getName(m);
+            }
+        }));
+    }
 
     /**
      * Closes the {@link java.sql.ResultSet} in a {@code null} safe manner and quietly, i.e without throwing nor logging

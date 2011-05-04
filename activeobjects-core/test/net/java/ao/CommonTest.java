@@ -1,8 +1,11 @@
 package net.java.ao;
 
+import net.java.ao.schema.AbstractFieldNameConverter;
+import net.java.ao.schema.PrimaryKey;
 import org.junit.Test;
 
 import java.lang.reflect.Method;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -98,86 +101,95 @@ public final class CommonTest
         assertNull(Common.getAttributeTypeFromMethod(method("manyToMany")));
     }
 
-    private static Method method(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException
+    @Test
+    public void testGetValueFieldNames()
     {
-        return ClassWithMethods.class.getMethod(methodName, parameterTypes);
+        final Set<String> valueFieldsNames = Common.getValueFieldsNames(SomeInterface.class, new TestFieldNameConverter());
+        assertEquals(2, valueFieldsNames.size());
+        assertTrue(valueFieldsNames.contains("PrimaryKey"));
+        assertTrue(valueFieldsNames.contains("Field1"));
+        assertFalse(valueFieldsNames.contains("Relation1"));
+        assertFalse(valueFieldsNames.contains("Relation2"));
+        assertFalse(valueFieldsNames.contains("Relation3"));
     }
 
-    private static final class ClassWithMethods
+    private static Method method(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException
     {
-        public SomeInterface getThis()
-        {
-            return null;
-        }
+        return InterfaceWithMethods.class.getMethod(methodName, parameterTypes);
+    }
 
-        public void getInvalid()
-        {
-        }
+    @SuppressWarnings("unused")
+    private static interface InterfaceWithMethods extends RawEntity<Object>
+    {
+        public SomeInterface getThis();
 
-        public SomeInterface isThis()
-        {
-            return null;
-        }
+        public void getInvalid();
 
-        public void isInvalid()
-        {
-        }
+        public SomeInterface isThis();
 
-        public void setThis(SomeInterface si)
-        {
-        }
+        public void isInvalid();
 
-        public void setInvalid0()
-        {
-        }
+        public void setThis(SomeInterface si);
 
-        public void setInvalid2(SomeInterface si1, SomeInterface si2)
-        {
-        }
+        public void setInvalid0();
+
+        public void setInvalid2(SomeInterface si1, SomeInterface si2);
 
         @Accessor("")
-        public SomeInterface accessThis()
-        {
-            return null;
-        }
+        public SomeInterface accessThis();
 
         @Accessor("")
-        public void accessInvalid()
-        {
-        }
+        public void accessInvalid();
 
         @Mutator("")
-        public void changeThis(SomeInterface si)
-        {
-        }
+        public void changeThis(SomeInterface si);
 
         @Mutator("")
-        public void changeInvalid0()
-        {
-        }
+        public void changeInvalid0();
 
         @Mutator("")
-        public void changeInvalid2(SomeInterface si1, SomeInterface si2)
-        {
-        }
+        public void changeInvalid2(SomeInterface si1, SomeInterface si2);
 
         @OneToOne
-        public void oneToOne()
-        {
-        }
+        public void oneToOne();
 
         @OneToMany
-        public void oneToMany()
-        {
-        }
+        public void oneToMany();
 
         @ManyToMany(value = SomeInterface.class, where = "")
-        public void manyToMany()
-        {
-        }
+        public void manyToMany();
     }
 
     private static interface SomeInterface extends RawEntity<Object>
     {
+        public void setField1(String field1);
+
+        public String getField1();
+
+        @PrimaryKey
+        public String getPrimaryKey();
+
+        public void setPrimaryKey(String pk);
+
+        @OneToOne
+        public OtherInterface getRelation1();
+
+        @OneToMany
+        public OtherInterface[] getRelation2();
+
+        @ManyToMany(value = OtherInterface.class)
+        public OtherInterface[] getRelation3();
+    }
+
+    private static interface OtherInterface extends RawEntity<Object>
+    {}
+
+    private static final class TestFieldNameConverter extends AbstractFieldNameConverter
+    {
+        @Override
+        protected String convertName(String name)
+        {
+            return name;
+        }
     }
 }

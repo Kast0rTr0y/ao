@@ -633,7 +633,7 @@ public class EntityManager
 
 		query.resolveFields(type, getFieldNameConverter());
 
-		Preload preloadAnnotation = type.getAnnotation(Preload.class);
+		final Preload preloadAnnotation = type.getAnnotation(Preload.class);
 		if (preloadAnnotation != null) {
 			if (!query.getFields()[0].equals("*") && query.getJoins().isEmpty()) {
 				String[] oldFields = query.getFields();
