@@ -15,9 +15,22 @@
  */
 package net.java.ao.schema;
 
-import net.java.ao.*;
-import net.java.ao.event.sql.SqlEvent;
-import net.java.ao.schema.ddl.*;
+import net.java.ao.AnnotationDelegate;
+import net.java.ao.Common;
+import net.java.ao.DatabaseFunction;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.ManyToMany;
+import net.java.ao.OneToMany;
+import net.java.ao.OneToOne;
+import net.java.ao.Polymorphic;
+import net.java.ao.RawEntity;
+import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -26,7 +39,15 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -38,7 +59,7 @@ public final class SchemaGenerator {
 	
 	public static void migrate(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
                                Class<? extends RawEntity<?>>... classes) throws SQLException {
-		String[] statements = null;
+		String[] statements;
 		try {
 			statements = generateImpl(provider, schemaConfiguration, nameConverter, fieldConverter, SchemaGenerator.class.getClassLoader(), classes);
 		} catch (ClassNotFoundException e) {
@@ -51,9 +72,9 @@ public final class SchemaGenerator {
 			Statement stmt = conn.createStatement();
 			
 			for (String statement : statements) {
-				if (!statement.trim().equals("")) {
-                    provider.getEventManager().publish(new SqlEvent(statement));
-                    executeUpdate(stmt, statement, provider);
+				if (!statement.trim().equals(""))
+                {
+                    provider.executeUpdate(stmt, statement);
                 }
 			}
 			
@@ -62,18 +83,6 @@ public final class SchemaGenerator {
 			conn.close();
 		}
 	}
-
-    private static void executeUpdate(Statement stmt, String sql, DatabaseProvider provider) throws SQLException
-    {
-        try
-        {
-            stmt.executeUpdate(sql);
-        }
-        catch (SQLException e)
-        {
-            provider.handleUpdateError(e);
-        }
-    }
 
     private static String[] generateImpl(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
                                          ClassLoader classloader, Class<? extends RawEntity<?>>... classes) throws ClassNotFoundException, SQLException {

@@ -3,8 +3,8 @@ package net.java.ao.schema.helper;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.SchemaConfiguration;
-import net.java.ao.it.config.java.sql.AbstractCloseableResultSetMetaData;
-import net.java.ao.it.config.java.sql.CloseableResultSetMetaData;
+import net.java.ao.sql.AbstractCloseableResultSetMetaData;
+import net.java.ao.sql.CloseableResultSetMetaData;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 

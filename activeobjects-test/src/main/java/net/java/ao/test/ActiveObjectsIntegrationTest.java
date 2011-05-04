@@ -1,8 +1,8 @@
 package net.java.ao.test;
 
+import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
-import net.java.ao.event.EventManager;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
@@ -11,8 +11,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.concurrent.Callable;
 
-import static junit.framework.Assert.assertEquals;
-import static net.java.ao.Common.closeQuietly;
+import static junit.framework.Assert.*;
+import static net.java.ao.Common.*;
 
 /**
  *
@@ -34,18 +34,18 @@ public abstract class ActiveObjectsIntegrationTest
 
     private <T> T checkSql(boolean executed, Callable<T> callable) throws Exception
     {
-        final EventManager eventManager = entityManager.getEventManager();
+        final DatabaseProvider provider = entityManager.getProvider();
         final SqlTracker sqlTracker = new SqlTracker();
         try
         {
-            eventManager.register(sqlTracker);
+            provider.addSqlListener(sqlTracker);
             final T t = callable.call();
             assertEquals(executed, sqlTracker.isSqlExecuted());
             return t;
         }
         finally
         {
-            eventManager.unregister(sqlTracker);
+            provider.removeSqlListener(sqlTracker);
         }
     }
 

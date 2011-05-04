@@ -15,14 +15,13 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
-import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -127,8 +126,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 			String sql, DBParam... params) throws SQLException {
 		T back = null;
 
-        eventManager.publish(new SqlEvent(sql));
-		PreparedStatement stmt = conn.prepareStatement(sql);
+		PreparedStatement stmt = preparedStatement(conn, sql);
 
 		for (int i = 0; i < params.length; i++) {
 			Object value = params[i].getValue();

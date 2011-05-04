@@ -1,4 +1,4 @@
-package net.java.ao.it.config.java.sql;
+package net.java.ao.sql;
 
 import java.sql.ResultSetMetaData;
 

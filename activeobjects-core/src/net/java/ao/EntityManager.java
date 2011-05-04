@@ -15,9 +15,11 @@
  */
 package net.java.ao;
 
-import net.java.ao.cache.*;
-import net.java.ao.event.EventManager;
-import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.cache.Cache;
+import net.java.ao.cache.CacheLayer;
+import net.java.ao.cache.RAMCache;
+import net.java.ao.cache.RAMRelationsCache;
+import net.java.ao.cache.RelationsCache;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.CachingTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
@@ -36,12 +38,20 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -60,11 +70,6 @@ public class EntityManager
 {
     private final DatabaseProvider provider;
     private final EntityManagerConfiguration configuration;
-
-    /**
-     * To fire events, for example Sql releated events
-     */
-    private final EventManager eventManager;
 
     private final TableNameConverter tableNameConverter;
 	private final FieldNameConverter fieldNameConverter;
@@ -99,16 +104,11 @@ public class EntityManager
 	 *
      * @param provider    the {@link DatabaseProvider} to use in all database operations.
      * @param configuration the configuration for this entity manager
-     * @param eventManager the event manager to use
 	 */
-	public EntityManager(DatabaseProvider provider, EntityManagerConfiguration configuration, EventManager eventManager)
+	public EntityManager(DatabaseProvider provider, EntityManagerConfiguration configuration)
     {
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
-        this.eventManager = checkNotNull(eventManager);
-
-        // this should not be there
-        this.provider.setEventManager(this.eventManager);
 
         if (configuration.useWeakCache())
         {
@@ -232,7 +232,6 @@ public class EntityManager
 				Connection conn = null;
 
 				try {
-					DatabaseProvider provider = getProvider();
 					conn = provider.getConnection();
 
 					StringBuilder sql = new StringBuilder("SELECT ");
@@ -419,7 +418,7 @@ public class EntityManager
             listParams.add(new DBParam(field, generator.generateValue(this)));
         }
 
-		Connection conn = getProvider().getConnection();
+		final Connection conn = provider.getConnection();
 		try {
 			Method pkMethod = Common.getPrimaryKeyMethod(type);
 			back = peer(type, provider.insertReturningKey(this, conn,
@@ -504,8 +503,7 @@ public class EntityManager
 
 		entityCacheLock.writeLock().lock();
 		try {
-			DatabaseProvider provider = getProvider();
-			Connection conn = provider.getConnection();
+			final Connection conn = provider.getConnection();
 			try {
 				for (Class<? extends RawEntity<?>> type : organizedEntities.keySet()) {
 					List<RawEntity<?>> entityList = organizedEntities.get(type);
@@ -520,9 +518,7 @@ public class EntityManager
 					}
 					sql.append(')');
 
-                    eventManager.publish(new SqlEvent(sql.toString()));
-
-					PreparedStatement stmt = conn.prepareStatement(sql.toString());
+					final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 
 					int index = 1;
 					for (RawEntity<?> entity : entityList) {
@@ -673,15 +669,12 @@ public class EntityManager
 			}
 		}
 
-		Connection conn = getProvider().getConnection();
-        try
-        {
-            final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
+		final Connection conn = provider.getConnection();
+		try {
+			final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
 
-            eventManager.publish(new SqlEvent(sql));
-
-            PreparedStatement stmt = conn.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            provider.setQueryStatementProperties(stmt, query);
+			final PreparedStatement stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			provider.setQueryStatementProperties(stmt, query);
 
             query.setParameters(this, stmt);
 
@@ -742,11 +735,9 @@ public class EntityManager
 	public <T extends RawEntity<K>, K> T[] findWithSQL(Class<T> type, String keyField, String sql, Object... parameters) throws SQLException {
 		List<T> back = new ArrayList<T>();
 
-		Connection conn = getProvider().getConnection();
+		final Connection conn = provider.getConnection();
 		try {
-			eventManager.publish(new SqlEvent(sql));
-
-			PreparedStatement stmt = conn.prepareStatement(sql);
+			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 
 			TypeManager manager = TypeManager.getInstance();
 			for (int i = 0; i < parameters.length; i++) {
@@ -813,13 +804,11 @@ public class EntityManager
 	public <K> int count(Class<? extends RawEntity<K>> type, Query query) throws SQLException {
 		int back = -1;
 
-		Connection conn = getProvider().getConnection();
+        Connection conn = provider.getConnection();
 		try {
 			String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), true);
 
-            eventManager.publish(new SqlEvent(sql));
-
-			PreparedStatement stmt = conn.prepareStatement(sql);
+			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 			provider.setQueryStatementProperties(stmt, query);
 
 			query.setParameters(this, stmt);
@@ -937,15 +926,6 @@ public class EntityManager
 	public DatabaseProvider getProvider() {
 		return provider;
 	}
-
-    /**
-     * Returns the event manager in use by this entity manager, cannot but {@code null}
-     * @return the event manager in use by this entity manager
-     */
-    public EventManager getEventManager()
-    {
-        return eventManager;
-    }
 
     <T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
 		proxyLock.readLock().lock();

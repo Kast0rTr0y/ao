@@ -4,33 +4,28 @@ import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.EntityManager;
 import net.java.ao.EntityManagerConfiguration;
 import net.java.ao.SchemaConfiguration;
-import net.java.ao.event.EventManager;
-import net.java.ao.event.EventManagerImpl;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableAnnotationTableNameConverter;
 import net.java.ao.schema.TableNameConverter;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.*;
 
 public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B extends AbstractEntityManagerBuilderWithDatabaseProperties>
 {
     private final DatabaseProperties databaseProperties;
     private final BuilderEntityManagerConfiguration configuration;
 
-    private EventManager eventManager;
-
     AbstractEntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties)
     {
-        this(databaseProperties, new BuilderEntityManagerConfiguration(), null);
+        this(databaseProperties, new BuilderEntityManagerConfiguration());
     }
 
-    AbstractEntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration, EventManager eventManager)
+    AbstractEntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration)
     {
         this.databaseProperties = checkNotNull(databaseProperties);
         this.configuration = checkNotNull(configuration);
-        this.eventManager = eventManager; // can be null
     }
 
     public B tableNameConverter(TableNameConverter tableNameConverter)
@@ -55,17 +50,6 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
     {
         configuration.setUseWeakCache(true);
         return cast();
-    }
-
-    public B eventManager(EventManager eventManager)
-    {
-        this.eventManager = checkNotNull(eventManager);
-        return cast();
-    }
-
-    final EventManager getEventManager()
-    {
-        return eventManager != null ? eventManager : new EventManagerImpl();
     }
 
     final DatabaseProperties getDatabaseProperties()

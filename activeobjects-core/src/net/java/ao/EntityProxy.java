@@ -16,7 +16,6 @@
 package net.java.ao;
 
 import net.java.ao.cache.CacheLayer;
-import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.OnUpdate;
 import net.java.ao.sql.SqlUtils;
@@ -238,8 +237,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			sql.append(" WHERE ").append(provider.processID(pkFieldName)).append(" = ?");
 
-            this.manager.getEventManager().publish(new SqlEvent(sql.toString()));
-			PreparedStatement stmt = conn.prepareStatement(sql.toString());
+			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 
 			List<PropertyChangeEvent> events = new LinkedList<PropertyChangeEvent>();
 			int index = 1;
@@ -434,8 +432,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" FROM ").append(provider.processID(table)).append(" WHERE ");
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
 
-                manager.getEventManager().publish(new SqlEvent(sql.toString()));
-				PreparedStatement stmt = conn.prepareStatement(sql.toString());
+				final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 				Common.getPrimaryKeyType(this.type).putToDatabase(getManager(), stmt, 1, key);
 	
 				ResultSet res = stmt.executeQuery();
@@ -766,8 +763,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 
-            manager.getEventManager().publish(new SqlEvent(sql.toString()));
-			PreparedStatement stmt = conn.prepareStatement(sql.toString());
+			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
 			
 			DatabaseType<K> dbType = (DatabaseType<K>) TypeManager.getInstance().getType(key.getClass());
 			int index = 0;

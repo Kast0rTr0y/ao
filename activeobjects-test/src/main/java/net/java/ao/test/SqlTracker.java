@@ -1,20 +1,19 @@
 package net.java.ao.test;
 
-import net.java.ao.event.EventListener;
-import net.java.ao.event.sql.SqlEvent;
+import net.java.ao.DatabaseProvider;
 
-import java.util.LinkedList;
 import java.util.List;
+
+import static com.google.common.collect.Lists.*;
 
 /**
  *
  */
-public final class SqlTracker
+public final class SqlTracker implements DatabaseProvider.SqlListener
 {
-    private final List<SqlEvent> sqlStatements = new LinkedList<SqlEvent>();
+    private final List<String> sqlStatements = newLinkedList();
 
-    @EventListener
-    public void onSql(SqlEvent sql)
+    public void onSql(String sql)
     {
         sqlStatements.add(sql);
     }

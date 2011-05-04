@@ -72,6 +72,10 @@
         <module>activeobjects</module>
     </modules>
 
+    <properties>
+        <slf4j.version>1.5.11</slf4j.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -95,6 +99,18 @@
             <groupId>com.google.collections</groupId>
             <artifactId>google-collections</artifactId>
             <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <!-- simple slf4j for tests -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

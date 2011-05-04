@@ -1,4 +1,6 @@
-package net.java.ao.it.config.java.sql;
+package net.java.ao.sql;
+
+import net.java.ao.sql.CloseableResultSetMetaData;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;

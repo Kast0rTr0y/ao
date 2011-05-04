@@ -2,20 +2,19 @@ package net.java.ao.builder;
 
 import net.java.ao.LuceneConfiguration;
 import net.java.ao.SearchableEntityManager;
-import net.java.ao.event.EventManager;
 
 import java.io.IOException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static net.java.ao.builder.DatabaseProviderFactory.getDatabaseProvider;
+import static com.google.common.base.Preconditions.*;
+import static net.java.ao.builder.DatabaseProviderFactory.*;
 
 public final class EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration extends AbstractEntityManagerBuilderWithDatabaseProperties<EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration>
 {
     private final LuceneConfiguration luceneConfiguration;
 
-    EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration, EventManager eventManager, LuceneConfiguration luceneConfiguration)
+    EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration)
     {
-        super(databaseProperties, configuration, eventManager);
+        super(databaseProperties, configuration);
         this.luceneConfiguration = checkNotNull(luceneConfiguration);
     }
 
@@ -23,7 +22,7 @@ public final class EntityManagerBuilderWithDatabasePropertiesAndLuceneConfigurat
     {
         try
         {
-            return new SearchableEntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration(), getEventManager(), luceneConfiguration);
+            return new SearchableEntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration(), luceneConfiguration);
         }
         catch (IOException e)
         {

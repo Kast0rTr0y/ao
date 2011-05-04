@@ -15,14 +15,13 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
-import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -453,10 +452,9 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		if (back == null) {
-			String sql = "SELECT NEXTVAL('" + processID(table + "_" + pkField + "_seq") + "')";
+			final String sql = "SELECT NEXTVAL('" + processID(table + "_" + pkField + "_seq") + "')";
 
-            eventManager.publish(new SqlEvent(sql));
-			PreparedStatement stmt = conn.prepareStatement(sql);
+			final PreparedStatement stmt = preparedStatement(conn, sql);
 
 			ResultSet res = stmt.executeQuery();
 			if (res.next()) {
@@ -480,8 +478,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
 			String sql, DBParam... params) throws SQLException {
-        eventManager.publish(new SqlEvent(sql));
-		PreparedStatement stmt = conn.prepareStatement(sql);
+
+		final PreparedStatement stmt = preparedStatement(conn, sql);
 
 		for (int i = 0; i < params.length; i++) {
 			Object value = params[i].getValue();

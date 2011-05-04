@@ -28,7 +28,7 @@ public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEn
     public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final File indexDir)
     {
         checkNotNull(indexDir);
-        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), getEventManager(), new LuceneConfiguration()
+        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), new LuceneConfiguration()
         {
             public Directory getIndexDirectory()
             {
@@ -46,6 +46,6 @@ public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEn
 
     public EntityManager build()
     {
-        return new EntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration(), getEventManager());
+        return new EntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration());
     }
 }

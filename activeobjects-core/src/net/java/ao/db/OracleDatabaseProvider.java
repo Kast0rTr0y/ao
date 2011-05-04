@@ -23,7 +23,6 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
-import net.java.ao.event.sql.SqlEvent;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -280,8 +279,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         try
         {
             final String oracleSql = sql + " returning " + processID(pkField) + " into ?";
-            eventManager.publish(new SqlEvent(oracleSql));
-
+            onSql(sql);
             stmt = (OraclePreparedStatement) conn.prepareCall(oracleSql);
             T back = setParameters(stmt, params, pkField, pkType);
 

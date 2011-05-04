@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.List;
 
-import net.java.ao.event.EventManager;
 import net.java.ao.types.DatabaseType;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -81,9 +80,9 @@ public class SearchableEntityManager extends EntityManager {
 
 	private final Analyzer analyzer;
 
-    public SearchableEntityManager(DatabaseProvider databaseProvider, EntityManagerConfiguration configuration, EventManager eventManager, LuceneConfiguration luceneConfiguration) throws IOException
+    public SearchableEntityManager(DatabaseProvider databaseProvider, EntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration) throws IOException
     {
-        super(databaseProvider, configuration, eventManager);
+        super(databaseProvider, configuration);
         this.indexDir = checkNotNull(checkNotNull(luceneConfiguration).getIndexDirectory());
         this.analyzer = new StopAnalyzer();
         init();

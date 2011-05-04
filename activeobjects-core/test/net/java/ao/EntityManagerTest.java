@@ -15,7 +15,6 @@
  */
 package net.java.ao;
 
-import net.java.ao.event.EventManager;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import org.junit.After;
@@ -25,11 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Daniel Spiewak
@@ -40,15 +35,12 @@ public class EntityManagerTest
     @Mock
     private DatabaseProvider databaseProvider;
 
-    @Mock
-    private EventManager eventManager;
-
     private EntityManager entityManager;
 
     @Before
     public void setUp()
     {
-        entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration(), eventManager);
+        entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration());
     }
 
     @After
