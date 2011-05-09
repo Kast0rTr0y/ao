@@ -49,8 +49,6 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
     public void update(EntityManager entityManager) throws Exception
     {
-        System.out.println("****** updating the DB ************");
-
         // creating the schema
         entityManager.migrate(PersonSuit.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class, Authorship.class,
                 Book.class, Magazine.class, PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,
