@@ -278,6 +278,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected boolean considerPrecision(DDLField field) {
 		switch (field.getType().getType()) {
 			case Types.INTEGER:
+			case Types.BOOLEAN:
 				return false;
 		}
 		

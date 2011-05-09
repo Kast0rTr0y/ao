@@ -17,6 +17,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             put("mysql", new MySql());
             put("postgres", new Postgres());
             put("oracle", new Oracle());
+            put("sqlserver", new SqlServer());
         }};
 
     private final JdbcConfiguration delegate;
