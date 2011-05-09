@@ -185,17 +185,32 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
     private void updateDatabase() throws Exception
     {
-        if (getTestClass().isAnnotationPresent(Data.class))
+        final Class<? extends DatabaseUpdater> databaseUpdater = isDataAnnotationPresent() ? getDataAnnotationValue() : getDataAnnotationDefaultValue();
+        if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(databaseUpdater))
         {
-            final Class<? extends DatabaseUpdater> databaseUpdater = getTestClass().getAnnotation(Data.class).value();
-            if (!DATABASES.containsKey(jdbc)
-                    || !DATABASES.get(jdbc).equals(databaseUpdater))
-            {
-                entityManager.migrate(); // empty the database
-                newInstance(databaseUpdater).update(entityManager);
-                DATABASES.put(jdbc, databaseUpdater);
-            }
+            entityManager.migrate(); // empty the database
+            newInstance(databaseUpdater).update(entityManager);
+            DATABASES.put(jdbc, databaseUpdater);
         }
+    }
+
+    private Class<? extends DatabaseUpdater> getDataAnnotationDefaultValue() throws NoSuchMethodException
+    {
+        @Data
+        final class C
+        {
+        }
+        return C.class.getAnnotation(Data.class).value();
+    }
+
+    private Class<? extends DatabaseUpdater> getDataAnnotationValue()
+    {
+        return getTestClass().getAnnotation(Data.class).value();
+    }
+
+    private boolean isDataAnnotationPresent()
+    {
+        return getTestClass().isAnnotationPresent(Data.class);
     }
 
     private <T> T newInstance(Class<T> aClass)

@@ -7,23 +7,22 @@ import net.java.ao.Polymorphic;
 import net.java.ao.schema.Indexed;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.Unique;
+import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.test.jdbc.Jdbc;
-import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * Test for ACTIVEOBJECTS-64 where {@link Indexed} fields within {@link Polymorphic} entities try to create extra index
  * on non-existing tables.
  */
-@RunWith(ActiveObjectsJUnitRunner.class)
 @Jdbc(DynamicJdbcConfiguration.class)
-public class TestPolymorphicAndIndex
+public class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest
 {
     private EntityManager entityManager;
 
     @Test
+//    @Ignore
     public void createDatabaseSchema() throws Exception
     {
         entityManager.migrate(ReferenceableEntity.class, Achievement.class);
