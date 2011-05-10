@@ -284,8 +284,29 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		
 		return super.considerPrecision(field);
 	}
-	
-	@Override
+
+    @Override
+    protected String renderFieldPrecision(DDLField field)
+    {
+        switch (field.getType().getType())
+        {
+            case Types.DECIMAL:
+            case Types.FLOAT:
+            case Types.DOUBLE:
+            case Types.REAL:
+                if (field.getPrecision() <= 0)
+                {
+                    field.setPrecision(32);
+                }
+                if (field.getScale() <= 0)
+                {
+                    field.setScale(16);
+                }
+        }
+        return super.renderFieldPrecision(field);
+    }
+
+    @Override
 	protected String renderFunction(DatabaseFunction func) {
 		switch (func) {
 			case CURRENT_DATE:

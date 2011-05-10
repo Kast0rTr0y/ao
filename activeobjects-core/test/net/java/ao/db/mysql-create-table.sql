@@ -9,6 +9,7 @@ CREATE TABLE person (
     companyID BIGINT,
     cool BOOLEAN DEFAULT 1,
     modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    weight DOUBLE(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 ) ENGINE=InnoDB

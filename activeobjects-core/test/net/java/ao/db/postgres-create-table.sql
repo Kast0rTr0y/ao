@@ -9,6 +9,7 @@ CREATE TABLE 'person' (
     'companyID' BIGINT,
     'cool' BOOLEAN DEFAULT TRUE,
     'modified' TIMESTAMP DEFAULT now(),
+    'weight' DOUBLE PRECISION,
     CONSTRAINT 'fk_person_companyid' FOREIGN KEY ('companyID') REFERENCES 'company'('id'),
     PRIMARY KEY('id')
 )

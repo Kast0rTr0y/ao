@@ -183,8 +183,14 @@ public class OracleDatabaseProvider extends DatabaseProvider {
             case Types.FLOAT:
             case Types.DOUBLE:
             case Types.REAL:
-                field.setPrecision(32);
-                field.setScale(16);
+                if (field.getPrecision() <= 0)
+                {
+                    field.setPrecision(32);
+                }
+                if (field.getScale() <= 0)
+                {
+                    field.setScale(16);
+                }
         }
         return super.renderFieldPrecision(field);
     }

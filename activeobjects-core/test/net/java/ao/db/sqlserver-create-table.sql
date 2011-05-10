@@ -9,6 +9,7 @@ CREATE TABLE person (
     companyID BIGINT,
     cool INTEGER DEFAULT 1,
     modified DATETIME DEFAULT GetDate(),
+    weight DECIMAL(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )

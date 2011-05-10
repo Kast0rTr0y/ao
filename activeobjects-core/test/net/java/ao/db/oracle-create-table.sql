@@ -5,10 +5,11 @@ CREATE TABLE person (
     age NUMBER(12),
     url VARCHAR(255) UNIQUE NOT NULL,
     favoriteClass VARCHAR(255),
-    height NUMBER(32,16) DEFAULT 62.3,
+    height NUMBER(32,6) DEFAULT 62.3,
     companyID NUMBER,
     cool NUMBER(1) DEFAULT 1,
     modified TIMESTAMP DEFAULT SYSDATE,
+    weight NUMBER(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )

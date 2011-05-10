@@ -204,7 +204,7 @@ public class DatabaseProviderTest
 		DDLTable table = new DDLTable();
 		table.setName("person");
 		
-		DDLField[] fields = new DDLField[10];
+		DDLField[] fields = new DDLField[11];
 		table.setFields(fields);
 		
 		fields[0] = new DDLField();
@@ -258,7 +258,11 @@ public class DatabaseProviderTest
 		fields[9].setType(tm.getType(Calendar.class));
 		fields[9].setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
 		fields[9].setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
-		
+
+        fields[10] = new DDLField();
+		fields[10].setName("weight");
+		fields[10].setType(tm.getType(double.class));
+
 		DDLForeignKey[] keys = new DDLForeignKey[1];
 		table.setForeignKeys(keys);
 		
