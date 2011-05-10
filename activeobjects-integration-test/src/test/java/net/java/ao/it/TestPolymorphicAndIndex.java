@@ -6,7 +6,6 @@ import net.java.ao.EntityManager;
 import net.java.ao.Polymorphic;
 import net.java.ao.schema.Indexed;
 import net.java.ao.schema.NotNull;
-import net.java.ao.schema.Unique;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.test.jdbc.Jdbc;
@@ -22,7 +21,6 @@ public class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest
     private EntityManager entityManager;
 
     @Test
-//    @Ignore
     public void createDatabaseSchema() throws Exception
     {
         entityManager.migrate(ReferenceableEntity.class, Achievement.class);
@@ -35,7 +33,6 @@ public class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest
     {
         @Indexed
         @NotNull
-        @Unique
         public String getRef();
 
         public void setRef(String ref);
