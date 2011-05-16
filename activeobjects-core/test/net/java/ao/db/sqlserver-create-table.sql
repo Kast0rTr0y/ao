@@ -7,7 +7,7 @@ CREATE TABLE person (
     favoriteClass VARCHAR(255),
     height DECIMAL(32,6) DEFAULT 62.3,
     companyID BIGINT,
-    cool INTEGER DEFAULT 1,
+    cool BIT DEFAULT 1,
     modified DATETIME DEFAULT GetDate(),
     weight DECIMAL(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),

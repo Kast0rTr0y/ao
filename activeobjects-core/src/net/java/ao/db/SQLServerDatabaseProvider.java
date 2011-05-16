@@ -253,7 +253,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected String convertTypeToString(DatabaseType<?> type) {
 		switch (type.getType()) {
 			case Types.BOOLEAN:
-				return "INTEGER";
+				return "BIT";
 			
 			case Types.DOUBLE:
 				return "DECIMAL";
