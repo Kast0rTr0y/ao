@@ -639,10 +639,15 @@ public abstract class DatabaseProvider
         if (groupClause != null)
         {
             sql.append(" GROUP BY ");
-            sql.append(groupClause);
+            sql.append(processGroupByClause(groupClause));
         }
 
         return sql.toString();
+    }
+
+    private String processGroupByClause(String groupBy)
+    {
+        return SqlUtils.GROUP_BY_CLAUSE.matcher(groupBy).replaceAll(processID("$1"));
     }
 
     /**
@@ -666,10 +671,15 @@ public abstract class DatabaseProvider
         if (orderClause != null)
         {
             sql.append(" ORDER BY ");
-            sql.append(orderClause);
+            sql.append(processOrderClause(orderClause));
         }
 
         return sql.toString();
+    }
+
+    private String processOrderClause(String order)
+    {
+        return SqlUtils.ORDER_CLAUSE.matcher(order).replaceFirst(processID("$1"));
     }
 
     /**
