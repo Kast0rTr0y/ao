@@ -18,7 +18,6 @@ package net.java.ao.schema;
 import net.java.ao.Common;
 import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
@@ -40,14 +39,24 @@ import java.sql.Types;
 import static org.junit.Assert.*;
 
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class SchemaReaderTest extends ActiveObjectsIntegrationTest
 {
     @SuppressWarnings("null")
     @Test
     public void testReadSchema() throws SQLException
     {
-        String[] expectedFields = {"id", "firstName", "lastName", "profession", "age", "url", "favoriteClass", "companyID", "image", "active", "modified"};
+        String[] expectedFields = {
+                getFieldName(Person.class, "getID"),
+                getFieldName(Person.class, "getFirstName"),
+                getFieldName(Person.class, "getLastName"),
+                getFieldName(Person.class, "getProfession"),
+                getFieldName(Person.class, "getAge"),
+                getFieldName(Person.class, "getURL"),
+                getFieldName(Person.class, "getFavoriteClass"),
+                getFieldName(Person.class, "getCompany"),
+                getFieldName(Person.class, "getImage"),
+                getFieldName(Person.class, "isActive"),
+                getFieldName(Person.class, "getModified")};
 
         DDLTable[] parsedTables = SchemaReader.readSchema(entityManager.getProvider(), new DefaultSchemaConfiguration());
 
@@ -103,7 +112,7 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
         DDLField idField = null;
         for (DDLField field : personDDL.getFields())
         {
-            if (field.getName().equalsIgnoreCase("id"))
+            if (field.getName().equalsIgnoreCase(getFieldName(Person.class, "getID")))
             {
                 idField = field;
                 break;
@@ -118,7 +127,7 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
         DDLField cidField = null;
         for (DDLField field : personDDL.getFields())
         {
-            if (field.getName().equalsIgnoreCase("companyID"))
+            if (field.getName().equalsIgnoreCase(getFieldName(Person.class, "getCompany")))
             {
                 cidField = field;
                 break;
@@ -133,7 +142,7 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
         DDLForeignKey cidKey = null;
         for (DDLForeignKey key : personDDL.getForeignKeys())
         {
-            if (key.getField().equalsIgnoreCase("companyID"))
+            if (key.getField().equalsIgnoreCase(getFieldName(Person.class, "getCompany")))
             {
                 cidKey = key;
                 break;
@@ -143,8 +152,8 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertNotNull(cidKey);
 
         assertTrue(entityManager.getTableNameConverter().getName(Person.class).equalsIgnoreCase(cidKey.getDomesticTable()));
-        assertTrue("companyID".equalsIgnoreCase(cidKey.getField()));
-        assertTrue("companyID".equalsIgnoreCase(cidKey.getForeignField()));
+        assertTrue(getFieldName(Person.class, "getCompany").equalsIgnoreCase(cidKey.getField()));
+        assertTrue(getFieldName(Company.class, "getCompanyID").equalsIgnoreCase(cidKey.getForeignField()));
         assertTrue(entityManager.getTableNameConverter().getName(Company.class).equalsIgnoreCase(cidKey.getTable()));
     }
 

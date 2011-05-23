@@ -1,16 +1,27 @@
 package net.java.ao.test;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.test.converters.DynamicFieldNameConverter;
+import net.java.ao.test.converters.DynamicTableNameConverter;
+import net.java.ao.test.converters.NameConverters;
+import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
+import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.concurrent.Callable;
 
+import static com.google.common.collect.Iterables.find;
+import static com.google.common.collect.Lists.newArrayList;
 import static junit.framework.Assert.*;
 import static net.java.ao.Common.*;
 
@@ -18,6 +29,8 @@ import static net.java.ao.Common.*;
  *
  */
 @RunWith(ActiveObjectsJUnitRunner.class)
+@NameConverters(table = DynamicTableNameConverter.class, field = DynamicFieldNameConverter.class)
+@Jdbc(DynamicJdbcConfiguration.class)
 public abstract class ActiveObjectsIntegrationTest
 {
     protected EntityManager entityManager;
@@ -130,6 +143,38 @@ public abstract class ActiveObjectsIntegrationTest
     {
         final String tableName = entityManager.getTableNameConverter().getName(entityType);
         return escape ? escapeKeyword(tableName) : tableName;
+    }
+
+    protected final String getFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
+    {
+        return entityManager.getFieldNameConverter().getName(findMethod(entityType, methodName));
+    }
+
+    protected final String getPolyFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
+    {
+        return entityManager.getFieldNameConverter().getPolyTypeName(findMethod(entityType, methodName));
+    }
+
+    protected final String escapeFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
+    {
+        return escapeKeyword(getFieldName(entityType, methodName));
+    }
+
+    protected final String escapePolyFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
+    {
+        return escapeKeyword(getPolyFieldName(entityType, methodName));
+    }
+
+    private Method findMethod(Class<? extends RawEntity<?>> entityType, final String methodName)
+    {
+        return find(newArrayList(entityType.getMethods()), new Predicate<Method>()
+        {
+            @Override
+            public boolean apply(Method m)
+            {
+                return m.getName().equals(methodName);
+            }
+        });
     }
 
     protected final String escapeKeyword(String keyword)

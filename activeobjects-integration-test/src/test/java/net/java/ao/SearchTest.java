@@ -89,9 +89,9 @@ public class SearchTest extends ActiveObjectsIntegrationTest
         List<String> fields = Common.getSearchableFields(entityManager, Company.class);
 
         assertEquals(1, fields.size());
-        assertEquals("name", fields.get(0));
+        assertEquals(getFieldName(Company.class, "getName"), fields.get(0));
 
-        List<String> possibilities = Arrays.asList(new String[]{"firstName", "lastName"});
+        List<String> possibilities = Arrays.asList(getFieldName(Person.class, "getFirstName"), getFieldName(Person.class, "getLastName"));
         fields = Common.getSearchableFields(entityManager, Person.class);
 
         assertEquals(possibilities.size(), fields.size());

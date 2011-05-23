@@ -24,11 +24,16 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import net.java.ao.RawEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Spiewak
  */
-public class RAMRelationsCache implements RelationsCache {
+public final class RAMRelationsCache implements RelationsCache {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
 	private final Map<CacheKey, RawEntity<?>[]> cache;
 	private final Map<Class<? extends RawEntity<?>>, Set<CacheKey>> typeMap;
 	private final Map<MetaCacheKey, Set<CacheKey>> fieldMap;
@@ -48,17 +53,15 @@ public class RAMRelationsCache implements RelationsCache {
 			cache.clear();
 			typeMap.clear();
 			fieldMap.clear();
+            logger.debug("flush");
 		} finally {
 			lock.writeLock().unlock();
 		}
 	}
 
 	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields) {
-//		if (to.length == 0) {
-//			return;
-//		}
-		
-		CacheKey key = new CacheKey(from, toType, throughType, fields);
+
+		final CacheKey key = new CacheKey(from, toType, throughType, fields);
 		lock.writeLock().lock();
 		try {
 			cache.put(key, to);
@@ -82,16 +85,24 @@ public class RAMRelationsCache implements RelationsCache {
 					keys.add(key);
 				}
 			}
-		} finally {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("put ( {}, {}, {}, {}, {}, {} )", new Object[]{from, through, throughType, to, toType, Arrays.toString(fields)});
+            }
+        } finally {
 			lock.writeLock().unlock();
 		}
 	}
 
-	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, 
-			Class<? extends RawEntity<?>> throughType, String[] fields) {
+	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields) {
 		lock.readLock().lock();
 		try {
-			return (T[]) cache.get(new CacheKey(from, toType, throughType, fields));
+            final T[] ts = (T[]) cache.get(new CacheKey(from, toType, throughType, fields));
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("get ( {}, {}, {}, {} ) : {}", new Object[]{from, toType, throughType, Arrays.toString(fields), Arrays.toString(ts)});
+            }
+            return ts;
 		} finally {
 			lock.readLock().unlock();
 		}
@@ -110,7 +121,11 @@ public class RAMRelationsCache implements RelationsCache {
 					typeMap.remove(type);
 				}
 			}
-		} finally {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("remove ( {} )", Arrays.toString(types));
+            }
+        } finally {
 			lock.writeLock().unlock();
 		}
 	}
@@ -126,12 +141,16 @@ public class RAMRelationsCache implements RelationsCache {
 					}
 				}
 			}
-		} finally {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("remove ( {}, {} )", entity, Arrays.toString(fields));
+            }
+        } finally {
 			lock.writeLock().unlock();
 		}
 	}
 
-	private static class CacheKey {
+	private static final class CacheKey {
 		private RawEntity<?> from;
 		private Class<? extends RawEntity<?>> toType;
 		private Class<? extends RawEntity<?>> throughType;
@@ -242,7 +261,7 @@ public class RAMRelationsCache implements RelationsCache {
 		}
 	}
 	
-	private static class MetaCacheKey {
+	private static final class MetaCacheKey {
 		private RawEntity<?> entity;
 		private String field;
 		

@@ -1,4 +1,4 @@
-package net.java.ao.test;
+package net.java.ao.test.converters;
 
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;

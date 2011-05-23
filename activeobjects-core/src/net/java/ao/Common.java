@@ -27,18 +27,23 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
 import net.java.ao.schema.PrimaryKey;
+import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * WARNING: <strong>Not</strong> part of the public API.  This class is public only
@@ -405,6 +410,60 @@ public final class Common {
                 return converter.getName(m);
             }
         }));
+    }
+
+    public static List<String> preloadValue(Preload preload, final FieldNameConverter fnc)
+    {
+        final List<String> value = newArrayList(preload.value());
+        if (fnc instanceof FieldNameProcessor)
+        {
+            return Lists.transform(value, new Function<String, String>()
+            {
+                @Override
+                public String apply(String from)
+                {
+                    return ((FieldNameProcessor) fnc).convertName(from);
+                }
+            });
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+    public static String where(OneToOne oneToOne, final FieldNameConverter fnc)
+    {
+        return where(oneToOne.where(), fnc);
+    }
+
+    public static String where(OneToMany oneToMany, final FieldNameConverter fnc)
+    {
+        return where(oneToMany.where(), fnc);
+    }
+
+    public static String where(ManyToMany manyToMany, final FieldNameConverter fnc)
+    {
+        return where(manyToMany.where(), fnc);
+    }
+
+    private static String where(String where, final FieldNameConverter fnc)
+    {
+        if (fnc instanceof FieldNameProcessor)
+        {
+            final Matcher matcher = SqlUtils.WHERE_CLAUSE.matcher(where);
+            final StringBuffer sb = new StringBuffer();
+            while (matcher.find())
+            {
+                matcher.appendReplacement(sb, ((FieldNameProcessor) fnc).convertName(matcher.group(1)));
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        }
+        else
+        {
+            return where;
+        }
     }
 
     /**

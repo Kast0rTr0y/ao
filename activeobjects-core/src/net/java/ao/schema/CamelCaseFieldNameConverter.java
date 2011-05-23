@@ -71,7 +71,7 @@ public final class CamelCaseFieldNameConverter extends AbstractFieldNameConverte
     }
 
     @Override
-    protected String convertName(String name)
+    public String convertName(String name)
     {
         return Common.convertDowncaseName(name);
     }

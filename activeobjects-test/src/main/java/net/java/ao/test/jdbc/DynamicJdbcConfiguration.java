@@ -1,7 +1,11 @@
 package net.java.ao.test.jdbc;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
+import net.java.ao.test.ConfigurationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>A JDBC configuration that can be configured through either system properties or a configuration file.</p>
@@ -11,44 +15,50 @@ import java.util.Map;
  */
 public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 {
-    private static final Map<String, JdbcConfiguration> AVAILABLE = new HashMap<String, JdbcConfiguration>()
-    {{
-            put("hsql", new Hsql());
-            put("mysql", new MySql());
-            put("postgres", new Postgres());
-            put("oracle", new Oracle());
-            put("sqlserver", new SqlServer());
-        }};
+    private static final Logger logger = LoggerFactory.getLogger(DynamicJdbcConfiguration.class);
 
-    private final JdbcConfiguration delegate;
+    private static final ImmutableMap<String, JdbcConfiguration> CONFIGS = ImmutableMap.<String, JdbcConfiguration>builder()
+            .put("hsql", new Hsql())
+            .put("mysql", new MySql())
+            .put("postgres", new Postgres())
+            .put("oracle", new Oracle())
+            .put("sqlserver", new SqlServer())
+            .build();
+
+    private static final String DEFAULT = "hsql";
+
+    private final Supplier<JdbcConfiguration> jdbcSupplier;
 
     public DynamicJdbcConfiguration()
     {
-        final String database = ConfigurationProperties.get("ao.test.database", "hsql");
-        delegate = get(database);
-        if (delegate == null)
-        {
-            throw new IllegalStateException("Could not find appropriate database configuration for " + database);
-        }
-    }
-
-    private JdbcConfiguration get(String database)
-    {
-        return AVAILABLE.get(database);
+        this.jdbcSupplier = Suppliers.memoize(new SystemPropertyJdbcConfigurationSupplier());
     }
 
     public String getUrl()
     {
-        return delegate.getUrl();
+        return jdbcSupplier.get().getUrl();
     }
 
     public String getUsername()
     {
-        return delegate.getUsername();
+        return jdbcSupplier.get().getUsername();
     }
 
     public String getPassword()
     {
-        return delegate.getPassword();
+        return jdbcSupplier.get().getPassword();
+    }
+
+    private static final class SystemPropertyJdbcConfigurationSupplier implements Supplier<JdbcConfiguration>
+    {
+        @Override
+        public JdbcConfiguration get()
+        {
+            final String db = ConfigurationProperties.get("ao.test.database", DEFAULT);
+            final JdbcConfiguration jdbcConfiguration = CONFIGS.get(db);
+
+            logger.debug("JDBC configuration key is {} and resolved to {}", db, jdbcConfiguration);
+            return jdbcConfiguration;
+        }
     }
 }

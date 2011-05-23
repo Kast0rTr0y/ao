@@ -52,6 +52,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.*;
+import static net.java.ao.Common.preloadValue;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -639,7 +640,7 @@ public class EntityManager
 				String[] oldFields = query.getFields();
 				List<String> newFields = new ArrayList<String>();
 
-				for (String newField : preloadAnnotation.value()) {
+				for (String newField : preloadValue(preloadAnnotation, fieldNameConverter)) {
 					newField = newField.trim();
 
 					int fieldLoc = -1;

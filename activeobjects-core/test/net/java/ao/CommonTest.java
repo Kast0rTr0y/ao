@@ -187,7 +187,7 @@ public final class CommonTest
     private static final class TestFieldNameConverter extends AbstractFieldNameConverter
     {
         @Override
-        protected String convertName(String name)
+        public String convertName(String name)
         {
             return name;
         }

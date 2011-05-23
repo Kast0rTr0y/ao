@@ -25,7 +25,6 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Lists.*;
 
 /**
  * An abstract implementation of {@link FieldNameConverter} which handles common
@@ -35,7 +34,7 @@ import static com.google.common.collect.Lists.*;
  *
  * @author Daniel Spiewak
  */
-public abstract class AbstractFieldNameConverter implements FieldNameConverter
+public abstract class AbstractFieldNameConverter implements FieldNameConverter, FieldNameProcessor
 {
     private final List<FieldNameResolver> fieldNameResolvers;
 
@@ -185,5 +184,5 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter
         return attributeTypeFromMethod != null && Common.interfaceInheritsFrom(attributeTypeFromMethod, RawEntity.class);
     }
 
-    protected abstract String convertName(String name);
+    public abstract String convertName(String name);
 }

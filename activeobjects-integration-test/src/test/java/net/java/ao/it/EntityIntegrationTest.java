@@ -3,7 +3,6 @@ package net.java.ao.it;
 import net.java.ao.DBParam;
 import net.java.ao.EntityProxyConfigurator;
 import net.java.ao.RawEntity;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
@@ -29,7 +28,6 @@ import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -70,7 +68,6 @@ import static org.junit.Assert.fail;
  *
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
@@ -231,7 +228,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         checkSqlExecutedWhenSaving(company);
 
-        executeStatement("SELECT " + escapeKeyword("name") + ", " + escapeKeyword("cool") + " FROM " + getTableName(Company.class) + " WHERE " + escapeKeyword("companyID") + " = ?",
+        executeStatement("SELECT " + escapeKeyword("name") + ", " + escapeKeyword("cool") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -359,7 +356,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         comment.setCommentable(commentable);
         comment.save();
 
-        executeStatement("SELECT " + escapeKeyword("commentableID") + ", " + escapeKeyword("commentableType")
+        executeStatement("SELECT " + escapeFieldName(Comment.class, "getCommentable") + ", " + escapePolyFieldName(Comment.class, "getCommentable")
                 + " FROM " + getTableName(Comment.class) + " WHERE " + escapeKeyword("id") + " = ?",
                 new StatementCallback()
                 {
@@ -415,7 +412,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         person.setFirstName("Daniel");
         person.save();
 
-        assertEquals("firstName", propertyName.get());
+        assertEquals(getFieldName(Person.class, "getFirstName"), propertyName.get());
         assertEquals("Daniel", propertyValue.get());
     }
 
@@ -540,7 +537,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     {
         final Company company = entityManager.create(Company.class);
         executeStatement("SELECT " + escapeKeyword("motivation") + " FROM " + getTableName(Company.class)
-                + " WHERE " + escapeKeyword("companyID") + " = ?",
+                + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -576,8 +573,8 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("companyID") + " FROM " + getTableName(Company.class)
-                + " WHERE " + escapeKeyword("companyID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + getTableName(Company.class)
+                + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -738,7 +735,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        pen = entityManager.create(Pen.class, new DBParam("personID", person));
+        pen = entityManager.create(Pen.class, new DBParam(getFieldName(Pen.class, "getPerson"), person));
 
         checkSqlExecuted(new Callable<Void>()
         {
@@ -884,8 +881,8 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         suit = entityManager.create(PersonSuit.class,
-                new DBParam("personID", person),
-                new DBParam("personLegalDefenceID", PersonLegalDefenceData.getIds()[1]));
+                new DBParam(getFieldName(PersonSuit.class, "getPerson"), person),
+                new DBParam(getFieldName(PersonSuit.class, "getPersonLegalDefence"), PersonLegalDefenceData.getIds()[1]));
 
         checkSqlExecuted(new Callable<Void>()
         {
@@ -1085,8 +1082,8 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         comment = entityManager.create(Comment.class,
-                new DBParam("commentableID", post),
-                new DBParam("commentableType", entityManager.getPolymorphicTypeMapper().convert(Post.class)));
+                new DBParam(getFieldName(Comment.class, "getCommentable"), post),
+                new DBParam(getPolyFieldName(Comment.class, "getCommentable"), entityManager.getPolymorphicTypeMapper().convert(Post.class)));
 
         checkSqlExecuted(new Callable<Void>()
         {
@@ -1307,9 +1304,9 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         authorship = entityManager.create(Authorship.class,
-                new DBParam("publicationID", magazine),
-                new DBParam("publicationType", entityManager.getPolymorphicTypeMapper().convert(Magazine.class)),
-                new DBParam("authorID", BookData.AUTHOR_IDS[0][1]));
+                new DBParam(getFieldName(Authorship.class, "getPublication"), magazine),
+                new DBParam(getPolyFieldName(Authorship.class, "getPublication"), entityManager.getPolymorphicTypeMapper().convert(Magazine.class)),
+                new DBParam(getFieldName(Authorship.class, "getAuthor"), BookData.AUTHOR_IDS[0][1]));
 
         checkSqlExecuted(new Callable<Void>()
         {

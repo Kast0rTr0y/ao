@@ -87,7 +87,7 @@ public final class UnderscoreFieldNameConverter extends AbstractFieldNameConvert
     }
 
     @Override
-    protected String convertName(String name)
+    public String convertName(String name)
     {
         return fieldNameCase.apply(camelCaseToUnderScore(name));
     }

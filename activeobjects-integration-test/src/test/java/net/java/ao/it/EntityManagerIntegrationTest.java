@@ -2,7 +2,6 @@ package net.java.ao.it;
 
 import net.java.ao.DBParam;
 import net.java.ao.Query;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
@@ -10,7 +9,6 @@ import net.java.ao.it.model.Profession;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -19,18 +17,13 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import static net.java.ao.it.DatabaseProcessor.CompanyData;
-import static net.java.ao.it.DatabaseProcessor.PenData;
-import static net.java.ao.it.DatabaseProcessor.PersonData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static net.java.ao.it.DatabaseProcessor.*;
+import static org.junit.Assert.*;
 
 /**
  *
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
@@ -71,7 +64,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("companyID") + " FROM " + getTableName(Company.class) + " WHERE " + escapeKeyword("companyID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -100,7 +93,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("name") + " FROM " + getTableName(Company.class) + " WHERE " + escapeKeyword("companyID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -172,7 +165,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("name") + " FROM " + getTableName(Company.class) + " WHERE " + escapeKeyword("companyID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -313,7 +306,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testFindCheckDefinedPrecache() throws Exception
     {
-        final Person[] people = entityManager.find(Person.class, Query.select("id, firstName, lastName"));
+        final Person[] people = entityManager.find(Person.class, Query.select(escapeFieldName(Person.class, "getID") + ", " + escapeFieldName(Person.class, "getFirstName") + ", " + escapeFieldName(Person.class, "getLastName")));
 
         checkSqlNotExecuted(new Callable<Void>()
         {
@@ -349,13 +342,15 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         final String personTableName = getTableName(Person.class);
 
         Company[] coolCompanies = entityManager.findWithSQL(Company.class,
-                "companyID", "SELECT " + escapeKeyword("companyID") + " FROM "
-                        + companyTableName + " WHERE " + escapeKeyword("cool") + " = ?", true);
+                getFieldName(Company.class, "getCompanyID"),
+                "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM "
+                        + companyTableName + " WHERE " + escapeFieldName(Company.class, "isCool") + " = ?", true);
 
         assertEquals(1, coolCompanies.length);
         assertEquals(CompanyData.getIds()[1], coolCompanies[0].getCompanyID());
 
-        final Company[] allCompanies = entityManager.findWithSQL(Company.class, "companyID", "SELECT " + escapeKeyword("companyID") + " FROM " + companyTableName);
+        final Company[] allCompanies = entityManager.findWithSQL(Company.class, getFieldName(Company.class, "getCompanyID"),
+                "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + companyTableName);
 
         assertEquals(CompanyData.getIds().length, allCompanies.length);
 
@@ -378,9 +373,10 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         }
 
         final Company company = entityManager.get(Company.class, CompanyData.getIds()[0]);
-        Person[] people = entityManager.findWithSQL(Person.class, "id", "SELECT " + escapeKeyword("id") + " FROM "
+        Person[] people = entityManager.findWithSQL(Person.class, getFieldName(Person.class, "getID"),
+                "SELECT " + escapeFieldName(Person.class, "getID") + " FROM "
                 + personTableName
-                + " WHERE " + escapeKeyword("companyID") + " = ?", company);
+                + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?", company);
         Person[] companyPeople = company.getPeople();
 
         assertEquals(companyPeople.length, people.length);

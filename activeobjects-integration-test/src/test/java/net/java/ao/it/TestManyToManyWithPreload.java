@@ -7,8 +7,6 @@ import net.java.ao.Preload;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -21,7 +19,6 @@ import static org.junit.Assert.*;
  * {@link SQLException} saying "Column not found '*'"
  */
 @Data(TestManyToManyWithPreload.ManyToManyWithPreloadDatabaseUpdater.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public final class TestManyToManyWithPreload extends ActiveObjectsIntegrationTest
 {
     @Test

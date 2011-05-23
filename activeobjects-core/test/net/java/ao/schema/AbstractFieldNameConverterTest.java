@@ -128,7 +128,7 @@ public final class AbstractFieldNameConverterTest
     private static final class AbstractFieldNameConverterForTests extends AbstractFieldNameConverter
     {
         @Override
-        protected String convertName(String name)
+        public String convertName(String name)
         {
             return name;
         }

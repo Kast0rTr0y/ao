@@ -16,7 +16,6 @@
 package net.java.ao.schema;
 
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
@@ -27,7 +26,6 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.sql.Types;
@@ -38,15 +36,26 @@ import static org.junit.Assert.*;
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 {
     @SuppressWarnings("null")
     @Test
     public void testParseDDL()
     {
-        String[] expectedFields = {"id", "firstName", "lastName", "profession", "age", "url", "favoriteClass", "companyID", "image", "active", "modified"};
-        String[] expectedIndexes = {"age", "companyID"};
+        String[] expectedFields = {
+                getFieldName(Person.class, "getID"),
+                getFieldName(Person.class, "getFirstName"),
+                getFieldName(Person.class, "getLastName"),
+                getFieldName(Person.class, "getProfession"),
+                getFieldName(Person.class, "getAge"),
+                getFieldName(Person.class, "getURL"),
+                getFieldName(Person.class, "getFavoriteClass"),
+                getFieldName(Person.class, "getCompany"),
+                getFieldName(Person.class, "getImage"),
+                getFieldName(Person.class, "isActive"),
+                getFieldName(Person.class, "getModified")};
+
+        String[] expectedIndexes = {getFieldName(Person.class, "getAge"), getFieldName(Person.class, "getCompany")};
 
         TableNameConverter tableNameConverter = entityManager.getTableNameConverter();
         DDLTable[] parsedTables = SchemaGenerator.parseDDL(tableNameConverter,
@@ -94,23 +103,23 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 
         for (DDLField field : personDDL.getFields())
         {
-            if (field.getName().equals("url"))
+            if (field.getName().equals(getFieldName(Person.class, "getURL")))
             {
                 urlField = field;
             }
-            else if (field.getName().equals("age"))
+            else if (field.getName().equals(getFieldName(Person.class, "getAge")))
             {
                 ageField = field;
             }
-            else if (field.getName().equals("lastName"))
+            else if (field.getName().equals(getFieldName(Person.class, "getLastName")))
             {
                 lastNameField = field;
             }
-            else if (field.getName().equals("id"))
+            else if (field.getName().equals(getFieldName(Person.class, "getID")))
             {
                 idField = field;
             }
-            else if (field.getName().equals("companyID"))
+            else if (field.getName().equals(getFieldName(Person.class, "getCompany")))
             {
                 cidField = field;
             }
@@ -165,7 +174,7 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         DDLForeignKey cidKey = null;
         for (DDLForeignKey key : personDDL.getForeignKeys())
         {
-            if (key.getField().equals("companyID"))
+            if (key.getField().equals(getFieldName(Person.class, "getCompany")))
             {
                 cidKey = key;
                 break;
@@ -175,8 +184,8 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertNotNull(cidKey);
 
         assertEquals(tableNameConverter.getName(Person.class), cidKey.getDomesticTable());
-        assertEquals("companyID", cidKey.getField());
-        assertEquals("companyID", cidKey.getForeignField());
+        assertEquals(getFieldName(Person.class, "getCompany"), cidKey.getField());
+        assertEquals(getFieldName(Company.class, "getCompanyID"), cidKey.getForeignField());
         assertEquals(tableNameConverter.getName(Company.class), cidKey.getTable());
 
         assertEquals(expectedIndexes.length, personDDL.getIndexes().length);

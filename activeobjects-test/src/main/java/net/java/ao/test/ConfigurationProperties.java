@@ -1,21 +1,20 @@
-package net.java.ao.test.jdbc;
+package net.java.ao.test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-final class ConfigurationProperties
+public final class ConfigurationProperties
 {
     private static Properties props = null;
 
-    static String get(String key, final String defaultValue)
+    public static String get(String key, final String defaultValue)
     {
         String value = load().getProperty(key, defaultValue);
         if (value.startsWith("${")) // we're using an unfiltered test.properties
         {
             value = defaultValue;
         }
-        log("<" + key + "> is defined as <" + value + ">");
         return value;
     }
 
@@ -73,10 +72,5 @@ final class ConfigurationProperties
         {
             // ignore
         }
-    }
-
-    private static void log(String msg)
-    {
-        System.out.println(msg);
     }
 }

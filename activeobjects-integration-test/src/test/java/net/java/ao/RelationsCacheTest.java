@@ -37,7 +37,6 @@ import static net.java.ao.it.DatabaseProcessor.*;
 @Jdbc(DynamicJdbcConfiguration.class)
 public class RelationsCacheTest extends ActiveObjectsIntegrationTest
 {
-
     @Test
     public void testOneToManyDestinationCreation() throws Exception
     {

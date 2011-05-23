@@ -20,6 +20,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <ao.test.database>${ao.test.database}</ao.test.database>
+                        <ao.test.tablenameconverter>${ao.test.tablenameconverter}</ao.test.tablenameconverter>
+                        <ao.test.fieldnameconverter>${ao.test.fieldnameconverter}</ao.test.fieldnameconverter>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -129,6 +131,9 @@
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
         <oracle.version>10.2.0.4</oracle.version>
+
+        <ao.test.tablenameconverter>camelcase</ao.test.tablenameconverter>
+        <ao.test.fieldnameconverter>camelcase</ao.test.fieldnameconverter>
     </properties>
 
     <profiles>

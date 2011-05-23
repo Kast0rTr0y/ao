@@ -2,7 +2,7 @@ package net.java.ao.test.junit;
 
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.test.NameConverters;
+import net.java.ao.test.converters.NameConverters;
 import net.java.ao.test.jdbc.Hsql;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.JdbcConfiguration;

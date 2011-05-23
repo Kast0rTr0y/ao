@@ -44,6 +44,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 
+import static net.java.ao.Common.*;
+
 /**
  * @author Daniel Spiewak
  */
@@ -164,7 +166,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0], 
 					new String[] { Common.getPrimaryKeyField(type, getManager().getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, oneToOneAnnotation.where(), 
+					(Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, manager.getFieldNameConverter()),
 					Common.getPolymorphicFieldNames(getManager().getFieldNameConverter(), type, this.type));
 			
 			return back.length == 0 ? null : back[0];
@@ -174,7 +176,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			return retrieveRelations((RawEntity<K>) proxy, new String[0], 
 					new String[] { Common.getPrimaryKeyField(type, getManager().getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, oneToManyAnnotation.where(), 
+					(Class<? extends RawEntity>) type, where(oneToManyAnnotation, manager.getFieldNameConverter()),
 					Common.getPolymorphicFieldNames(getManager().getFieldNameConverter(), type, this.type));
 		} else if (manyToManyAnnotation != null && method.getReturnType().isArray() 
 				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
@@ -184,7 +186,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			return retrieveRelations((RawEntity<K>) proxy, null, 
 					Common.getMappingFields(getManager().getFieldNameConverter(), 
 							throughType, type), throughType, (Class<? extends RawEntity>) type, 
-							manyToManyAnnotation.where(),
+							Common.where(manyToManyAnnotation, manager.getFieldNameConverter()),
 							Common.getPolymorphicFieldNames(getManager().getFieldNameConverter(), throughType, this.type), 
 							Common.getPolymorphicFieldNames(getManager().getFieldNameConverter(), throughType, type));
 		} else if (Common.isAccessor(method)) {
@@ -559,7 +561,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append("SELECT ");		// one-to-many preload
 				
 				selectFields.add(outMapFields[0]);
-				selectFields.addAll(Arrays.asList(preloadAnnotation.value()));
+				selectFields.addAll(preloadValue(preloadAnnotation, manager.getFieldNameConverter()));
 				
 				if (selectFields.contains(Preload.ALL)) {
 					sql.append(Preload.ALL);
@@ -598,7 +600,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				String finalPKField = Common.getPrimaryKeyField(finalType, getManager().getFieldNameConverter());
 
 				selectFields.add(finalPKField);
-				selectFields.addAll(Arrays.asList(preloadAnnotation.value()));
+				selectFields.addAll(preloadValue(preloadAnnotation, manager.getFieldNameConverter()));
 
                if (selectFields.contains(Preload.ALL))
                 {

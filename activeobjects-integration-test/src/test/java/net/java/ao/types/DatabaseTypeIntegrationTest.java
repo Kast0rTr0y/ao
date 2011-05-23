@@ -1,11 +1,9 @@
 package net.java.ao.types;
 
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.net.URL;
@@ -19,25 +17,24 @@ import static org.junit.Assert.*;
  *
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
     public void testPutToDatabase() throws Exception
     {
         final String personTableName = getTableName(Person.class);
-        final String firstName = "firstName";
-        final String age = "age";
-        final String url = "url";
-        final String favoriteClass = "favoriteClass";
-        final String id = "id";
+        final String firstName = escapeFieldName(Person.class, "getFirstName");
+        final String age = escapeFieldName(Person.class, "getAge");
+        final String url = escapeFieldName(Person.class, "getURL");
+        final String favoriteClass = escapeFieldName(Person.class, "getFavoriteClass");
+        final String id = escapeFieldName(Person.class, "getID");
 
         executeUpdate("UPDATE " + personTableName + " SET "
-                + escapeKeyword(firstName) + " = ?, "
-                + escapeKeyword(age) + " = ?, "
-                + escapeKeyword(url) + " = ?, "
-                + escapeKeyword(favoriteClass) + " = ? "
-                + "WHERE " + escapeKeyword(id) + " = ?", new UpdateCallback()
+                + firstName + " = ?, "
+                + age + " = ?, "
+                + url + " = ?, "
+                + favoriteClass + " = ? "
+                + "WHERE " + id + " = ?", new UpdateCallback()
         {
             public void setParameters(PreparedStatement stmt) throws Exception
             {
@@ -82,18 +79,18 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
     public void testConvert() throws Exception
     {
         final String personTableName = getTableName(Person.class);
-        final String firstName = "firstName";
-        final String age = "age";
-        final String url = "url";
-        final String favoriteClass = "favoriteClass";
-        final String id = "id";
+        final String firstName = escapeFieldName(Person.class, "getFirstName");
+        final String age = escapeFieldName(Person.class, "getAge");
+        final String url = escapeFieldName(Person.class, "getURL");
+        final String favoriteClass = escapeFieldName(Person.class, "getFavoriteClass");
+        final String id = escapeFieldName(Person.class, "getID");
 
         executeUpdate("UPDATE " + personTableName + " SET "
-                + escapeKeyword(firstName) + " = ?, "
-                + escapeKeyword(age) + " = ?, "
-                + escapeKeyword(url) + " = ?, "
-                + escapeKeyword(favoriteClass) + " = ? "
-                + "WHERE " + escapeKeyword(id) + " = ?",
+                + firstName + " = ?, "
+                + age + " = ?, "
+                + url + " = ?, "
+                + favoriteClass + " = ? "
+                + "WHERE " + id + " = ?",
                 new UpdateCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -110,11 +107,11 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
 
                 });
 
-        executeStatement("SELECT " + escapeKeyword(firstName) + ","
-                + escapeKeyword(age) + ","
-                + escapeKeyword(url) + ","
-                + escapeKeyword(favoriteClass)
-                + " FROM " + personTableName + " WHERE " + escapeKeyword(id) + " = ?",
+        executeStatement("SELECT " + firstName + ","
+                + age + ","
+                + url + ","
+                + favoriteClass
+                + " FROM " + personTableName + " WHERE " + id + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -126,10 +123,10 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("JoeJoe", new VarcharType().pullFromDatabase(entityManager, res, String.class, "firstName"));
-                            assertEquals(123, new IntegerType().pullFromDatabase(entityManager, res, int.class, "age").intValue());
-                            assertEquals(new URL("http://www.google.com"), new URLType().pullFromDatabase(entityManager, res, URL.class, "url"));
-                            assertEquals(DatabaseTypeIntegrationTest.class, new ClassType().pullFromDatabase(entityManager, res, (Class) Class.class, "favoriteClass"));
+                            assertEquals("JoeJoe", new VarcharType().pullFromDatabase(entityManager, res, String.class, getFieldName(Person.class, "getFirstName")));
+                            assertEquals(123, new IntegerType().pullFromDatabase(entityManager, res, int.class, getFieldName(Person.class, "getAge")).intValue());
+                            assertEquals(new URL("http://www.google.com"), new URLType().pullFromDatabase(entityManager, res, URL.class, getFieldName(Person.class, "getURL")));
+                            assertEquals(DatabaseTypeIntegrationTest.class, new ClassType().pullFromDatabase(entityManager, res, (Class) Class.class, getFieldName(Person.class, "getFavoriteClass")));
                         }
                     }
                 });

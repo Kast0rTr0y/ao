@@ -15,6 +15,7 @@
  */
 package net.java.ao.cache;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,20 +24,25 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import net.java.ao.RawEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Daniel Spiewak
  */
-class RAMCacheLayer implements CacheLayer {
+final class RAMCacheLayer implements CacheLayer {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
 	private Map<String, Object> values;
 	private final ReadWriteLock valueLock = new ReentrantReadWriteLock();
-	
+
 	private Set<String> dirty;
 	private final ReadWriteLock dirtyLock = new ReentrantReadWriteLock();
-	
+
 	private Set<Class<? extends RawEntity<?>>> flush;
 	private final ReadWriteLock flushLock = new ReentrantReadWriteLock();
-	
+
 	RAMCacheLayer() {
 		values = new HashMap<String, Object>();
 		dirty = new HashSet<String>();
@@ -53,10 +59,11 @@ class RAMCacheLayer implements CacheLayer {
 					toRemove.add(field);
 				}
 			}
-			
+
 			for (String field : toRemove) {
 				values.remove(field);
 			}
+            logger.debug("clear");
 		} finally {
 			valueLock.writeLock().unlock();
 			dirtyLock.readLock().unlock();
@@ -67,34 +74,41 @@ class RAMCacheLayer implements CacheLayer {
 		dirtyLock.writeLock().lock();
 		try {
 			dirty.clear();
+            logger.debug("clearDirty");
 		} finally {
 			dirtyLock.writeLock().unlock();
 		}
-	
+
 	}
 
 	public void clearFlush() {
 		flushLock.writeLock().lock();
 		try {
 			flush.clear();
+            logger.debug("clearFlush");
 		} finally {
 			flushLock.writeLock().unlock();
 		}
 	}
 
-	public boolean contains(String field) {
+	public boolean contains(String field)
+    {
 		valueLock.readLock().lock();
 		try {
-			return values.containsKey(field);
+            final boolean contains = values.containsKey(field);
+            logger.debug("contains ( {} ) : {}", field, contains);
+            return contains;
 		} finally {
 			valueLock.readLock().unlock();
 		}
 	}
-	
+
 	public boolean dirtyContains(String field) {
 		dirtyLock.readLock().lock();
 		try {
-			return dirty.contains(field);
+            final boolean contains = dirty.contains(field);
+            logger.debug("dirtyContains ( {} ) : {}", field, contains);
+            return contains;
 		} finally {
 			dirtyLock.readLock().unlock();
 		}
@@ -103,7 +117,9 @@ class RAMCacheLayer implements CacheLayer {
 	public Object get(String field) {
 		valueLock.readLock().lock();
 		try {
-			return values.get(field);
+            final Object o = values.get(field);
+            logger.debug("get ( {} ) : {}", field, o);
+            return o;
 		} finally {
 			valueLock.readLock().unlock();
 		}
@@ -112,7 +128,9 @@ class RAMCacheLayer implements CacheLayer {
 	public String[] getDirtyFields() {
 		dirtyLock.readLock().lock();
 		try {
-			return dirty.toArray(new String[dirty.size()]);
+            final String[] strings = dirty.toArray(new String[dirty.size()]);
+            logger.debug("getDirtyFields : {}", Arrays.toString(strings));
+            return strings;
 		} finally {
 			dirtyLock.readLock().unlock();
 		}
@@ -121,7 +139,9 @@ class RAMCacheLayer implements CacheLayer {
 	public Class<? extends RawEntity<?>>[] getToFlush() {
 		flushLock.readLock().lock();
 		try {
-			return flush.toArray(new Class[flush.size()]);
+            final Class[] classes = flush.toArray(new Class[flush.size()]);
+            logger.debug("getToFlush : {}", classes);
+            return classes;
 		} finally {
 			flushLock.readLock().unlock();
 		}
@@ -131,6 +151,7 @@ class RAMCacheLayer implements CacheLayer {
 		dirtyLock.writeLock().lock();
 		try {
 			dirty.add(field);
+            logger.debug("markDirty( {} )", field);
 		} finally {
 			dirtyLock.writeLock().unlock();
 		}
@@ -140,6 +161,7 @@ class RAMCacheLayer implements CacheLayer {
 		flushLock.writeLock().lock();
 		try {
 			flush.add(type);
+            logger.debug("markToFlush ( {} )", type);
 		} finally {
 			flushLock.writeLock().unlock();
 		}
@@ -149,15 +171,17 @@ class RAMCacheLayer implements CacheLayer {
 		valueLock.writeLock().lock();
 		try {
 			values.put(field, value);
+            logger.debug("put ( {}, {} )", field, value);
 		} finally {
 			valueLock.writeLock().unlock();
 		}
 	}
-	
+
 	public void remove(String field) {
 		valueLock.writeLock().lock();
 		try {
 			values.remove(field);
+            logger.debug("remove ( {} )", field);
 		} finally {
 			valueLock.writeLock().unlock();
 		}
