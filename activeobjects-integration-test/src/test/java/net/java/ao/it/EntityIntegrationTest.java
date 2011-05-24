@@ -228,7 +228,8 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         checkSqlExecutedWhenSaving(company);
 
-        executeStatement("SELECT " + escapeKeyword("name") + ", " + escapeKeyword("cool") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + ", " + escapeFieldName(Company.class, "isCool")
+                + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -240,8 +241,8 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(companyName, resultSet.getString("name"));
-                            assertEquals(companyIsCool, resultSet.getBoolean("cool"));
+                            assertEquals(companyName, resultSet.getString(getFieldName(Company.class, "getName")));
+                            assertEquals(companyIsCool, resultSet.getBoolean(getFieldName(Company.class, "isCool")));
                         }
                         else
                         {
@@ -257,7 +258,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         checkSqlExecutedWhenSaving(person);
 
-        executeStatement("SELECT " + escapeKeyword("profession") + " FROM " + getTableName(Person.class) + " WHERE " + escapeKeyword("id") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Person.class, "getProfession") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -269,7 +270,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(musician.ordinal(), resultSet.getInt("profession"));
+                            assertEquals(musician.ordinal(), resultSet.getInt(getFieldName(Person.class, "getProfession")));
                         }
                         else
                         {
@@ -536,7 +537,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     public void testGenerator() throws Exception
     {
         final Company company = entityManager.create(Company.class);
-        executeStatement("SELECT " + escapeKeyword("motivation") + " FROM " + getTableName(Company.class)
+        executeStatement("SELECT " + escapeFieldName(Company.class, "getMotivation") + " FROM " + getTableName(Company.class)
                 + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
                 new StatementCallback()
                 {
