@@ -89,7 +89,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         {
             public Company call() throws Exception
             {
-                return entityManager.create(Company.class, new DBParam("name", null));
+                return entityManager.create(Company.class, new DBParam(getFieldName(Company.class, "getName"), null));
             }
         });
 
@@ -160,7 +160,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             {
                 return entityManager.create(Company.class, new HashMap<String, Object>()
                 {{
-                        put("name", null);
+                        put(getFieldName(Company.class, "getName"), null);
                     }});
             }
         });
@@ -240,7 +240,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testFindCheckIDs() throws SQLException
     {
-        final Company[] coolCompanies = entityManager.find(Company.class, escapeKeyword("cool") + " = ?", true);
+        final Company[] coolCompanies = entityManager.find(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true);
 
         assertEquals(1, coolCompanies.length);
         assertEquals(CompanyData.getIds()[1], coolCompanies[0].getCompanyID());
@@ -267,7 +267,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             }
         }
 
-        final Person[] people = entityManager.find(Person.class, escapeKeyword("profession") + " = ?", Profession.DEVELOPER);
+        final Person[] people = entityManager.find(Person.class, escapeFieldName(Person.class, "getProfession") + " = ?", Profession.DEVELOPER);
 
         assertEquals(1, people.length);
         assertEquals(PersonData.getId(), people[0].getID());
@@ -306,7 +306,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testFindCheckDefinedPrecache() throws Exception
     {
-        final Person[] people = entityManager.find(Person.class, Query.select(escapeFieldName(Person.class, "getID") + ", " + escapeFieldName(Person.class, "getFirstName") + ", " + escapeFieldName(Person.class, "getLastName")));
+        final Person[] people = entityManager.find(Person.class, Query.select(getFieldName(Person.class, "getID") + ", " + getFieldName(Person.class, "getFirstName") + ", " + getFieldName(Person.class, "getLastName")));
 
         checkSqlNotExecuted(new Callable<Void>()
         {
@@ -403,7 +403,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testCount() throws SQLException
     {
-        assertEquals(1, entityManager.count(Company.class, escapeKeyword("cool") + " = ?", true));
+        assertEquals(1, entityManager.count(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true));
         assertEquals(PenData.getIds().length, entityManager.count(Pen.class));
         assertEquals(1, entityManager.count(Person.class));
         assertEquals(0, entityManager.count(Select.class));
