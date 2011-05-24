@@ -16,14 +16,12 @@
 package net.java.ao;
 
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
 import net.java.ao.it.model.PersonLegalDefence;
 import net.java.ao.it.model.PersonSuit;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -34,7 +32,6 @@ import static net.java.ao.it.DatabaseProcessor.*;
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 public class RelationsCacheTest extends ActiveObjectsIntegrationTest
 {
     @Test

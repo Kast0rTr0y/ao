@@ -49,11 +49,11 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword(firstName) + ","
-                + escapeKeyword(age) + ","
-                + escapeKeyword(url) + ","
-                + escapeKeyword(favoriteClass)
-                + " FROM " + personTableName + " WHERE " + escapeKeyword(id) + " = ?",
+        executeStatement("SELECT " + firstName + ","
+                + age + ","
+                + url + ","
+                + favoriteClass
+                + " FROM " + personTableName + " WHERE " + id + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -65,10 +65,10 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("JoeJoe", res.getString(firstName));
-                            assertEquals(123, res.getInt(age));
-                            assertEquals("http://www.google.com", res.getString(url));
-                            assertEquals(DatabaseTypeIntegrationTest.class.getName(), res.getString(favoriteClass));
+                            assertEquals("JoeJoe", res.getString(getFieldName(Person.class, "getFirstName")));
+                            assertEquals(123, res.getInt(getFieldName(Person.class, "getAge")));
+                            assertEquals("http://www.google.com", res.getString(getFieldName(Person.class, "getURL")));
+                            assertEquals(DatabaseTypeIntegrationTest.class.getName(), res.getString(getFieldName(Person.class, "getFavoriteClass")));
                         }
                     }
                 });

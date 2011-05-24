@@ -285,7 +285,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         try
         {
             final String oracleSql = sql + " returning " + processID(pkField) + " into ?";
-            onSql(sql);
+            onSql(oracleSql);
             stmt = (OraclePreparedStatement) conn.prepareCall(oracleSql);
             T back = setParameters(stmt, params, pkField, pkType);
 

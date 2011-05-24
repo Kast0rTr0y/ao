@@ -2107,7 +2107,12 @@ public abstract class DatabaseProvider
      * @see #getMaxIDLength()
      * @see #shouldQuoteID(String)
      */
-    public String processID(String id)
+    public final String processID(String id)
+    {
+        return quote(shorten(id));
+    }
+
+    public final String shorten(String id)
     {
         int maxIDLength = getMaxIDLength();
         if (id.length() > maxIDLength)
@@ -2119,7 +2124,11 @@ public abstract class DatabaseProvider
             id = id.substring(0, maxIDLength - tailLength - 1);
             id += hash;
         }
+        return id;
+    }
 
+    public final String quote(String id)
+    {
         if (shouldQuoteID(id))
         {
             loadQuoteString();

@@ -1,5 +1,6 @@
 package net.java.ao.it;
 
+import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.EntityManager;
 import net.java.ao.it.model.Address;
@@ -225,7 +226,8 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
     private Message addMessage(EntityManager entityManager, Address to, Address from, final String content) throws Exception
     {
-        final Message message = entityManager.create(Message.class, new DBParam("contents", content));
+        final String contents = Common.convert(entityManager.getFieldNameConverter(), "contents");
+        final Message message = entityManager.create(Message.class, new DBParam(contents, content));
         message.setTo(to);
         message.setFrom(from);
         message.save();

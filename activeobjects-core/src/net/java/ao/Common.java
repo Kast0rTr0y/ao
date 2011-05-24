@@ -455,7 +455,7 @@ public final class Common {
             final StringBuffer sb = new StringBuffer();
             while (matcher.find())
             {
-                matcher.appendReplacement(sb, ((FieldNameProcessor) fnc).convertName(matcher.group(1)));
+                matcher.appendReplacement(sb, convert(fnc, matcher.group(1)));
             }
             matcher.appendTail(sb);
             return sb.toString();
@@ -463,6 +463,18 @@ public final class Common {
         else
         {
             return where;
+        }
+    }
+
+    public static String convert(FieldNameConverter fnc, String column)
+    {
+        if (fnc instanceof FieldNameProcessor)
+        {
+            return ((FieldNameProcessor) fnc).convertName(column);
+        }
+        else
+        {
+            return column;
         }
     }
 

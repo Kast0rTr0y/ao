@@ -592,8 +592,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					&& preloadAnnotation != null && !ignorePreload) {
 				String finalTable = getManager().getTableNameConverter().getName(finalType);		// many-to-many preload
 
-				returnField = finalTable + "__aointernal__id";
-				throughField = table + "__aointernal__id";
+				returnField = getManager().getProvider().shorten(finalTable + "__aointernal__id");
+				throughField = getManager().getProvider().shorten(table + "__aointernal__id");
 
 				sql.append("SELECT ");
 
@@ -609,12 +609,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 }
 
                 sql.append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
-                sql.append(" AS ").append(provider.processID(returnField)).append(',');
+                sql.append(" AS ").append(provider.quote(returnField)).append(',');
 
                 selectFields.remove(finalPKField);
 
 				sql.append(provider.processID(table)).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getManager().getFieldNameConverter())));
-				sql.append(" AS ").append(provider.processID(throughField)).append(',');
+				sql.append(" AS ").append(provider.quote(throughField)).append(',');
 
 				for (String field : selectFields) {
 					sql.append(provider.processID(finalTable)).append('.').append(provider.processID(field)).append(',');
