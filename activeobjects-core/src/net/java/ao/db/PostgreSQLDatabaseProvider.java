@@ -119,6 +119,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			case Types.INTEGER:
 			case Types.DOUBLE:
 			case Types.BOOLEAN:
+			case Types.BIGINT:
                 return false;
 		}
 
