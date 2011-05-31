@@ -88,10 +88,8 @@ import static net.java.ao.Common.*;
  */
 public abstract class DatabaseProvider
 {
-    /**
-     * The logger to log SQL statements
-     */
-    private final Logger sqlLogger = LoggerFactory.getLogger("net.java.ao.sql");
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final Logger sqlLogger = LoggerFactory.getLogger("net.java.ao.sql");
 
     private final Set<SqlListener> sqlListeners;
 
@@ -1793,7 +1791,7 @@ public abstract class DatabaseProvider
     /**
      * <p>Generates an INSERT statement to be used to create a new row in the
      * database, returning the primary key value.  This method also invokes
-     * the delegate method, {@link #executeInsertReturningKey(EntityManager, Connection, Class, String, String, DBParam...)}
+     * the delegate method, {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class}
      * passing the appropriate parameters and query.  This method is required
      * because some databases do not support the JDBC parameter
      * <code>RETURN_GENERATED_KEYS</code> (such as HSQLDB and PostgreSQL).
@@ -1816,7 +1814,7 @@ public abstract class DatabaseProvider
      * <p>The default implementation of this method should be sufficient for any
      * fully compliant ANSI SQL database with a properly implemented JDBC
      * driver.  Note that this method should <i>not</i> not actually execute
-     * the SQL it generates, but pass it on to the {@link #executeInsertReturningKey(EntityManager, Connection, Class, String, String, DBParam...)}
+     * the SQL it generates, but pass it on to the {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class}
      * method, allowing for functional delegation and better extensibility.
      * However, this method may execute any additional statements required to
      * prepare for the INSERTion (as in the case of MS SQL Server which requires
@@ -1841,7 +1839,7 @@ public abstract class DatabaseProvider
      * primary key.
      * @throws SQLException If the INSERT fails in the delegate method, or
      * if any additional statements fail with an exception.
-     * @see #executeInsertReturningKey(EntityManager, Connection, Class, String, String, DBParam...)
+     * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class
      */
     @SuppressWarnings("unused")
     public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
@@ -1924,20 +1922,20 @@ public abstract class DatabaseProvider
      * that this method should not close the connection.  Doing so could cause the
      * entity creation algorithm to fail at a higher level up the stack.</p>
      *
+     *
      * @param manager The <code>EntityManager</code> which was used to dispatch
      * the INSERT in question.
      * @param conn The database connection to use in executing the INSERT statement.
      * @param pkType The Java class type of the primary key field (for use both in
-     * searching the <code>params</code> as well as performing value conversion
-     * of auto-generated DB values into proper Java instances).
+ * searching the <code>params</code> as well as performing value conversion
+ * of auto-generated DB values into proper Java instances).
      * @param pkField The database field which is the primary key for the
-     * table in question.  Can be used to perform a linear search for a
-     * specified primary key value in the <code>params</code> list.
+* table in question.  Can be used to perform a linear search for a
+* specified primary key value in the <code>params</code> list.
      * @param params A varargs array of parameters to be passed to the
-     * INSERT statement.  This may include a specified value for the
-     * primary key.
-     * @throws SQLException If the INSERT fails in the delegate method, or
-     * if any additional statements fail with an exception.
+* INSERT statement.  This may include a specified value for the
+* primary key.  @throws SQLException If the INSERT fails in the delegate method, or
+* if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
     protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
@@ -2200,11 +2198,14 @@ public abstract class DatabaseProvider
      * Tells whether this exception should be ignored when running an updated statement. Typically, errors on dropping
      * non-existing objects should be ignored.
      *
-     * @param e the {@link SQLException} that occured.
+     *
+     * @param sql
+     * @param e the {@link java.sql.SQLException} that occured.
      * @throws SQLException throws the SQLException if it should not be ignored.
      */
-    public void handleUpdateError(SQLException e) throws SQLException
+    public void handleUpdateError(String sql, SQLException e) throws SQLException
     {
+        sqlLogger.error("Exception executing SQL update <" + sql + ">", e);
         throw e;
     }
 
@@ -2231,15 +2232,15 @@ public abstract class DatabaseProvider
 
     public final void executeUpdate(Statement stmt, CharSequence sql) throws SQLException
     {
+        final String sqlString = sql.toString();
         try
         {
-            final String sqlString = sql.toString();
             onSql(sqlString);
             checkNotNull(stmt).executeUpdate(sqlString);
         }
         catch (SQLException e)
         {
-            handleUpdateError(e);
+            handleUpdateError(sqlString, e);
         }
     }
 

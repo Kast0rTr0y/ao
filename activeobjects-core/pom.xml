@@ -52,13 +52,6 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queries</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>oracle-jdbc14</artifactId>
-            <version>10.2.0.4</version>
-            <optional>true</optional>
-        </dependency>
-
         <!--
             test dependencies
         -->

@@ -79,14 +79,14 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testToStringWithRegularNamedEntity() throws Exception
     {
-        assertEquals(getTableName(Person.class, false) + " {id = " + PersonData.getId() + "}", getPerson().toString());
+        assertEquals(getTableName(Person.class, false) + " {" + getFieldName(Person.class, "getID") + " = " + PersonData.getId() + "}", getPerson().toString());
     }
 
     @Test
     public void testToStringWithEntityNamedWithKeyword() throws Exception
     {
         int selectId = getSelectId();
-        assertEquals(getTableName(Select.class, false) + " {id = " + selectId + "}", entityManager.get(Select.class, selectId).toString());
+        assertEquals(getTableName(Select.class, false) + " {" + getFieldName(Select.class, "getID") + " = " + selectId + "}", entityManager.get(Select.class, selectId).toString());
     }
 
     @Test
@@ -358,7 +358,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         comment.save();
 
         executeStatement("SELECT " + escapeFieldName(Comment.class, "getCommentable") + ", " + escapePolyFieldName(Comment.class, "getCommentable")
-                + " FROM " + getTableName(Comment.class) + " WHERE " + escapeKeyword("id") + " = ?",
+                + " FROM " + getTableName(Comment.class) + " WHERE " + escapeFieldName(Comment.class, "getID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception

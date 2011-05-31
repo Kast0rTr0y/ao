@@ -1,8 +1,6 @@
 package net.java.ao.test;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
@@ -20,8 +18,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.concurrent.Callable;
 
-import static com.google.common.collect.Iterables.find;
-import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Lists.*;
 import static junit.framework.Assert.*;
 import static net.java.ao.Common.*;
 

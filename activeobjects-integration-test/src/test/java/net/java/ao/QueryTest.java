@@ -22,7 +22,6 @@ import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Person;
@@ -30,7 +29,6 @@ import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,12 +40,11 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /** @author Daniel Spiewak */
-@Jdbc(DynamicJdbcConfiguration.class)
 @Data(DatabaseProcessor.class)
 public class QueryTest extends ActiveObjectsIntegrationTest
 {
     private static final Query QUERY_1 = Query.select();
-    private static final Query QUERY_2 = Query.select("id,firstName,lastName");
+    private static final Query QUERY_2 = Query.select("ID,firstName,lastName");
     private static final Query QUERY_3 = Query.select().where("name IS NULL AND age = 3");
     private static final Query QUERY_4 = Query.select().order("name DESC");
     private static final Query QUERY_5 = Query.select().where("name IS NULL AND age = 3").limit(10);
@@ -71,134 +68,145 @@ public class QueryTest extends ActiveObjectsIntegrationTest
         DatabaseProvider provider = DatabaseProviders.getEmbeddedDerbyDatabaseProvider();
         String personTableName = getTableName(provider, tableNameConverter, Person.class);
         String companyTableName = getTableName(provider, tableNameConverter, Company.class);
+        String id = getFieldName(Person.class, "getID");
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
 
         provider = DatabaseProviders.getHsqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT LIMIT 0 10 id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT LIMIT 4 10 id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT LIMIT 0 4 id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT LIMIT 0 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT LIMIT 4 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT LIMIT 0 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT LIMIT 0 10 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT LIMIT 4 10 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT LIMIT 0 4 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT LIMIT 0 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT LIMIT 4 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT LIMIT 0 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
 
         provider = DatabaseProviders.getMsSqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT TOP 10 id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT TOP 14 id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT TOP 4 id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT TOP 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT TOP 14 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT TOP 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id,  personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT TOP 10 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT TOP 14 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT TOP 4 COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT TOP 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT TOP 14 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT TOP 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
 
         provider = DatabaseProviders.getMySqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
 
         provider = DatabaseProviders.getOracleDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT id FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id,firstName,lastName FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT id FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY name DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE name IS NULL AND age = 3 GROUP BY age", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE name IS NULL AND age = 3 GROUP BY url", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
 
         provider = DatabaseProviders.getPostgreSqlDatabaseProvider();
         personTableName = getTableName(provider, tableNameConverter, Person.class);
         companyTableName = getTableName(provider, tableNameConverter, Company.class);
 
-        assertEquals("SELECT 'id' FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id','firstName','lastName' FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " ORDER BY 'name' DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
-        assertEquals("SELECT 'id' FROM " + personTableName + " JOIN " + companyTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, false));
+        assertSqlEquals(provider, QUERY_1, false, "SELECT '%s' FROM %s", id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, "SELECT 'ID','firstName','lastName' FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3", id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, "SELECT '%s' FROM %s ORDER BY 'name' DESC", id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, "SELECT '%s' FROM %s JOIN %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", id, personTableName, companyTableName);
 
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_1.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName, QUERY_2.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3", QUERY_3.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " ORDER BY 'name' DESC", QUERY_4.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", QUERY_5.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", QUERY_6.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", QUERY_7.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
-        assertEquals("SELECT COUNT(*) FROM " + personTableName + " JOIN " + companyTableName + " WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", QUERY_8.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, true));
+        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
+        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3", personTableName);
+        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY 'name' DESC", personTableName);
+        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", personTableName);
+        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", personTableName);
+        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", personTableName);
+        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", personTableName, companyTableName);
+    }
+
+    private void assertSqlEquals(DatabaseProvider provider, Query query, boolean count, String expected, String... args)
+    {
+        assertEquals(String.format(expected, args), toSql(provider, query, count));
+    }
+
+    private String toSql(DatabaseProvider provider, Query query, boolean count)
+    {
+        return query.toSQL(Person.class, provider, tableNameConverter, fieldNameConverter, count);
     }
 
     @Test

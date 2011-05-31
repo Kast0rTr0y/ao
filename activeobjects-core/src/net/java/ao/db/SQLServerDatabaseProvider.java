@@ -390,7 +390,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	@SuppressWarnings("unused")
-	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, 
+	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
 			boolean pkIdentity, String table, DBParam... params) throws SQLException {
 		boolean identityInsert = false;
 		StringBuilder sql = new StringBuilder();

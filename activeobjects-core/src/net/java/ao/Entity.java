@@ -59,6 +59,6 @@ public interface Entity extends RawEntity<Integer> {
 	 */
 	@AutoIncrement
 	@NotNull
-	@PrimaryKey("id")
+	@PrimaryKey("ID")
 	public int getID();
 }

@@ -108,6 +108,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 	};
 
+    private static final String SQL_STATE_UNDEFINED_FUNCTION = "42883";
+
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
         super(dataSource);
@@ -478,7 +480,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-			String sql, DBParam... params) throws SQLException {
+                                              String sql, DBParam... params) throws SQLException {
 
 		final PreparedStatement stmt = preparedStatement(conn, sql);
 
@@ -519,11 +521,13 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    public void handleUpdateError(SQLException e) throws SQLException
+    public void handleUpdateError(String sql, SQLException e) throws SQLException
     {
-        if (!e.getSQLState().equals("42883") || !e.getMessage().contains("does not exist"))
+        if (e.getSQLState().equals(SQL_STATE_UNDEFINED_FUNCTION) && e.getMessage().contains("does not exist"))
         {
-            throw e;
+            logger.debug("Ignoring SQL exception for <" + sql + ">", e);
+            return;
         }
+        super.handleUpdateError(sql, e);
     }
 }

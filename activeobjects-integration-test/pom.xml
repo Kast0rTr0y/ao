@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -37,6 +38,9 @@
                     <password>ao_password</password>
                     <rootUsername>${db.username}</rootUsername>
                     <rootPassword>${db.password}</rootPassword>
+                    <properties>
+                        <internal_logon>sysdba</internal_logon>
+                    </properties>
                 </configuration>
                 <executions>
                     <execution>
@@ -67,7 +71,7 @@
                     </dependency>
                     <dependency>
                         <groupId>com.oracle</groupId>
-                        <artifactId>oracle-jdbc14</artifactId>
+                        <artifactId>ojdbc6</artifactId>
                         <version>${oracle.version}</version>
                     </dependency>
                     <dependency>
@@ -130,8 +134,7 @@
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
-        <oracle.version>10.2.0.4</oracle.version>
-
+        <oracle.version>11.2.0.2.0</oracle.version>
         <ao.test.tablenameconverter>camelcase</ao.test.tablenameconverter>
         <ao.test.fieldnameconverter>camelcase</ao.test.fieldnameconverter>
     </properties>
@@ -159,7 +162,7 @@
             <properties>
                 <ao.test.database>mysql</ao.test.database>
                 <db.username>root</db.username>
-                <db.password />
+                <db.password/>
             </properties>
             <dependencies>
                 <dependency>
@@ -195,9 +198,8 @@
             <dependencies>
                 <dependency>
                     <groupId>com.oracle</groupId>
-                    <artifactId>oracle-jdbc14</artifactId>
-                    <version>10.2.0.4</version>
-                    <scope>test</scope>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${oracle.version}</version>
                 </dependency>
             </dependencies>
         </profile>

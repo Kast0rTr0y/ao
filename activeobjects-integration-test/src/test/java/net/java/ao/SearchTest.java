@@ -16,12 +16,10 @@
 package net.java.ao;
 
 import net.java.ao.it.DatabaseProcessor;
-import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.lucene.WithIndex;
 import org.apache.lucene.index.IndexReader;
 import org.junit.Before;
@@ -42,7 +40,6 @@ import static org.junit.Assert.*;
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-@Jdbc(DynamicJdbcConfiguration.class)
 @WithIndex
 public class SearchTest extends ActiveObjectsIntegrationTest
 {

@@ -28,7 +28,6 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
-import oracle.jdbc.OraclePreparedStatement;
 
 import java.net.URL;
 import java.sql.*;
@@ -118,6 +117,9 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 					"WRITEDOWN", "WRITEUP", "XID", "YEAR", "ZONE"));
 		}
 	};
+    
+    private static final int ORA_04080_TRIGGER_DOES_NOT_EXIST = 4080;
+    private static final int ORA_02289_SEQUENCE_DOES_NOT_EXIST = 2289;
 
     public OracleDatabaseProvider(DisposableDataSource dataSource)
     {
@@ -145,7 +147,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     public ResultSet getTables(Connection conn) throws SQLException
     {
         DatabaseMetaData metaData = conn.getMetaData();
-        return metaData.getTables(null, metaData.getUserName(), "%", new String[] {"TABLE"});
+        return metaData.getTables(null, metaData.getUserName(), "%", new String[]{"TABLE"});
     }
 
     @Override
@@ -289,23 +291,45 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         return "DROP TABLE " + processID(table.getName()) + " PURGE";
     }
 
-	@Override
+    @Override
+    public void handleUpdateError(String sql, SQLException e) throws SQLException
+    {
+        if (isDropTrigger(sql, e)
+                || isDropSequence(sql, e))
+        {
+            logger.debug("Ignoring non-existant trigger for SQL <" + sql + ">", e);
+            return;
+        }
+
+        super.handleUpdateError(sql, e);
+    }
+
+    private boolean isDropTrigger(String sql, SQLException e)
+    {
+        return e.getErrorCode() == ORA_04080_TRIGGER_DOES_NOT_EXIST && sql.startsWith("DROP");
+    }
+
+    private boolean isDropSequence(String sql, SQLException e)
+    {
+        return e.getErrorCode() == ORA_02289_SEQUENCE_DOES_NOT_EXIST && sql.startsWith("DROP");
+    }
+
+    @Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException
     {
-        OraclePreparedStatement stmt = null;
+        PreparedStatement stmt = null;
         ResultSet res = null;
         try
         {
-            final String oracleSql = sql + " returning " + processID(pkField) + " into ?";
-            onSql(oracleSql);
-            stmt = (OraclePreparedStatement) conn.prepareCall(oracleSql);
+            onSql(sql);
+            stmt = conn.prepareStatement(sql, new String[]{pkField});
             T back = setParameters(stmt, params, pkField, pkType);
 
             stmt.executeUpdate();
 
             if (back == null)
             {
-                res =  stmt.getReturnResultSet();
+                res = stmt.getGeneratedKeys();
                 if (res.next())
                 {
                     back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
@@ -320,7 +344,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         }
     }
 
-    private <T> T setParameters(OraclePreparedStatement stmt, DBParam[] params, String pkField, Class<T> pkType) throws SQLException
+    private <T> T setParameters(PreparedStatement stmt, DBParam[] params, String pkField, Class<T> pkType) throws SQLException
     {
         T back = null;
         int i = 0;
@@ -345,7 +369,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
                 back = (T) value;
             }
         }
-        stmt.registerReturnParameter(i + 1, TypeManager.getInstance().getType(pkType).getType());
         return back;
     }
 

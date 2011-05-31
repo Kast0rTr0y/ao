@@ -127,7 +127,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         executeStatement("SELECT " + escapeKeyword("url") + " FROM "
-                + getTableName(Person.class) + " WHERE " + escapeKeyword("id") + " = ?",
+                + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
                 new StatementCallback()
                 {
 
@@ -201,7 +201,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("url") + " FROM " + getTableName(Person.class) + " WHERE " + escapeKeyword("id") + " = ?",
+        executeStatement("SELECT " + escapeKeyword("url") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
                 new StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
