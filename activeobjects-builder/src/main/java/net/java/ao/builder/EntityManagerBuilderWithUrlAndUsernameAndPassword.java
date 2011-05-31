@@ -1,11 +1,15 @@
 package net.java.ao.builder;
 
 import net.java.ao.ActiveObjectsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class EntityManagerBuilderWithUrlAndUsernameAndPassword
+public final class EntityManagerBuilderWithUrlAndUsernameAndPassword
 {
+    private final Logger logger = LoggerFactory.getLogger(EntityManagerBuilder.class);
+
     private final String url, username, password;
 
     public EntityManagerBuilderWithUrlAndUsernameAndPassword(String url, String username, String password)
@@ -56,6 +60,7 @@ public class EntityManagerBuilderWithUrlAndUsernameAndPassword
     {
         if (pool.isAvailable())
         {
+            logger.debug("Entity manager will be using connection pool '{}'.", pool);
             return new EntityManagerBuilderWithDatabaseProperties(getDatabaseProperties(pool));
         }
         else

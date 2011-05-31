@@ -74,6 +74,10 @@
 
     <properties>
         <slf4j.version>1.5.11</slf4j.version>
+        <c3p0.version>0.9.1.1</c3p0.version>
+        <dbcp.version>1.4</dbcp.version>
+        <proxool.version>0.9.1</proxool.version>
+        <dbpool.version>4.9.3-jdbc3</dbpool.version>
     </properties>
 
     <dependencyManagement>
