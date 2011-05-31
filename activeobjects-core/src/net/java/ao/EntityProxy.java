@@ -864,11 +864,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return back.toArray(new String[back.size()]);
 	}
 
-	private <V> V convertValue(ResultSet res, String field, String polyName, Class<V> type) throws SQLException {
-		res.getString(field);
-		if (res.wasNull()) {
-			return null;
-		}
+    private <V> V convertValue(ResultSet res, String field, String polyName, Class<V> type) throws SQLException
+    {
+        if (isNull(res, field))
+        {
+            return null;
+        }
 		
 		if (polyName != null) {
 			Class<? extends RawEntity<?>> entityType = (Class<? extends RawEntity<?>>) type;
@@ -887,7 +888,13 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return databaseType.pullFromDatabase(getManager(), res, type, field);
 	}
 
-	private boolean instanceOf(Object value, Class<?> type) {
+    private boolean isNull(ResultSet res, String field) throws SQLException
+    {
+        res.getObject(field);
+        return res.wasNull();
+    }
+
+    private boolean instanceOf(Object value, Class<?> type) {
 		if (value == null) {
 			return true;
 		}
