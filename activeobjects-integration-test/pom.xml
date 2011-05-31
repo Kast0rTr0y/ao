@@ -201,6 +201,21 @@
             </dependencies>
         </profile>
         <profile>
+            <id>oracle5</id>
+            <properties>
+                <ao.test.database>oracle</ao.test.database>
+                <db.username>sys</db.username>
+                <db.password>oracle</db.password>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc5</artifactId>
+                    <version>${oracle.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>oracle6</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
