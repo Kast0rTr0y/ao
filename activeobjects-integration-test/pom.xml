@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>net.java.dev.activeobjects</groupId>
-        <artifactId>activeobjects-parent</artifactId>
+        <artifactId>activeobjects-integration-profiles</artifactId>
         <version>0.9-SNAPSHOT</version>
+        <relativePath>../activeobjects-integration-profiles</relativePath>
     </parent>
 
     <artifactId>activeobjects-integration-test</artifactId>
@@ -112,12 +114,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>hsqldb</groupId>
-            <artifactId>hsqldb</artifactId>
-            <version>1.8.0.7</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>1.8.4</version>
@@ -127,10 +123,6 @@
 
     <properties>
         <db.skip>false</db.skip>
-        <hsqldb.version>1.8.0.5</hsqldb.version>
-        <mysql.version>5.1.13</mysql.version>
-        <postgres.version>8.4-701.jdbc3</postgres.version>
-        <oracle.version>11.2.0.2.0</oracle.version>
         <ao.test.tablenameconverter>camelcase</ao.test.tablenameconverter>
         <ao.test.fieldnameconverter>camelcase</ao.test.fieldnameconverter>
     </properties>
@@ -142,152 +134,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>hsqldb</groupId>
-                    <artifactId>hsqldb</artifactId>
-                    <version>${hsqldb.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>mysql</id>
-            <properties>
-                <ao.test.database>mysql</ao.test.database>
-                <db.username>root</db.username>
-                <db.password />
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                    <version>${mysql.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>postgres</id>
-            <properties>
-                <ao.test.database>postgres</ao.test.database>
-                <db.username>postgres</db.username>
-                <db.password>postgres</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${postgres.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>oracle</id>
-            <properties>
-                <ao.test.database>oracle</ao.test.database>
-                <db.username>sys</db.username>
-                <db.password>oracle</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc14</artifactId>
-                    <version>10.2.0.4</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>oracle5</id>
-            <properties>
-                <ao.test.database>oracle</ao.test.database>
-                <db.username>sys</db.username>
-                <db.password>oracle</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc5</artifactId>
-                    <version>${oracle.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>oracle6</id>
-            <properties>
-                <ao.test.database>oracle</ao.test.database>
-                <db.username>sys</db.username>
-                <db.password>oracle</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc6</artifactId>
-                    <version>${oracle.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>sqlserver</id>
-            <properties>
-                <ao.test.database>sqlserver</ao.test.database>
-                <db.username>sa</db.username>
-                <db.password>admin</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>net.sourceforge.jtds</groupId>
-                    <artifactId>jtds</artifactId>
-                    <version>1.2.4</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>commons-dbcp</id>
-            <dependencies>
-                <dependency>
-                    <groupId>commons-dbcp</groupId>
-                    <artifactId>commons-dbcp</artifactId>
-                    <version>${dbcp.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>c3p0</id>
-            <dependencies>
-                <dependency>
-                   <groupId>c3p0</groupId>
-                   <artifactId>c3p0</artifactId>
-                   <version>${c3p0.version}</version>
-                   <scope>test</scope>
-               </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>proxool</id>
-            <dependencies>
-                <dependency>
-                    <groupId>proxool</groupId>
-                    <artifactId>proxool</artifactId>
-                    <version>${proxool.version}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>snaq.db</id>
-            <dependencies>
-                <dependency>
-                    <groupId>snaq.db.dbpool</groupId>
-                    <artifactId>dbpool</artifactId>
-                    <version>4.9.3-jdbc3</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

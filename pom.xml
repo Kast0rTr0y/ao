@@ -70,10 +70,13 @@
         <module>activeobjects-integration-test-model</module>
         <module>activeobjects-ant-task</module>
         <module>activeobjects</module>
+        <module>activeobjects-benchmark</module>
+        <module>activeobjects-integration-profiles</module>
     </modules>
 
     <properties>
         <slf4j.version>1.5.11</slf4j.version>
+        <junit.version>4.8.1</junit.version>
         <c3p0.version>0.9.1.1</c3p0.version>
         <dbcp.version>1.4</dbcp.version>
         <proxool.version>0.9.1</proxool.version>
@@ -109,7 +112,16 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
         </dependency>
-        <!-- simple slf4j for tests -->
+
+        <!--
+            for tests
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
