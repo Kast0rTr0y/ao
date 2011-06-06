@@ -122,20 +122,7 @@
     </dependencies>
 
     <properties>
-        <db.skip>false</db.skip>
         <ao.test.tablenameconverter>camelcase</ao.test.tablenameconverter>
         <ao.test.fieldnameconverter>camelcase</ao.test.fieldnameconverter>
     </properties>
-
-    <profiles>
-        <profile>
-            <id>hsql</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <db.skip>true</db.skip>
-            </properties>
-        </profile>
-    </profiles>
 </project>

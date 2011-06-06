@@ -18,6 +18,7 @@
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
         <oracle.version>11.2.0.2.0</oracle.version>
+        <db.skip>false</db.skip>
     </properties>
 
     <profiles>
