@@ -23,6 +23,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             .put("postgres", new Postgres())
             .put("oracle", new Oracle())
             .put("sqlserver", new SqlServer())
+            .put("derby-embedded", new DerbyEmbedded())
             .build();
 
     private static final String DEFAULT = "hsql";
