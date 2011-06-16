@@ -1,7 +1,6 @@
 package net.java.ao.db;
 
 import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 
 import java.io.Closeable;
 import java.io.File;
@@ -21,28 +20,34 @@ import static com.google.common.base.Suppliers.memoize;
 
 final class FileSystemUtils
 {
+    private static final Supplier<Boolean> CASE_SENSITIVE_SUPPLIER = memoize(new Supplier<Boolean>()
+    {
+        public Boolean get()
+        {
+            try
+            {
+                final File tmp = File.createTempFile("active_objects", "_case_tmp");
+                tmp.deleteOnExit();
+
+                final File tmpWithUpperCaseName = new File(tmp.getParent(), toUpperCase(tmp.getName()));
+                tmpWithUpperCaseName.deleteOnExit();
+
+                if (!tmpWithUpperCaseName.exists())
+                {
+                    return false;
+                }
+                return !sameContent(tmp, tmpWithUpperCaseName);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+    });
+
     static boolean isCaseSensitive()
     {
-        return memoize(new Supplier<Boolean>()
-        {
-            public Boolean get()
-            {
-                try
-                {
-                    final File tmp = File.createTempFile("active_objects", "tmp");
-                    final File tmpWithUpperCaseName = new File(tmp.getParent(), toUpperCase(tmp.getName()));
-                    if (!tmpWithUpperCaseName.exists())
-                    {
-                        return false;
-                    }
-                    return !sameContent(tmp, tmpWithUpperCaseName);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalStateException(e);
-                }
-            }
-        }).get();
+        return CASE_SENSITIVE_SUPPLIER.get();
     }
 
     private static boolean sameContent(File tmp, File tmpWithUpperCaseName) throws IOException
