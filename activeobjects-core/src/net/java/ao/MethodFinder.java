@@ -15,187 +15,187 @@
  */
 package net.java.ao;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import com.google.common.base.Function;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MapMaker;
 import net.java.ao.schema.FieldNameConverter;
 
-/**
- * @author Daniel Spiewak
- */
-final class MethodFinder {
-	private static MethodFinder instance;
-	
-	private Map<AnnotationCacheKey, Method[]> annotationCache;
-	private final ReadWriteLock annotationCacheLock;
-	
-	private Map<CounterpartCacheKey, Method> counterpartCache;
-	private final ReadWriteLock counterpartCacheLock;
-	
-	private MethodFinder() {
-		annotationCache = new HashMap<AnnotationCacheKey, Method[]>();
-		annotationCacheLock = new ReentrantReadWriteLock();
-		
-		counterpartCache = new HashMap<CounterpartCacheKey, Method>();
-		counterpartCacheLock = new ReentrantReadWriteLock();
-	}
-	
-	public Method[] findAnnotation(Class<? extends Annotation> annotation, Class<? extends RawEntity<?>> clazz) {
-		AnnotationCacheKey key = new AnnotationCacheKey(annotation, clazz);
-		
-		annotationCacheLock.writeLock().lock();
-		try {
-			if (annotationCache.containsKey(key)) {
-				return annotationCache.get(key);
-			}
-			
-			List<Method> back = new ArrayList<Method>();
-			for (Method method : clazz.getMethods()) {
-				if (method.getAnnotation(annotation) != null) {
-					back.add(method);
-				}
-			}
-			
-			Method[] array = back.toArray(new Method[back.size()]);
-			annotationCache.put(key, array);
-			
-			return array;
-		} finally {
-			annotationCacheLock.writeLock().unlock();
-		}
-	}
-	
-	public Method findCounterpart(FieldNameConverter converter, Method method) {
-		CounterpartCacheKey key = new CounterpartCacheKey(converter, method);
-		String name = converter.getName(method);
-		
-		counterpartCacheLock.writeLock().lock();
-		try {
-			if (counterpartCache.containsKey(key)) {
-				return counterpartCache.get(key);
-			}
-			
-			Class<?> clazz = method.getDeclaringClass();
-			for (Method other : clazz.getMethods()) {
-				String otherName = converter.getName(other);
-				if (!other.equals(method) && otherName != null && otherName.equals(name)) {
-					counterpartCache.put(key, other);
-					return other;
-				}
-			}
-			
-			counterpartCache.put(key, null);
-			return null;
-		} finally {
-			counterpartCacheLock.writeLock().unlock();
-		}
-	}
-	
-	public static synchronized MethodFinder getInstance() {
-		if (instance == null) {
-			instance = new MethodFinder();
-		}
-		
-		return instance;
-	}
-	
-	private static final class AnnotationCacheKey {
-		private Class<? extends Annotation> annotation;
-		private Class<? extends RawEntity<?>> type;
-		
-		public AnnotationCacheKey(Class<? extends Annotation> annotation, Class<? extends RawEntity<?>> type) {
-			this.annotation = annotation;
-			this.type = type;
-		}
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Map;
 
-		public Class<? extends Annotation> getAnnotation() {
-			return annotation;
-		}
+import static com.google.common.base.Preconditions.*;
 
-		public void setAnnotation(Class<? extends Annotation> annotation) {
-			this.annotation = annotation;
-		}
+final class MethodFinder
+{
+    private final Map<AnnotatedMethods, Iterable<Method>> annotatedMethodsCache;
+    private final Map<CounterPartMethod, Supplier<Method>> counterpartCache;
 
-		public Class<? extends RawEntity<?>> getType() {
-			return type;
-		}
+    MethodFinder()
+    {
+        this.annotatedMethodsCache = new MapMaker().makeComputingMap(new Function<AnnotatedMethods, Iterable<Method>>()
+        {
+            @Override
+            public Iterable<Method> apply(AnnotatedMethods a)
+            {
+                return a.getAnnotatedMethods();
+            }
+        });
 
-		public void setType(Class<? extends RawEntity<?>> type) {
-			this.type = type;
-		}
-		
-		@Override
-		public int hashCode() {
-			int back = 0;
-			
-			if (annotation != null) {
-				back += annotation.hashCode();
-			}
-			if (type != null) {
-				back += type.hashCode();
-			}
-			back %= 2 << 15;
-			
-			return back;
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof AnnotationCacheKey) {
-				AnnotationCacheKey key = (AnnotationCacheKey) obj;
-				
-				if (key.getAnnotation().equals(annotation) && key.getType().equals(type)) {
-					return true;
-				}
-				
-				return false;
-			}
-			
-			return super.equals(obj);
-		}
-	}
-	
-	private static final class CounterpartCacheKey {
-		private final FieldNameConverter converter;
-		private final Method method;
-		
-		public CounterpartCacheKey(FieldNameConverter converter, Method method) {
-			this.converter = converter;
-			this.method = method;
-		}
+        this.counterpartCache = new MapMaker().makeComputingMap(new Function<CounterPartMethod, Supplier<Method>>()
+        {
+            @Override
+            public Supplier<Method> apply(CounterPartMethod c)
+            {
+                return Suppliers.ofInstance(c.getCounterPartMethod());
+            }
+        });
+    }
 
-		public FieldNameConverter getConverter() {
-			return converter;
-		}
+    public Iterable<Method> findAnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type)
+    {
+        return annotatedMethodsCache.get(new AnnotatedMethods(annotation, type));
+    }
 
-		public Method getMethod() {
-			return method;
-		}
-		
-		@Override
-		public int hashCode() {
-			return converter.hashCode() + method.hashCode();
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (super.equals(obj)) {
-				return true;
-			}
-			
-			if (obj instanceof CounterpartCacheKey) {
-				CounterpartCacheKey key = (CounterpartCacheKey) obj;
-				
-				return key.converter == converter && key.method == method;
-			}
-			
-			return false;
-		}
-	}
+    public Method findCounterPartMethod(FieldNameConverter converter, Method method)
+    {
+        return counterpartCache.get(new CounterPartMethod(converter, method)).get();
+    }
+
+    private final static Supplier<MethodFinder> INSTANCE_SUPPLIER = Suppliers.synchronizedSupplier(Suppliers.memoize(new Supplier<MethodFinder>()
+    {
+        @Override
+        public MethodFinder get()
+        {
+            return new MethodFinder();
+        }
+    }));
+
+    public static MethodFinder getInstance()
+    {
+        return INSTANCE_SUPPLIER.get();
+    }
+
+    private static final class AnnotatedMethods
+    {
+        private final Class<? extends Annotation> annotation;
+        private final Class<?> type;
+
+        AnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type)
+        {
+            this.annotation = checkNotNull(annotation);
+            this.type = checkNotNull(type);
+        }
+
+        Iterable<Method> getAnnotatedMethods()
+        {
+            final ImmutableList.Builder<Method> annotatedMethods = ImmutableList.builder();
+            for (Method m : type.getMethods())
+            {
+                if (m.isAnnotationPresent(annotation))
+                {
+                    annotatedMethods.add(m);
+                }
+            }
+            return annotatedMethods.build();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final AnnotatedMethods that = (AnnotatedMethods) o;
+
+            if (annotation != null ? !annotation.equals(that.annotation) : that.annotation != null)
+            {
+                return false;
+            }
+            if (type != null ? !type.equals(that.type) : that.type != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = annotation != null ? annotation.hashCode() : 0;
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private static final class CounterPartMethod
+    {
+        private final FieldNameConverter converter;
+        private final Method method;
+
+        CounterPartMethod(FieldNameConverter converter, Method method)
+        {
+            this.converter = converter;
+            this.method = method;
+        }
+
+        Method getCounterPartMethod()
+        {
+            final String name = converter.getName(method);
+            final Class<?> clazz = method.getDeclaringClass();
+
+            for (Method other : clazz.getMethods())
+            {
+                final String otherName = converter.getName(other);
+                if (!other.equals(method) && otherName != null && otherName.equals(name))
+                {
+                    return other;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final CounterPartMethod that = (CounterPartMethod) o;
+
+            if (converter != null ? !converter.equals(that.converter) : that.converter != null)
+            {
+                return false;
+            }
+            if (method != null ? !method.equals(that.method) : that.method != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = converter != null ? converter.hashCode() : 0;
+            result = 31 * result + (method != null ? method.hashCode() : 0);
+            return result;
+        }
+    }
 }

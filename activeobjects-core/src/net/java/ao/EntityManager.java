@@ -395,7 +395,7 @@ public class EntityManager
 		Set<DBParam> listParams = new HashSet<DBParam>();
 		listParams.addAll(Arrays.asList(params));
 
-        for (Method method : MethodFinder.getInstance().findAnnotation(Generator.class, type)) {
+        for (Method method : MethodFinder.getInstance().findAnnotatedMethods(Generator.class, type)) {
             Generator genAnno = method.getAnnotation(Generator.class);
             String field = fieldNameConverter.getName(method);
             ValueGenerator<?> generator;
