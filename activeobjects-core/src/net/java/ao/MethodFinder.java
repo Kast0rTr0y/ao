@@ -35,7 +35,7 @@ final class MethodFinder
 
     MethodFinder()
     {
-        this.annotatedMethodsCache = new MapMaker().makeComputingMap(new Function<AnnotatedMethods, Iterable<Method>>()
+        this.annotatedMethodsCache = new MapMaker().weakKeys().weakValues().makeComputingMap(new Function<AnnotatedMethods, Iterable<Method>>()
         {
             @Override
             public Iterable<Method> apply(AnnotatedMethods a)
@@ -44,7 +44,7 @@ final class MethodFinder
             }
         });
 
-        this.counterpartCache = new MapMaker().makeComputingMap(new Function<CounterPartMethod, Supplier<Method>>()
+        this.counterpartCache = new MapMaker().weakKeys().weakValues().makeComputingMap(new Function<CounterPartMethod, Supplier<Method>>()
         {
             @Override
             public Supplier<Method> apply(CounterPartMethod c)
