@@ -215,14 +215,6 @@ public final class Common {
         return method.getReturnType();
     }
 
-    public static Class<?> getCallingClass(int depth) {
-        try {
-            return Class.forName(getCallingClassName(depth + 1));
-        } catch (ClassNotFoundException e) {}
-
-        return null;
-    }
-
     public static String getCallingClassName(int depth) {
         StackTraceElement[] stack = new Exception().getStackTrace();
         return stack[depth + 2].getClassName();
