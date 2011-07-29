@@ -100,8 +100,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		if (methodImpl != null) {
 			final Class<?> declaringClass = methodImpl.getMethod().getDeclaringClass();
 			if (!Object.class.equals(declaringClass)) {
-				final Class<?> callingClass = Common.getCallingClass(1);
-				if (callingClass == null || !callingClass.equals(declaringClass)) {
+                // We don't want to return get the class Class using Class.forName as this doesn't play well
+                // with multiple ClassLoaders (if the AO library has a separate class loader to the AO client)
+                // Instead just compare the classNames
+				final String callingClassName = Common.getCallingClassName(1);
+				if (callingClassName == null || !callingClassName.equals(declaringClass.getName())) {
 					return methodImpl.getMethod().invoke(methodImpl.getInstance(), args);
 				}
 			}

@@ -216,12 +216,16 @@ public final class Common {
     }
 
     public static Class<?> getCallingClass(int depth) {
-        StackTraceElement[] stack = new Exception().getStackTrace();
         try {
-            return Class.forName(stack[depth + 2].getClassName());
+            return Class.forName(getCallingClassName(depth + 1));
         } catch (ClassNotFoundException e) {}
 
         return null;
+    }
+
+    public static String getCallingClassName(int depth) {
+        StackTraceElement[] stack = new Exception().getStackTrace();
+        return stack[depth + 2].getClassName();
     }
 
 	public static List<String> getSearchableFields(EntityManager manager, Class<? extends RawEntity<?>> type) {
