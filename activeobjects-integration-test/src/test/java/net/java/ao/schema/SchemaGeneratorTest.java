@@ -59,7 +59,7 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 
         TableNameConverter tableNameConverter = entityManager.getTableNameConverter();
         DDLTable[] parsedTables = SchemaGenerator.parseDDL(tableNameConverter,
-                entityManager.getFieldNameConverter(), SchemaGeneratorTest.class.getClassLoader(), PersonSuit.class, Pen.class);
+                entityManager.getFieldNameConverter(), PersonSuit.class, Pen.class);
 
         assertEquals(6, parsedTables.length);
 

@@ -30,7 +30,6 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -161,9 +160,9 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
     public void testDiffSchema()
     {
         DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getTableNameConverter(),
-                entityManager.getFieldNameConverter(), this.getClass().getClassLoader(), PersonSuit.class, Pen.class);
+                entityManager.getFieldNameConverter(), PersonSuit.class, Pen.class);
         DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getTableNameConverter(),
-                entityManager.getFieldNameConverter(), this.getClass().getClassLoader(), PersonSuit.class, Pen.class);
+                entityManager.getFieldNameConverter(), PersonSuit.class, Pen.class);
 
         assertEquals(0, SchemaReader.diffSchema(ddl1, ddl2, true).length);
     }

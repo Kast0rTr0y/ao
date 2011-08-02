@@ -28,6 +28,8 @@ import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+import net.java.ao.test.jdbc.Jdbc;
+import net.java.ao.test.jdbc.MySql;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;

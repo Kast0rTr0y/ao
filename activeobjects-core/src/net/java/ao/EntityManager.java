@@ -388,9 +388,7 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
-		String table = null;
-
-			table = tableNameConverter.getName(type);
+		String table = tableNameConverter.getName(type);
 
 		Set<DBParam> listParams = new HashSet<DBParam>();
 		listParams.addAll(Arrays.asList(params));

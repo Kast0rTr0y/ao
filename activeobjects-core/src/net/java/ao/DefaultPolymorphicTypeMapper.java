@@ -43,7 +43,7 @@ import java.util.Set;
  * 
  * @author Daniel Spiewak
  */
-public class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper {
+public final class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper {
 	private final Map<Class<? extends RawEntity<?>>, String> mappings;
 	private final Map<String, Set<Class<? extends RawEntity<?>>>> reverse;
 	
@@ -63,7 +63,6 @@ public class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper {
 	 */
 	public DefaultPolymorphicTypeMapper(Class<? extends RawEntity<?>>... types) {
 		this(new HashMap<Class<? extends RawEntity<?>>, String>());
-		
 		this.types = types;
 	}
 	
@@ -74,7 +73,7 @@ public class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper {
 	 */
 	public DefaultPolymorphicTypeMapper(Map<Class<? extends RawEntity<?>>, String> mappings) {
 		this.mappings = mappings;
-		reverse = new HashMap<String, Set<Class<? extends RawEntity<?>>>>();
+		this.reverse = new HashMap<String, Set<Class<? extends RawEntity<?>>>>();
 		
 		createReverseMappings();
 	}
