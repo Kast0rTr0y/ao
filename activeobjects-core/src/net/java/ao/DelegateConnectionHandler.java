@@ -16,52 +16,113 @@
 package net.java.ao;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.SQLException;
 
-/**
- * @author Daniel Spiewak
- */
-class DelegateConnectionHandler implements InvocationHandler {
-	private Connection delegate;
-	private boolean closeable;
-	private boolean closed;
-	
-	private DelegateConnectionHandler(Connection delegate) {
-		this.delegate = delegate;
-		closeable = true;
-	}
+import static com.google.common.base.Preconditions.*;
 
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if (method.getName().equals("setCloseable")) {
-			if (method.getParameterTypes().length == 1 && method.getParameterTypes()[0].equals(boolean.class)) {
-				this.closeable = (Boolean) args[0];
-				
-				return Void.TYPE;
-			}
-		} else if (method.getName().equals("isCloseable")) {
-			return closeable;
-		} else if (method.getName().equals("close") && method.getParameterTypes().length == 0) {
-			if (closeable) {
-				delegate.close();
-				closed = true;
-			}
-			
-			return Void.TYPE;
-		} else if (method.getName().equals("isClosed") && method.getReturnType().equals(boolean.class)) {
-			return closed;
-		}
-		
-		Class<Connection> clazz = (Class<Connection>) delegate.getClass();
-		Method method2 = clazz.getMethod(method.getName(), method.getParameterTypes());
-		method2.setAccessible(true);
-		
-		return method2.invoke(delegate, args);
-	}
+final class DelegateConnectionHandler implements InvocationHandler
+{
+    private final Connection delegate;
+    private boolean closeable;
 
-	public static DelegateConnection newInstance(Connection delegate) {
-		return (DelegateConnection) Proxy.newProxyInstance(DelegateConnectionHandler.class.getClassLoader(), 
-				new Class[] {DelegateConnection.class}, new DelegateConnectionHandler(delegate));
-	}
+    private DelegateConnectionHandler(Connection delegate)
+    {
+        this.delegate = checkNotNull(delegate);
+        this.closeable = true;
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
+    {
+        if (isSetCloseableMethod(method))
+        {
+            setCloseable((Boolean) args[0]);
+            return Void.TYPE;
+        }
+
+        if (isIsCloseableMethod(method))
+        {
+            return isCloseable();
+        }
+
+
+        if (isCloseMethod(method))
+        {
+            close();
+            return Void.TYPE;
+        }
+
+
+        else if (isIsClosedMethod(method))
+        {
+            return isClosed();
+        }
+
+        return delegate(method, args);
+    }
+
+    private void setCloseable(boolean closeable)
+    {
+        this.closeable = closeable;
+    }
+
+    private boolean isCloseable()
+    {
+        return closeable;
+    }
+
+    private void close() throws SQLException
+    {
+        if (isCloseable())
+        {
+            delegate.close();
+        }
+    }
+
+    private boolean isClosed() throws SQLException
+    {
+        return delegate.isClosed();
+    }
+
+    private Object delegate(Method method, Object[] args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    {
+        return delegate.getClass().getMethod(method.getName(), method.getParameterTypes()).invoke(delegate, args);
+    }
+
+    public static DelegateConnection newInstance(Connection c)
+    {
+        return (DelegateConnection) Proxy.newProxyInstance(
+                DelegateConnectionHandler.class.getClassLoader(),
+                new Class[]{DelegateConnection.class},
+                new DelegateConnectionHandler(c));
+    }
+
+    private static boolean isSetCloseableMethod(Method method)
+    {
+        return method.getName().equals("setCloseable")
+                && method.getParameterTypes().length == 1
+                && method.getParameterTypes()[0].equals(boolean.class);
+    }
+
+
+    private static boolean isIsCloseableMethod(Method method)
+    {
+        return method.getName().equals("isCloseable")
+                && method.getParameterTypes().length == 0;
+    }
+
+    private static boolean isCloseMethod(Method method)
+    {
+        return method.getName().equals("close")
+                && method.getParameterTypes().length == 0;
+    }
+
+    private static boolean isIsClosedMethod(Method method)
+    {
+        return method.getName().equals("isClosed")
+                && method.getParameterTypes().length == 0;
+    }
 }

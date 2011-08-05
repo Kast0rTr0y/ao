@@ -5,10 +5,12 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class DriverManagerDataSource implements DataSource
+public final class DriverManagerDataSource implements DataSource
 {
     private final String url;
     private final String username;
@@ -62,5 +64,11 @@ public class DriverManagerDataSource implements DataSource
     public int getLoginTimeout() throws SQLException
     {
         return loginTimeOut;
+    }
+
+    // java 7
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException
+    {
+        throw new SQLFeatureNotSupportedException();
     }
 }

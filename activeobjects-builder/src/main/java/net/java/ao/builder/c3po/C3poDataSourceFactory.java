@@ -3,10 +3,11 @@ package net.java.ao.builder.c3po;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.DataSources;
 import net.java.ao.ActiveObjectsException;
+import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.builder.ClassUtils;
 import net.java.ao.builder.DataSourceFactory;
-import net.java.ao.builder.DelegatingDisposableDataSource;
+import net.java.ao.builder.DelegatingDisposableDataSourceHandler;
 
 import java.beans.PropertyVetoException;
 import java.sql.Driver;
@@ -31,8 +32,9 @@ public class C3poDataSourceFactory implements DataSourceFactory
         cpds.setMaxPoolSize(30);
         cpds.setMaxStatements(180);
 
-        return new DelegatingDisposableDataSource(cpds)
+        return DelegatingDisposableDataSourceHandler.newInstance(cpds, new Disposable()
         {
+            @Override
             public void dispose()
             {
                 try
@@ -44,7 +46,7 @@ public class C3poDataSourceFactory implements DataSourceFactory
                     // ignored
                 }
             }
-        };
+        });
     }
 
     public static boolean isAvailable()

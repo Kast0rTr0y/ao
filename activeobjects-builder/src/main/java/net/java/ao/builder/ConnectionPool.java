@@ -1,6 +1,7 @@
 package net.java.ao.builder;
 
 import net.java.ao.ActiveObjectsException;
+import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.builder.c3po.C3poDataSourceFactory;
 import net.java.ao.builder.dbcp.DbcpDataSourceFactory;
@@ -29,12 +30,14 @@ public enum ConnectionPool implements DataSourceFactory
                 @Override
                 public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
                 {
-                    return new DelegatingDisposableDataSource(new DriverManagerDataSource(url, username, password))
-                    {
-                        public void dispose()
-                        {
-                        }
-                    };
+                    return DelegatingDisposableDataSourceHandler.newInstance(
+                            new DriverManagerDataSource(url, username, password),
+                            new Disposable()
+                            {
+                                public void dispose()
+                                {
+                                }
+                            });
                 }
             };
 

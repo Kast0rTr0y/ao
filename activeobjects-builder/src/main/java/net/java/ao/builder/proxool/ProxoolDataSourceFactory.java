@@ -1,9 +1,10 @@
 package net.java.ao.builder.proxool;
 
+import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.builder.ClassUtils;
 import net.java.ao.builder.DataSourceFactory;
-import net.java.ao.builder.DelegatingDisposableDataSource;
+import net.java.ao.builder.DelegatingDisposableDataSourceHandler;
 import org.logicalcobwebs.proxool.ProxoolDataSource;
 import org.logicalcobwebs.proxool.ProxoolException;
 import org.logicalcobwebs.proxool.ProxoolFacade;
@@ -23,8 +24,9 @@ public class ProxoolDataSourceFactory implements DataSourceFactory
         source.setDriverUrl(url);
         source.setMaximumConnectionCount(30);
 
-        return new DelegatingDisposableDataSource(source)
+        return DelegatingDisposableDataSourceHandler.newInstance(source, new Disposable()
         {
+            @Override
             public void dispose()
             {
                 try
@@ -36,7 +38,7 @@ public class ProxoolDataSourceFactory implements DataSourceFactory
                     // ignored
                 }
             }
-        };
+        });
     }
 
     public static boolean isAvailable()

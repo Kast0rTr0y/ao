@@ -1,9 +1,10 @@
 package net.java.ao.builder.dbcp;
 
+import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.builder.ClassUtils;
 import net.java.ao.builder.DataSourceFactory;
-import net.java.ao.builder.DelegatingDisposableDataSource;
+import net.java.ao.builder.DelegatingDisposableDataSourceHandler;
 import org.apache.commons.dbcp.BasicDataSource;
 
 import java.sql.Driver;
@@ -17,8 +18,9 @@ public final class DbcpDataSourceFactory implements DataSourceFactory
         dbcp.setUrl(url);
         dbcp.setUsername(username);
         dbcp.setPassword(password);
-        return new DelegatingDisposableDataSource(dbcp)
+        return DelegatingDisposableDataSourceHandler.newInstance(dbcp, new Disposable()
         {
+            @Override
             public void dispose()
             {
                 try
@@ -30,7 +32,7 @@ public final class DbcpDataSourceFactory implements DataSourceFactory
                     //ignored
                 }
             }
-        };
+        });
     }
 
     public static boolean isAvailable()

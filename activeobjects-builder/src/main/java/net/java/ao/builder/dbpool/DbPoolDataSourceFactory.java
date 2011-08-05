@@ -1,9 +1,10 @@
 package net.java.ao.builder.dbpool;
 
+import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.builder.ClassUtils;
 import net.java.ao.builder.DataSourceFactory;
-import net.java.ao.builder.DelegatingDisposableDataSource;
+import net.java.ao.builder.DelegatingDisposableDataSourceHandler;
 import snaq.db.DBPoolDataSource;
 
 import java.sql.Driver;
@@ -21,13 +22,14 @@ public final class DbPoolDataSourceFactory implements DataSourceFactory
         ds.setPoolSize(5);
         ds.setMaxSize(30);
         ds.setExpiryTime(3600);  // Specified in seconds.
-        return new DelegatingDisposableDataSource(ds)
+
+        return DelegatingDisposableDataSourceHandler.newInstance(ds, new Disposable()
         {
             public void dispose()
             {
                 ds.releaseConnectionPool();
             }
-        };
+        });
     }
 
     public static boolean isAvailable()
