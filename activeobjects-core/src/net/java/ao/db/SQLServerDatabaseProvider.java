@@ -134,7 +134,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, "dbo", null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables(null, null, null, new String[] {"TABLE"});
 	}
 	
 	@Override
