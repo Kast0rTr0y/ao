@@ -196,19 +196,22 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		if (type.getType() == Types.CLOB) {
-			return "TEXT";
-		} else if (type.getType() == Types.BLOB) {
-			return "BYTEA";
-		} else if (type.getType() == Types.DOUBLE) {
-			return "DOUBLE PRECISION";
-		}
+    protected String convertTypeToString(DatabaseType<?> type)
+    {
+        switch (type.getType())
+        {
+            case Types.CLOB:
+            case Types.LONGVARCHAR:
+                return "TEXT";
+            case Types.BLOB:
+                return "BYTEA";
+            case Types.DOUBLE:
+                return "DOUBLE PRECISION";
+        }
+        return super.convertTypeToString(type);
+    }
 
-		return super.convertTypeToString(type);
-	}
-
-	@Override
+    @Override
 	protected String renderValue(Object value) {
 		if (value instanceof Boolean) {
 			if (value.equals(true)) {

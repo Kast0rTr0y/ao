@@ -81,6 +81,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
     protected boolean considerPrecision(DDLField field) {
         switch (field.getType().getType()) {
             case Types.BOOLEAN:
+            case Types.LONGVARCHAR:
                 return false;
         }
 
@@ -91,6 +92,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 	protected String convertTypeToString(DatabaseType<?> type) {
 		switch (type.getType()) {
 			case Types.CLOB:
+			case Types.LONGVARCHAR:
 				return "TEXT";
 		}
 		

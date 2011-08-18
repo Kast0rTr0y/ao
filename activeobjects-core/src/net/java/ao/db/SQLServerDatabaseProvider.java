@@ -265,6 +265,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 				return "SMALLDATETIME";
 				
 			case Types.CLOB:
+			case Types.LONGVARCHAR:
 				return "NTEXT";
 				
 			case Types.BLOB:

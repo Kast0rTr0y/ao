@@ -172,6 +172,8 @@ public class OracleDatabaseProvider extends DatabaseProvider {
             case Types.DOUBLE:
             case Types.REAL:
                 return "NUMBER";
+            case Types.LONGVARCHAR:
+                return "CLOB";
         }
         return super.convertTypeToString(type);
     }
