@@ -190,6 +190,10 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
         }
         if (field.isAutoIncrement())
         {
+            if (field.getType().getType() == Types.BIGINT)
+            {
+                return "BIGSERIAL";
+            }
             return "SERIAL";
         }
         return super.renderFieldType(field);
