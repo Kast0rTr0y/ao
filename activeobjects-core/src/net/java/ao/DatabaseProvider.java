@@ -1704,6 +1704,11 @@ public abstract class DatabaseProvider
      */
     protected boolean considerPrecision(DDLField field)
     {
+        switch (field.getType().getType())
+        {
+            case Types.TIMESTAMP:
+                return false;
+        }
         return true;
     }
 
