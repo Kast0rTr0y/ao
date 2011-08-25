@@ -1,1 +1,1 @@
-DROP INDEX index_person_companyid ON person
+DROP INDEX index_person_companyid ON dbo.person

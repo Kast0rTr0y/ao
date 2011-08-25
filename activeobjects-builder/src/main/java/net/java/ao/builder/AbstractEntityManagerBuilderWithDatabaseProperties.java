@@ -14,18 +14,24 @@ import static com.google.common.base.Preconditions.*;
 
 public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B extends AbstractEntityManagerBuilderWithDatabaseProperties>
 {
-    private final DatabaseProperties databaseProperties;
+    private final BuilderDatabaseProperties databaseProperties;
     private final BuilderEntityManagerConfiguration configuration;
 
-    AbstractEntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties)
+    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties)
     {
         this(databaseProperties, new BuilderEntityManagerConfiguration());
     }
 
-    AbstractEntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration)
+    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration)
     {
         this.databaseProperties = checkNotNull(databaseProperties);
         this.configuration = checkNotNull(configuration);
+    }
+
+    public B schema(String schema)
+    {
+        databaseProperties.setSchema(schema);
+        return cast();
     }
 
     public B tableNameConverter(TableNameConverter tableNameConverter)
@@ -52,7 +58,7 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         return cast();
     }
 
-    final DatabaseProperties getDatabaseProperties()
+    final BuilderDatabaseProperties getDatabaseProperties()
     {
         return databaseProperties;
     }

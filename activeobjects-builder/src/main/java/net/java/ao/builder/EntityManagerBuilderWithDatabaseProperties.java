@@ -20,7 +20,7 @@ import static net.java.ao.builder.DatabaseProviderFactory.getDatabaseProvider;
  */
 public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEntityManagerBuilderWithDatabaseProperties<EntityManagerBuilderWithDatabaseProperties>
 {
-    EntityManagerBuilderWithDatabaseProperties(DatabaseProperties databaseProperties)
+    EntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties)
     {
         super(databaseProperties);
     }

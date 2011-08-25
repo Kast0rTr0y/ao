@@ -12,7 +12,7 @@ public final class EntityManagerBuilderWithDatabasePropertiesAndLuceneConfigurat
 {
     private final LuceneConfiguration luceneConfiguration;
 
-    EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(DatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration)
+    EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(BuilderDatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration)
     {
         super(databaseProperties, configuration);
         this.luceneConfiguration = checkNotNull(luceneConfiguration);

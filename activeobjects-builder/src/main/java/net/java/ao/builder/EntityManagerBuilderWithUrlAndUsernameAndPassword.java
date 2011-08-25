@@ -73,40 +73,4 @@ public final class EntityManagerBuilderWithUrlAndUsernameAndPassword
     {
         return new BuilderDatabaseProperties(url, username, password, connectionPool);
     }
-
-    private static class BuilderDatabaseProperties implements DatabaseProperties
-    {
-        private final String url;
-        private final String username;
-        private final String password;
-        private final ConnectionPool pool;
-
-        public BuilderDatabaseProperties(String url, String username, String password, ConnectionPool pool)
-        {
-            this.url = checkNotNull(url);
-            this.username = checkNotNull(username);
-            this.password = checkNotNull(password);
-            this.pool = checkNotNull(pool);
-        }
-
-        public String getUrl()
-        {
-            return url;
-        }
-
-        public String getUsername()
-        {
-            return username;
-        }
-
-        public String getPassword()
-        {
-            return password;
-        }
-
-        public ConnectionPool getConnectionPool()
-        {
-            return pool;
-        }
-    }
 }

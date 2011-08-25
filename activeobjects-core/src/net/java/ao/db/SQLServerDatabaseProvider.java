@@ -122,7 +122,12 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     public SQLServerDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        this(dataSource, "dbo");
+    }
+
+    public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        super(dataSource, schema);
     }
 	
 	@Override
@@ -134,7 +139,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, null, null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables(null, schema, null, new String[] {"TABLE"});
 	}
 	
 	@Override
@@ -339,9 +344,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			}
 			
 			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + "\n");
-			back.append("ON ").append(processID(table.getName())).append("\n");
+			back.append("ON ").append(withSchema(table.getName())).append("\n");
 			back.append("FOR UPDATE\nAS\n");
-			back.append("    UPDATE ").append(processID(table.getName())).append(" SET ").append(processID(field.getName()));
+			back.append("    UPDATE ").append(withSchema(table.getName())).append(" SET ").append(processID(field.getName()));
 			back.append(" = ").append(renderValue(onUpdate));
 			back.append(" WHERE " + processID(pkField.getName()) + " = (SELECT " + processID(pkField.getName()) + " FROM inserted)");
 			
@@ -355,7 +360,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field) {
 		StringBuilder current = new StringBuilder();
 		
-		current.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 		current.append(renderField(field));
 		
 		return current.toString();
@@ -365,7 +370,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected String[] renderAlterTableAddColumn(DDLTable table, DDLField field) {
 		List<String> back = new ArrayList<String>();
 		
-		back.add("ALTER TABLE " + processID(table.getName()) + " ADD " + renderField(field));
+		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(field));
 		
 		String function = renderFunctionForField(table, field);
 		if (function != null) {
@@ -384,7 +389,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableDropKey(DDLForeignKey key) {
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 		
-		back.append(processID(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 		
 		return back.toString();
 	}

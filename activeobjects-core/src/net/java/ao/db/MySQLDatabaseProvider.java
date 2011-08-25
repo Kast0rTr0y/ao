@@ -74,7 +74,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 
     public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        super(dataSource, null);
     }
 
     @Override

@@ -80,7 +80,7 @@ import static net.java.ao.Common.*;
  * in fact a very basic (and naive) form of connection pooling. It should
  * <i>not</i> be relied upon for performance reasons.  Instead one should enable
  * connection pooling via the {@link javax.sql.DataSource} passed to instances. You can
- * also use the {@link net.java.ao.builder.EntityManagerBuilder} builder to make it
+ * also use the <em>net.java.ao.builder.EntityManagerBuilder</em> builder to make it
  * easier to configure the pooling. The purpose of the thread-locked connection pooling
  * in this class is to satisfy transactions with external SQL statements.</p>
  *
@@ -94,18 +94,26 @@ public abstract class DatabaseProvider
     private final Set<SqlListener> sqlListeners;
 
     private final DisposableDataSource dataSource;
+    protected final String schema;
 
     private final Map<Thread, Connection> connections;
     private final ReadWriteLock connectionsLock = new ReentrantReadWriteLock();
 
+
     private String quote;
 
-    protected DatabaseProvider(DisposableDataSource dataSource)
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
     {
         this.dataSource = checkNotNull(dataSource);
+        this.schema = schema; // can be null
         this.connections = new HashMap<Thread, Connection>();
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
+    }
+
+    public String getSchema()
+    {
+        return schema;
     }
 
     private synchronized void loadQuoteString()
@@ -478,12 +486,12 @@ public abstract class DatabaseProvider
      */
     public ResultSet getTables(Connection conn) throws SQLException
     {
-        return conn.getMetaData().getTables(null, null, "", new String[]{"TABLE"});
+        return conn.getMetaData().getTables(null, schema, "", new String[]{"TABLE"});
     }
 
     public ResultSet getSequences(Connection conn) throws SQLException
     {
-        return conn.getMetaData().getTables(null, null, "", new String[]{"SEQUENCE"});
+        return conn.getMetaData().getTables(null, schema, "", new String[]{"SEQUENCE"});
     }
 
     /**
@@ -861,7 +869,7 @@ public abstract class DatabaseProvider
 
         back.append("CONSTRAINT ").append(processID(key.getFKName()));
         back.append(" FOREIGN KEY (").append(processID(key.getField())).append(") REFERENCES ");
-        back.append(processID(key.getTable())).append('(').append(processID(key.getForeignField())).append(")");
+        back.append(withSchema(key.getTable())).append('(').append(processID(key.getForeignField())).append(")");
 
         return back.toString();
     }
@@ -898,7 +906,7 @@ public abstract class DatabaseProvider
     protected String renderTable(DDLTable table)
     {
         StringBuilder back = new StringBuilder("CREATE TABLE ");
-        back.append(processID(table.getName()));
+        back.append(withSchema(table.getName()));
         back.append(" (\n");
 
         List<String> primaryKeys = new LinkedList<String>();
@@ -955,7 +963,7 @@ public abstract class DatabaseProvider
         values.deleteCharAt(values.length() - 1);
 
         return new StringBuilder()
-                .append("INSERT INTO ").append(processID(ddlTable.getName()))
+                .append("INSERT INTO ").append(withSchema(ddlTable.getName()))
                 .append("(").append(columns).append(")")
                 .append(" VALUES (").append(values).append(")")
                 .toString();
@@ -975,7 +983,7 @@ public abstract class DatabaseProvider
      */
     protected String renderDropTable(DDLTable table)
     {
-        return "DROP TABLE " + processID(table.getName());
+        return "DROP TABLE " + withSchema(table.getName());
     }
 
     /**
@@ -1136,7 +1144,7 @@ public abstract class DatabaseProvider
     {
         List<String> back = new ArrayList<String>();
 
-        back.add("ALTER TABLE " + processID(table.getName()) + " ADD COLUMN " + renderField(field));
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(field));
 
         String function = renderFunctionForField(table, field);
         if (function != null)
@@ -1244,7 +1252,7 @@ public abstract class DatabaseProvider
     protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field)
     {
         StringBuilder current = new StringBuilder();
-        current.append("ALTER TABLE ").append(processID(table.getName())).append(" CHANGE COLUMN ");
+        current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" CHANGE COLUMN ");
         current.append(processID(oldField.getName())).append(' ');
         current.append(renderField(field));
         return current.toString();
@@ -1289,7 +1297,7 @@ public abstract class DatabaseProvider
         }
 
         current.setLength(0);
-        current.append("ALTER TABLE ").append(processID(table.getName())).append(
+        current.append("ALTER TABLE ").append(withSchema(table.getName())).append(
                 " DROP COLUMN ").append(processID(field.getName()));
         back.add(current.toString());
 
@@ -1312,7 +1320,7 @@ public abstract class DatabaseProvider
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("ALTER TABLE ").append(processID(key.getDomesticTable())).append(" ADD ");
+        back.append("ALTER TABLE ").append(withSchema(key.getDomesticTable())).append(" ADD ");
         back.append(renderForeignKey(key));
 
         return back.toString();
@@ -1334,7 +1342,7 @@ public abstract class DatabaseProvider
      */
     protected String renderAlterTableDropKey(DDLForeignKey key)
     {
-        return "ALTER TABLE " + processID(key.getDomesticTable()) + " DROP FOREIGN KEY " + processID(key.getFKName());
+        return "ALTER TABLE " + withSchema(key.getDomesticTable()) + " DROP FOREIGN KEY " + processID(key.getFKName());
     }
 
     /**
@@ -1354,7 +1362,7 @@ public abstract class DatabaseProvider
         StringBuilder back = new StringBuilder();
 
         back.append("CREATE INDEX ").append(processID(index.getName()));
-        back.append(" ON ").append(processID(index.getTable())).append('(').append(processID(index.getField())).append(')');
+        back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
 
         return back.toString();
     }
@@ -1376,7 +1384,7 @@ public abstract class DatabaseProvider
         StringBuilder back = new StringBuilder();
 
         back.append("DROP INDEX ").append(processID(index.getName()));
-        back.append(" ON ").append(processID(index.getTable()));
+        back.append(" ON ").append(withSchema(index.getTable()));
 
         return back.toString();
     }
@@ -1796,7 +1804,7 @@ public abstract class DatabaseProvider
     /**
      * <p>Generates an INSERT statement to be used to create a new row in the
      * database, returning the primary key value.  This method also invokes
-     * the delegate method, {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class}
+     * the delegate method, {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)}
      * passing the appropriate parameters and query.  This method is required
      * because some databases do not support the JDBC parameter
      * <code>RETURN_GENERATED_KEYS</code> (such as HSQLDB and PostgreSQL).
@@ -1819,7 +1827,7 @@ public abstract class DatabaseProvider
      * <p>The default implementation of this method should be sufficient for any
      * fully compliant ANSI SQL database with a properly implemented JDBC
      * driver.  Note that this method should <i>not</i> not actually execute
-     * the SQL it generates, but pass it on to the {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class}
+     * the SQL it generates, but pass it on to the {@link #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)}
      * method, allowing for functional delegation and better extensibility.
      * However, this method may execute any additional statements required to
      * prepare for the INSERTion (as in the case of MS SQL Server which requires
@@ -1844,7 +1852,7 @@ public abstract class DatabaseProvider
      * primary key.
      * @throws SQLException If the INSERT fails in the delegate method, or
      * if any additional statements fail with an exception.
-     * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class
+     * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)
      */
     @SuppressWarnings("unused")
     public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
@@ -2113,6 +2121,12 @@ public abstract class DatabaseProvider
     public final String processID(String id)
     {
         return quote(shorten(id));
+    }
+
+    public final String withSchema(String tableName)
+    {
+        final String processedTableName = processID(tableName);
+        return schema != null ? schema + "." + processedTableName : processedTableName;
     }
 
     public final String shorten(String id)

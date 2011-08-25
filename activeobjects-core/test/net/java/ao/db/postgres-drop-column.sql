@@ -1,1 +1,1 @@
-ALTER TABLE 'company' DROP COLUMN 'name'
+ALTER TABLE public."company" DROP COLUMN "name"

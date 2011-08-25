@@ -87,10 +87,15 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
     public HSQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        this(dataSource, "PUBLIC");
     }
 
-	@Override
+    public HSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        super(dataSource, schema);
+    }
+
+    @Override
 	@SuppressWarnings("unused")
 	public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException {
 		StringBuilder sql = new StringBuilder("INSERT INTO " + processID(table) + " (");
@@ -198,7 +203,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, "PUBLIC", null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables(null, schema, null, new String[] {"TABLE"});
 	}
 
 	@Override
@@ -359,7 +364,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field) {
 		StringBuilder current = new StringBuilder();
 
-		current.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 		current.append(renderField(field));
 
 		return current.toString();
@@ -369,7 +374,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableDropKey(DDLForeignKey key) {
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
-		back.append(processID(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
 		return back.toString();
 	}

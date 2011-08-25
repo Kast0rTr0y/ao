@@ -123,7 +123,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     public OracleDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        super(dataSource, null);
     }
 
     @Override
@@ -250,8 +250,8 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 			StringBuilder back = new StringBuilder();
 			String value = renderValue(field.getOnUpdate());
 
-			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + '\n');
-			back.append("BEFORE UPDATE\n").append("    ON ").append(processID(table.getName())).append("\n    FOR EACH ROW\n");
+			back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_onupdate") + '\n');
+			back.append("BEFORE UPDATE\n").append("    ON ").append(withSchema(table.getName())).append("\n    FOR EACH ROW\n");
 			back.append("BEGIN\n");
 			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
 
@@ -259,10 +259,10 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		} else if (field.isAutoIncrement()) {
 			StringBuilder back = new StringBuilder();
 
-	        back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_autoinc") +  '\n');
-	        back.append("BEFORE INSERT\n").append("    ON ").append(processID(table.getName())).append("   FOR EACH ROW\n");
+	        back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_autoinc") +  '\n');
+	        back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
 	        back.append("BEGIN\n");
-	        back.append("    SELECT ").append(processID(table.getName() + '_' + field.getName() + "_SEQ") + ".NEXTVAL");
+	        back.append("    SELECT ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ") + ".NEXTVAL");
 	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
 
 	        return back.toString();
@@ -274,7 +274,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field) {
 		StringBuilder current = new StringBuilder();
-		current.append("ALTER TABLE ").append(processID(table.getName())).append(" MODIFY (");
+		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (");
 		current.append(renderField(field)).append(')');
 		return current.toString();
 	}
@@ -290,7 +290,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     @Override
     protected String renderDropTable(DDLTable table) {
-        return "DROP TABLE " + processID(table.getName()) + " PURGE";
+        return "DROP TABLE " + withSchema(table.getName()) + " PURGE";
     }
 
     @Override
@@ -395,7 +395,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         for (DDLField field : table.getFields()) {
         	if (field.isAutoIncrement()) {
                 StringBuilder seq = new StringBuilder();
-                seq.append("DROP TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_autoinc"));
+                seq.append("DROP TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_autoinc"));
                 back.add(seq.toString());
         	}
         }
@@ -410,7 +410,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         for (DDLField field : table.getFields()) {
         	if (field.isAutoIncrement()) {
                 StringBuilder seq = new StringBuilder();
-                seq.append("DROP SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_SEQ"));
+                seq.append("DROP SEQUENCE ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ"));
                 back.add(seq.toString());
         	}
         }
@@ -425,7 +425,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         for (DDLField field : table.getFields()) {
         	if (field.isAutoIncrement()) {
                 StringBuilder seq = new StringBuilder();
-                seq.append("CREATE SEQUENCE ").append(processID(table.getName() + '_' + field.getName() + "_SEQ"));
+                seq.append("CREATE SEQUENCE ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ"));
                 seq.append(" INCREMENT BY 1 START WITH 1 ");
                 seq.append("NOMAXVALUE").append(" MINVALUE 1");
                 back.add(seq.toString());

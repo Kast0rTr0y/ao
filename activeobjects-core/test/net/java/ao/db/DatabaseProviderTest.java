@@ -88,8 +88,8 @@ public class DatabaseProviderTest
 		final String[] ddl = {"DROP TABLE person"};
 
         testRenderAction(ddl, action, getEmbeddedDerbyDatabaseProvider());
-        testRenderAction(ddl, action, getHsqlDatabaseProvider());
-        testRenderAction(ddl, action, getMsSqlDatabaseProvider());
+        testRenderAction("hsqldb-drop-table.sql", action, getHsqlDatabaseProvider());
+        testRenderAction("sqlserver-drop-table.sql", action, getMsSqlDatabaseProvider());
         testRenderAction(ddl, action, getMySqlDatabaseProvider());
         testRenderAction("oracle-drop-table.sql", action, getOracleDatabaseProvider());
         testRenderAction("postgres-drop-table.sql", action, getPostgreSqlDatabaseProvider());
@@ -188,7 +188,7 @@ public class DatabaseProviderTest
         assertEquals(where, getMsSqlDatabaseProvider().processWhereClause(where));
         assertEquals(where, getMySqlDatabaseProvider().processWhereClause(where));
         assertEquals(where, getOracleDatabaseProvider().processWhereClause(where));
-        assertEquals("'field1' = 2 and 'field2' like %er", getPostgreSqlDatabaseProvider().processWhereClause(where));
+        assertEquals("\"field1\" = 2 and \"field2\" like %er", getPostgreSqlDatabaseProvider().processWhereClause(where));
     }
 
     @After

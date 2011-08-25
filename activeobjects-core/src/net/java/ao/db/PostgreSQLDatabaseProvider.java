@@ -112,7 +112,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        this(dataSource, "public");
+    }
+
+    public PostgreSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        super(dataSource, schema);
     }
 
 	@Override
@@ -173,7 +178,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables("public", null, null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables(null, schema, null, new String[] {"TABLE"});
 	}
 
 	@Override
@@ -248,7 +253,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
             final String triggerName = triggerName(table, field);
 
-            back.append("CREATE FUNCTION ").append(triggerName).append("()");
+            back.append("CREATE FUNCTION ").append(schema != null ? schema + "." + triggerName : triggerName).append("()");
             back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
 			back.append("    NEW.").append(processID(field.getName())).append(" := ").append(renderValue(onUpdate));
             back.append(";\n    RETURN NEW;\nEND;\n$").append(triggerName).append("$ LANGUAGE plpgsql");
@@ -268,9 +273,9 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
             final String triggerName = triggerName(table, field);
 
             back.append("CREATE TRIGGER ").append(triggerName).append('\n');
-            back.append(" BEFORE UPDATE OR INSERT ON ").append(processID(table.getName())).append('\n');
+            back.append(" BEFORE UPDATE OR INSERT ON ").append(withSchema(table.getName())).append('\n');
 			back.append("    FOR EACH ROW EXECUTE PROCEDURE ");
-            back.append(triggerName).append("()");
+            back.append(schema != null ? schema + "." + triggerName : triggerName).append("()");
 
             return back.toString();
 		}
@@ -319,7 +324,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		String function = getFunctionNameForField(table, oldField);
 		if (function != null) {
 			StringBuilder str = new StringBuilder();
-			str.append("DROP FUNCTION ").append(processID(function));
+			str.append("DROP FUNCTION ").append(withSchema(function));
 			back.add(str.toString());
 		}
 
@@ -328,7 +333,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			foundChange = true;
 
 			StringBuilder str = new StringBuilder();
-			str.append("ALTER TABLE ").append(processID(table.getName())).append(" RENAME COLUMN ");
+			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ");
 			str.append(processID(oldField.getName())).append(" TO ").append(processID(field.getName()));
 			back.add(str.toString());
 		}
@@ -337,7 +342,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			foundChange = true;
 
 			StringBuilder str = new StringBuilder();
-			str.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" TYPE ");
 			str.append(renderFieldType(field)).append(renderFieldPrecision(field));
 			back.add(str.toString());
@@ -349,14 +354,14 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			foundChange = true;
 
 			StringBuilder str = new StringBuilder();
-			str.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" DROP DEFAULT");
 			back.add(str.toString());
 		} else if (!field.getDefaultValue().equals(oldField.getDefaultValue())) {
 			foundChange = true;
 
 			StringBuilder str = new StringBuilder();
-			str.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" SET DEFAULT ").append(renderValue(field.getDefaultValue()));
 			back.add(str.toString());
 		}
@@ -366,12 +371,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 			if (field.isNotNull()) {
 				StringBuilder str = new StringBuilder();
-				str.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+				str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 				str.append(processID(field.getName())).append(" SET NOT NULL");
 				back.add(str.toString());
 			} else {
 				StringBuilder str = new StringBuilder();
-				str.append("ALTER TABLE ").append(processID(table.getName())).append(" ALTER COLUMN ");
+				str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 				str.append(processID(field.getName())).append(" DROP NOT NULL");
 				back.add(str.toString());
 			}
@@ -402,7 +407,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableDropKey(DDLForeignKey key) {
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
-		back.append(processID(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
 		return back.toString();
 	}
@@ -429,7 +434,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION " + functionName + " CASCADE";
+        return "DROP FUNCTION " + (schema != null ? schema + "." + functionName : functionName)+ " CASCADE";
     }
 
     @Override

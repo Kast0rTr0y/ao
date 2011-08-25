@@ -1,4 +1,4 @@
-CREATE TABLE person (
+CREATE TABLE dbo.person (
     id INTEGER IDENTITY(1,1) NOT NULL,
     firstName VARCHAR(255) NOT NULL,
     lastName NTEXT,
@@ -10,12 +10,12 @@ CREATE TABLE person (
     cool BIT DEFAULT 1,
     modified DATETIME DEFAULT GetDate(),
     weight DECIMAL(32,16),
-    CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
+    CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id),
     PRIMARY KEY(id)
 )
 
 CREATE TRIGGER person_modified_onupdate
-ON person
+ON dbo.person
 FOR UPDATE
 AS
-    UPDATE person SET modified = GetDate() WHERE id = (SELECT id FROM inserted)
+    UPDATE dbo.person SET modified = GetDate() WHERE id = (SELECT id FROM inserted)

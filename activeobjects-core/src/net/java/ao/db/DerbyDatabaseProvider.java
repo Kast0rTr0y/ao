@@ -76,7 +76,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 
     DerbyDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource);
+        super(dataSource, null);
     }
 
     @Override
@@ -102,7 +102,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables("APP", null, null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables("APP", schema, null, new String[] {"TABLE"});
 	}
 	
 	@Override
@@ -211,10 +211,10 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
 			}
 			
-			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName()+ "_onupdate") + '\n');
-			back.append("    AFTER UPDATE ON ").append(processID(table.getName()));
+			back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName()+ "_onupdate") + '\n');
+			back.append("    AFTER UPDATE ON ").append(withSchema(table.getName()));
 			back.append("\n    REFERENCING NEW AS inserted\n    FOR EACH ROW MODE DB2SQL\n        ");
-			back.append("UPDATE ").append(processID(table.getName())).append(" SET ").append(
+			back.append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(
 					processID(field.getName())).append(" = ").append(renderValue(onUpdate));
 			back.append("\n            WHERE " + processID(pkField.getName()) + " = inserted." 
 					+ processID(pkField.getName()) + " AND inserted.");

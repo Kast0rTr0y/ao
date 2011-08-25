@@ -11,6 +11,7 @@ class DatabaseProviderFactory
                 databaseProperties.getConnectionPool(),
                 databaseProperties.getUrl(),
                 databaseProperties.getUsername(),
-                databaseProperties.getPassword());
+                databaseProperties.getPassword(),
+                databaseProperties.getSchema());
     }
 }

@@ -8,5 +8,7 @@ public interface DatabaseProperties
 
     String getPassword();
 
+    String getSchema();
+
     ConnectionPool getConnectionPool();
 }

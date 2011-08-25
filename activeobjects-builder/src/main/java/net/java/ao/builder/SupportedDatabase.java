@@ -21,7 +21,7 @@ enum SupportedDatabase
     MYSQL("jdbc:mysql", "com.mysql.jdbc.Driver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
                     return new MySQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
@@ -29,7 +29,7 @@ enum SupportedDatabase
     DERBY_NETWORK("jdbc:derby://", "org.apache.derby.jdbc.ClientDriver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
                     return new ClientDerbyDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
@@ -37,7 +37,7 @@ enum SupportedDatabase
     DERBY_EMBEDDED("jdbc:derby", "org.apache.derby.jdbc.EmbeddedDriver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
                     return new EmbeddedDerbyDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), uri);
                 }
@@ -45,7 +45,7 @@ enum SupportedDatabase
     ORACLE("jdbc:oracle", "oracle.jdbc.OracleDriver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
                     return new OracleDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
                 }
@@ -53,33 +53,33 @@ enum SupportedDatabase
     POSTGRESQL("jdbc:postgresql", "org.postgresql.Driver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
-                    return new PostgreSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                    return new PostgreSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             },
     MSSQL("jdbc:sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
-                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             },
     MSSQL_JTDS("jdbc:jtds:sqlserver", "net.sourceforge.jtds.jdbc.Driver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
-                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                    return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             },
     HSQLDB("jdbc:hsqldb", "org.hsqldb.jdbcDriver")
             {
                 @Override
-                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password)
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
-                    return new HSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                    return new HSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             };
 
@@ -92,7 +92,7 @@ enum SupportedDatabase
         this.driverClassName = checkNotNull(driverClassName);
     }
 
-    public abstract DatabaseProvider getDatabaseProvider(DataSourceFactory factory, String url, String username, String password);
+    public abstract DatabaseProvider getDatabaseProvider(DataSourceFactory factory, String url, String username, String password, String schema);
 
     DisposableDataSource getDataSource(DataSourceFactory factory, String uri, String username, String password)
     {

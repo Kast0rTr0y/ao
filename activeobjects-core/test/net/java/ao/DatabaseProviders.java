@@ -22,7 +22,7 @@ public class DatabaseProviders
 
     public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
     {
-        return new PostgreSQLDatabaseProvider(newDataSource("'"));
+        return new PostgreSQLDatabaseProvider(newDataSource("\""));
     }
 
     public static OracleDatabaseProvider getOracleDatabaseProvider()

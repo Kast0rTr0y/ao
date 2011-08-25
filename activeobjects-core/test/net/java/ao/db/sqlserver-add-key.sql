@@ -1,1 +1,1 @@
-ALTER TABLE person ADD CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id)
+ALTER TABLE dbo.person ADD CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id)

@@ -1,1 +1,1 @@
-DROP INDEX 'index_person_companyid'
+DROP INDEX "index_person_companyid"

@@ -1,1 +1,1 @@
-CREATE INDEX index_person_companyid ON person(companyID)
+CREATE INDEX index_person_companyid ON dbo.person(companyID)
