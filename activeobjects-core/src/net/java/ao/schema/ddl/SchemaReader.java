@@ -18,6 +18,7 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import net.java.ao.Common;
+import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.helper.DatabaseMetaDataReader;
@@ -304,8 +305,8 @@ public final class SchemaReader
 
                 if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null)
                 {
-                    if (!ontoField.getDefaultValue().toString().equals("CURRENT_TIMESTAMP"))
-                    {        // super-hack for MySQL
+                    if (!isMySqlTimeStampAndDefaultValueIsCurrentTimeStamp(ontoField))
+                    {
                         actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                     }
                 }
@@ -427,6 +428,23 @@ public final class SchemaReader
         }
 
         return actions.toArray(new DDLAction[actions.size()]);
+    }
+
+    private static boolean isMySqlTimeStampAndDefaultValueIsCurrentTimeStamp(DDLField ontoField)
+    {
+        if (ontoField.getType().getType() != Types.TIMESTAMP)
+        {
+            return false;
+        }
+
+        if (!(ontoField.getDefaultValue() instanceof DatabaseFunction[]))
+        {
+            return false;
+        }
+
+        // on MySql there is always a default value even if it isn't set on the entities
+        final DatabaseFunction[] dbFunctions = (DatabaseFunction[]) ontoField.getDefaultValue();
+        return dbFunctions.length > 0 && DatabaseFunction.CURRENT_TIMESTAMP.equals(dbFunctions[0]);
     }
 
     private static boolean equals(String s, String s1, boolean caseSensitive)
