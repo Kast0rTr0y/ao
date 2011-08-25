@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import com.google.common.collect.MapMaker;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
@@ -47,12 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.*;
-import static net.java.ao.Common.preloadValue;
+import static net.java.ao.Common.*;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -113,11 +113,11 @@ public class EntityManager
 
         if (configuration.useWeakCache())
         {
-            proxies = new WeakHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
+            proxies = new MapMaker().weakKeys().makeMap();
         }
         else
         {
-            proxies = new SoftHashMap<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>();
+            proxies = new MapMaker().softKeys().makeMap();
         }
 
 		entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
