@@ -605,7 +605,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				selectFields.add(finalPKField);
 				selectFields.addAll(preloadValue(preloadAnnotation, manager.getFieldNameConverter()));
 
-               if (selectFields.contains(Preload.ALL))
+                if (selectFields.contains(Preload.ALL))
                 {
                     selectFields.remove(Preload.ALL);
                     selectFields.addAll(Common.getValueFieldsNames(finalType, getManager().getFieldNameConverter()));
@@ -814,9 +814,14 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 				V returnValueEntity = getManager().peer(backType, returnValue);
 				CacheLayer returnLayer = getManager().getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
-				
-				for (String field : selectFields) {
-					if (!resPolyNames.contains(field)) {
+
+                if (selectFields.contains(Preload.ALL))
+                {
+                    selectFields.remove(Preload.ALL);
+                    selectFields.addAll(Common.getValueFieldsNames(finalType, getManager().getFieldNameConverter()));
+                }
+                for (String field : selectFields) {
+                    if (!resPolyNames.contains(field)) {
 						returnLayer.put(field, res.getObject(field));
 					}
 				}
