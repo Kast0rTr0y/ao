@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import com.google.common.collect.ImmutableMap;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
@@ -25,6 +26,7 @@ import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,7 +247,7 @@ public class Query implements Serializable {
 	}
 
 	public Map<Class<? extends RawEntity<?>>, String> getJoins() {
-		return joins;
+		return Collections.unmodifiableMap(joins);
 	}
 
 	public void setJoins(Map<Class<? extends RawEntity<?>>, String> joins) {

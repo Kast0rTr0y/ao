@@ -576,24 +576,16 @@ public abstract class DatabaseProvider
      */
     protected String renderQueryJoins(Query query, TableNameConverter converter)
     {
-        StringBuilder sql = new StringBuilder();
+        final StringBuilder sql = new StringBuilder();
 
-        if (query.getJoins().size() > 0)
+        for (Map.Entry<Class<? extends RawEntity<?>>, String> joinEntry : query.getJoins().entrySet())
         {
-            for (Class<? extends RawEntity<?>> join : query.getJoins().keySet())
+            sql.append(" JOIN ").append(processID(converter.getName(joinEntry.getKey())));
+            if (joinEntry.getValue() != null)
             {
-                sql.append(" JOIN ");
-                sql.append(processID(converter.getName(join)));
-
-                String on = query.getJoins().get(join);
-                if (on != null)
-                {
-                    sql.append(" ON ");
-                    sql.append(processID(on));
-                }
+                sql.append(" ON ").append(processOnClause(joinEntry.getValue()));
             }
         }
-
         return sql.toString();
     }
 
@@ -2071,6 +2063,11 @@ public abstract class DatabaseProvider
         }
 
         return false;
+    }
+
+    protected String processOnClause(String on)
+    {
+        return SqlUtils.ON_CLAUSE.matcher(on).replaceAll("$1" + processID("$2") + " = " + "$3" + processID("$4"));
     }
 
     /**

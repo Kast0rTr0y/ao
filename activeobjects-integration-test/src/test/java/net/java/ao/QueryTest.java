@@ -40,7 +40,6 @@ import java.sql.SQLException;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-/** @author Daniel Spiewak */
 @Data(DatabaseProcessor.class)
 public class QueryTest extends ActiveObjectsIntegrationTest
 {
@@ -51,7 +50,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
     private static final Query QUERY_5 = Query.select().where("name IS NULL AND age = 3").limit(10);
     private static final Query QUERY_6 = Query.select().where("name IS NULL AND age = 3").limit(10).offset(4);
     private static final Query QUERY_7 = Query.select().where("name IS NULL AND age = 3").limit(4).group("age");
-    private static final Query QUERY_8 = Query.select().join(Company.class).where("name IS NULL AND age = 3").group("url");
+    private static final Query QUERY_8 = Query.select().join(Company.class, "person.companyId = company.id").where("name IS NULL AND age = 3").group("url");
     private static final Query QUERY_9 = Query.select().join(Company.class).join(CompanyAddressInfo.class).where("addressLine1 IS NULL");
 
     private TableNameConverter tableNameConverter;
@@ -65,159 +64,177 @@ public class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testToSQL()
+    public void testToSqlWithPostgreSqlDatabaseProvider()
     {
-        DatabaseProvider provider = DatabaseProviders.getEmbeddedDerbyDatabaseProvider();
-        String personTableName = getTableName(provider, tableNameConverter, Person.class);
-        String companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        String companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-        String id = getFieldName(Person.class, "getID");
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
-
-        provider = DatabaseProviders.getHsqlDatabaseProvider();
-        personTableName = getTableName(provider, tableNameConverter, Person.class);
-        companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT LIMIT 0 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT LIMIT 4 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT LIMIT 0 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT LIMIT 0 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT LIMIT 4 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT LIMIT 0 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
-
-        provider = DatabaseProviders.getMsSqlDatabaseProvider();
-        personTableName = getTableName(provider, tableNameConverter, Person.class);
-        companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT TOP 10 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT TOP 14 %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT TOP 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id,  personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT TOP 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT TOP 14 COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT TOP 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
-
-        provider = DatabaseProviders.getMySqlDatabaseProvider();
-        personTableName = getTableName(provider, tableNameConverter, Person.class);
-        companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", id, personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
-
-        provider = DatabaseProviders.getOracleDatabaseProvider();
-        personTableName = getTableName(provider, tableNameConverter, Person.class);
-        companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT %s FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT ID,firstName,lastName FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT %s FROM %s ORDER BY name DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", id, personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT %s FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY name DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE name IS NULL AND age = 3 GROUP BY url", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
-
-        provider = DatabaseProviders.getPostgreSqlDatabaseProvider();
-        personTableName = getTableName(provider, tableNameConverter, Person.class);
-        companyTableName = getTableName(provider, tableNameConverter, Company.class);
-        companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
-
-        assertSqlEquals(provider, QUERY_1, false, "SELECT '%s' FROM %s", id, personTableName);
-        assertSqlEquals(provider, QUERY_2, false, "SELECT 'ID','firstName','lastName' FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3", id, personTableName);
-        assertSqlEquals(provider, QUERY_4, false, "SELECT '%s' FROM %s ORDER BY 'name' DESC", id, personTableName);
-        assertSqlEquals(provider, QUERY_5, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", id, personTableName);
-        assertSqlEquals(provider, QUERY_6, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", id, personTableName);
-        assertSqlEquals(provider, QUERY_7, false, "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", id, personTableName);
-        assertSqlEquals(provider, QUERY_8, false, "SELECT '%s' FROM %s JOIN %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", id, personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, false, "SELECT '%s' FROM %s JOIN %s JOIN %s WHERE 'addressLine1' IS NULL", id, personTableName, companyTableName, companyAdressInfoTableName);
-
-        assertSqlEquals(provider, QUERY_1, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_2, true, "SELECT COUNT(*) FROM %s", personTableName);
-        assertSqlEquals(provider, QUERY_3, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3", personTableName);
-        assertSqlEquals(provider, QUERY_4, true, "SELECT COUNT(*) FROM %s ORDER BY 'name' DESC", personTableName);
-        assertSqlEquals(provider, QUERY_5, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10", personTableName);
-        assertSqlEquals(provider, QUERY_6, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4", personTableName);
-        assertSqlEquals(provider, QUERY_7, true, "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4", personTableName);
-        assertSqlEquals(provider, QUERY_8, true, "SELECT COUNT(*) FROM %s JOIN %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'", personTableName, companyTableName);
-        assertSqlEquals(provider, QUERY_9, true, "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE 'addressLine1' IS NULL", personTableName, companyTableName, companyAdressInfoTableName);
+        testToSql(DatabaseProviders.getPostgreSqlDatabaseProvider(),
+                "SELECT '%s' FROM %s",
+                "SELECT 'ID','firstName','lastName' FROM %s",
+                "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3",
+                "SELECT '%s' FROM %s ORDER BY 'name' DESC",
+                "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10",
+                "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4",
+                "SELECT '%s' FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4",
+                "SELECT '%s' FROM %s JOIN %s ON person.'companyId' = company.'id' WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'",
+                "SELECT '%s' FROM %s JOIN %s JOIN %s WHERE 'addressLine1' IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY 'name' DESC",
+                "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10",
+                "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 LIMIT 10 OFFSET 4",
+                "SELECT COUNT(*) FROM %s WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'age' LIMIT 4",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.'companyId' = company.'id' WHERE 'name' IS NULL AND 'age' = 3 GROUP BY 'url'",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE 'addressLine1' IS NULL");
     }
+
+    @Test
+    public void testToSqlWithEmbeddedDerbyDatabaseProvider()
+    {
+        testToSql(DatabaseProviders.getEmbeddedDerbyDatabaseProvider(),
+                "SELECT %s FROM %s",
+                "SELECT ID,firstName,lastName FROM %s",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s ORDER BY name DESC",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT %s FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY name DESC",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL");
+    }
+
+    @Test
+    public void testToSqlWithHsqlDatabaseProvider()
+    {
+        testToSql(DatabaseProviders.getHsqlDatabaseProvider(),
+                "SELECT %s FROM %s",
+                "SELECT ID,firstName,lastName FROM %s",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s ORDER BY name DESC",
+                "SELECT LIMIT 0 10 %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT LIMIT 4 10 %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT LIMIT 0 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT %s FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY name DESC",
+                "SELECT LIMIT 0 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT LIMIT 4 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT LIMIT 0 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL");
+    }
+
+    @Test
+    public void testToSqlWithMsSqlDatabaseProvider()
+    {
+        testToSql(DatabaseProviders.getMsSqlDatabaseProvider(),
+                "SELECT %s FROM %s",
+                "SELECT ID,firstName,lastName FROM %s",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s ORDER BY name DESC",
+                "SELECT TOP 10 %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT TOP 14 %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT TOP 4 %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT %s FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY name DESC",
+                "SELECT TOP 10 COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT TOP 14 COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT TOP 4 COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL");
+    }
+
+    @Test
+    public void testToSqlWithMySqlDatabaseProvider()
+    {
+        testToSql(DatabaseProviders.getMySqlDatabaseProvider(),
+                "SELECT %s FROM %s",
+                "SELECT ID,firstName,lastName FROM %s",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s ORDER BY name DESC",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4",
+                "SELECT %s FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY name DESC",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 LIMIT 10 OFFSET 4",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age LIMIT 4",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL");
+    }
+
+    @Test
+    public void testToSqlWithOracleDatabaseProvider()
+    {
+        testToSql(DatabaseProviders.getOracleDatabaseProvider(),
+                "SELECT %s FROM %s",
+                "SELECT ID,firstName,lastName FROM %s",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s ORDER BY name DESC",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT %s FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT %s FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT %s FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s ORDER BY name DESC",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3",
+                "SELECT COUNT(*) FROM %s WHERE name IS NULL AND age = 3 GROUP BY age",
+                "SELECT COUNT(*) FROM %s JOIN %s ON person.companyId = company.id WHERE name IS NULL AND age = 3 GROUP BY url",
+                "SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE addressLine1 IS NULL");
+    }
+
+    private void testToSql(DatabaseProvider provider, String... sql)
+    {
+        final String personTableName = getTableName(provider, tableNameConverter, Person.class);
+        final String companyTableName = getTableName(provider, tableNameConverter, Company.class);
+        final String companyAdressInfoTableName = getTableName(provider, tableNameConverter, CompanyAddressInfo.class);
+        final String id = getFieldName(Person.class, "getID");
+
+        assertSqlEquals(provider, QUERY_1, false, sql[0], id, personTableName);
+        assertSqlEquals(provider, QUERY_2, false, sql[1], personTableName);
+        assertSqlEquals(provider, QUERY_3, false, sql[2], id, personTableName);
+        assertSqlEquals(provider, QUERY_4, false, sql[3], id, personTableName);
+        assertSqlEquals(provider, QUERY_5, false, sql[4], id, personTableName);
+        assertSqlEquals(provider, QUERY_6, false, sql[5], id, personTableName);
+        assertSqlEquals(provider, QUERY_7, false, sql[6], id, personTableName);
+        assertSqlEquals(provider, QUERY_8, false, sql[7], id, personTableName, companyTableName);
+        assertSqlEquals(provider, QUERY_9, false, sql[8], id, personTableName, companyTableName, companyAdressInfoTableName);
+
+        assertSqlEquals(provider, QUERY_1, true, sql[9], personTableName);
+        assertSqlEquals(provider, QUERY_2, true, sql[10], personTableName);
+        assertSqlEquals(provider, QUERY_3, true, sql[11], personTableName);
+        assertSqlEquals(provider, QUERY_4, true, sql[12], personTableName);
+        assertSqlEquals(provider, QUERY_5, true, sql[13], personTableName);
+        assertSqlEquals(provider, QUERY_6, true, sql[14], personTableName);
+        assertSqlEquals(provider, QUERY_7, true, sql[15], personTableName);
+        assertSqlEquals(provider, QUERY_8, true, sql[16], personTableName, companyTableName);
+        assertSqlEquals(provider, QUERY_9, true, sql[17], personTableName, companyTableName, companyAdressInfoTableName);
+    }
+
 
     private void assertSqlEquals(DatabaseProvider provider, Query query, boolean count, String expected, String... args)
     {
