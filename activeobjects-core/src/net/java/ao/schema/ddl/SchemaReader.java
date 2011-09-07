@@ -28,6 +28,8 @@ import net.java.ao.schema.helper.ForeignKey;
 import net.java.ao.sql.SqlUtils;
 
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -40,7 +42,19 @@ import static com.google.common.collect.Lists.newArrayList;
  */
 public final class SchemaReader
 {
-    private static final long DATE_0000_00_00_00_00_00 = -62170160400000L;
+    static
+    {
+        try
+        {
+            DEFAULT_MYSQL_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("0000-00-00 00:00:00").getTime();
+        }
+        catch (ParseException e)
+        {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static final long DEFAULT_MYSQL_TIME;
 
     /**
      * Currently doesn't account for:
@@ -447,7 +461,7 @@ public final class SchemaReader
 
         if (ontoField.getDefaultValue() instanceof Calendar)
         {
-            return ((Calendar) ontoField.getDefaultValue()).getTimeInMillis() == DATE_0000_00_00_00_00_00;
+            return ((Calendar) ontoField.getDefaultValue()).getTimeInMillis() == DEFAULT_MYSQL_TIME;
         }
 
         return false;
