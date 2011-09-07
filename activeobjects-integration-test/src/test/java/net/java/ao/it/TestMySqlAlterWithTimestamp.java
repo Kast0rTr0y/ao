@@ -40,6 +40,10 @@ public final class TestMySqlAlterWithTimestamp extends ActiveObjectsIntegrationT
         void setCreated(Date created);
 
         Date getCreated();
+
+        void setUpdated(Date updated);
+
+        Date getUpdated();
     }
 
     public static final class TestMySqlAlterWithTimestampUpdater implements DatabaseUpdater

@@ -40,6 +40,8 @@ import static com.google.common.collect.Lists.newArrayList;
  */
 public final class SchemaReader
 {
+    private static final long DATE_0000_00_00_00_00_00 = -62170160400000L;
+
     /**
      * Currently doesn't account for:
      *
@@ -98,7 +100,7 @@ public final class SchemaReader
 
         return table;
     }
-    
+
     private static List<DDLField> readFields(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName)
     {
         return newArrayList(Iterables.transform(databaseMetaDataReader.getFields(databaseMetaData, tableName), new Function<Field, DDLField>()
@@ -305,7 +307,7 @@ public final class SchemaReader
 
                 if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null)
                 {
-                    if (!isMySqlTimeStampAndDefaultValueIsCurrentTimeStamp(ontoField))
+                    if (!isMySqlTimeStampAndDefaultValueIsCurrentTimeStampOr0(ontoField))
                     {
                         actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                     }
@@ -430,21 +432,25 @@ public final class SchemaReader
         return actions.toArray(new DDLAction[actions.size()]);
     }
 
-    private static boolean isMySqlTimeStampAndDefaultValueIsCurrentTimeStamp(DDLField ontoField)
+    private static boolean isMySqlTimeStampAndDefaultValueIsCurrentTimeStampOr0(DDLField ontoField)
     {
         if (ontoField.getType().getType() != Types.TIMESTAMP)
         {
             return false;
         }
 
-        if (!(ontoField.getDefaultValue() instanceof DatabaseFunction[]))
+        if (ontoField.getDefaultValue() instanceof DatabaseFunction[])
         {
-            return false;
+            final DatabaseFunction[] dbFunctions = (DatabaseFunction[]) ontoField.getDefaultValue();
+            return dbFunctions.length > 0 && DatabaseFunction.CURRENT_TIMESTAMP.equals(dbFunctions[0]);
         }
 
-        // on MySql there is always a default value even if it isn't set on the entities
-        final DatabaseFunction[] dbFunctions = (DatabaseFunction[]) ontoField.getDefaultValue();
-        return dbFunctions.length > 0 && DatabaseFunction.CURRENT_TIMESTAMP.equals(dbFunctions[0]);
+        if (ontoField.getDefaultValue() instanceof Calendar)
+        {
+            return ((Calendar) ontoField.getDefaultValue()).getTimeInMillis() == DATE_0000_00_00_00_00_00;
+        }
+
+        return false;
     }
 
     private static boolean equals(String s, String s1, boolean caseSensitive)
