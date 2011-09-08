@@ -344,9 +344,11 @@ public final class SchemaReader
 					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
 				} else if (fromField.isNotNull() != ontoField.isNotNull()) {
 					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-				} else if (fromField.isUnique() != ontoField.isUnique()) {
-					actions.add(createColumnAlterAction(fromTable, fromField));
-				}*/
+				} */
+                else if (fromField.isUnique() != ontoField.isUnique())
+                {
+                    actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
+                }
             }
 
             // foreign keys
