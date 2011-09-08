@@ -141,28 +141,10 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 		switch (type) {
 			case Types.TIMESTAMP:
-				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-
-			case Types.DATE:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-
-			case Types.TIME:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-
+            case Types.DATE:
+            case Types.TIME:
             case Types.VARCHAR:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
+				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
 				if (matcher.find()) {
 					value = matcher.group(1);
 				}

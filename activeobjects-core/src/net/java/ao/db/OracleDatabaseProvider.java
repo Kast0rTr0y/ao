@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -221,7 +223,26 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		return "";
 	}
 
-	@Override
+    @Override
+    public Object parseValue(int type, String value) {
+        if (value == null || value.equals("") || value.equals("NULL"))
+        {
+            return null;
+        }
+
+        switch (type) {
+            case Types.VARCHAR:
+                Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
+                if (matcher.find()) {
+                    value = matcher.group(1);
+                }
+            break;
+        }
+
+        return super.parseValue(type, value);
+    }
+
+    @Override
 	protected String renderOnUpdate(DDLField field) {
 		return "";
 	}
