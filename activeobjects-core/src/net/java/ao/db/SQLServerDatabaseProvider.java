@@ -144,54 +144,52 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	
 	@Override
 	public Object parseValue(int type, String value) {
-		if (value == null || value.equals("") || value.equals("NULL")) {
-			return null;
-		}
-		
-		Matcher valueMatcher = VALUE_PATTERN.matcher(value);
-		while (valueMatcher.matches()) {
-			value = valueMatcher.group(1);
-			valueMatcher = VALUE_PATTERN.matcher(value);
-		}
-		
-		switch (type) {
-			case Types.TIMESTAMP:
-				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
+        if (value == null || value.equals("") || value.equals("NULL"))
+        {
+            return null;
+        }
 
-			case Types.DATE:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-			
-			case Types.TIME:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-			
-			case Types.BIT:
-				try {
-					return Byte.parseByte(value);
-				} catch (Throwable t) {
-					try {
-						return Boolean.parseBoolean(value);
-					} catch (Throwable t1) {
-						return null;
-					}
-				}
-		}
-		
-		return super.parseValue(type, value);
-	}
-	
-	@Override
+        Matcher valueMatcher = VALUE_PATTERN.matcher(value);
+        while (valueMatcher.matches())
+        {
+            value = valueMatcher.group(1);
+            valueMatcher = VALUE_PATTERN.matcher(value);
+        }
+
+        switch (type)
+        {
+            case Types.TIMESTAMP:
+            case Types.DATE:
+            case Types.TIME:
+            case Types.VARCHAR:
+                Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
+                if (matcher.find())
+                {
+                    value = matcher.group(1);
+                }
+                break;
+            case Types.BIT:
+                try
+                {
+                    return Byte.parseByte(value);
+                }
+                catch (Throwable t)
+                {
+                    try
+                    {
+                        return Boolean.parseBoolean(value);
+                    }
+                    catch (Throwable t1)
+                    {
+                        return null;
+                    }
+                }
+        }
+
+        return super.parseValue(type, value);
+    }
+
+    @Override
 	protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
 		StringBuilder sql = new StringBuilder();
 		String tableName = query.getTable();

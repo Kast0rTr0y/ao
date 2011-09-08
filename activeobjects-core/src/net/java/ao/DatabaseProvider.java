@@ -346,7 +346,6 @@ public abstract class DatabaseProvider
         {
             return posFuncs.toArray(new DatabaseFunction[posFuncs.size()]);
         }
-
         try
         {
             switch (type)
@@ -423,13 +422,12 @@ public abstract class DatabaseProvider
                     return Short.parseShort(value);
 
                 case Types.VARCHAR:
-                    return value.substring(1, value.length() - 2);
+                    return value;
             }
         }
         catch (Throwable t)
         {
         }
-
         return null;
     }
 

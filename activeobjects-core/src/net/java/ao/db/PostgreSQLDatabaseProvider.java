@@ -161,6 +161,13 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 				}
 			break;
 
+            case Types.VARCHAR:
+				matcher = Pattern.compile("'(.+)'.*").matcher(value);
+				if (matcher.find()) {
+					value = matcher.group(1);
+				}
+			break;
+
 			case Types.BIT:
 				try {
 					return Byte.parseByte(value);

@@ -106,36 +106,29 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	public Object parseValue(int type, String value) {
-		if (value == null || value.equals("") || value.equals("NULL")) {
-			return null;
-		}
-		
-		switch (type) {
-			case Types.TIMESTAMP:
-				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
+	public Object parseValue(int type, String value)
+    {
+        if (value == null || value.equals("") || value.equals("NULL"))
+        {
+            return null;
+        }
 
-			case Types.DATE:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-			
-			case Types.TIME:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-		}
-		
-		return super.parseValue(type, value);
-	}
+        switch (type)
+        {
+            case Types.TIMESTAMP:
+            case Types.DATE:
+            case Types.TIME:
+            case Types.VARCHAR:
+                Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
+                if (matcher.find())
+                {
+                    value = matcher.group(1);
+                }
+                break;
+        }
+
+        return super.parseValue(type, value);
+    }
 	
 	@Override
 	protected void setPostConnectionProperties(Connection conn) throws SQLException {

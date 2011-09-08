@@ -177,21 +177,10 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
 		switch (type) {
 			case Types.TIMESTAMP:
-				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-
 			case Types.DATE:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-
 			case Types.TIME:
-				matcher = Pattern.compile("'(.+)'.*").matcher(value);
+            case Types.VARCHAR:
+				Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
 				if (matcher.find()) {
 					value = matcher.group(1);
 				}
