@@ -300,8 +300,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String[] renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
-		List<String> back = new ArrayList<String>();
+	protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
+		final List<String> back = new ArrayList<String>();
 
 		String trigger = getTriggerNameForField(table, oldField);
 		if (trigger != null) {
@@ -389,8 +389,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			back.add(toRender);
 		}
 
-		return back.toArray(new String[back.size()]);
-	}
+        return back;
+    }
 
 	@Override
 	protected String renderAlterTableDropKey(DDLForeignKey key) {

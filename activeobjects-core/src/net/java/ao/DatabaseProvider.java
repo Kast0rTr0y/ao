@@ -226,7 +226,7 @@ public abstract class DatabaseProvider
                 break;
 
             case ALTER_CHANGE_COLUMN:
-                back.addAll(Arrays.asList(renderAlterTableChangeColumn(action.getTable(), action.getOldField(), action.getField())));
+                back.addAll(renderAlterTableChangeColumn(action.getTable(), action.getOldField(), action.getField()));
                 break;
 
             case ALTER_DROP_COLUMN:
@@ -903,7 +903,7 @@ public abstract class DatabaseProvider
         StringBuilder append = new StringBuilder();
         for (DDLField field : table.getFields())
         {
-            back.append("    ").append(renderField(field)).append(",\n");
+            back.append("    ").append(renderField(field, true)).append(",\n");
 
             if (field.isPrimaryKey())
             {
@@ -1134,7 +1134,7 @@ public abstract class DatabaseProvider
     {
         List<String> back = new ArrayList<String>();
 
-        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(field));
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(field, true));
 
         String function = renderFunctionForField(table, field);
         if (function != null)
@@ -1172,7 +1172,7 @@ public abstract class DatabaseProvider
      * <p>For maximum flexibility, the default implementation of this method
      * only deals with the dropping and addition of functions and triggers.
      * The actual generation of the ALTER TABLE statement is done in the
-     * {@link #renderAlterTableChangeColumnStatement(DDLTable, DDLField, DDLField)}
+     * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, boolean)}
      * method.</p>
      *
      * @param table The table containing the column to change.
@@ -1184,44 +1184,42 @@ public abstract class DatabaseProvider
      * @see #renderFunctionForField(DDLTable, DDLField)
      * @see #renderTriggerForField(DDLTable, DDLField)
      */
-    protected String[] renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field)
     {
-        List<String> back = new ArrayList<String>();
-        StringBuilder current = new StringBuilder();
+        final List<String> back = new ArrayList<String>();
 
-        String trigger = getTriggerNameForField(table, oldField);
+        final String trigger = getTriggerNameForField(table, oldField);
         if (trigger != null)
         {
-            current.setLength(0);
-            current.append("DROP TRIGGER ").append(processID(trigger));
-
-            back.add(current.toString());
+            back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
         }
 
-        String function = getFunctionNameForField(table, oldField);
+        final String function = getFunctionNameForField(table, oldField);
         if (function != null)
         {
-            current.setLength(0);
-            current.append("DROP FUNCTION ").append(processID(function));
-
-            back.add(current.toString());
+            back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
         }
 
-        back.add(renderAlterTableChangeColumnStatement(table, oldField, field));
+        back.add(renderAlterTableChangeColumnStatement(table, oldField, field, renderUniqueInAlterColumn()));
 
-        String toRender = renderFunctionForField(table, field);
-        if (toRender != null)
+        final String toRenderFunction = renderFunctionForField(table, field);
+        if (toRenderFunction != null)
         {
-            back.add(toRender);
+            back.add(toRenderFunction);
         }
 
-        toRender = renderTriggerForField(table, field);
-        if (toRender != null)
+        final String toRenderTrigger = renderTriggerForField(table, field);
+        if (toRenderTrigger != null)
         {
-            back.add(toRender);
+            back.add(toRenderTrigger);
         }
 
-        return back.toArray(new String[back.size()]);
+        return back;
+    }
+
+    protected boolean renderUniqueInAlterColumn()
+    {
+        return true;
     }
 
     /**
@@ -1233,18 +1231,20 @@ public abstract class DatabaseProvider
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
+     *
      * @param table The table containing the column to change.
      * @param oldField The old column definition.
      * @param field The new column definition (defining the resultant DDL).
+     * @param renderUnique
      * @return A single DDL statement which is to be executed.
-     * @see #renderField(DDLField)
+     * @see #renderField(net.java.ao.schema.ddl.DDLField, boolean)
      */
-    protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field)
+    protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, boolean renderUnique)
     {
         StringBuilder current = new StringBuilder();
         current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" CHANGE COLUMN ");
         current.append(processID(oldField.getName())).append(' ');
-        current.append(renderField(field));
+        current.append(renderField(field, renderUnique));
         return current.toString();
     }
 
@@ -1421,10 +1421,12 @@ public abstract class DatabaseProvider
      * would be a database like PostgreSQL which requires a different type
      * for auto-incremented fields.</p>
      *
+     *
      * @param field The field to be rendered.
+     * @param renderUnique
      * @return A DDL fragment to be embedded in a statement elsewhere.
      */
-    protected String renderField(DDLField field)
+    protected String renderField(DDLField field, boolean renderUnique)
     {
         StringBuilder back = new StringBuilder();
 
@@ -1447,13 +1449,13 @@ public abstract class DatabaseProvider
             back.append(renderValue(field.getDefaultValue()));
         }
 
-        if (field.isUnique())
+        if (renderUnique && field.isUnique())
         {
-            String renderUnique = renderUnique();
+            final String renderUniqueString = renderUnique();
 
-            if (!renderUnique.trim().equals(""))
+            if (!renderUniqueString.trim().equals(""))
             {
-                back.append(' ').append(renderUnique);
+                back.append(' ').append(renderUniqueString);
             }
         }
 
@@ -1571,7 +1573,7 @@ public abstract class DatabaseProvider
     /**
      * Renders the <code>UNIQUE</code> constraint as defined by the
      * database-specific DDL syntax.  This method is a delegate of other, more
-     * complex methods such as {@link #renderField(DDLField)}.  The default
+     * complex methods such as {@link #renderField(net.java.ao.schema.ddl.DDLField, boolean)}.  The default
      * implementation just returns <code>UNIQUE</code>.  Implementations may
      * override this method to return an empty {@link String} if the database
      * in question does not support the constraint.

@@ -190,6 +190,42 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
+    protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field)
+    {
+        final List<String> sql = super.renderAlterTableChangeColumn(table, oldField, field);
+
+        if (!oldField.isUnique() && field.isUnique())
+        {
+            sql.add(new StringBuilder()
+                    .append("ALTER TABLE ").append(withSchema(table.getName()))
+                    .append(" ADD CONSTRAINT ").append(uniqueConstraintName(field))
+                    .append(" UNIQUE(").append(processID(field.getName())).append(")")
+                    .toString());
+        }
+
+        if (oldField.isUnique() && !field.isUnique())
+        {
+            sql.add(new StringBuilder()
+                    .append("ALTER TABLE ").append(withSchema(table.getName()))
+                    .append(" DROP CONSTRAINT ").append(uniqueConstraintName(oldField))
+                    .toString());
+        }
+
+        return sql;
+    }
+
+    private String uniqueConstraintName(DDLField field)
+    {
+        return "U_" + field.getName();
+    }
+
+    @Override
+    protected boolean renderUniqueInAlterColumn()
+    {
+        return false;
+    }
+
+    @Override
 	protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
 		StringBuilder sql = new StringBuilder();
 		String tableName = query.getTable();
@@ -355,11 +391,11 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field) {
+	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, boolean renderUnique) {
 		StringBuilder current = new StringBuilder();
 		
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(field));
+		current.append(renderField(field, renderUnique));
 		
 		return current.toString();
 	}
@@ -368,7 +404,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	protected String[] renderAlterTableAddColumn(DDLTable table, DDLField field) {
 		List<String> back = new ArrayList<String>();
 		
-		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(field));
+		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(field, true));
 		
 		String function = renderFunctionForField(table, field);
 		if (function != null) {

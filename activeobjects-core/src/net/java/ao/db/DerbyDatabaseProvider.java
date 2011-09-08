@@ -24,7 +24,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -277,11 +279,11 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected String[] renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
-		System.err.println("WARNING: Derby doesn't support CHANGE TABLE statements");
-		System.err.println("WARNING: Migration may not be entirely in sync as a result");
+	protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
+		logger.warn("Derby doesn't support CHANGE TABLE statements!");
+		logger.warn("Migration may not be entirely in sync as a result!");
 		
-		return new String[0];
+		return Collections.<String>emptyList();
 	}
 	
 	@Override
