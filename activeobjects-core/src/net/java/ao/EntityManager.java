@@ -15,19 +15,8 @@
  */
 package net.java.ao;
 
-import com.google.common.collect.MapMaker;
-import net.java.ao.cache.Cache;
-import net.java.ao.cache.CacheLayer;
-import net.java.ao.cache.RAMCache;
-import net.java.ao.cache.RAMRelationsCache;
-import net.java.ao.cache.RelationsCache;
-import net.java.ao.schema.AutoIncrement;
-import net.java.ao.schema.CachingTableNameConverter;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.SchemaGenerator;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.Common.preloadValue;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -51,8 +40,20 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.google.common.base.Preconditions.*;
-import static net.java.ao.Common.*;
+import net.java.ao.cache.Cache;
+import net.java.ao.cache.CacheLayer;
+import net.java.ao.cache.RAMCache;
+import net.java.ao.cache.RAMRelationsCache;
+import net.java.ao.cache.RelationsCache;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.CachingTableNameConverter;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.SchemaGenerator;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
+
+import com.google.common.collect.MapMaker;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -704,7 +705,7 @@ public class EntityManager
         }
         return back.toArray((T[]) Array.newInstance(type, back.size()));
     }
-
+	
 	/**
 	 * <p>Executes the specified SQL and extracts the given key field, wrapping each
 	 * row into a instance of the specified type.  The SQL itself is executed as
@@ -761,6 +762,88 @@ public class EntityManager
 
 		return back.toArray((T[]) Array.newInstance(type, back.size()));
 	}
+	
+	/**
+	 * <p>Opitimsed read for large datasets. This method will stream all rows for the given type to the given callback.</p>
+	 * 
+	 * <p>Please see {@link #stream(Class, Query, EntityStreamCallback)} for details / limitations.
+	 * 
+	 * @param type The type of the entities to retrieve.
+	 * @param streamCallback The receiver of the data, will be passed one entity per returned row 
+	 */
+	public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException {
+	    stream(type, Query.select(), streamCallback);
+	}
+	
+    /**
+     * <p>Selects all entities of the given type and feeds them to the callback, one by one. The entities are slim, uncached, read-only
+     * representations of the data. They only supports getters or designated {@link Accessor} methods. Calling setters or <pre>save</pre> will 
+     * result in an exception. Other method calls will be ignored. The proxies do not support lazy-loading of related entities.</p>
+     * 
+     * <p>This call is optimised for efficient read operations on large datasets. For best memory usage, do not buffer the entities passed to the
+     * callback but process and discard them directly.</p>
+     * 
+     * <p>Unlike regular Entities, the read only implementations do not support flushing/refreshing. The data is a snapshot view at the time of
+     * query.</p> 
+     * 
+     * @param type The type of the entities to retrieve.
+     * @param query 
+     * @param streamCallback The receiver of the data, will be passed one entity per returned row 
+     */	
+    public <T extends RawEntity<K>, K> void stream(Class<T> type, Query query, EntityStreamCallback<T, K> streamCallback) throws SQLException {
+        // select all fields, as lazy loading would be too expensive
+        query.setFields(new String[]{"*"});
+
+        // fetch some information about the fields we're dealing with. These calls are expensive when
+        // executed too often, and since we're always working on the same type of object, we only need them once.
+        final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
+        final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
+        final String[] canonicalFields = query.getCanonicalFields(type, fieldNameConverter);
+        String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
+
+        // the factory caches details about the proxied interface, since reflection calls are expensive
+        // inside the stream loop
+        ReadOnlyEntityProxyFactory<T, K> proxyFactory = new ReadOnlyEntityProxyFactory<T, K>(this, type);
+        
+        // Execute the query
+        final Connection conn = provider.getConnection();
+        try {
+            final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
+            
+            // we're only going over the result set once, so use the slimmest possible cursor type
+            final PreparedStatement stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            provider.setQueryStatementProperties(stmt, query);
+            
+            query.setParameters(this, stmt);
+            
+            ResultSet res = stmt.executeQuery();
+            provider.setQueryResultSetProperties(res, query);
+            
+            while (res.next())
+            {
+                K primaryKey = primaryKeyType.pullFromDatabase(this, res, primaryKeyClassType, field);
+                // use the cached instance information from the factory to build efficient, read-only proxy representations
+                ReadOnlyEntityProxy<T, K> proxy = proxyFactory.build(primaryKey);
+                T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy));
+                
+                // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
+                // it's designated as a read-only snapshot view of the data and thus doesn't need flushing.
+                for (String fieldName : canonicalFields)
+                {
+                    proxy.addValue(fieldName, res.getObject(fieldName));
+                }
+
+                // forward the proxy to the callback for the client to consume
+                streamCallback.onRowRead(entity);
+            }
+            res.close();
+            stmt.close();
+        }
+        finally
+        {
+            conn.close();
+        }
+    }	
 
 	/**
 	 * Counts all entities of the specified type.  This method is actually
