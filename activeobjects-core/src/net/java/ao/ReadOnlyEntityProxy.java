@@ -3,9 +3,14 @@ package net.java.ao;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeManager;
 
 /**
  * <p>A read-only representation of a database row proxy, mapped to the specified Entity type.</p>
@@ -37,13 +42,17 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
     private final Map<String, Object> values = new HashMap<String, Object>();
 
     private final Map<Method, String> fieldNames;
+    private final Map<String, String> polymorphicFieldNames;
     private final Set<Method> accessors;
+    private final Map<String, Class<?>> returnTypes;
 
-    public ReadOnlyEntityProxy(EntityManager manager, Class<T> type, K key, Map<Method, String> fieldNames, Set<Method> accessors) {
+    public ReadOnlyEntityProxy(EntityManager manager, Class<T> type, K key, Map<Method, String> fieldNames, Map<String, String> polymorphicFieldNames, Map<String, Class<?>> returnTypes, Set<Method> accessors) {
         this.key = key;
         this.type = type;
         this.manager = manager;
         this.fieldNames = fieldNames;
+        this.polymorphicFieldNames = polymorphicFieldNames;
+        this.returnTypes = returnTypes;
         this.accessors = accessors;
     }
 
@@ -106,12 +115,17 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
             // someone tried to call "save" at a read-only instance. We don't simply ignore that but rather throw an
             // exception, so the client knows that the call did not do what he expected.
             throw new RuntimeException("Setter method called on a read-only entity of type " + type.getSimpleName() + ": " + methodName);
-        } 
+        }
         
         return null;
     }
 
-    public void addValue(String fieldName, Object value) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void addValue(String fieldName, ResultSet res) throws SQLException {
+        Class type = returnTypes.get(fieldName);
+        String polyName = polymorphicFieldNames.get(fieldName);
+        
+        Object value = convertValue(res, fieldName, polyName, type);
         values.put(fieldName, value);
     }
 
@@ -186,6 +200,36 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         } 
         
         return handleNullReturn(null, type);
+    }
+    
+    private <V> V convertValue(ResultSet res, String field, String polyName, Class<V> type) throws SQLException
+    {
+        if (isNull(res, field))
+        {
+            return null;
+        }
+        
+        if (polyName != null) {
+            Class<? extends RawEntity<?>> entityType = (Class<? extends RawEntity<?>>) type;
+            entityType = getManager().getPolymorphicTypeMapper().invert(entityType, res.getString(polyName));
+            
+            type = (Class<V>) entityType;       // avoiding Java cast oddities with generics
+        }
+        
+        TypeManager manager = TypeManager.getInstance();
+        DatabaseType<V> databaseType = manager.getType(type);
+        
+        if (databaseType == null) {
+            throw new RuntimeException("UnrecognizedType: " + type.toString());
+        }
+        
+        return databaseType.pullFromDatabase(getManager(), res, type, field);
+    }
+    
+    private boolean isNull(ResultSet res, String field) throws SQLException
+    {
+        res.getObject(field);
+        return res.wasNull();
     }
 
     @SuppressWarnings("unchecked")

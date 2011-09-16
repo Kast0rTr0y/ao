@@ -830,7 +830,7 @@ public class EntityManager
                 // it's designated as a read-only snapshot view of the data and thus doesn't need flushing.
                 for (String fieldName : canonicalFields)
                 {
-                    proxy.addValue(fieldName, res.getObject(fieldName));
+                    proxy.addValue(fieldName, res);
                 }
 
                 // forward the proxy to the callback for the client to consume

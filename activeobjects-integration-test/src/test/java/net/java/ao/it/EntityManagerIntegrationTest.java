@@ -1,7 +1,25 @@
 package net.java.ao.it;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 import net.java.ao.DBParam;
+import net.java.ao.EntityStreamCallback;
 import net.java.ao.Query;
+import net.java.ao.Query.QueryType;
+import net.java.ao.it.DatabaseProcessor.CompanyData;
+import net.java.ao.it.DatabaseProcessor.PenData;
+import net.java.ao.it.DatabaseProcessor.PersonData;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
@@ -9,16 +27,11 @@ import net.java.ao.it.model.Profession;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+
 import org.junit.Test;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
-
-import static net.java.ao.it.DatabaseProcessor.*;
-import static org.junit.Assert.*;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 
 /**
  *
@@ -398,6 +411,113 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
                 fail("Unable to find key=" + p.getID());
             }
         }
+    }
+    
+    /**
+     * Load all rows from the company table through the stream API
+     */
+    @Test
+    public void testStream() throws SQLException {
+        final List<Company> streamed = new ArrayList<Company>();
+        
+        // make sure we've got enough data
+        assertTrue(CompanyData.NAMES.length > 1);
+        
+        entityManager.stream(Company.class, new EntityStreamCallback<Company, Long>()
+        {
+            @Override
+            public void onRowRead(Company t)
+            {
+                streamed.add(t);
+            }
+        });
+        
+        assertEquals(CompanyData.ids.length, streamed.size());
+        for (final String name : CompanyData.NAMES)
+        {
+            // throws exception if no element matches the predicate, which will fail test
+            Iterables.find(streamed, new Predicate<Company>()
+            {
+                @Override
+                public boolean apply(Company company)
+                {
+                    return name.equals(company.getName()); 
+                }
+            });
+        }
+    }
+    
+    /**
+     * Load only one row from the company table through the stream API
+     * @throws SQLException 
+     */
+    @Test
+    public void testStreamWithQuery() throws SQLException {
+        final List<Company> streamed = new ArrayList<Company>();
+        
+        // make sure we've got enough data
+        assertTrue(CompanyData.NAMES.length > 1);
+        
+        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where("NAME = ?", CompanyData.NAMES[0]);
+        entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
+        {
+            @Override
+            public void onRowRead(Company t)
+            {
+                streamed.add(t);
+            }
+        });
+        
+        assertEquals("There should have only been one row matching the query", 1, streamed.size());
+        assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());
+    }
+    
+    /**
+     * Query matches no rows
+     */
+    @Test
+    public void testStreamWithQueryNoResult() throws SQLException {
+        final List<Company> streamed = new ArrayList<Company>();
+        
+        // make sure we've got enough data
+        assertTrue(CompanyData.NAMES.length > 1);
+        
+        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where("NAME = ?", "NotInTheDatabase");
+        entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
+        {
+            @Override
+            public void onRowRead(Company t)
+            {
+                streamed.add(t);
+            }
+        });
+        
+        assertTrue("No rows should have matched the query", streamed.isEmpty());
+    }
+    
+    /**
+     * Query with limited fields, should be expanded to full query for stream
+     */
+    @Test
+    public void testStreamWithQueryLimitedFields() throws SQLException {
+        final List<Company> streamed = new ArrayList<Company>();
+        
+        // make sure we've got enough data
+        assertTrue(CompanyData.NAMES.length > 1);
+        
+        Query query = new Query(QueryType.SELECT, "ID").from(Company.class).where("NAME = ?", CompanyData.NAMES[0]);
+        entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
+        {
+            @Override
+            public void onRowRead(Company t)
+            {
+                streamed.add(t);
+            }
+        });
+        
+        assertEquals("There should have only been one row matching the query", 1, streamed.size());
+        // name field should have been preloaded
+        assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());        
     }
 
     @Test
