@@ -458,7 +458,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
         
-        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where("NAME = ?", CompanyData.NAMES[0]);
+        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
             @Override
@@ -482,7 +482,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
         
-        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where("NAME = ?", "NotInTheDatabase");
+        Query query = new Query(QueryType.SELECT, "*").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", "NotInTheDatabase");
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
             @Override
@@ -505,7 +505,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
         
-        Query query = new Query(QueryType.SELECT, "ID").from(Company.class).where("NAME = ?", CompanyData.NAMES[0]);
+        Query query = new Query(QueryType.SELECT, "ID").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
             @Override
