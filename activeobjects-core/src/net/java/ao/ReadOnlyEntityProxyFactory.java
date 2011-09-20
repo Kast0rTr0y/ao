@@ -1,6 +1,7 @@
 package net.java.ao;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -22,10 +23,10 @@ public class ReadOnlyEntityProxyFactory<T extends RawEntity<K>, K>
     private final EntityManager entityManager;
     private final Class<T> type;
     
-    private Set<Method> accessors = new HashSet<Method>();;
-    private Map<Method, String> fieldNames = new HashMap<Method, String>();
-    private Map<String, String> polymorphicFieldNames = new HashMap<String, String>();
-    private Map<String, Class<?>> returnTypes = new HashMap<String, Class<?>>();
+    private final Set<Method> accessors;
+    private final Map<Method, String> fieldNames;
+    private final Map<String, String> polymorphicFieldNames;
+    private final Map<String, Class<?>> returnTypes;
     
     /**
      * Cache information about the accessors (can be getters or annotated) and field names.
@@ -44,6 +45,11 @@ public class ReadOnlyEntityProxyFactory<T extends RawEntity<K>, K>
         // go through the current interface and all superinterfaces to collect accessor information
         Set<Class<?>> types = new HashSet<Class<?>>();
         readTypeHierarchy(types, type);
+        
+        Set<Method> accessors = new HashSet<Method>();;
+        Map<Method, String> fieldNames = new HashMap<Method, String>();
+        Map<String, String> polymorphicFieldNames = new HashMap<String, String>();
+        Map<String, Class<?>> returnTypes = new HashMap<String, Class<?>>();
         
         for (Class<?> search : types)
         {
@@ -70,6 +76,11 @@ public class ReadOnlyEntityProxyFactory<T extends RawEntity<K>, K>
             }
         }        
         
+        // create immutable caches which will be shared by ReadOnlyEntityProxy instances
+        this.accessors = Collections.unmodifiableSet(accessors);
+        this.fieldNames = Collections.unmodifiableMap(fieldNames);
+        this.polymorphicFieldNames = Collections.unmodifiableMap(polymorphicFieldNames);
+        this.returnTypes = Collections.unmodifiableMap(returnTypes);
     }
 
     /**
