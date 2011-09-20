@@ -21,12 +21,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Specifies a default value for the database field corresponding to
+ * <p>Specifies a default value for the database field corresponding to
  * the tagged method.  This default value will be used at INSERT,
  * usually automatically by the database.  If the database does not
  * provide a DEFAULT modifier for fields, the value will be
  * injected into any INSERT statement, ensuring it is indeed the default
- * value for the field in question.
+ * value for the field in question.</p>
+ * 
+ * <p>Do NOT use an empty string as a default value, as this is not supported
+ * by some databases and will cause SQLExceptions (e.g. MS SQL)</p>
  * 
  * @author Daniel Spiewak
  */
