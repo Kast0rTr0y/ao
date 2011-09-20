@@ -772,13 +772,16 @@ public class EntityManager
 	 * @param streamCallback The receiver of the data, will be passed one entity per returned row 
 	 */
 	public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException {
-	    stream(type, Query.select(), streamCallback);
+	    stream(type, Query.select("*"), streamCallback);
 	}
 	
     /**
      * <p>Selects all entities of the given type and feeds them to the callback, one by one. The entities are slim, uncached, read-only
      * representations of the data. They only supports getters or designated {@link Accessor} methods. Calling setters or <pre>save</pre> will 
      * result in an exception. Other method calls will be ignored. The proxies do not support lazy-loading of related entities.</p>
+     * 
+     * <p>Only the fields specified in the Query are loaded. Since lazy loading is not supported, calls to unspecified getters will return null
+     * (or AO's defaults in case of primitives)</p>
      * 
      * <p>This call is optimised for efficient read operations on large datasets. For best memory usage, do not buffer the entities passed to the
      * callback but process and discard them directly.</p>
@@ -791,8 +794,6 @@ public class EntityManager
      * @param streamCallback The receiver of the data, will be passed one entity per returned row 
      */	
     public <T extends RawEntity<K>, K> void stream(Class<T> type, Query query, EntityStreamCallback<T, K> streamCallback) throws SQLException {
-        // select all fields, as lazy loading would be too expensive
-        query.setFields(new String[]{"*"});
 
         // fetch some information about the fields we're dealing with. These calls are expensive when
         // executed too often, and since we're always working on the same type of object, we only need them once.

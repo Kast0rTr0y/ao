@@ -1,6 +1,7 @@
 package net.java.ao.it;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -505,7 +506,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
         
-        Query query = new Query(QueryType.SELECT, "ID").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
+        Query query = new Query(QueryType.SELECT, getFieldName(Company.class, "getCompanyID")).from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
             @Override
@@ -516,8 +517,8 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
         
         assertEquals("There should have only been one row matching the query", 1, streamed.size());
-        // name field should have been preloaded
-        assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());        
+        assertNull("name field should not have been preloaded", streamed.get(0).getName());        
+        assertNotNull("ID field should have been preloaded", streamed.get(0).getCompanyID());
     }
 
     @Test
