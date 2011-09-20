@@ -903,7 +903,7 @@ public abstract class DatabaseProvider
         StringBuilder append = new StringBuilder();
         for (DDLField field : table.getFields())
         {
-            back.append("    ").append(renderField(field, new RenderFieldOptions(true, true))).append(",\n");
+            back.append("    ").append(renderField(field, true)).append(",\n");
 
             if (field.isPrimaryKey())
             {
@@ -1134,7 +1134,7 @@ public abstract class DatabaseProvider
     {
         List<String> back = new ArrayList<String>();
 
-        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(field, new RenderFieldOptions(true, true)));
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(field, true));
 
         String function = renderFunctionForField(table, field);
         if (function != null)
@@ -1200,7 +1200,7 @@ public abstract class DatabaseProvider
             back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
         }
 
-        back.add(renderAlterTableChangeColumnStatement(table, oldField, field, renderFieldOptionsInAlterColumn()));
+        back.add(renderAlterTableChangeColumnStatement(table, oldField, field, renderUniqueInAlterColumn()));
 
         final String toRenderFunction = renderFunctionForField(table, field);
         if (toRenderFunction != null)
@@ -1217,9 +1217,9 @@ public abstract class DatabaseProvider
         return back;
     }
 
-    protected RenderFieldOptions renderFieldOptionsInAlterColumn()
+    protected boolean renderUniqueInAlterColumn()
     {
-        return new RenderFieldOptions(true, true);
+        return true;
     }
 
     /**
@@ -1231,19 +1231,20 @@ public abstract class DatabaseProvider
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
+     *
      * @param table The table containing the column to change.
      * @param oldField The old column definition.
      * @param field The new column definition (defining the resultant DDL).
-     * @param options
+     * @param renderUnique
      * @return A single DDL statement which is to be executed.
-     * @see #renderField(net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)
+     * @see #renderField(net.java.ao.schema.ddl.DDLField, boolean)
      */
-    protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
+    protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, boolean renderUnique)
     {
         StringBuilder current = new StringBuilder();
         current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" CHANGE COLUMN ");
         current.append(processID(oldField.getName())).append(' ');
-        current.append(renderField(field, options));
+        current.append(renderField(field, renderUnique));
         return current.toString();
     }
 
@@ -1420,11 +1421,12 @@ public abstract class DatabaseProvider
      * would be a database like PostgreSQL which requires a different type
      * for auto-incremented fields.</p>
      *
+     *
      * @param field The field to be rendered.
-     * @param options
+     * @param renderUnique
      * @return A DDL fragment to be embedded in a statement elsewhere.
      */
-    protected String renderField(DDLField field, RenderFieldOptions options)
+    protected String renderField(DDLField field, boolean renderUnique)
     {
         StringBuilder back = new StringBuilder();
 
@@ -1441,12 +1443,13 @@ public abstract class DatabaseProvider
                 back.append(' ').append(autoIncrementValue);
             }
         }
-        else if (options.renderDefault && field.getDefaultValue() != null)
+        else if (field.getDefaultValue() != null)
         {
-            back.append(renderFieldDefault(field));
+            back.append(" DEFAULT ");
+            back.append(renderValue(field.getDefaultValue()));
         }
 
-        if (options.renderUnique && field.isUnique())
+        if (renderUnique && field.isUnique())
         {
             final String renderUniqueString = renderUnique();
 
@@ -1467,11 +1470,6 @@ public abstract class DatabaseProvider
         }
 
         return back.toString();
-    }
-
-    protected String renderFieldDefault(DDLField field)
-    {
-        return new StringBuilder().append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
     }
 
     /**
@@ -1575,7 +1573,7 @@ public abstract class DatabaseProvider
     /**
      * Renders the <code>UNIQUE</code> constraint as defined by the
      * database-specific DDL syntax.  This method is a delegate of other, more
-     * complex methods such as {@link #renderField(net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}.  The default
+     * complex methods such as {@link #renderField(net.java.ao.schema.ddl.DDLField, boolean)}.  The default
      * implementation just returns <code>UNIQUE</code>.  Implementations may
      * override this method to return an empty {@link String} if the database
      * in question does not support the constraint.
@@ -1929,19 +1927,20 @@ public abstract class DatabaseProvider
      * that this method should not close the connection.  Doing so could cause the
      * entity creation algorithm to fail at a higher level up the stack.</p>
      *
+     *
      * @param manager The <code>EntityManager</code> which was used to dispatch
      * the INSERT in question.
      * @param conn The database connection to use in executing the INSERT statement.
      * @param pkType The Java class type of the primary key field (for use both in
-     * searching the <code>params</code> as well as performing value conversion
-     * of auto-generated DB values into proper Java instances).
+ * searching the <code>params</code> as well as performing value conversion
+ * of auto-generated DB values into proper Java instances).
      * @param pkField The database field which is the primary key for the
-     * table in question.  Can be used to perform a linear search for a
-     * specified primary key value in the <code>params</code> list.
+* table in question.  Can be used to perform a linear search for a
+* specified primary key value in the <code>params</code> list.
      * @param params A varargs array of parameters to be passed to the
-     * INSERT statement.  This may include a specified value for the
-     * primary key.  @throws SQLException If the INSERT fails in the delegate method, or
-     * if any additional statements fail with an exception.
+* INSERT statement.  This may include a specified value for the
+* primary key.  @throws SQLException If the INSERT fails in the delegate method, or
+* if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
     protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
@@ -2215,6 +2214,7 @@ public abstract class DatabaseProvider
      * Tells whether this exception should be ignored when running an updated statement. Typically, errors on dropping
      * non-existing objects should be ignored.
      *
+     *
      * @param sql
      * @param e the {@link java.sql.SQLException} that occured.
      * @throws SQLException throws the SQLException if it should not be ignored.
@@ -2275,18 +2275,6 @@ public abstract class DatabaseProvider
         for (SqlListener sqlListener : sqlListeners)
         {
             sqlListener.onSql(sql);
-        }
-    }
-
-    protected static class RenderFieldOptions
-    {
-        public final boolean renderUnique;
-        public final boolean renderDefault;
-
-        public RenderFieldOptions(boolean renderUnique, boolean renderDefault)
-        {
-            this.renderUnique = renderUnique;
-            this.renderDefault = renderDefault;
         }
     }
 

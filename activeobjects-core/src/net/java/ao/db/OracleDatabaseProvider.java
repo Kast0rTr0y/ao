@@ -293,10 +293,10 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, boolean renderUnique) {
 		StringBuilder current = new StringBuilder();
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (");
-		current.append(renderField(field, options)).append(')');
+		current.append(renderField(field, renderUnique)).append(')');
 		return current.toString();
 	}
 
