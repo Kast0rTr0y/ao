@@ -350,11 +350,11 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, boolean renderUnique) {
+	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
 
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(field, renderUnique));
+		current.append(renderField(table, field, options));
 
 		return current.toString();
 	}

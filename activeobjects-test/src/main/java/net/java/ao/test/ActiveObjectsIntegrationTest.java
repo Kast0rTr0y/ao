@@ -4,6 +4,7 @@ import com.google.common.base.Predicate;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.test.converters.DynamicFieldNameConverter;
 import net.java.ao.test.converters.DynamicTableNameConverter;
 import net.java.ao.test.converters.NameConverters;
@@ -32,6 +33,11 @@ import static net.java.ao.Common.*;
 public abstract class ActiveObjectsIntegrationTest
 {
     protected EntityManager entityManager;
+
+    protected final boolean isOracle()
+    {
+        return entityManager.getProvider() instanceof OracleDatabaseProvider;
+    }
 
     protected final <T> T checkSqlExecuted(Callable<T> callable) throws Exception
     {

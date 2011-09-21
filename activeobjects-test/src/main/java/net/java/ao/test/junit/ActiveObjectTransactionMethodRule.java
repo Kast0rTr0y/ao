@@ -25,8 +25,7 @@ import java.util.Map;
  */
 public class ActiveObjectTransactionMethodRule implements MethodRule
 {
-    private static final Map<JdbcConfiguration, Class<? extends DatabaseUpdater>> DATABASES =
-            new HashMap<JdbcConfiguration, Class<? extends DatabaseUpdater>>();
+    private static final Map<JdbcConfiguration, Class<? extends DatabaseUpdater>> DATABASES = new HashMap<JdbcConfiguration, Class<? extends DatabaseUpdater>>();
 
     private final Object test;
     private final JdbcConfiguration jdbc;
