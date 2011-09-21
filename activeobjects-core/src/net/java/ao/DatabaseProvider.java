@@ -1443,7 +1443,7 @@ public abstract class DatabaseProvider
                 back.append(' ').append(autoIncrementValue);
             }
         }
-        else if ((options.forceNull && !field.isNotNull()) || (options.renderDefault && field.getDefaultValue() != null))
+        else if ((options.forceNull && !field.isNotNull() && !field.isUnique() && !field.isPrimaryKey()) || (options.renderDefault && field.getDefaultValue() != null))
         {
             back.append(renderFieldDefault(table, field));
         }

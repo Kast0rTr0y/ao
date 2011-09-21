@@ -21,7 +21,6 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
     private static final String DEFAULT_EMPTY = "";
 
     @Test
-    @NonTransactional
     public void testDefaultMigrated() throws Exception
     {
         entityManager.migrate(EntityVersion1.class);

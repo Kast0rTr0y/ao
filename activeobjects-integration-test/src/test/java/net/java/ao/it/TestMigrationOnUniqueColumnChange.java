@@ -6,6 +6,8 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.Unique;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.converters.NameConverters;
+import net.java.ao.test.jdbc.Jdbc;
+import net.java.ao.test.jdbc.MySql;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
