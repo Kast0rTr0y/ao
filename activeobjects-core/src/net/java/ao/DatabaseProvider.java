@@ -99,13 +99,12 @@ public abstract class DatabaseProvider
     private final Map<Thread, Connection> connections;
     private final ReadWriteLock connectionsLock = new ReentrantReadWriteLock();
 
-
     private String quote;
 
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
     {
         this.dataSource = checkNotNull(dataSource);
-        this.schema = schema; // can be null
+        this.schema = isBlank(schema) ? null : schema; // can be null
         this.connections = new HashMap<Thread, Connection>();
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
@@ -2278,6 +2277,23 @@ public abstract class DatabaseProvider
         {
             sqlListener.onSql(sql);
         }
+    }
+
+    private static boolean isBlank(String str)
+    {
+        int strLen;
+        if (str == null || (strLen = str.length()) == 0)
+        {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++)
+        {
+            if (!Character.isWhitespace(str.charAt(i)))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected static class RenderFieldOptions
