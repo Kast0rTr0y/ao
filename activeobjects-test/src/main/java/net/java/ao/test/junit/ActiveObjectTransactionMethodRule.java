@@ -9,7 +9,6 @@ import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
 import net.java.ao.test.jdbc.NonTransactional;
-import net.java.ao.test.tx.Transaction;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -17,6 +16,7 @@ import org.junit.runners.model.Statement;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +34,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private final FieldNameConverter fieldNameConverter;
 
     private EntityManager entityManager;
-    private Transaction transaction;
     private File indexDirectory;
 
     public ActiveObjectTransactionMethodRule(Object test, JdbcConfiguration jdbc, boolean withIndex, TableNameConverter tableNameConverter, FieldNameConverter fieldNameConverter)
@@ -56,7 +55,19 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                 before(method);
                 try
                 {
+                    final boolean useTransaction = useTransaction(method);
+                    Connection c = null;
+                    if (useTransaction)
+                    {
+                        c = entityManager.getProvider().startTransaction();
+                    }
+
                     base.evaluate();
+
+                    if (useTransaction)
+                    {
+                        entityManager.getProvider().rollbackTransaction(c);
+                    }
                 }
                 finally
                 {
@@ -72,11 +83,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         entityManager = createEntityManager();
         injectEntityManager();
         updateDatabase();
-        if (useTransaction(method))
-        {
-            transaction = createTransaction();
-            transaction.start();
-        }
     }
 
     private void createIndexDir()
@@ -95,12 +101,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
     protected void after(FrameworkMethod method)
     {
-        if (useTransaction(method))
-        {
-            transaction.rollback();
-            transaction = null;
-        }
-        else
+        if (!useTransaction(method))
         {
             DATABASES.remove(jdbc.getClass()); // make sure that the next test gets a clean database
         }
@@ -138,11 +139,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             }
             file.delete(); // now we can delete the empty directory
         }
-    }
-
-    private Transaction createTransaction()
-    {
-        return new Transaction(entityManager);
     }
 
     private EntityManager createEntityManager()

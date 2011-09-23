@@ -78,10 +78,9 @@ import java.sql.SQLException;
  * @author Daniel Spiewak
  * @see java.sql.Connection
  */
-public abstract class Transaction<T> {
-	private EntityManager manager;
-
-
+public abstract class Transaction<T>
+{
+	private final EntityManager manager;
 
     private enum TransactionState {
 		START,
@@ -132,51 +131,27 @@ public abstract class Transaction<T> {
 	 * @throws SQLException	If the transaction failed for any reason and was rolled back.
 	 * @see #run()
 	 */
-	public T execute() throws SQLException {
-		Connection conn = null;
-		
-		TransactionState state = TransactionState.START;
-		T back = null;
-		
-		try {
-			conn = manager.getProvider().getConnection();
-            setCloseable(conn, false);
-
-            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-			conn.setAutoCommit(false);
-			
-			state = TransactionState.RUNNING;
-			back = Transaction.this.run();
-			conn.commit();
-			state = TransactionState.COMMITTED;
-		} finally {
-			if (conn == null) {
-				return null;
-			}
-			
-			if (state == TransactionState.RUNNING) {
-				try {
-					conn.rollback();
-				} catch (SQLException e1) {
-				}
-			}
-			
-			try {
-				conn.setAutoCommit(true);
-                setCloseable(conn, true);
-
-                conn.close();
-			} catch (SQLException e) {
-			}
-		}
-		
-		return back;
-	}
-
-    private void setCloseable(Connection connection, boolean closeable)
+    public T execute() throws SQLException
     {
-        if (connection instanceof DelegateConnection)
-            ((DelegateConnection) connection).setCloseable(closeable);
+        final DatabaseProvider provider = manager.getProvider();
+        TransactionState state = TransactionState.START;
+        Connection c = null;
+        try
+        {
+            c = provider.startTransaction();
+            state = TransactionState.RUNNING;
+            final T back = run();
+            provider.commitTransaction(c);
+            state = TransactionState.COMMITTED;
+            return back;
+        }
+        finally
+        {
+            if (state == TransactionState.RUNNING && c != null)
+            {
+                provider.rollbackTransaction(c);
+            }
+        }
     }
 
     /**

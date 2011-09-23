@@ -51,8 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.*;
 import static net.java.ao.Common.*;
@@ -93,11 +91,10 @@ public abstract class DatabaseProvider
 
     private final Set<SqlListener> sqlListeners;
 
+    private final ThreadLocal<Connection> transactionThreadLocal = new ThreadLocal<Connection>();
     private final DisposableDataSource dataSource;
-    protected final String schema;
 
-    private final Map<Thread, Connection> connections;
-    private final ReadWriteLock connectionsLock = new ReentrantReadWriteLock();
+    protected final String schema;
 
     private String quote;
 
@@ -105,7 +102,6 @@ public abstract class DatabaseProvider
     {
         this.dataSource = checkNotNull(dataSource);
         this.schema = isBlank(schema) ? null : schema; // can be null
-        this.connections = new HashMap<Thread, Connection>();
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
     }
@@ -744,34 +740,72 @@ public abstract class DatabaseProvider
      *
      * @return A new connection to the database
      */
-    // TODO? move this in a datasource implementation, delegate?
-    public Connection getConnection() throws SQLException
+    public final Connection getConnection() throws SQLException
     {
-        connectionsLock.writeLock().lock();
-        try
+        Connection c = transactionThreadLocal.get();
+        if (c != null)
         {
-            Connection conn = connections.get(Thread.currentThread());
-            if (conn != null && !conn.isClosed())
+            if (!c.isClosed())
             {
-                return conn;
+                return c;
             }
-
-            Connection connectionImpl = dataSource.getConnection();
-            if (connectionImpl == null)
+            else
             {
-                throw new SQLException("Unable to create connection");
+                transactionThreadLocal.remove(); // remove the reference to the connection
             }
-
-            conn = DelegateConnectionHandler.newInstance(connectionImpl);
-            setPostConnectionProperties(conn);
-            connections.put(Thread.currentThread(), conn);
-
-            return conn;
         }
-        finally
+
+        final Connection connectionImpl = dataSource.getConnection();
+        if (connectionImpl == null)
         {
-            connectionsLock.writeLock().unlock();
+            throw new SQLException("Unable to create connection");
         }
+
+        c = DelegateConnectionHandler.newInstance(connectionImpl);
+        setPostConnectionProperties(c);
+        return c;
+    }
+
+    public final Connection startTransaction() throws SQLException
+    {
+        final Connection c = getConnection();
+
+        setCloseable(c, false);
+        c.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+        c.setAutoCommit(false);
+
+        transactionThreadLocal.set(c);
+
+        return c;
+    }
+
+    public final Connection commitTransaction(Connection c) throws SQLException
+    {
+        checkState(c == transactionThreadLocal.get(), "There are two concurrently open transactions!");
+        checkState(c != null, "Tried to commit a transaction that is not started!");
+
+        c.commit();
+        setCloseable(c, true);
+        c.close();
+        transactionThreadLocal.remove();
+        return c;
+
+    }
+
+    public final void rollbackTransaction(Connection c) throws SQLException
+    {
+        checkState(c == transactionThreadLocal.get(), "There are two concurrently open transactions!");
+        checkState(c != null, "Tried to rollback a transaction that is not started!");
+
+        c.rollback();
+        setCloseable(c, true);
+        c.close();
+    }
+
+    private void setCloseable(Connection connection, boolean closeable)
+    {
+        if (connection instanceof DelegateConnection)
+            ((DelegateConnection) connection).setCloseable(closeable);
     }
 
     /**
@@ -782,27 +816,7 @@ public abstract class DatabaseProvider
      */
     public void dispose()
     {
-        connectionsLock.writeLock().lock();
-        try
-        {
-            for (Connection conn : connections.values())
-            {
-                if (conn instanceof DelegateConnection)
-                {
-                    ((DelegateConnection) conn).setCloseable(true);
-                }
-
-                conn.close();
-            }
-            dataSource.dispose();
-        }
-        catch (SQLException e)
-        {
-        }
-        finally
-        {
-            connectionsLock.writeLock().unlock();
-        }
+        dataSource.dispose();
     }
 
     /**
