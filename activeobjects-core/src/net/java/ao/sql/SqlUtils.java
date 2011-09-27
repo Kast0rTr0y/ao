@@ -1,5 +1,6 @@
 package net.java.ao.sql;
 
+import com.google.common.base.Function;
 import net.java.ao.Common;
 
 import java.sql.Connection;
@@ -12,13 +13,18 @@ import java.util.regex.Pattern;
  */
 public final class SqlUtils
 {
-    public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*(=|>|<|LIKE|like|IS|is))");
+    public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*(=|>|<|LIKE|like|IS|is)\\s)");
     public static final Pattern ON_CLAUSE = Pattern.compile("(?:(\\w+\\.)?(\\w+))(?:\\s*=\\s*)(?:(\\w+\\.)?(\\w+))");
     public static final Pattern ORDER_CLAUSE = Pattern.compile("(\\w+)(?=\\s*(ASC|DESC))?");
     public static final Pattern GROUP_BY_CLAUSE = Pattern.compile("(\\w+)(?:,(\\w+))*");
 
     private SqlUtils()
     {
+    }
+
+    public static String processWhereClause(String where, Function<String, String> fieldNameProcessor)
+    {
+        return WHERE_CLAUSE.matcher(where).replaceAll(fieldNameProcessor.apply("$1"));
     }
 
     public static void closeQuietly(Connection connection)

@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import com.google.common.base.Function;
 import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
@@ -2094,9 +2095,16 @@ public abstract class DatabaseProvider
      * @return the processed where clause compatible with the database in use.
      * @see #processID(String)
      */
-    public String processWhereClause(String where)
+    public final String processWhereClause(String where)
     {
-        return SqlUtils.WHERE_CLAUSE.matcher(where).replaceAll(processID("$1"));
+        return SqlUtils.processWhereClause(where, new Function<String, String>()
+        {
+            @Override
+            public String apply(String id)
+            {
+                return processID(id);
+            }
+        });
     }
 
     /**
