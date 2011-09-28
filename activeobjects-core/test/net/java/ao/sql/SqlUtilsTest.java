@@ -36,6 +36,12 @@ public final class SqlUtilsTest
         testWhereClause(format("field1 %s value1 AND (field2 %s value2 OR field3 %s value3)", s, s, s), "field1", "field2", "field3");
         testWhereClause(format("field1 %s ? AND (field2 %s ? OR field3 %s ?)", s, s, s), "field1", "field2", "field3");
 
+        testWhereClause(format("field1 %s value1 AND field2 IN (value2,value3,value4)", s), "field1", "field2");
+        testWhereClause(format("field1 %s ? AND field2 IN (?,?,?)", s), "field1", "field2");
+
+        testWhereClause(format("field1 %s value1 AND field2 NOT   IN (value2,value3,value4)", s), "field1", "field2");
+        testWhereClause(format("field1 %s ? AND field2 NOT IN (?,?,?)", s), "field1", "field2");
+
         testWhereClause(format("CUSTOM_FIELD_ID %s ? AND ISSUE_ID %s ?", s, s), "CUSTOM_FIELD_ID", "ISSUE_ID");
     }
 
@@ -44,10 +50,15 @@ public final class SqlUtilsTest
         final Matcher m = SqlUtils.WHERE_CLAUSE.matcher(clause);
         for (String field : fields)
         {
-            assertTrue(m.find());
+            assertTrue("Could not match " + field, m.find());
             assertEquals(field, m.group(1));
         }
-        assertFalse(m.find());
+
+        final boolean next = m.find();
+        if (next)
+        {
+            assertFalse("Found an extra match " + m.group(1), next);
+        }
     }
 
     @Test
