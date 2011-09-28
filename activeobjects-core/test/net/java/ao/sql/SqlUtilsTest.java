@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public final class SqlUtilsTest
 {
     private static final TestIdProcessor TEST_ID_PROCESSOR = new TestIdProcessor();
-    private static final String[] SEPARATORS = new String[]{"=", "<", ">", "like", "LIKE", "is", "IS"};
+    private static final String[] SEPARATORS = new String[]{"=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
 
     @Test
     public void testWhereClause()
@@ -40,7 +40,10 @@ public final class SqlUtilsTest
         testWhereClause(format("field1 %s ? AND field2 IN (?,?,?)", s), "field1", "field2");
 
         testWhereClause(format("field1 %s value1 AND field2 NOT   IN (value2,value3,value4)", s), "field1", "field2");
-        testWhereClause(format("field1 %s ? AND field2 NOT IN (?,?,?)", s), "field1", "field2");
+        testWhereClause(format("field1 %s ? AND field2 NOT  IN (?,?,?)", s), "field1", "field2");
+
+        testWhereClause(format("field1 %s value1 AND field2 BETWEEN value2 AND value3", s), "field1", "field2");
+        testWhereClause(format("field1 %s ? AND field2 BETWEEN ? AND ?", s), "field1", "field2");
 
         testWhereClause(format("CUSTOM_FIELD_ID %s ? AND ISSUE_ID %s ?", s, s), "CUSTOM_FIELD_ID", "ISSUE_ID");
     }
