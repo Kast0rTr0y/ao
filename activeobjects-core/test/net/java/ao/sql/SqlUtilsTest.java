@@ -46,6 +46,9 @@ public final class SqlUtilsTest
         testWhereClause(format("field1 %s ? AND field2 BETWEEN ? AND ?", s), "field1", "field2");
 
         testWhereClause(format("CUSTOM_FIELD_ID %s ? AND ISSUE_ID %s ?", s, s), "CUSTOM_FIELD_ID", "ISSUE_ID");
+
+        testWhereClause(format("field1 = value1 AND NOT (field2 %s value2 OR field3 NOT IN (1,2,3))", s), "field1", "field2", "field3");
+        testWhereClause(format("field1 = ? AND NOT (field2 %s ? OR field3 NOT IN (?,?,?))", s), "field1", "field2", "field3");
     }
 
     private void testWhereClause(String clause, String... fields)
@@ -110,6 +113,14 @@ public final class SqlUtilsTest
         testProcessWhereClause(
                 format("CUSTOM_FIELD_ID %s ? AND ISSUE_ID %s ?", s, s),
                 format("*CUSTOM_FIELD_ID* %s ? AND *ISSUE_ID* %s ?", s, s));
+
+        testProcessWhereClause(
+                format("field1 = value1 AND NOT (field2 %s value2 OR field3 NOT IN (1,2,3))", s),
+                format("*field1* = value1 AND NOT (*field2* %s value2 OR *field3* NOT IN (1,2,3))", s));
+
+        testProcessWhereClause(
+                format("field1 = ? AND NOT (field2 %s ? OR field3 NOT IN (?,?,?))", s),
+                format("*field1* = ? AND NOT (*field2* %s ? OR *field3* NOT IN (?,?,?))", s));
     }
 
     private void testProcessWhereClause(String where, String expected)
