@@ -32,7 +32,6 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>1.4</version>
                 <configuration>
-                    <createSourcesJar>true</createSourcesJar>
                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <artifactSet>
                         <includes>
