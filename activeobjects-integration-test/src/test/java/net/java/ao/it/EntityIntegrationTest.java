@@ -44,25 +44,8 @@ import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static net.java.ao.it.DatabaseProcessor.AddressData;
-import static net.java.ao.it.DatabaseProcessor.BookData;
-import static net.java.ao.it.DatabaseProcessor.CompanyData;
-import static net.java.ao.it.DatabaseProcessor.MagazineData;
-import static net.java.ao.it.DatabaseProcessor.MessageData;
-import static net.java.ao.it.DatabaseProcessor.PenData;
-import static net.java.ao.it.DatabaseProcessor.PersonData;
-import static net.java.ao.it.DatabaseProcessor.PersonLegalDefenceData;
-import static net.java.ao.it.DatabaseProcessor.PhotoCommentData;
-import static net.java.ao.it.DatabaseProcessor.PhotoData;
-import static net.java.ao.it.DatabaseProcessor.PostCommentData;
-import static net.java.ao.it.DatabaseProcessor.PostData;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static net.java.ao.it.DatabaseProcessor.*;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -1501,6 +1484,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
     private void checkPersonData(Person person)
     {
+        assertNotNull(person);
         assertEquals(PersonData.FIRST_NAME, person.getFirstName());
         assertEquals(PersonData.LAST_NAME, person.getLastName());
         assertEquals(PersonData.PROFESSION, person.getProfession());

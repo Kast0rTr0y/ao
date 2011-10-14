@@ -262,7 +262,7 @@ public class QueryTest extends ActiveObjectsIntegrationTest
 
     private String getTableName(DatabaseProvider provider, TableNameConverter converter, Class<? extends RawEntity<?>> entityType)
     {
-        return provider.processID(converter.getName(entityType));
+        return provider.withSchema(converter.getName(entityType));
     }
 
     private static class DatabaseProviders

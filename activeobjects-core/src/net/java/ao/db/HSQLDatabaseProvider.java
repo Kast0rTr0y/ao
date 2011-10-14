@@ -256,7 +256,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 				}
 				sql.append(" FROM ");
 
-				sql.append(processID(tableName));
+				sql.append(withSchema(tableName));
 			break;
 		}
 

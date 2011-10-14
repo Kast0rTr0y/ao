@@ -223,7 +223,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		DatabaseProvider provider = getManager().getProvider();
 		
 		try {
-			StringBuilder sql = new StringBuilder("UPDATE " + provider.processID(table) + " SET ");
+			StringBuilder sql = new StringBuilder("UPDATE " + provider.withSchema(table) + " SET ");
 
 			for (String field : dirtyFields) {
 				sql.append(provider.processID(field));
@@ -433,7 +433,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					sql.append(',').append(provider.processID(polyName));
 				}
 	
-				sql.append(" FROM ").append(provider.processID(table)).append(" WHERE ");
+				sql.append(" FROM ").append(provider.withSchema(table)).append(" WHERE ");
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
 
 				final PreparedStatement stmt = provider.preparedStatement(conn, sql);
@@ -575,7 +575,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					sql.setLength(sql.length() - 1);
 				}
 				
-				sql.append(" FROM ").append(provider.processID(table));
+				sql.append(" FROM ").append(provider.withSchema(table));
 				
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 				
@@ -611,16 +611,16 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                     selectFields.addAll(Common.getValueFieldsNames(finalType, getManager().getFieldNameConverter()));
                 }
 
-                sql.append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
+                sql.append(provider.withSchema(finalTable)).append('.').append(provider.processID(finalPKField));
                 sql.append(" AS ").append(provider.quote(returnField)).append(',');
 
                 selectFields.remove(finalPKField);
 
-				sql.append(provider.processID(table)).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getManager().getFieldNameConverter())));
+				sql.append(provider.withSchema(table)).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getManager().getFieldNameConverter())));
 				sql.append(" AS ").append(provider.quote(throughField)).append(',');
 
 				for (String field : selectFields) {
-					sql.append(provider.processID(finalTable)).append('.').append(provider.processID(field)).append(',');
+					sql.append(provider.withSchema(finalTable)).append('.').append(provider.processID(field)).append(',');
 				}
 				sql.setLength(sql.length() - 1);
 
@@ -633,12 +633,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 
-				sql.append(" FROM ").append(provider.processID(table)).append(" INNER JOIN ");
-				sql.append(provider.processID(finalTable)).append(" ON ");
-				sql.append(provider.processID(table)).append('.').append(provider.processID(outMapFields[0]));
-				sql.append(" = ").append(provider.processID(finalTable)).append('.').append(provider.processID(finalPKField));
+				sql.append(" FROM ").append(provider.withSchema(table)).append(" INNER JOIN ");
+				sql.append(provider.withSchema(finalTable)).append(" ON ");
+				sql.append(provider.withSchema(table)).append('.').append(provider.processID(outMapFields[0]));
+				sql.append(" = ").append(provider.withSchema(finalTable)).append('.').append(provider.processID(finalPKField));
 
-				sql.append(" WHERE ").append(provider.processID(table)).append('.').append(
+				sql.append(" WHERE ").append(provider.withSchema(table)).append('.').append(
 						provider.processID(inMapFields[0])).append(" = ?");
 
 				if (!where.trim().equals("")) {
@@ -671,7 +671,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 
-				sql.append(" FROM ").append(provider.processID(table));
+				sql.append(" FROM ").append(provider.withSchema(table));
 				sql.append(" WHERE ").append(provider.processID(inMapFields[0])).append(" = ?");
 
 				if (!where.trim().equals("")) {
@@ -722,7 +722,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 							}
 						}
 
-						sql.append(" FROM ").append(provider.processID(table));
+						sql.append(" FROM ").append(provider.withSchema(table));
 						sql.append(" WHERE ");
 						sql.append(provider.processID(inMap)).append(" = ?");
 

@@ -287,7 +287,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 				}
 				sql.append(" FROM ");
 
-				sql.append(processID(tableName));
+				sql.append(withSchema(tableName));
 			break;
 		}
 
@@ -466,13 +466,13 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			for (DBParam param : params) {
 				if (param.getField().trim().equalsIgnoreCase(pkField)) {
 					identityInsert = true;
-					sql.append("SET IDENTITY_INSERT ").append(processID(table)).append(" ON\n");
+					sql.append("SET IDENTITY_INSERT ").append(withSchema(table)).append(" ON\n");
 					break;
 				}
 			}
 		}
 
-		sql.append("INSERT INTO ").append(processID(table));
+		sql.append("INSERT INTO ").append(withSchema(table));
 
 		if (params.length > 0) {
 			sql.append(" (");
