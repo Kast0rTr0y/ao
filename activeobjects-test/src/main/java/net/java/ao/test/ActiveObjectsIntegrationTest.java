@@ -146,7 +146,7 @@ public abstract class ActiveObjectsIntegrationTest
     protected final String getTableName(Class<? extends RawEntity<?>> entityType, boolean escape)
     {
         final String tableName = entityManager.getTableNameConverter().getName(entityType);
-        return escape ? escapeKeyword(tableName) : tableName;
+        return escape ? entityManager.getProvider().withSchema(tableName) : tableName;
     }
 
     protected final String getFieldName(Class<? extends RawEntity<?>> entityType, String methodName)

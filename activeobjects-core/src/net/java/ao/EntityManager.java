@@ -238,7 +238,7 @@ public class EntityManager
 
 					StringBuilder sql = new StringBuilder("SELECT ");
 					sql.append(provider.processID(primaryKeyField));
-					sql.append(" FROM ").append(provider.processID(tableName));
+					sql.append(" FROM ").append(provider.withSchema(tableName));
 					sql.append(" WHERE ").append(provider.processID(primaryKeyField));
 					sql.append(" = ?");
 
@@ -509,7 +509,7 @@ public class EntityManager
 					List<RawEntity<?>> entityList = organizedEntities.get(type);
 
 					StringBuilder sql = new StringBuilder("DELETE FROM ");
-                    sql.append(provider.processID(tableNameConverter.getName(type)));
+                    sql.append(provider.withSchema(tableNameConverter.getName(type)));
 					sql.append(" WHERE ").append(provider.processID(
 							Common.getPrimaryKeyField(type, getFieldNameConverter()))).append(" IN (?");
 

@@ -147,7 +147,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
     private EntityManager createEntityManager()
     {
-        EntityManagerBuilderWithDatabaseProperties entityManagerBuilder = EntityManagerBuilder.url(jdbc.getUrl()).username(jdbc.getUsername()).password(jdbc.getPassword()).auto();
+        EntityManagerBuilderWithDatabaseProperties entityManagerBuilder = EntityManagerBuilder.url(jdbc.getUrl()).username(jdbc.getUsername()).password(jdbc.getPassword()).schema(jdbc.getSchema()).auto();
 
         if (tableNameConverter != null)
         {

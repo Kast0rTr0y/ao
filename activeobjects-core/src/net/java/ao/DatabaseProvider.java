@@ -549,7 +549,7 @@ public abstract class DatabaseProvider
                 }
                 sql.append(" FROM ");
 
-                sql.append(processID(tableName));
+                sql.append(withSchema(tableName));
                 break;
         }
 
@@ -577,7 +577,7 @@ public abstract class DatabaseProvider
 
         for (Map.Entry<Class<? extends RawEntity<?>>, String> joinEntry : query.getJoins().entrySet())
         {
-            sql.append(" JOIN ").append(processID(converter.getName(joinEntry.getKey())));
+            sql.append(" JOIN ").append(withSchema(converter.getName(joinEntry.getKey())));
             if (joinEntry.getValue() != null)
             {
                 sql.append(" ON ").append(processOnClause(joinEntry.getValue()));

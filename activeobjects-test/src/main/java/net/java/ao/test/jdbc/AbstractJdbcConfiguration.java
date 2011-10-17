@@ -1,5 +1,7 @@
 package net.java.ao.test.jdbc;
 
+import com.google.common.base.Objects;
+
 /**
  *
  */
@@ -16,15 +18,19 @@ public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
     }
 
     @Override
-    public int hashCode()
+    public String getSchema()
     {
-        return 11 * getUsername().hashCode()
-                + 7 * getPassword().hashCode()
-                + getUrl().hashCode();
+        return null;
     }
 
     @Override
-    public boolean equals(Object obj)
+    public final int hashCode()
+    {
+        return Objects.hashCode(getUsername(), getPassword(), getUrl(), getSchema());
+    }
+
+    @Override
+    public final boolean equals(Object obj)
     {
         if (obj == null)
         {
@@ -42,13 +48,15 @@ public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
         final JdbcConfiguration that = (JdbcConfiguration) obj;
         return this.getUsername().equals(that.getUsername())
                 && this.getPassword().equals(that.getPassword())
-                && this.getUrl().equals(that.getUrl());
+                && this.getUrl().equals(that.getUrl())
+                && Objects.equal(this.getSchema(), that.getSchema());
     }
 
     @Override
-    public String toString()
+    public final String toString()
     {
         return new StringBuilder().append(getUrl())
+                .append(" :: ").append(getSchema() != null ? getSchema() : "<no schema>")
                 .append(" - ").append(getUsername())
                 .append(" - ").append(getPassword())
                 .toString();

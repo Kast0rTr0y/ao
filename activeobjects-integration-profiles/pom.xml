@@ -134,6 +134,25 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>net.sourceforge.jtds</groupId>
+                                <artifactId>jtds</artifactId>
+                                <version>1.2.4</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>commons-dbcp</id>

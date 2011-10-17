@@ -11,12 +11,19 @@ public final class EntityManagerBuilderWithUrlAndUsernameAndPassword
     private final Logger logger = LoggerFactory.getLogger(EntityManagerBuilder.class);
 
     private final String url, username, password;
+    private String schema;
 
     public EntityManagerBuilderWithUrlAndUsernameAndPassword(String url, String username, String password)
     {
         this.url = checkNotNull(url);
         this.username = checkNotNull(username);
         this.password = checkNotNull(password);
+    }
+
+    public EntityManagerBuilderWithUrlAndUsernameAndPassword schema(String schema)
+    {
+        this.schema = schema;
+        return this;
     }
 
     public EntityManagerBuilderWithDatabaseProperties none()
@@ -71,6 +78,8 @@ public final class EntityManagerBuilderWithUrlAndUsernameAndPassword
 
     private BuilderDatabaseProperties getDatabaseProperties(ConnectionPool connectionPool)
     {
-        return new BuilderDatabaseProperties(url, username, password, connectionPool);
+        final BuilderDatabaseProperties properties = new BuilderDatabaseProperties(url, username, password, connectionPool);
+        properties.setSchema(schema);
+        return properties;
     }
 }
