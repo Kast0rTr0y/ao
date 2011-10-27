@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
 public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
-    public void testGetCheckID()
+    public void testGetCheckID() throws Exception
     {
         assertNull(entityManager.get(Person.class, PersonData.getId() + 1));
     }
@@ -51,7 +51,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
 
         checkSqlNotExecuted(new Callable<Void>()
         {
-            public Void call()
+            public Void call() throws Exception
             {
                 entityManager.get(Person.class, PersonData.getId());
                 return null;
@@ -60,7 +60,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testReservedGet()
+    public void testReservedGet() throws Exception
     {
         assertNull(entityManager.get(Select.class, 123));
     }

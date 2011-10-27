@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.collect.Sets.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -67,19 +68,20 @@ public final class SchemaGenerator {
     {
         final Iterable<String> statements = generateImpl(provider, schemaConfiguration, nameConverter, fieldConverter, classes);
 
-        final Connection conn = provider.getConnection();
+        Connection conn = null;
+        Statement stmt = null;
         try
         {
-            final Statement stmt = conn.createStatement();
+            conn = provider.getConnection();
+            stmt = conn.createStatement();
             for (String statement : statements)
             {
                 provider.executeUpdate(stmt, statement);
             }
-            stmt.close();
         }
         finally
         {
-            conn.close();
+            closeQuietly(stmt, conn);
         }
     }
 

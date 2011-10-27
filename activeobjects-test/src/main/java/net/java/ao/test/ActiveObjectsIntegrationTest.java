@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Lists.*;
 import static junit.framework.Assert.*;
-import static net.java.ao.Common.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  *
@@ -91,8 +91,7 @@ public abstract class ActiveObjectsIntegrationTest
         }
         finally
         {
-            closeQuietly(statement);
-            closeQuietly(connection);
+            closeQuietly(statement, connection);
         }
     }
 
@@ -111,9 +110,7 @@ public abstract class ActiveObjectsIntegrationTest
         }
         finally
         {
-            closeQuietly(resultSet);
-            closeQuietly(statement);
-            closeQuietly(connection);
+            closeQuietly(resultSet, statement, connection);
         }
     }
 

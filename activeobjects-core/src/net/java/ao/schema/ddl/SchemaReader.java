@@ -25,7 +25,6 @@ import net.java.ao.schema.helper.DatabaseMetaDataReader;
 import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
 import net.java.ao.schema.helper.Field;
 import net.java.ao.schema.helper.ForeignKey;
-import net.java.ao.sql.SqlUtils;
 
 import java.sql.*;
 import java.text.ParseException;
@@ -33,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -79,7 +79,7 @@ public final class SchemaReader
         }
         finally
         {
-            SqlUtils.closeQuietly(connection);
+            closeQuietly(connection);
         }
     }
 

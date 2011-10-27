@@ -46,7 +46,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -786,8 +785,7 @@ public abstract class DatabaseProvider
         checkState(c != null, "Tried to commit a transaction that is not started!");
 
         c.commit();
-        setCloseable(c, true);
-        c.close();
+
         transactionThreadLocal.remove();
         return c;
 
@@ -799,13 +797,11 @@ public abstract class DatabaseProvider
         checkState(c != null, "Tried to rollback a transaction that is not started!");
 
         c.rollback();
-        setCloseable(c, true);
-        c.close();
     }
 
-    private void setCloseable(Connection connection, boolean closeable)
+    void setCloseable(Connection connection, boolean closeable)
     {
-        if (connection instanceof DelegateConnection)
+        if (connection != null && connection instanceof DelegateConnection)
             ((DelegateConnection) connection).setCloseable(closeable);
     }
 

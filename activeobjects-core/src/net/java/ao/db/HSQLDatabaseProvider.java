@@ -42,6 +42,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static net.java.ao.sql.SqlUtils.closeQuietly;
+
 /**
  * @author Daniel Spiewak
  */
@@ -195,28 +197,30 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		return conn.getMetaData().getTables(null, schema, null, new String[] {"TABLE"});
 	}
 
-	@Override
-	public void dispose() {
-		Connection conn = null;
-		try {
-			conn = getConnection();
-			Statement stmt = conn.createStatement();
-
-			stmt.executeUpdate("SHUTDOWN");
-			stmt.close();
-		} catch (SQLException e) {
-		} finally {
-			if (conn != null) {
-				try {
-					conn.close();
-				} catch (SQLException t) {
-				}
-			}
-		}
+    @Override
+    public void dispose()
+    {
+        Connection conn = null;
+        Statement stmt = null;
+        try
+        {
+            conn = getConnection();
+            stmt = conn.createStatement();
+            stmt.executeUpdate("SHUTDOWN");
+        }
+        catch (SQLException e)
+        {
+            // ignored
+        }
+        finally
+        {
+            closeQuietly(stmt);
+            closeQuietly(conn);
+        }
         super.dispose();
-	}
+    }
 
-	@Override
+    @Override
 	protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
 		StringBuilder sql = new StringBuilder();
 		String tableName = query.getTable();

@@ -18,6 +18,8 @@ package net.java.ao;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import static net.java.ao.sql.SqlUtils.closeQuietly;
+
 /**
  * <p>Allows for the syntactically simple use of database transactions within the
  * ActiveObjects API.  This class's syntax is modeled after the <code>transaction
@@ -151,6 +153,8 @@ public abstract class Transaction<T>
             {
                 provider.rollbackTransaction(c);
             }
+            provider.setCloseable(c, true);
+            closeQuietly(c);
         }
     }
 

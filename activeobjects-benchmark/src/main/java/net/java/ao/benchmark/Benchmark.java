@@ -95,7 +95,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         return personsKey;
     }
 
-    private void updatePersons(Class<? extends Person> personClass, List<Integer> pks)
+    private void updatePersons(Class<? extends Person> personClass, List<Integer> pks) throws SQLException
     {
         updateStopWatch.start();
         for (Integer i : pks)
@@ -149,7 +149,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         return p.getID();
     }
 
-    private void updatePerson(Class<? extends Person> personClass, int i)
+    private void updatePerson(Class<? extends Person> personClass, int i) throws SQLException
     {
         final Person p = entityManager.get(personClass, i);
         {

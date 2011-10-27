@@ -55,7 +55,8 @@ public final class Common {
 
     private static final MethodFinder methodFinder = MethodFinder.getInstance();
 
-    public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) {
+    public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) throws SQLException
+    {
 		return manager.peer(type, key);
 	}
 

@@ -45,6 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 
 import static net.java.ao.Common.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * @author Daniel Spiewak
@@ -219,10 +220,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 		String table = getManager().getTableNameConverter().getName(type);
 		TypeManager manager = TypeManager.getInstance();
-		Connection conn = getConnectionImpl();
-		DatabaseProvider provider = getManager().getProvider();
-		
-		try {
+		final DatabaseProvider provider = getManager().getProvider();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            conn = provider.getConnection();
 			StringBuilder sql = new StringBuilder("UPDATE " + provider.withSchema(table) + " SET ");
 
 			for (String field : dirtyFields) {
@@ -241,7 +244,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			sql.append(" WHERE ").append(provider.processID(pkFieldName)).append(" = ?");
 
-			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
+			stmt = provider.preparedStatement(conn, sql);
 
 			List<PropertyChangeEvent> events = new LinkedList<PropertyChangeEvent>();
 			int index = 1;
@@ -270,7 +273,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 			}
-			((DatabaseType) Common.getPrimaryKeyType(type)).putToDatabase(getManager(), stmt, index++, key);
+			Common.getPrimaryKeyType(type).putToDatabase(getManager(), stmt, index++, key);
 
 			getManager().getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
@@ -284,13 +287,13 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					l.propertyChange(evt);
 				}
 			}
-
 			cacheLayer.clearDirty();
-
-			stmt.close();
-		} finally {
-			closeConnectionImpl(conn);
-		}
+        }
+        finally
+        {
+            closeQuietly(stmt);
+            closeQuietly(conn);
+        }
 	}
 
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -370,15 +373,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return manager;
 	}
 
-	private Connection getConnectionImpl() throws SQLException {
-		return getManager().getProvider().getConnection();
-	}
-
-	private void closeConnectionImpl(Connection conn) throws SQLException {
-		conn.close();
-	}
-	
-	private ReadWriteLock getLock(String field) {
+    private ReadWriteLock getLock(String field) {
 		locksLock.writeLock().lock();
 		try {
 			if (locks.containsKey(field)) {
@@ -423,9 +418,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 			
-			Connection conn = getConnectionImpl();
-			DatabaseProvider provider = getManager().getProvider();
-			try {
+			final DatabaseProvider provider = getManager().getProvider();
+            Connection conn = null;
+            PreparedStatement stmt = null;
+            ResultSet res = null;
+            try {
+                conn = provider.getConnection();
 				StringBuilder sql = new StringBuilder("SELECT ");
 				
 				sql.append(provider.processID(name));
@@ -436,18 +434,16 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(" FROM ").append(provider.withSchema(table)).append(" WHERE ");
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
 
-				final PreparedStatement stmt = provider.preparedStatement(conn, sql);
+				stmt = provider.preparedStatement(conn, sql);
 				Common.getPrimaryKeyType(this.type).putToDatabase(getManager(), stmt, 1, key);
 	
-				ResultSet res = stmt.executeQuery();
+				res = stmt.executeQuery();
 				if (res.next()) {
 					back = convertValue(res, name, polyName, type);
 				}
-				res.close();
-				stmt.close();
 			} finally {
-				closeConnectionImpl(conn);
-			}
+                closeQuietly(res, stmt, conn);
+            }
 	
 			if (shouldCache) {
 				cacheLayer.put(name, back);
@@ -548,10 +544,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		boolean oneToMany = type.equals(finalType);
 		final Preload preloadAnnotation = finalType.getAnnotation(Preload.class);
 		
-		final Connection conn = getConnectionImpl();
 		final DatabaseProvider provider = getManager().getProvider();
-
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet res = null;
 		try {
+            conn = provider.getConnection();
 			StringBuilder sql = new StringBuilder();
 			String returnField;
 			String throughField = null;
@@ -774,7 +772,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 
-			final PreparedStatement stmt = provider.preparedStatement(conn, sql);
+			stmt = provider.preparedStatement(conn, sql);
 
             DatabaseType<K> dbType =  TypeManager.getInstance().getType(getClass(key));
 			int index = 0;
@@ -791,7 +789,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			dbType = Common.getPrimaryKeyType(finalType);
 			final DatabaseType<Object> throughDBType = Common.getPrimaryKeyType((Class<? extends RawEntity<Object>>) type);
 			
-			ResultSet res = stmt.executeQuery();
+			res = stmt.executeQuery();
 			while (res.next()) {
 				K returnValue = dbType.pullFromDatabase(getManager(), res, (Class<? extends K>) type, returnField);
 				Class<V> backType = finalType;
@@ -828,11 +826,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				
 				back.add(returnValueEntity);
 			}
-			res.close();
-			stmt.close();
 		} finally {
-			closeConnectionImpl(conn);
-		}
+            closeQuietly(res, stmt, conn);
+        }
 		
 		cached = back.toArray((V[]) Array.newInstance(finalType, back.size()));
 

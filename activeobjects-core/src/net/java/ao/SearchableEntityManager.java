@@ -109,7 +109,8 @@ public class SearchableEntityManager extends EntityManager {
 	 * @return The entity instances which correspond with the search results.
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException {
+	public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException, SQLException
+    {
 		String table = getTableNameConverter().getName(type);
 		List<String> indexFields = Common.getSearchableFields(this, type);
 		String[] searchFields = new String[indexFields.size()];

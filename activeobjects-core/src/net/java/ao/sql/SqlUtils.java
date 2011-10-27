@@ -41,4 +41,16 @@ public final class SqlUtils
     {
         Common.closeQuietly(resultSet);
     }
+
+    public static void closeQuietly(Statement st, Connection c)
+    {
+        closeQuietly(st);
+        closeQuietly(c);
+    }
+
+    public static void closeQuietly(ResultSet rs, Statement st, Connection c)
+    {
+        closeQuietly(rs);
+        closeQuietly(st, c);
+    }
 }

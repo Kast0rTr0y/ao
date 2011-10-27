@@ -17,6 +17,7 @@ package net.java.ao;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,8 @@ class RelatedEntityImpl {
 		this.entity = (RawEntity<Object>) entity;
 	}
 	
-	public RelatedEntity<?>[] getRelated() throws IOException {
+	public RelatedEntity<?>[] getRelated() throws IOException, SQLException
+    {
 		Class<? extends RawEntity<Object>> type = entity.getEntityType();
 		String table = entity.getEntityManager().getTableNameConverter().getName(type);
 		List<String> indexFields = Common.getSearchableFields(entity.getEntityManager(), type);

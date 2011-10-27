@@ -24,6 +24,7 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import org.junit.Test;
 
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
 import static net.java.ao.it.DatabaseProcessor.*;
@@ -202,7 +203,7 @@ public class RelationsCacheTest extends ActiveObjectsIntegrationTest
         suit.save();
     }
 
-    private Person getPerson()
+    private Person getPerson() throws SQLException
     {
         return entityManager.get(Person.class, PersonData.getId());
     }

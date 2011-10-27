@@ -400,7 +400,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         assertEquals("Daniel", propertyValue.get());
     }
 
-    private Person getPersonWithPropertyChangeListener(AtomicReference<String> propertyName, AtomicReference<String> propertyValue)
+    private Person getPersonWithPropertyChangeListener(AtomicReference<String> propertyName, AtomicReference<String> propertyValue) throws SQLException
     {
         final Person person = getPerson();
         person.addPropertyChangeListener(getPropertyChangeListener(propertyName, propertyValue));
@@ -611,7 +611,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToOneRetrievalId()
+    public void testOneToOneRetrievalId() throws Exception
     {
         final Company company = getCompany();
         final Person person = getPerson();
@@ -620,7 +620,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToManyRetrievalIds()
+    public void testOneToManyRetrievalIds() throws Exception
     {
         EntityProxyConfigurator.setIgnorePreload(true);
         try
@@ -945,7 +945,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testPolymorphicOneToManyRetrievalIDs()
+    public void testPolymorphicOneToManyRetrievalIDs() throws Exception
     {
         EntityProxyConfigurator.setIgnorePreload(true);
         try
@@ -1092,7 +1092,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testPolymorphicManyToManyRetrievalIDs()
+    public void testPolymorphicManyToManyRetrievalIDs() throws Exception
     {
         EntityProxyConfigurator.setIgnorePreload(true);
         try
@@ -1427,7 +1427,7 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testMultiPathPolymorphicOneToManyRetrievalIDs()
+    public void testMultiPathPolymorphicOneToManyRetrievalIDs() throws Exception
     {
         EntityProxyConfigurator.setIgnorePreload(true);
         try
@@ -1462,22 +1462,22 @@ public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
 
-    private Person getPerson()
+    private Person getPerson() throws SQLException
     {
         return entityManager.get(Person.class, PersonData.getId());
     }
 
-    private Company getCompany()
+    private Company getCompany() throws SQLException
     {
         return entityManager.get(Company.class, CompanyData.getIds()[0]);
     }
 
-    private Post getPost()
+    private Post getPost() throws SQLException
     {
         return entityManager.get(Post.class, PostData.getId());
     }
 
-    private Photo getPhoto()
+    private Photo getPhoto() throws SQLException
     {
         return entityManager.get(Photo.class, PhotoData.getId());
     }
