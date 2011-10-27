@@ -42,7 +42,13 @@ public class DatabaseProviders
 
     public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider()
     {
-        return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "");
+        return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "") {
+            @Override
+            protected void setPostConnectionProperties(Connection conn) throws SQLException
+            {
+                // nothing
+            }
+        };
     }
 
     private static DisposableDataSource newDataSource(String quote)

@@ -104,6 +104,7 @@ public abstract class DatabaseProvider
         this.schema = isBlank(schema) ? null : schema; // can be null
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
+        loadQuoteString();
     }
 
     public String getSchema()
@@ -121,7 +122,7 @@ public abstract class DatabaseProvider
         Connection conn = null;
         try
         {
-            conn = dataSource.getConnection();
+            conn = getConnection();
             if (conn == null)
             {
                 throw new IllegalStateException("Could not get connection to load quote String");

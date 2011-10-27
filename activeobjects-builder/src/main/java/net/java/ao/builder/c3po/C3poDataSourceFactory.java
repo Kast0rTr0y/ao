@@ -29,8 +29,6 @@ public class C3poDataSourceFactory implements DataSourceFactory
         cpds.setJdbcUrl(url);
         cpds.setUser(username);
         cpds.setPassword(password);
-        cpds.setMaxPoolSize(30);
-        cpds.setMaxStatements(180);
 
         return DelegatingDisposableDataSourceHandler.newInstance(cpds, new Disposable()
         {
