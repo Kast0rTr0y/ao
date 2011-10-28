@@ -236,7 +236,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private ResultSet getImportedKeys(DatabaseMetaData metaData, String tableName) throws SQLException
     {
-        return metaData.getImportedKeys(null, databaseProvider.getSchema(), tableName);
+        return databaseProvider.getImportedKeys(metaData.getConnection(), tableName);
     }
 
     private ForeignKey newForeignKey(ResultSet rs, String localTableName) throws SQLException

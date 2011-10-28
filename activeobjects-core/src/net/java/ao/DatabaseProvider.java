@@ -94,7 +94,7 @@ public abstract class DatabaseProvider
     private final ThreadLocal<Connection> transactionThreadLocal = new ThreadLocal<Connection>();
     private final DisposableDataSource dataSource;
 
-    protected final String schema;
+    private final String schema;
 
     private String quote;
 
@@ -486,6 +486,11 @@ public abstract class DatabaseProvider
     public ResultSet getSequences(Connection conn) throws SQLException
     {
         return conn.getMetaData().getTables(null, schema, "", new String[]{"SEQUENCE"});
+    }
+
+    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException
+    {
+        return connection.getMetaData().getImportedKeys(null, schema, tableName);
     }
 
     /**
@@ -1865,7 +1870,7 @@ public abstract class DatabaseProvider
     public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
                                     String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
     {
-        StringBuilder sql = new StringBuilder("INSERT INTO " + processID(table) + " (");
+        final StringBuilder sql = new StringBuilder("INSERT INTO " + withSchema(table) + " (");
 
         for (DBParam param : params)
         {
@@ -2144,7 +2149,12 @@ public abstract class DatabaseProvider
     public final String withSchema(String tableName)
     {
         final String processedTableName = processID(tableName);
-        return schema != null ? schema + "." + processedTableName : processedTableName;
+        return isSchemaNotEmpty() ? schema + "." + processedTableName : processedTableName;
+    }
+
+    protected final boolean isSchemaNotEmpty()
+    {
+        return schema != null && schema.length() > 0;
     }
 
     public final String shorten(String id)

@@ -35,19 +35,28 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
         this.jdbcSupplier = Suppliers.memoize(new SystemPropertyJdbcConfigurationSupplier());
     }
 
+    @Override
     public String getUrl()
     {
         return jdbcSupplier.get().getUrl();
     }
 
+    @Override
     public String getUsername()
     {
         return jdbcSupplier.get().getUsername();
     }
 
+    @Override
     public String getPassword()
     {
         return jdbcSupplier.get().getPassword();
+    }
+
+    @Override
+    public String getSchema()
+    {
+        return jdbcSupplier.get().getSchema();
     }
 
     private static final class SystemPropertyJdbcConfigurationSupplier implements Supplier<JdbcConfiguration>

@@ -123,6 +123,9 @@
                     <plugin>
                         <groupId>org.leberrigaud.maven.plugins</groupId>
                         <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
                         <dependencies>
                             <dependency>
                                 <groupId>com.oracle</groupId>
@@ -155,6 +158,9 @@
                     <plugin>
                         <groupId>org.leberrigaud.maven.plugins</groupId>
                         <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
                         <dependencies>
                             <dependency>
                                 <groupId>com.oracle</groupId>
@@ -187,6 +193,9 @@
                     <plugin>
                         <groupId>org.leberrigaud.maven.plugins</groupId>
                         <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
                         <dependencies>
                             <dependency>
                                 <groupId>com.oracle</groupId>

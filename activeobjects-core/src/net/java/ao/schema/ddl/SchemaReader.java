@@ -117,7 +117,8 @@ public final class SchemaReader
 
     private static List<DDLField> readFields(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName)
     {
-        return newArrayList(Iterables.transform(databaseMetaDataReader.getFields(databaseMetaData, tableName), new Function<Field, DDLField>()
+        return newArrayList(Iterables.transform(databaseMetaDataReader.
+                getFields(databaseMetaData, tableName), new Function<Field, DDLField>()
         {
             public DDLField apply(Field from)
             {
