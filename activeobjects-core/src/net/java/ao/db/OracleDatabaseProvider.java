@@ -125,7 +125,18 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     public OracleDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null);
+        this(dataSource, null);
+    }
+
+    public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        super(dataSource, schema);
+    }
+
+    @Override
+    public String getSchema()
+    {
+        return isSchemaNotEmpty() ? super.getSchema().toUpperCase() : null;
     }
 
     @Override
@@ -148,15 +159,25 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     @Override
     public ResultSet getTables(Connection conn) throws SQLException
     {
-        DatabaseMetaData metaData = conn.getMetaData();
-        return metaData.getTables(null, metaData.getUserName(), "%", new String[]{"TABLE"});
+        final DatabaseMetaData metaData = conn.getMetaData();
+        final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
+        return metaData.getTables(null, schemaPattern, "%", new String[]{"TABLE"});
     }
 
     @Override
     public ResultSet getSequences(Connection conn) throws SQLException
     {
-        DatabaseMetaData metaData = conn.getMetaData();
-        return metaData.getTables(null, metaData.getUserName(), "%", new String[]{"SEQUENCE"});
+        final DatabaseMetaData metaData = conn.getMetaData();
+        final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
+        return metaData.getTables(null, schemaPattern, "%", new String[]{"SEQUENCE"});
+    }
+
+    @Override
+    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException
+    {
+        final DatabaseMetaData metaData = connection.getMetaData();
+        final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
+        return metaData.getImportedKeys(null, schemaPattern, tableName);
     }
 
     @Override
@@ -304,7 +325,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	protected String renderAlterTableDropKey(DDLForeignKey key) {
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
-		back.append(processID(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
 		return back.toString();
 	}

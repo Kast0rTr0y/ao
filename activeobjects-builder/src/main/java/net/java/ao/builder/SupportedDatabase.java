@@ -47,7 +47,7 @@ enum SupportedDatabase
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
-                    return new OracleDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                    return new OracleDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             },
     POSTGRESQL("jdbc:postgresql", "org.postgresql.Driver")

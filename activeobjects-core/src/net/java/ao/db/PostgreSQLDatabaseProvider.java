@@ -167,7 +167,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, schema, null, new String[] {"TABLE"});
+		return conn.getMetaData().getTables(null, getSchema(), null, new String[] {"TABLE"});
 	}
 
 	@Override
@@ -242,7 +242,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
             final String triggerName = triggerName(table, field);
 
-            back.append("CREATE FUNCTION ").append(schema != null ? schema + "." + triggerName : triggerName).append("()");
+            back.append("CREATE FUNCTION ").append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
             back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
 			back.append("    NEW.").append(processID(field.getName())).append(" := ").append(renderValue(onUpdate));
             back.append(";\n    RETURN NEW;\nEND;\n$").append(triggerName).append("$ LANGUAGE plpgsql");
@@ -264,7 +264,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
             back.append("CREATE TRIGGER ").append(triggerName).append('\n');
             back.append(" BEFORE UPDATE OR INSERT ON ").append(withSchema(table.getName())).append('\n');
 			back.append("    FOR EACH ROW EXECUTE PROCEDURE ");
-            back.append(schema != null ? schema + "." + triggerName : triggerName).append("()");
+            back.append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
 
             return back.toString();
 		}
@@ -423,7 +423,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION " + (schema != null ? schema + "." + functionName : functionName)+ " CASCADE";
+        return "DROP FUNCTION " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
     }
 
     @Override

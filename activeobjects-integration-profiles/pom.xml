@@ -54,6 +54,22 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>${mysql.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>postgres</id>
@@ -70,6 +86,22 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                                <version>${postgres.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>oracle</id>
@@ -86,6 +118,25 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.oracle</groupId>
+                                <artifactId>ojdbc14</artifactId>
+                                <version>10.2.0.4</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>oracle5</id>
@@ -102,6 +153,25 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.oracle</groupId>
+                                <artifactId>ojdbc5</artifactId>
+                                <version>${oracle.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>oracle6</id>
@@ -118,6 +188,25 @@
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <schema>ao_schema</schema>
+                        </configuration>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.oracle</groupId>
+                                <artifactId>ojdbc6</artifactId>
+                                <version>${oracle.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>sqlserver</id>
