@@ -53,24 +53,23 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             public void evaluate() throws Throwable
             {
                 before(method);
+                final boolean useTransaction = useTransaction(method);
+                Connection c = null;
                 try
                 {
-                    final boolean useTransaction = useTransaction(method);
-                    Connection c = null;
                     if (useTransaction)
                     {
                         c = entityManager.getProvider().startTransaction();
                     }
 
                     base.evaluate();
-
-                    if (useTransaction)
-                    {
-                        entityManager.getProvider().rollbackTransaction(c);
-                    }
                 }
                 finally
                 {
+                    if (useTransaction && c != null)
+                    {
+                        entityManager.getProvider().rollbackTransaction(c);
+                    }
                     after(method);
                 }
             }
