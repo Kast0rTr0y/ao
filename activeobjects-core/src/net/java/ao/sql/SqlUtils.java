@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  */
 public final class SqlUtils
 {
-    public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*((=|>|<|<>|LIKE|like|BETWEEN|between|IS|is|(?<!((IS|AND)\\s{1,10}))NOT|(?<!(NOT\\s{1,10}))IN|(?<!(is\\s{1,10}))not|(?<!(not\\s{1,10}))in)(\\s|\\()))");
+    public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*((=|!=|>|<|<>|LIKE|like|BETWEEN|between|IS|is|(?<!((IS|AND)\\s{1,10}))NOT|(?<!(NOT\\s{1,10}))IN|(?<!(is\\s{1,10}))not|(?<!(not\\s{1,10}))in)(\\s|\\()))");
     public static final Pattern ON_CLAUSE = Pattern.compile("(?:(\\w+\\.)?(\\w+))(?:\\s*=\\s*)(?:(\\w+\\.)?(\\w+))");
     public static final Pattern ORDER_CLAUSE = Pattern.compile("(\\w+)(?=\\s*(ASC|DESC))?");
     public static final Pattern GROUP_BY_CLAUSE = Pattern.compile("(\\w+)(?:,(\\w+))*");

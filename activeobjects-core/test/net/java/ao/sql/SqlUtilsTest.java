@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public final class SqlUtilsTest
 {
     private static final TestIdProcessor TEST_ID_PROCESSOR = new TestIdProcessor();
-    private static final String[] SEPARATORS = new String[]{"=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
+    private static final String[] SEPARATORS = new String[]{"=", "!=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
 
     @Test
     public void testWhereClause()
