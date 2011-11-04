@@ -2,12 +2,10 @@ package net.java.ao.it;
 
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
-import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.converters.NameConverters;
-import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -65,6 +63,16 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
         final EntityVersion3 v3 = entityManager.create(EntityVersion3.class);
         assertEquals(isOracle() ? null : "", v3.getDescription()); // oracle treats '' as NULL
 
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                entityManager.migrate(EntityVersion3.class);
+                return null;
+            }
+        });
+
         checkSqlExecuted(new Callable<Object>()
         {
             @Override
@@ -77,6 +85,22 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
 
         final EntityVersion2 v2_2 = entityManager.create(EntityVersion2.class);
         assertEquals(null, v2_2.getDescription());
+    }
+
+    @Test
+    public void testNoDefaultNotMigrated() throws Exception
+    {
+        entityManager.migrate(EntityVersion2.class);
+
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                entityManager.migrate(EntityVersion2.class);
+                return null;
+            }
+        });
     }
 
     static interface TestEntity extends Entity
