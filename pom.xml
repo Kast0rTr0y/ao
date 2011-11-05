@@ -31,9 +31,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:svn:https://svn.java.net/svn/activeobjects~svn/branches/v0.9-m41.x</connection>
-        <developerConnection>scm:svn:https://svn.java.net/svn/activeobjects~svn/branches/v0.9-m41.x</developerConnection>
-        <url>http://java.net/projects/activeobjects/sources/svn/show/branches/v0.9-m41.x</url>
+        <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
+        <url>https://bitbucket.org/activeobjects/ao/src</url>
     </scm>
 
     <developers>
