@@ -34,13 +34,20 @@ class BigIntType extends DatabaseType<Long> {
 	public String getDefaultName() {
 		return "BIGINT";
 	}
-	
-	@Override
-	public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, String field) throws SQLException {
-		return res.getLong(field);
-	}
 
-	@Override
+    @Override
+    public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, int index) throws SQLException
+    {
+        return res.getLong(index);
+    }
+
+    @Override
+    public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, String field) throws SQLException
+    {
+        return res.getLong(field);
+    }
+
+    @Override
 	public Long defaultParseValue(String value) {
 		return Long.parseLong(value);
 	}
