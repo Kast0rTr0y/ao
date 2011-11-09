@@ -54,8 +54,6 @@ final class DelegateConnectionHandler implements InvocationHandler
             close();
             return Void.TYPE;
         }
-
-
         else if (isIsClosedMethod(method))
         {
             return isClosed();
@@ -87,11 +85,18 @@ final class DelegateConnectionHandler implements InvocationHandler
         return delegate.isClosed();
     }
 
-    private Object delegate(Method method, Object[] args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    private Object delegate(Method method, Object[] args) throws NoSuchMethodException, IllegalAccessException, Throwable
     {
         final Method m = delegate.getClass().getMethod(method.getName(), method.getParameterTypes());
         m.setAccessible(true);
-        return m.invoke(delegate, args);
+        try
+        {
+            return m.invoke(delegate, args);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw e.getCause();
+        }
     }
 
     public static DelegateConnection newInstance(Connection c)
