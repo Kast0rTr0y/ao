@@ -42,7 +42,7 @@ class RelatedEntityImpl {
 	public RelatedEntity<?>[] getRelated() throws IOException, SQLException
     {
 		Class<? extends RawEntity<Object>> type = entity.getEntityType();
-		String table = entity.getEntityManager().getTableNameConverter().getName(type);
+		String table = entity.getEntityManager().getNameConverters().getTableNameConverter().getName(type);
 		List<String> indexFields = Common.getSearchableFields(entity.getEntityManager(), type);
 		String[] searchFields = new String[indexFields.size()];
 		
@@ -62,7 +62,7 @@ class RelatedEntityImpl {
 			more.setAnalyzer(((SearchableEntityManager) entity.getEntityManager()).getAnalyzer());
 			
 			int docID = -1;
-			String primaryKeyField = Common.getPrimaryKeyField(entity.getEntityType(), entity.getEntityManager().getFieldNameConverter());
+			String primaryKeyField = Common.getPrimaryKeyField(entity.getEntityType(), entity.getEntityManager().getNameConverters().getFieldNameConverter());
 			Object primaryKeyValue = Common.getPrimaryKeyValue(entity);
 			
 			TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField, 	

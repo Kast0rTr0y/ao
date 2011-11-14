@@ -16,8 +16,17 @@
 package net.java.ao;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.OnUpdate;
+import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
@@ -157,39 +166,40 @@ public abstract class DatabaseProvider
      * doubtful that any implementations will have to override this method as the
      * default implementation is database-agnostic.
      *
+     * @param nameConverters
      * @param action The database-agnostic action to render.
      * @return An array of DDL statements specific to the database in question.
      * @see #renderTable(DDLTable)
-     * @see #renderFunctions(DDLTable)
-     * @see #renderTriggers(DDLTable)
-     * @see #renderSequences(DDLTable)
-     * @see #renderDropTriggers(DDLTable)
-     * @see #renderDropFunctions(DDLTable)
-     * @see #renderDropSequences(DDLTable)
+     * @see #renderFunctions(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
+     * @see #renderTriggers(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable)
+     * @see #renderSequences(net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable)
+     * @see #renderDropTriggers(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
+     * @see #renderDropFunctions(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
+     * @see #renderDropSequences(net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable)
      * @see #renderDropTable(DDLTable)
-     * @see #renderAlterTableAddColumn(DDLTable, DDLField)
-     * @see #renderAlterTableChangeColumn(DDLTable, DDLField, DDLField)
-     * @see #renderAlterTableDropColumn(DDLTable, DDLField)
+     * @see #renderAlterTableAddColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderAlterTableChangeColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)
+     * @see #renderAlterTableDropColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderAlterTableAddKey(DDLForeignKey)
      * @see #renderAlterTableDropKey(DDLForeignKey)
      */
-    public final String[] renderAction(DDLAction action)
+    public final String[] renderAction(NameConverters nameConverters, DDLAction action)
     {
-        List<String> back = new ArrayList<String>();
+        final List<String> back = new ArrayList<String>();
 
         switch (action.getActionType())
         {
             case CREATE:
                 back.add(renderTable(action.getTable()));
-                back.addAll(Arrays.asList(renderFunctions(action.getTable())));
-                back.addAll(Arrays.asList(renderSequences(action.getTable())));
-                back.addAll(Arrays.asList(renderTriggers(action.getTable())));
+                back.addAll(renderFunctions(nameConverters.getTriggerNameConverter(), action.getTable()));
+                back.addAll(renderSequences(nameConverters.getSequenceNameConverter(), action.getTable()));
+                back.addAll(renderTriggers(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), action.getTable()));
 
                 for (DDLIndex index : action.getTable().getIndexes())
                 {
                     DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
                     newAction.setIndex(index);
-                    back.addAll(Arrays.asList(renderAction(newAction)));
+                    back.addAll(Arrays.asList(renderAction(nameConverters, newAction)));
                 }
                 break;
 
@@ -198,17 +208,17 @@ public abstract class DatabaseProvider
                 {
                     DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
                     newAction.setIndex(index);
-                    back.addAll(Arrays.asList(renderAction(newAction)));
+                    back.addAll(Arrays.asList(renderAction(nameConverters, newAction)));
                 }
 
-                back.addAll(Arrays.asList(renderDropTriggers(action.getTable())));
-                back.addAll(Arrays.asList(renderDropSequences(action.getTable())));
-                back.addAll(Arrays.asList(renderDropFunctions(action.getTable())));
+                back.addAll(renderDropTriggers(nameConverters.getTriggerNameConverter(), action.getTable()));
+                back.addAll(renderDropSequences(nameConverters.getSequenceNameConverter(), action.getTable()));
+                back.addAll(Arrays.asList(renderDropFunctions(nameConverters.getTriggerNameConverter(), action.getTable())));
                 back.add(renderDropTable(action.getTable()));
                 break;
 
             case ALTER_ADD_COLUMN:
-                back.addAll(Arrays.asList(renderAlterTableAddColumn(action.getTable(), action.getField())));
+                back.addAll(Arrays.asList(renderAlterTableAddColumn(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), action.getTable(), action.getField())));
 
                 for (DDLIndex index : action.getTable().getIndexes())
                 {
@@ -216,13 +226,13 @@ public abstract class DatabaseProvider
                     {
                         DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
                         newAction.setIndex(index);
-                        back.addAll(Arrays.asList(renderAction(newAction)));
+                        back.addAll(Arrays.asList(renderAction(nameConverters, newAction)));
                     }
                 }
                 break;
 
             case ALTER_CHANGE_COLUMN:
-                back.addAll(renderAlterTableChangeColumn(action.getTable(), action.getOldField(), action.getField()));
+                back.addAll(renderAlterTableChangeColumn(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), action.getTable(), action.getOldField(), action.getField()));
                 break;
 
             case ALTER_DROP_COLUMN:
@@ -232,11 +242,11 @@ public abstract class DatabaseProvider
                     {
                         DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
                         newAction.setIndex(index);
-                        back.addAll(Arrays.asList(renderAction(newAction)));
+                        back.addAll(Arrays.asList(renderAction(nameConverters, newAction)));
                     }
                 }
 
-                back.addAll(Arrays.asList(renderAlterTableDropColumn(action.getTable(), action.getField())));
+                back.addAll(Arrays.asList(renderAlterTableDropColumn(nameConverters.getTriggerNameConverter(), action.getTable(), action.getField())));
                 break;
 
             case ALTER_ADD_KEY:
@@ -248,11 +258,11 @@ public abstract class DatabaseProvider
                 break;
 
             case CREATE_INDEX:
-                back.add(renderCreateIndex(action.getIndex()));
+                back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
                 break;
 
             case DROP_INDEX:
-                back.add(renderDropIndex(action.getIndex()));
+                back.add(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
                 break;
             case INSERT:
                 back.add(renderInsert(action.getTable(), action.getValues()));
@@ -794,7 +804,6 @@ public abstract class DatabaseProvider
 
         transactionThreadLocal.remove();
         return c;
-
     }
 
     public final void rollbackTransaction(Connection c) throws SQLException
@@ -808,7 +817,9 @@ public abstract class DatabaseProvider
     void setCloseable(Connection connection, boolean closeable)
     {
         if (connection != null && connection instanceof DelegateConnection)
+        {
             ((DelegateConnection) connection).setCloseable(closeable);
+        }
     }
 
     /**
@@ -1002,12 +1013,14 @@ public abstract class DatabaseProvider
      * not only dropping the table and the associated triggers, but also
      * the functions associated with the triggers themselves.
      *
+     *
+     * @param triggerNameConverter
      * @param table The table representation against which all functions which
      * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
      *         required functions.
      */
-    protected String[] renderDropFunctions(DDLTable table)
+    protected String[] renderDropFunctions(TriggerNameConverter triggerNameConverter, DDLTable table)
     {
         return new String[0];
     }
@@ -1025,14 +1038,17 @@ public abstract class DatabaseProvider
      * functions will be dropped using another delegate method and need
      * not be dealt with in this method's implementation.
      *
+     *
+     *
+     * @param triggerNameConverter
      * @param table The table representation against which all triggers which
      * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
      *         required triggers.
      */
-    protected String[] renderDropTriggers(DDLTable table)
+    protected List<String> renderDropTriggers(TriggerNameConverter triggerNameConverter, DDLTable table)
     {
-        return new String[0];
+        return ImmutableList.of();
     }
 
     /**
@@ -1041,14 +1057,15 @@ public abstract class DatabaseProvider
      * implementation is to return an empty array.  This is an Oracle specific
      * method used for primary key management
      *
+     * @param sequenceNameConverter
      * @param table The table representation against which all triggers which
      * correspond (directly or indirectly) must be dropped.
      * @return An array of database-specific DDL statement(s) which drop the
      *         required triggers.
      */
-    protected String[] renderDropSequences(DDLTable table)
+    protected List<String> renderDropSequences(SequenceNameConverter sequenceNameConverter, DDLTable table)
     {
-        return new String[0];
+        return ImmutableList.of();
     }
 
     /**
@@ -1060,25 +1077,34 @@ public abstract class DatabaseProvider
      * a trigger is created.</p>
      * <p/>
      * <p>Most of the work for this functionality is delegated to the
-     * {@link #renderFunctionForField(DDLTable, DDLField)} method.</p>
+     * {@link #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
      *
+     *
+     *
+     * @param triggerNameConverter
      * @param table The table for which the functions must be generated.
      * @return An array of DDL statements to execute.
      */
-    protected String[] renderFunctions(DDLTable table)
+    protected List<String> renderFunctions(final TriggerNameConverter triggerNameConverter, final DDLTable table)
     {
-        List<String> back = new ArrayList<String>();
-
-        for (DDLField field : table.getFields())
+        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, String>()
         {
-            String function = renderFunctionForField(table, field);
-            if (function != null)
+            @Override
+            public String apply(DDLField field)
             {
-                back.add(function);
+                return renderFunctionForField(triggerNameConverter, table, field);
             }
-        }
+        });
+    }
 
-        return back.toArray(new String[back.size()]);
+    protected final List<String> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, String> render)
+    {
+        final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
+        return ImmutableList.copyOf(
+                Iterables.filter(
+                        Iterables.transform(
+                                Iterables.filter(fields, filter), render),
+                        Predicates.<String>notNull()));
     }
 
     /**
@@ -1093,39 +1119,42 @@ public abstract class DatabaseProvider
      * used to provide the functionality.</p>
      * <p/>
      * <p>Most of the work for this functionality is delegated to the
-     * {@link #renderTriggerForField(DDLTable, DDLField)} method.</p>
+     * {@link #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
      *
-     * @param table The table for which the triggers must be generated.
-     * @return An array of DDL statements to execute.
+     *
+     *
+     * @param triggerNameConverter
+     * @param sequenceNameConverter
+     *@param table The table for which the triggers must be generated.  @return An array of DDL statements to execute.
      */
-    protected String[] renderTriggers(DDLTable table)
+    protected List<String> renderTriggers(final TriggerNameConverter triggerNameConverter,
+                                          final SequenceNameConverter sequenceNameConverter,
+                                          final DDLTable table)
     {
-        List<String> back = new ArrayList<String>();
-
-        for (DDLField field : table.getFields())
-        {
-            String trigger = renderTriggerForField(table, field);
-            if (trigger != null)
-            {
-                back.add(trigger);
-            }
-        }
-
-        return back.toArray(new String[back.size()]);
+        return renderFields(
+                table,
+                Predicates.<DDLField>alwaysTrue(),
+                new Function<DDLField, String>()
+                {
+                    @Override
+                    public String apply(DDLField field)
+                    {
+                        return renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
+                    }
+                });
     }
 
     /**
      * <p>Generates the database-specific DDL statements required to create
-     * all of the sequences necessary for the given table. This is an Oracle specific
-     * method used for primary key management
+     * all of the sequences necessary for the given table.</p>
      *
+     * @param sequenceNameConverter the naming strategy for sequences
      * @param table The table for which the triggers must be generated.
-     * @return An array of DDL statements to execute.
+     * @return DDL statements to execute.
      */
-    protected String[] renderSequences(DDLTable table)
+    protected List<String> renderSequences(SequenceNameConverter sequenceNameConverter, DDLTable table)
     {
-
-        return new String[0];
+        return ImmutableList.of();
     }
 
     /**
@@ -1140,25 +1169,28 @@ public abstract class DatabaseProvider
      * their values are not <code>null</code>.  Because of this, very
      * few database providers will need to override this method.
      *
-     * @param table The table which should receive the new column.
-     * @param field The column to add to the specified table.
-     * @return An array of DDL statements to execute.
-     * @see #renderFunctionForField(DDLTable, DDLField)
-     * @see #renderTriggerForField(DDLTable, DDLField)
+     *
+     *
+     * @param triggerNameConverter
+     * @param sequenceNameConverter
+     *@param table The table which should receive the new column.
+     * @param field The column to add to the specified table.   @return An array of DDL statements to execute.
+     * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String[] renderAlterTableAddColumn(DDLTable table, DDLField field)
+    protected String[] renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
     {
         List<String> back = new ArrayList<String>();
 
         back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(table, field, new RenderFieldOptions(true, true)));
 
-        String function = renderFunctionForField(table, field);
+        String function = renderFunctionForField(triggerNameConverter, table, field);
         if (function != null)
         {
             back.add(function);
         }
 
-        String trigger = renderTriggerForField(table, field);
+        final String trigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
         if (trigger != null)
         {
             back.add(trigger);
@@ -1188,29 +1220,33 @@ public abstract class DatabaseProvider
      * <p>For maximum flexibility, the default implementation of this method
      * only deals with the dropping and addition of functions and triggers.
      * The actual generation of the ALTER TABLE statement is done in the
-     * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, boolean)}
+     * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}
      * method.</p>
      *
-     * @param table The table containing the column to change.
+     *
+     *
+     *
+     * @param triggerNameConverter
+     * @param sequenceNameConverter
+     *@param table The table containing the column to change.
      * @param oldField The old column definition.
-     * @param field The new column definition (defining the resultant DDL).
-     * @return An array of DDL statements to be executed.
-     * @see #getTriggerNameForField(DDLTable, DDLField)
-     * @see #getFunctionNameForField(DDLTable, DDLField)
-     * @see #renderFunctionForField(DDLTable, DDLField)
-     * @see #renderTriggerForField(DDLTable, DDLField)
+     * @param field The new column definition (defining the resultant DDL).    @return An array of DDL statements to be executed.
+     * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field)
     {
         final List<String> back = new ArrayList<String>();
 
-        final String trigger = getTriggerNameForField(table, oldField);
+        final String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
         if (trigger != null)
         {
             back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
         }
 
-        final String function = getFunctionNameForField(table, oldField);
+        final String function = getFunctionNameForField(triggerNameConverter, table, oldField);
         if (function != null)
         {
             back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
@@ -1218,13 +1254,13 @@ public abstract class DatabaseProvider
 
         back.add(renderAlterTableChangeColumnStatement(table, oldField, field, renderFieldOptionsInAlterColumn()));
 
-        final String toRenderFunction = renderFunctionForField(table, field);
+        final String toRenderFunction = renderFunctionForField(triggerNameConverter, table, field);
         if (toRenderFunction != null)
         {
             back.add(toRenderFunction);
         }
 
-        final String toRenderTrigger = renderTriggerForField(table, field);
+        final String toRenderTrigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
         if (toRenderTrigger != null)
         {
             back.add(toRenderTrigger);
@@ -1243,7 +1279,7 @@ public abstract class DatabaseProvider
      * changing a column.  This method must only generate a single statement as it
      * does not need to concern itself with functions or triggers associated with
      * the column.  This method is only to be called as a delegate for the
-     * {@link #renderAlterTableChangeColumn(DDLTable, DDLField, DDLField)} method,
+     * {@link #renderAlterTableChangeColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)} method,
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
@@ -1272,18 +1308,20 @@ public abstract class DatabaseProvider
      * triggers, it may be required to override this method, even if the
      * syntax to drop columns is standard.
      *
+     *
+     * @param triggerNameConverter
      * @param table The table from which to drop the column.
      * @param field The column definition to remove from the table.
      * @return An array of DDL statements to be executed.
-     * @see #getTriggerNameForField(DDLTable, DDLField)
-     * @see #getFunctionNameForField(DDLTable, DDLField)
+     * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String[] renderAlterTableDropColumn(DDLTable table, DDLField field)
+    protected String[] renderAlterTableDropColumn(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
         List<String> back = new ArrayList<String>();
         StringBuilder current = new StringBuilder();
 
-        String trigger = getTriggerNameForField(table, field);
+        String trigger = getTriggerNameForField(triggerNameConverter, table, field);
         if (trigger != null)
         {
             current.setLength(0);
@@ -1292,7 +1330,7 @@ public abstract class DatabaseProvider
             back.add(current.toString());
         }
 
-        String function = getFunctionNameForField(table, field);
+        String function = getFunctionNameForField(triggerNameConverter, table, field);
         if (function != null)
         {
             current.setLength(0);
@@ -1357,16 +1395,19 @@ public abstract class DatabaseProvider
      * database in question does not support indexes, a warning should
      * be printed to stderr and <code>null</code> returned.
      *
+     *
+     *
+     * @param indexNameConverter
      * @param index The index to create.  This single instance contains all
      * of the data necessary to create the index, thus no separate
      * parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
-    protected String renderCreateIndex(DDLIndex index)
+    protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("CREATE INDEX ").append(processID(index.getName()));
+        back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
         back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
 
         return back.toString();
@@ -1379,16 +1420,19 @@ public abstract class DatabaseProvider
      * database in question does not support indexes, a warning should
      * be printed to stderr and <code>null</code> returned.
      *
+     *
+     *
+     * @param indexNameConverter
      * @param index The index to drop.  This single instance contains all
      * of the data necessary to drop the index, thus no separate
      * parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
-    protected String renderDropIndex(DDLIndex index)
+    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("DROP INDEX ").append(processID(index.getName()));
+        back.append("DROP INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
         back.append(" ON ").append(withSchema(index.getTable()));
 
         return back.toString();
@@ -1435,7 +1479,6 @@ public abstract class DatabaseProvider
      * necessary to override this method directly.  An exception to this
      * would be a database like PostgreSQL which requires a different type
      * for auto-incremented fields.</p>
-     *
      *
      * @param table
      * @param field The field to be rendered.
@@ -1740,15 +1783,17 @@ public abstract class DatabaseProvider
      * triggers on a field to allow for certain functionality (like
      * ON UPDATE).  The default implementation returns <code>null</code>.
      *
+     *
+     * @param triggerNameConverter
      * @param table The table which contains the field for which a trigger
      * may or may not exist.
      * @param field The field for which a previous migration may have
      * created a trigger.
      * @return The unique name of the trigger which was created for the
      *         field, or <code>null</code> if none.
-     * @see #renderTriggerForField(DDLTable, DDLField)
+     * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String getTriggerNameForField(DDLTable table, DDLField field)
+    protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1759,15 +1804,18 @@ public abstract class DatabaseProvider
      * require the use of triggers to provide functionality such as ON
      * UPDATE.  The default implementation returns <code>null</code>.
      *
-     * @param table The table containing the field for which a trigger
+     *
+     *
+     * @param triggerNameConverter
+     * @param sequenceNameConverter
+     *@param table The table containing the field for which a trigger
      * may need to be rendered.
      * @param field The field for which the trigger should be rendered,
-     * if any.
-     * @return A database-specific DDL statement creating a trigger for
+ * if any.   @return A database-specific DDL statement creating a trigger for
      *         the field in question, or <code>null</code>.
-     * @see #getTriggerNameForField(DDLTable, DDLField)
+     * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String renderTriggerForField(DDLTable table, DDLField field)
+    protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1781,6 +1829,8 @@ public abstract class DatabaseProvider
      * PostgreSQL).  Few providers will need to override the default
      * implementation of this method, which returns <code>null</code>.
      *
+     *
+     * @param triggerNameConverter
      * @param table The table which contains the field for which a function
      * may or may not exist.
      * @param field The field for which a previous migration may have
@@ -1788,9 +1838,10 @@ public abstract class DatabaseProvider
      * @return The unique name of the function which was created for the
      *         field, or <code>null</code> if none.
      */
-    protected String getFunctionNameForField(DDLTable table, DDLField field)
+    protected String getFunctionNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
-        return null;
+        final String triggerName = getTriggerNameForField(triggerNameConverter, table, field);
+        return triggerName != null ? triggerName + "()" : null;
     }
 
     /**
@@ -1800,15 +1851,18 @@ public abstract class DatabaseProvider
      * provide functionality such as ON UPDATE (e.g. PostgreSQL).  The
      * default implementation returns <code>null</code>.
      *
+     *
+     *
+     * @param triggerNameConverter
      * @param table The table containing the field for which a function
      * may need to be rendered.
      * @param field The field for which the function should be rendered,
      * if any.
      * @return A database-specific DDL statement creating a function for
      *         the field in question, or <code>null</code>.
-     * @see #getFunctionNameForField(DDLTable, DDLField)
+     * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String renderFunctionForField(DDLTable table, DDLField field)
+    protected String renderFunctionForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -2159,17 +2213,7 @@ public abstract class DatabaseProvider
 
     public final String shorten(String id)
     {
-        int maxIDLength = getMaxIDLength();
-        if (id.length() > maxIDLength)
-        {
-            int tailLength = maxIDLength / 3;
-            int hash = (int) (id.hashCode() % Math.round(Math.pow(10, tailLength)));
-            hash = Math.abs(hash);
-
-            id = id.substring(0, maxIDLength - tailLength - 1);
-            id += hash;
-        }
-        return id;
+        return Common.shorten(id, getMaxIDLength());
     }
 
     public final String quote(String id)

@@ -33,7 +33,9 @@ import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
+import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -190,9 +192,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = super.renderAlterTableChangeColumn(table, oldField, field);
+        final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, table, oldField, field);
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
@@ -387,7 +389,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderTriggerForField(DDLTable table, DDLField field) {
+	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
@@ -404,7 +406,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
 			}
 
-			back.append("CREATE TRIGGER ").append(processID(table.getName() + '_' + field.getName() + "_onupdate") + "\n");
+			back.append("CREATE TRIGGER ").append(processID(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + "\n");
 			back.append("ON ").append(withSchema(table.getName())).append("\n");
 			back.append("FOR UPDATE\nAS\n");
 			back.append("    UPDATE ").append(withSchema(table.getName())).append(" SET ").append(processID(field.getName()));
@@ -414,7 +416,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			return back.toString();
 		}
 
-		return super.renderTriggerForField(table, field);
+		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
 	@Override
@@ -428,17 +430,17 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String[] renderAlterTableAddColumn(DDLTable table, DDLField field) {
+	protected String[] renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
 		List<String> back = new ArrayList<String>();
 
 		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(table, field, new RenderFieldOptions(true, true)));
 
-		String function = renderFunctionForField(table, field);
+		String function = renderFunctionForField(triggerNameConverter, table, field);
 		if (function != null) {
 			back.add(function);
 		}
 
-		String trigger = renderTriggerForField(table, field);
+		String trigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 		if (trigger != null) {
 			back.add(trigger);
 		}

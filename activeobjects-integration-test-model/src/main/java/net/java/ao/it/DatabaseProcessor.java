@@ -226,7 +226,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
     private Message addMessage(EntityManager entityManager, Address to, Address from, final String content) throws Exception
     {
-        final String contents = Common.convert(entityManager.getFieldNameConverter(), "contents");
+        final String contents = Common.convert(entityManager.getNameConverters().getFieldNameConverter(), "contents");
         final Message message = entityManager.create(Message.class, new DBParam(contents, content));
         message.setTo(to);
         message.setFrom(from);

@@ -225,11 +225,11 @@ public final class Common {
 		List<String> back = new ArrayList<String>();
 
 		for (Method m : type.getMethods()) {
-			Searchable annot = getAnnotationDelegate(manager.getFieldNameConverter(), m).getAnnotation(Searchable.class);
+			Searchable annot = getAnnotationDelegate(manager.getNameConverters().getFieldNameConverter(), m).getAnnotation(Searchable.class);
 
 			if (annot != null) {
 				Class<?> attributeType = Common.getAttributeTypeFromMethod(m);
-				String name = manager.getFieldNameConverter().getName(m);
+				String name = manager.getNameConverters().getFieldNameConverter().getName(m);
 
 				// don't index Entity fields
 				if (name != null && !Common.interfaceInheritsFrom(attributeType, RawEntity.class) && !back.contains(name)) {
@@ -544,5 +544,21 @@ public final class Common {
                 // ignored
             }
         }
+    }
+
+    /**
+     * Shortens a String to the given length if necessary. The process of shortening is stable.
+     */
+    public static String shorten(String s, int length)
+    {
+        if (s.length() <= length)
+        {
+            return s;
+        }
+
+        final int tailLength = length / 3;
+        final int hash = Math.abs((int) (s.hashCode() % Math.round(Math.pow(10, tailLength))));
+
+        return s.substring(0, length - tailLength - 1) + hash;
     }
 }

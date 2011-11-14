@@ -3,6 +3,7 @@ package net.java.ao.schema.helper;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.sql.AbstractCloseableResultSetMetaData;
 import net.java.ao.sql.CloseableResultSetMetaData;
 import net.java.ao.types.DatabaseType;
@@ -24,11 +25,13 @@ import static net.java.ao.sql.SqlUtils.*;
 public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 {
     private final DatabaseProvider databaseProvider;
+    private final NameConverters nameConverters;
     private final SchemaConfiguration schemaConfiguration;
 
-    public DatabaseMetaDataReaderImpl(DatabaseProvider databaseProvider, SchemaConfiguration schemaConfiguration)
+    public DatabaseMetaDataReaderImpl(DatabaseProvider databaseProvider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration)
     {
         this.databaseProvider = databaseProvider;
+        this.nameConverters = nameConverters;
         this.schemaConfiguration = schemaConfiguration;
     }
 
@@ -161,7 +164,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private boolean isUsingSequence(List<String> sequenceNames, String tableName, String fieldName)
     {
-        return sequenceNames.contains(databaseProvider.processID(tableName + '_' + fieldName + "_SEQ"));
+        return sequenceNames.contains(databaseProvider.processID(nameConverters.getSequenceNameConverter().getName(tableName, fieldName)));
     }
 
     private FieldImpl newField(String fieldName, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull)

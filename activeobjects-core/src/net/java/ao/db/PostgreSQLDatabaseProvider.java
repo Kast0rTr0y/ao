@@ -22,6 +22,9 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -43,10 +46,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author Daniel Spiewak
- */
-public class PostgreSQLDatabaseProvider extends DatabaseProvider {
+public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	private static final Set<String> RESERVED_WORDS = new HashSet<String>() {
 		{
 			addAll(Arrays.asList("ABS", "ABSOLUTE", "ACTION", "ADD", "ADMIN", "AFTER", "AGGREGATE",
@@ -235,12 +235,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderFunctionForField(DDLTable table, DDLField field) {
+	protected String renderFunctionForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
 
-            final String triggerName = triggerName(table, field);
+            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
 
             back.append("CREATE FUNCTION ").append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
             back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
@@ -250,16 +250,16 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			return back.toString();
 		}
 
-		return super.renderFunctionForField(table, field);
+		return super.renderFunctionForField(triggerNameConverter, table, field);
 	}
 
     @Override
-	protected String renderTriggerForField(DDLTable table, DDLField field) {
+	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
 
-            final String triggerName = triggerName(table, field);
+            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
 
             back.append("CREATE TRIGGER ").append(triggerName).append('\n');
             back.append(" BEFORE UPDATE OR INSERT ON ").append(withSchema(table.getName())).append('\n');
@@ -269,13 +269,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
             return back.toString();
 		}
 
-		return super.renderTriggerForField(table, field);
+		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
-
-    private String triggerName(DDLTable table, DDLField field)
-    {
-        return table.getName() + '_' + field.getName() + "_onupdate";
-    }
 
 	@Override
 	protected String renderOnUpdate(DDLField field) {
@@ -300,17 +295,17 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
+	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field) {
 		final List<String> back = new ArrayList<String>();
 
-		String trigger = getTriggerNameForField(table, oldField);
+		String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
 		if (trigger != null) {
 			StringBuilder str = new StringBuilder();
 			str.append("DROP TRIGGER ").append(processID(trigger));
 			back.add(str.toString());
 		}
 
-		String function = getFunctionNameForField(table, oldField);
+		String function = getFunctionNameForField(triggerNameConverter, table, oldField);
 		if (function != null) {
 			StringBuilder str = new StringBuilder();
 			str.append("DROP FUNCTION ").append(withSchema(function));
@@ -375,16 +370,16 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			System.err.println("WARNING: PostgreSQL doesn't fully support CHANGE TABLE statements");
 			System.err.println("WARNING: Data contained in column '" + table.getName() + "." + oldField.getName() + "' will be lost");
 
-			back.addAll(Arrays.asList(renderAlterTableDropColumn(table, oldField)));
-			back.addAll(Arrays.asList(renderAlterTableAddColumn(table, field)));
+			back.addAll(Arrays.asList(renderAlterTableDropColumn(triggerNameConverter, table, oldField)));
+			back.addAll(Arrays.asList(renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, table, field)));
 		}
 
-		String toRender = renderFunctionForField(table, field);
+		String toRender = renderFunctionForField(triggerNameConverter, table, field);
 		if (toRender != null) {
 			back.add(toRender);
 		}
 
-		toRender = renderTriggerForField(table, field);
+		toRender = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 		if (toRender != null) {
 			back.add(toRender);
 		}
@@ -401,22 +396,21 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return back.toString();
 	}
 
-	@Override
-	protected String renderDropIndex(DDLIndex index) {
-		StringBuilder back = new StringBuilder("DROP INDEX ");
+    @Override
+    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        return new StringBuilder("DROP INDEX ")
+                .append(processID(indexNameConverter.getName(index.getTable(), index.getField())))
+                .toString();
+    }
 
-		back.append(processID(index.getName()));
-
-		return back.toString();
-	}
-
-    protected String[] renderDropFunctions(DDLTable table)
+    protected String[] renderDropFunctions(TriggerNameConverter triggerNameConverter, DDLTable table)
     {
         final List<String> dropFunctions = new ArrayList<String>();
         for (DDLField field : table.getFields())
         {
             field.setOnUpdate(new Object()); // kind of a hack
-            dropFunctions.add(renderDropFunction(getFunctionNameForField(table, field)));
+            dropFunctions.add(renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field)));
         }
         return dropFunctions.toArray(new String[dropFunctions.size()]);
     }
@@ -426,25 +420,19 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
         return "DROP FUNCTION " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
     }
 
+
     @Override
-	protected String getFunctionNameForField(DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			return table.getName() + '_' + field.getName() + "_onupdate()";
-		}
+    protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
+    {
+        if (field.getOnUpdate() != null)
+        {
+            return triggerNameConverter.onUpdateName(table.getName(), field.getName());
+        }
 
-		return super.getFunctionNameForField(table, field);
-	}
+        return super.getTriggerNameForField(triggerNameConverter, table, field);
+    }
 
-	@Override
-	protected String getTriggerNameForField(DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			return table.getName() + '_' + field.getName() + "_onupdate";
-		}
-
-		return super.getTriggerNameForField(table, field);
-	}
-
-	@Override
+    @Override
 	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
 			boolean pkIdentity, String table, DBParam... params) throws SQLException {
 		T back = null;

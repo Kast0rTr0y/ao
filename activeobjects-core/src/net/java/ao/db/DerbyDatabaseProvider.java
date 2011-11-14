@@ -34,6 +34,9 @@ import java.util.regex.Pattern;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
@@ -189,7 +192,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String renderTriggerForField(DDLTable table, DDLField field) {
+	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
 		Object onUpdate = field.getOnUpdate();
 		if (onUpdate != null) {
 			StringBuilder back = new StringBuilder();
@@ -206,7 +209,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
 			}
 			
-			back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName()+ "_onupdate") + '\n');
+			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
 			back.append("    AFTER UPDATE ON ").append(withSchema(table.getName()));
 			back.append("\n    REFERENCING NEW AS inserted\n    FOR EACH ROW MODE DB2SQL\n        ");
 			back.append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(
@@ -218,16 +221,16 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 			return back.toString();
 		}
 		
-		return super.renderTriggerForField(table, field);
+		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 	
 	@Override
-	protected String getTriggerNameForField(DDLTable table, DDLField field) {
+	protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
 		if (field.getOnUpdate() != null) {
-			return processID(table.getName() + '_' + field.getName() + "_onupdate");
+			return processID(triggerNameConverter.onUpdateName(table.getName(), field.getName()));
 		}
 		
-		return super.getTriggerNameForField(table, field);
+		return super.getTriggerNameForField(triggerNameConverter, table, field);
 	}
 	
 	@Override
@@ -279,7 +282,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected List<String> renderAlterTableChangeColumn(DDLTable table, DDLField oldField, DDLField field) {
+	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field) {
 		logger.warn("Derby doesn't support CHANGE TABLE statements!");
 		logger.warn("Migration may not be entirely in sync as a result!");
 		
@@ -287,17 +290,17 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected String[] renderAlterTableDropColumn(DDLTable table, DDLField field) {
+	protected String[] renderAlterTableDropColumn(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
 		System.err.println("WARNING: Derby doesn't support ALTER TABLE DROP COLUMN statements");
 		
 		return new String[0];
 	}
 	
 	@Override
-	protected String renderDropIndex(DDLIndex index) {
+	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("DROP INDEX ");
 		
-		back.append(processID(index.getName()));
+		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
 		
 		return back.toString();
 	}

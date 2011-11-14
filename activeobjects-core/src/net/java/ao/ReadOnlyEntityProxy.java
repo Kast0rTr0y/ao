@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.TableNameConverter;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -145,8 +147,8 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         if (obj instanceof RawEntity<?>) {
             RawEntity<?> entity = (RawEntity<?>) obj;
             
-            String ourTableName = getManager().getTableNameConverter().getName(proxy.getEntityType());
-            String theirTableName = getManager().getTableNameConverter().getName(entity.getEntityType());
+            String ourTableName = getTableNameConverter().getName(proxy.getEntityType());
+            String theirTableName = getTableNameConverter().getName(entity.getEntityType());
 
             return Common.getPrimaryKeyValue(entity).equals(key) && theirTableName.equals(ourTableName);
         }
@@ -154,9 +156,19 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         return false;
     }
 
+    private TableNameConverter getTableNameConverter()
+    {
+        return getManager().getNameConverters().getTableNameConverter();
+    }
+
     public String toStringImpl() {
-        String pkFieldName = Common.getPrimaryKeyField(type, getManager().getFieldNameConverter());
-        return getManager().getTableNameConverter().getName(type) + " {" + pkFieldName + " = " + key.toString() + "}";
+        String pkFieldName = Common.getPrimaryKeyField(type, getFieldNameConverter());
+        return getTableNameConverter().getName(type) + " {" + pkFieldName + " = " + key.toString() + "}";
+    }
+
+    private FieldNameConverter getFieldNameConverter()
+    {
+        return getManager().getNameConverters().getFieldNameConverter();
     }
 
     @Override

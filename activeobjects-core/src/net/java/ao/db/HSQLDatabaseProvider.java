@@ -22,6 +22,7 @@ import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -373,10 +374,10 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderDropIndex(DDLIndex index) {
+	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("DROP INDEX ");
 
-		back.append(processID(index.getName()));
+		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
 
 		return back.toString();
 	}

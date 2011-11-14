@@ -22,18 +22,21 @@ import static net.java.ao.DatabaseProviders.getMySqlDatabaseProvider;
 import static net.java.ao.DatabaseProviders.getOracleDatabaseProvider;
 import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.URL;
 import java.sql.Types;
 import java.util.Calendar;
 
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.schema.DefaultIndexNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
+import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
@@ -43,29 +46,26 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import test.schema.Company;
 
-/**
- * @author Daniel Spiewak
- */
-public class DatabaseProviderTest
+@RunWith(MockitoJUnitRunner.class)
+public final class DatabaseProviderTest
 {
-    private static final PrintStream STDERR = System.err;
+    @Mock
+    private NameConverters nameConverters;
 
     @Before
-    public void setUp()
+    public final void setUp()
     {
-        System.setErr(new PrintStream(new OutputStream()
-        {
-            @Override
-            public void write(int arg0) throws IOException
-            {
-            }
-        }));
+        when(nameConverters.getSequenceNameConverter()).thenReturn(new DefaultSequenceNameConverter());
+        when(nameConverters.getTriggerNameConverter()).thenReturn(new DefaultTriggerNameConverter());
+        when(nameConverters.getIndexNameConverter()).thenReturn(new DefaultIndexNameConverter());
     }
 
     @Test
@@ -196,12 +196,6 @@ public class DatabaseProviderTest
         assertEquals(where, getMySqlDatabaseProvider().processWhereClause(where));
         assertEquals(where, getOracleDatabaseProvider().processWhereClause(where));
         assertEquals("\"field1\" = 2 and \"field2\" like %er", getPostgreSqlDatabaseProvider().processWhereClause(where));
-    }
-
-    @After
-    public void tearDown()
-    {
-        System.setErr(STDERR);
     }
 
     private DDLAction createActionCreateTable() {
@@ -420,7 +414,7 @@ public class DatabaseProviderTest
 
     private void testRenderAction(String[] expectedSql, DDLAction action, DatabaseProvider databaseProvider)
     {
-        assertArrayEquals(expectedSql, databaseProvider.renderAction(action));
+        assertArrayEquals(expectedSql, databaseProvider.renderAction(nameConverters, action));
     }
 
 	private String[] readStatements(String resource) throws IOException {

@@ -16,6 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
 import org.junit.After;
 import org.junit.Before;
@@ -58,13 +59,13 @@ public class EntityManagerTest
 
     private EntityManagerConfiguration getEntityManagerConfiguration()
     {
+        final NameConverters nameConverters = mock(NameConverters.class);
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
-        final FieldNameConverter fieldNameConverter = mock(FieldNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
 
         final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
-        when(configuration.getTableNameConverter()).thenReturn(tableNameConverter);
-        when(configuration.getFieldNameConverter()).thenReturn(fieldNameConverter);
+        when(configuration.getNameConverters()).thenReturn(nameConverters);
+        when(nameConverters.getTableNameConverter()).thenReturn(tableNameConverter);
         when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
         return configuration;
     }

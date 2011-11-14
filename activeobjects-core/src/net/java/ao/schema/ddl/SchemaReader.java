@@ -21,6 +21,7 @@ import net.java.ao.Common;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.helper.DatabaseMetaDataReader;
 import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
 import net.java.ao.schema.helper.Field;
@@ -64,18 +65,18 @@ public final class SchemaReader
      * <li>setUnique</li>
      * </ul>
      */
-    public static DDLTable[] readSchema(DatabaseProvider provider, SchemaConfiguration schemaConfiguration) throws SQLException
+    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration) throws SQLException
     {
-        return readSchema(provider, schemaConfiguration, true);
+        return readSchema(provider, nameConverters, schemaConfiguration, true);
     }
 
-    public static DDLTable[] readSchema(DatabaseProvider provider, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
+    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
     {
         Connection connection = null;
         try
         {
             connection = provider.getConnection();
-            return readSchema(connection, provider, schemaConfiguration, includeForeignKeys);
+            return readSchema(connection, provider, nameConverters, schemaConfiguration, includeForeignKeys);
         }
         finally
         {
@@ -83,9 +84,9 @@ public final class SchemaReader
         }
     }
 
-    public static DDLTable[] readSchema(Connection connection, DatabaseProvider provider, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
+    public static DDLTable[] readSchema(Connection connection, DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
     {
-        final DatabaseMetaDataReader databaseMetaDataReader = new DatabaseMetaDataReaderImpl(provider, schemaConfiguration);
+        final DatabaseMetaDataReader databaseMetaDataReader = new DatabaseMetaDataReaderImpl(provider, nameConverters, schemaConfiguration);
         final DatabaseMetaData databaseMetaData = connection.getMetaData();
         final List<DDLTable> tables = newArrayList(Iterables.transform(databaseMetaDataReader.getTableNames(databaseMetaData), new Function<String, DDLTable>()
         {

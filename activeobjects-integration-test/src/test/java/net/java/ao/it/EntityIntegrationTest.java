@@ -28,6 +28,8 @@ import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+import net.java.ao.test.jdbc.Jdbc;
+import net.java.ao.test.jdbc.Postgres;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -51,7 +53,7 @@ import static org.junit.Assert.*;
  *
  */
 @Data(DatabaseProcessor.class)
-public class EntityIntegrationTest extends ActiveObjectsIntegrationTest
+public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
     public void testGetEntityManagerOnEntity() throws Exception

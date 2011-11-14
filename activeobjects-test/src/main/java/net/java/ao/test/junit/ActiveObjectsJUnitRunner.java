@@ -17,7 +17,7 @@ import java.util.List;
 /**
  *
  */
-public class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
+public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
 {
     private final JdbcConfiguration jdbcConfiguration;
     private final boolean withIndex;

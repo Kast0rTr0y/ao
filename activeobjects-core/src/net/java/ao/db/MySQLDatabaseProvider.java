@@ -22,6 +22,7 @@ import java.util.Set;
 
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.types.DatabaseType;
@@ -120,9 +121,9 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String renderCreateIndex(DDLIndex index) {
+	protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("CREATE INDEX ");
-		back.append(processID(index.getName())).append(" ON ");
+		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField()))).append(" ON ");
 		back.append(processID(index.getTable())).append('(').append(processID(index.getField()));
 		
 		if (index.getType().getType() == Types.CLOB || index.getType().getType() == Types.VARCHAR) {

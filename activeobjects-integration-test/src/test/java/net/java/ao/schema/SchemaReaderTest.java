@@ -38,7 +38,7 @@ import java.sql.Types;
 import static org.junit.Assert.*;
 
 @Data(DatabaseProcessor.class)
-public class SchemaReaderTest extends ActiveObjectsIntegrationTest
+public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
 {
     @SuppressWarnings("null")
     @Test
@@ -57,14 +57,14 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
                 getFieldName(Person.class, "isActive"),
                 getFieldName(Person.class, "getModified")};
 
-        DDLTable[] parsedTables = SchemaReader.readSchema(entityManager.getProvider(), new DefaultSchemaConfiguration());
+        DDLTable[] parsedTables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), new DefaultSchemaConfiguration());
 
         assertEquals(22, parsedTables.length);
 
         DDLTable personDDL = null;
         for (DDLTable table : parsedTables)
         {
-            if (table.getName().equalsIgnoreCase(entityManager.getTableNameConverter().getName(Person.class)))
+            if (table.getName().equalsIgnoreCase(getTableName(Person.class, false)))
             {
                 personDDL = table;
                 break;
@@ -150,19 +150,17 @@ public class SchemaReaderTest extends ActiveObjectsIntegrationTest
 
         assertNotNull(cidKey);
 
-        assertTrue(entityManager.getTableNameConverter().getName(Person.class).equalsIgnoreCase(cidKey.getDomesticTable()));
+        assertTrue(getTableName(Person.class, false).equalsIgnoreCase(cidKey.getDomesticTable()));
         assertTrue(getFieldName(Person.class, "getCompany").equalsIgnoreCase(cidKey.getField()));
         assertTrue(getFieldName(Company.class, "getCompanyID").equalsIgnoreCase(cidKey.getForeignField()));
-        assertTrue(entityManager.getTableNameConverter().getName(Company.class).equalsIgnoreCase(cidKey.getTable()));
+        assertTrue(getTableName(Company.class, false).equalsIgnoreCase(cidKey.getTable()));
     }
 
     @Test
     public void testDiffSchema()
     {
-        DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getTableNameConverter(),
-                entityManager.getFieldNameConverter(), PersonSuit.class, Pen.class);
-        DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getTableNameConverter(),
-                entityManager.getFieldNameConverter(), PersonSuit.class, Pen.class);
+        DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getNameConverters(), PersonSuit.class, Pen.class);
+        DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getNameConverters(), PersonSuit.class, Pen.class);
 
         assertEquals(0, SchemaReader.diffSchema(ddl1, ddl2, true).length);
     }

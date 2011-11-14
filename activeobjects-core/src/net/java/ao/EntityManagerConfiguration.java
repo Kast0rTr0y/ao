@@ -1,6 +1,7 @@
 package net.java.ao;
 
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
 
 /**
@@ -16,18 +17,11 @@ public interface EntityManagerConfiguration
     boolean useWeakCache();
 
     /**
-     * Gets the table name converter to be used with the (to be) configured {@link net.java.ao.EntityManager}.
+     * Gets the name converters to be used with the (to be) configured {@link net.java.ao.EntityManager}.
      *
-     * @return a non-{@code null} {@link TableNameConverter table name converter}
+     * @return a non-{@code null} {@link NameConverters name converter}
      */
-    TableNameConverter getTableNameConverter();
-
-    /**
-     * Gets the field name converter to be used with the (to be) configured {@link net.java.ao.EntityManager}
-     *
-     * @return a non-{@code null} {@link net.java.ao.schema.FieldNameConverter field name converter}
-     */
-    FieldNameConverter getFieldNameConverter();
+    NameConverters getNameConverters();
 
     /**
      * Gets the schema configuration to be used with the (to be) configured {@link net.java.ao.EntityManager}

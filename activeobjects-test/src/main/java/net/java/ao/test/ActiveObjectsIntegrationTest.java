@@ -142,18 +142,18 @@ public abstract class ActiveObjectsIntegrationTest
      */
     protected final String getTableName(Class<? extends RawEntity<?>> entityType, boolean escape)
     {
-        final String tableName = entityManager.getTableNameConverter().getName(entityType);
+        final String tableName = entityManager.getNameConverters().getTableNameConverter().getName(entityType);
         return escape ? entityManager.getProvider().withSchema(tableName) : tableName;
     }
 
     protected final String getFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
     {
-        return entityManager.getFieldNameConverter().getName(findMethod(entityType, methodName));
+        return entityManager.getNameConverters().getFieldNameConverter().getName(findMethod(entityType, methodName));
     }
 
     protected final String getPolyFieldName(Class<? extends RawEntity<?>> entityType, String methodName)
     {
-        return entityManager.getFieldNameConverter().getPolyTypeName(findMethod(entityType, methodName));
+        return entityManager.getNameConverters().getFieldNameConverter().getPolyTypeName(findMethod(entityType, methodName));
     }
 
     protected final String escapeFieldName(Class<? extends RawEntity<?>> entityType, String methodName)

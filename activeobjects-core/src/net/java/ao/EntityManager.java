@@ -47,8 +47,10 @@ import net.java.ao.cache.RAMCache;
 import net.java.ao.cache.RAMRelationsCache;
 import net.java.ao.cache.RelationsCache;
 import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.CachingNameConverters;
 import net.java.ao.schema.CachingTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.types.DatabaseType;
@@ -74,9 +76,8 @@ public class EntityManager
     private final DatabaseProvider provider;
     private final EntityManagerConfiguration configuration;
 
-    private final TableNameConverter tableNameConverter;
-	private final FieldNameConverter fieldNameConverter;
     private final SchemaConfiguration schemaConfiguration;
+    private final NameConverters nameConverters;
 
 	private Map<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> proxies;
 	private final ReadWriteLock proxyLock = new ReentrantReadWriteLock(true);
@@ -96,19 +97,19 @@ public class EntityManager
 	private final RelationsCache relationsCache = new RAMRelationsCache();
 
     /**
-	 * Creates a new instance of <code>EntityManager</code> using the specified
-	 * {@link DatabaseProvider}.  This constructor initializes the entity and proxy
-	 * caches based on the given boolean value.  If <code>true</code>, the entities
-	 * will be weakly cached, not maintaining a reference allowing for garbage
-	 * collection.  If <code>false</code>, then strong caching will be used, preventing
-	 * garbage collection and ensuring the cache is logically complete.  If you are
-	 * concerned about memory, specify <code>true</code>.  Otherwise, for
-	 * maximum performance use <code>false</code> (highly recomended).
-	 *
-     * @param provider    the {@link DatabaseProvider} to use in all database operations.
+     * Creates a new instance of <code>EntityManager</code> using the specified
+     * {@link DatabaseProvider}.  This constructor initializes the entity and proxy
+     * caches based on the given boolean value.  If <code>true</code>, the entities
+     * will be weakly cached, not maintaining a reference allowing for garbage
+     * collection.  If <code>false</code>, then strong caching will be used, preventing
+     * garbage collection and ensuring the cache is logically complete.  If you are
+     * concerned about memory, specify <code>true</code>.  Otherwise, for
+     * maximum performance use <code>false</code> (highly recomended).
+     *
+     * @param provider the {@link DatabaseProvider} to use in all database operations.
      * @param configuration the configuration for this entity manager
-	 */
-	public EntityManager(DatabaseProvider provider, EntityManagerConfiguration configuration)
+     */
+    public EntityManager(DatabaseProvider provider, EntityManagerConfiguration configuration)
     {
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
@@ -122,27 +123,27 @@ public class EntityManager
             proxies = new MapMaker().softKeys().makeMap();
         }
 
-		entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
-		cache = new RAMCache();
-		valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
+        entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
+        cache = new RAMCache();
+        valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
 
-		tableNameConverter = new CachingTableNameConverter(checkNotNull(configuration.getTableNameConverter()));
-		fieldNameConverter = checkNotNull(configuration.getFieldNameConverter());
+        // TODO: move caching out of there!
+        nameConverters = new CachingNameConverters(configuration.getNameConverters());
         schemaConfiguration = checkNotNull(configuration.getSchemaConfiguration());
 
-		typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
-	}
+        typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
+    }
 
 
-	/**
+    /**
 	 * Convenience method to create the schema for the specified entities
 	 * using the current settings (table/field name converter and database provider).
 	 *
 	 * @param entities the "list" of entity classes to consider for migration.
-     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, net.java.ao.schema.TableNameConverter, net.java.ao.schema.FieldNameConverter, Class[])
+     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, NameConverters, Class[])
 	 */
 	public void migrate(Class<? extends RawEntity<?>>... entities) throws SQLException {
-        SchemaGenerator.migrate(provider, schemaConfiguration, tableNameConverter, fieldNameConverter, entities);
+        SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, entities);
 	}
 
 	/**
@@ -388,14 +389,14 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
-		String table = tableNameConverter.getName(type);
+		final String table = nameConverters.getTableNameConverter().getName(type);
 
 		Set<DBParam> listParams = new HashSet<DBParam>();
 		listParams.addAll(Arrays.asList(params));
 
         for (Method method : MethodFinder.getInstance().findAnnotatedMethods(Generator.class, type)) {
             Generator genAnno = method.getAnnotation(Generator.class);
-            String field = fieldNameConverter.getName(method);
+            final String field = nameConverters.getFieldNameConverter().getName(method);
             ValueGenerator<?> generator;
 
             valGenCacheLock.writeLock().lock();
@@ -514,7 +515,7 @@ public class EntityManager
 					List<RawEntity<?>> entityList = organizedEntities.get(type);
 
 					StringBuilder sql = new StringBuilder("DELETE FROM ");
-                    sql.append(provider.withSchema(tableNameConverter.getName(type)));
+                    sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
 					sql.append(" WHERE ").append(provider.processID(
 							Common.getPrimaryKeyField(type, getFieldNameConverter()))).append(" IN (?");
 
@@ -646,7 +647,7 @@ public class EntityManager
 				String[] oldFields = query.getFields();
 				List<String> newFields = new ArrayList<String>();
 
-				for (String newField : preloadValue(preloadAnnotation, fieldNameConverter)) {
+				for (String newField : preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter())) {
 					newField = newField.trim();
 
 					int fieldLoc = -1;
@@ -682,7 +683,7 @@ public class EntityManager
         try
         {
             conn = provider.getConnection();
-            final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
+            final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), false);
 
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             provider.setQueryStatementProperties(stmt, query);
@@ -694,7 +695,7 @@ public class EntityManager
 
             final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
             final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-            final String[] canonicalFields = query.getCanonicalFields(type, fieldNameConverter);
+            final String[] canonicalFields = query.getCanonicalFields(type, getFieldNameConverter());
             while (res.next())
             {
                 final T entity = peer(type, primaryKeyType.pullFromDatabase(this, res, primaryKeyClassType, field));
@@ -814,7 +815,7 @@ public class EntityManager
         // executed too often, and since we're always working on the same type of object, we only need them once.
         final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
         final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-        final String[] canonicalFields = query.getCanonicalFields(type, fieldNameConverter);
+        final String[] canonicalFields = query.getCanonicalFields(type, getFieldNameConverter());
         String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
 
         // the factory caches details about the proxied interface, since reflection calls are expensive
@@ -827,7 +828,7 @@ public class EntityManager
         ResultSet res = null;
         try {
             conn = provider.getConnection();
-            final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), false);
+            final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), false);
             
             // we're only going over the result set once, so use the slimmest possible cursor type
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -907,7 +908,7 @@ public class EntityManager
         ResultSet res =null;
 		try {
             connection = provider.getConnection();
-			final String sql = query.toSQL(type, provider, tableNameConverter, getFieldNameConverter(), true);
+			final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), true);
 
 			stmt = provider.preparedStatement(connection, sql);
 			provider.setQueryStatementProperties(stmt, query);
@@ -924,20 +925,25 @@ public class EntityManager
 		}
 	}
 
+    public NameConverters getNameConverters()
+    {
+        return nameConverters;
+    }
+
 	/**
 	 * Retrieves the {@link TableNameConverter} instance used for name
 	 * conversion of all entity types.
 	 */
-	public TableNameConverter getTableNameConverter() {
-        return tableNameConverter;
+	TableNameConverter getTableNameConverter() {
+        return nameConverters.getTableNameConverter();
 	}
 
 	/**
 	 * Retrieves the {@link FieldNameConverter} instance used for name
 	 * conversion of all entity methods.
 	 */
-	public FieldNameConverter getFieldNameConverter() {
-        return fieldNameConverter;
+	FieldNameConverter getFieldNameConverter() {
+        return nameConverters.getFieldNameConverter();
 	}
 
 	/**

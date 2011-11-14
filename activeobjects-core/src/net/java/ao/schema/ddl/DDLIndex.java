@@ -49,11 +49,7 @@ public class DDLIndex {
 	public void setField(String field) {
 		this.field = field;
 	}
-	
-	public String getName() {
-		return "index_" + table.toLowerCase() + "_" + field.toLowerCase();
-	}
-	
+
 	public DatabaseType<?> getType() {
 		return type;
 	}

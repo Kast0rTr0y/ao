@@ -36,8 +36,8 @@ public class ReadOnlyEntityProxyFactory<T extends RawEntity<K>, K>
     {
         this.entityManager = entityManager;
         this.type = type;
-        
-        FieldNameConverter fieldNameConverter = entityManager.getFieldNameConverter();
+
+        final FieldNameConverter fieldNameConverter = entityManager.getNameConverters().getFieldNameConverter();
 
         // iterate over the class hierarchy and find the converted field names and accessors.
         // this is needed for the getter implementation of the proxy as well as reading/converting the data values
@@ -63,8 +63,7 @@ public class ReadOnlyEntityProxyFactory<T extends RawEntity<K>, K>
                         // figure out if there's a polymorphic annotation and keep track of the respective field name
                         Class<?> attributeType = Common.getAttributeTypeFromMethod(method);
                         if (attributeType != null) {
-                            String polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null : 
-                                entityManager.getFieldNameConverter().getPolyTypeName(method));
+                            String polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null : fieldNameConverter.getPolyTypeName(method));
                             
                             polymorphicFieldNames.put(fieldName, polyFieldName);
                         }

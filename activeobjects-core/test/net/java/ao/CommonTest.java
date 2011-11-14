@@ -113,6 +113,41 @@ public final class CommonTest
         assertFalse(valueFieldsNames.contains("Relation3"));
     }
 
+    @Test
+    public final void testShorten()
+    {
+        testShorten("a-very-long-string");
+        testShorten("another-very-long-string");
+        testShorten("yet-another-very-long-string");
+    }
+
+    private void testShorten(String s)
+    {
+        for (int i = 0; i < s.length() * 2; i++)
+        {
+            assertShortenWithShortString(s, i);
+        }
+        for (int i = 1; i < s.length() / 2 + 1; i++)
+        {
+            assertShortenWithLongerString(s, i);
+        }
+    }
+
+    private void assertShortenWithLongerString(String s, int minusMaxLength)
+    {
+        final int maxLength = s.length() - minusMaxLength;
+        final String shortened = Common.shorten(s, maxLength);
+
+        assertTrue(shortened.length() <= maxLength);
+        assertEquals(shortened, Common.shorten(s, maxLength));
+    }
+
+    private void assertShortenWithShortString(String s, int plusMaxLength)
+    {
+        assertEquals(s, Common.shorten(s, s.length() + plusMaxLength));
+    }
+
+
     private static Method method(String methodName, Class<?>... parameterTypes) throws NoSuchMethodException
     {
         return InterfaceWithMethods.class.getMethod(methodName, parameterTypes);

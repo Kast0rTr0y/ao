@@ -62,11 +62,10 @@ public final class SchemaGenerator {
 
     public static void migrate(DatabaseProvider provider,
                                SchemaConfiguration schemaConfiguration,
-                               TableNameConverter nameConverter,
-                               FieldNameConverter fieldConverter,
+                               NameConverters nameConverters,
                                Class<? extends RawEntity<?>>... classes) throws SQLException
     {
-        final Iterable<String> statements = generateImpl(provider, schemaConfiguration, nameConverter, fieldConverter, classes);
+        final Iterable<String> statements = generateImpl(provider, schemaConfiguration, nameConverters, classes);
 
         Connection conn = null;
         Statement stmt = null;
@@ -87,19 +86,18 @@ public final class SchemaGenerator {
 
     private static Iterable<String> generateImpl(DatabaseProvider provider,
                                                  SchemaConfiguration schemaConfiguration,
-                                                 TableNameConverter nameConverter,
-                                                 FieldNameConverter fieldConverter,
+                                                 NameConverters nameConverters,
                                                  Class<? extends RawEntity<?>>... classes) throws SQLException
     {
         final Collection<String> statements = newLinkedHashSet(); // preserve the order of the elements
 
-        final DDLTable[] parsedTables = parseDDL(nameConverter, fieldConverter, classes);
-        final DDLTable[] readTables = SchemaReader.readSchema(provider, schemaConfiguration);
+        final DDLTable[] parsedTables = parseDDL(nameConverters, classes);
+        final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(parsedTables, readTables, provider.isCaseSensetive()));
         for (DDLAction action : actions)
         {
-            statements.addAll(Arrays.asList(provider.renderAction(action)));
+            statements.addAll(Arrays.asList(provider.renderAction(nameConverters, action)));
         }
         return filterEmpty(statements);
     }
@@ -116,13 +114,13 @@ public final class SchemaGenerator {
         });
     }
 
-    static DDLTable[] parseDDL(TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>>... classes) {
+    static DDLTable[] parseDDL(NameConverters nameConverters, Class<? extends RawEntity<?>>... classes) {
 		final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps = new HashMap<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>>();
 		final Set<Class<? extends RawEntity<?>>> roots = new LinkedHashSet<Class<? extends RawEntity<?>>>();
 
 		for (Class<? extends RawEntity<?>> cls : classes) {
 			try {
-				parseDependencies(fieldConverter, deps, roots, cls);
+				parseDependencies(nameConverters.getFieldNameConverter(), deps, roots, cls);
 			} catch (StackOverflowError e) {
 				throw new RuntimeException("Circular dependency detected in or below " + cls.getCanonicalName());
 			}
@@ -136,7 +134,7 @@ public final class SchemaGenerator {
 
 			Class<? extends RawEntity<?>> clazz = rootsArray[0];
 			if (clazz.getAnnotation(Polymorphic.class) == null) {
-				parsedTables.add(parseInterface(nameConverter, fieldConverter, clazz));
+				parsedTables.add(parseInterface(nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
 			}
 
 			List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();

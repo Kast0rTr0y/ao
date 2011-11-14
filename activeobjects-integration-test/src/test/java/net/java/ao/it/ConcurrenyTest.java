@@ -5,7 +5,9 @@ import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.NonTransactional;
+import net.java.ao.test.jdbc.Postgres;
 import org.junit.Test;
 
 import java.net.URL;
@@ -16,7 +18,7 @@ import static org.junit.Assert.assertFalse;
  *
  */
 @Data(DatabaseProcessor.class)
-public class ConcurrenyTest extends ActiveObjectsIntegrationTest
+public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
 {
     private static final int NUMBER_OF_THREADS = 50;
 

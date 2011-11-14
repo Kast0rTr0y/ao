@@ -15,6 +15,8 @@
  */
 package net.java.ao.db;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
@@ -23,6 +25,8 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -39,6 +43,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -287,12 +292,14 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderTriggerForField(DDLTable table, DDLField field) {
+	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter,
+                                           SequenceNameConverter sequenceNameConverter,
+                                           DDLTable table, DDLField field) {
 		if (field.getOnUpdate() != null) {
 			StringBuilder back = new StringBuilder();
 			String value = renderValue(field.getOnUpdate());
 
-			back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_onupdate") + '\n');
+			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
 			back.append("BEFORE UPDATE\n").append("    ON ").append(withSchema(table.getName())).append("\n    FOR EACH ROW\n");
 			back.append("BEGIN\n");
 			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
@@ -301,16 +308,16 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		} else if (field.isAutoIncrement()) {
 			StringBuilder back = new StringBuilder();
 
-	        back.append("CREATE TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_autoinc") +  '\n');
+	        back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())) +  '\n');
 	        back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
 	        back.append("BEGIN\n");
-	        back.append("    SELECT ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ") + ".NEXTVAL");
+	        back.append("    SELECT ").append(withSchema(sequenceNameConverter.getName(table.getName(), field.getName())) + ".NEXTVAL");
 	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
 
 	        return back.toString();
 		}
 
-		return super.renderTriggerForField(table, field);
+		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
 	@Override
@@ -417,67 +424,82 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String[] renderTriggers(DDLTable table) {
-        List<String> back = new ArrayList<String>();
-
-        for (DDLField field : table.getFields()) {
-            String trigger = renderTriggerForField(table, field);
-            if (trigger != null) {
-                back.add(trigger);
-            }
-        }
-
-        return back.toArray(new String[back.size()]);
-	}
-
-	@Override
-	protected String[] renderDropTriggers(DDLTable table) {
-        List<String> back = new ArrayList<String>();
-
-        for (DDLField field : table.getFields()) {
-        	if (field.isAutoIncrement()) {
-                StringBuilder seq = new StringBuilder();
-                seq.append("DROP TRIGGER ").append(withSchema(table.getName() + '_' + field.getName() + "_autoinc"));
-                back.add(seq.toString());
-        	}
-        }
-
-        return back.toArray(new String[back.size()]);
+    protected List<String> renderDropTriggers(final TriggerNameConverter triggerNameConverter, final DDLTable table)
+    {
+        return renderFields(
+                table,
+                new IsAutoIncrementFieldPredicate(),
+                new Function<DDLField, String>()
+                {
+                    @Override
+                    public String apply(DDLField field)
+                    {
+                        return renderDropTrigger(triggerNameConverter, table, field);
+                    }
+                });
     }
 
-	@Override
-	protected String[] renderDropSequences(DDLTable table) {
-        List<String> back = new ArrayList<String>();
+    private String renderDropTrigger(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
+    {
+        return new StringBuilder()
+                .append("DROP TRIGGER ")
+                .append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())))
+                .toString();
+    }
 
-        for (DDLField field : table.getFields()) {
-        	if (field.isAutoIncrement()) {
-                StringBuilder seq = new StringBuilder();
-                seq.append("DROP SEQUENCE ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ"));
-                back.add(seq.toString());
-        	}
-        }
+    @Override
+    protected List<String> renderDropSequences(final SequenceNameConverter sequenceNameConverter, final DDLTable table)
+    {
+        return renderFields(
+                table,
+                new IsAutoIncrementFieldPredicate(),
+                new Function<DDLField, String>()
+                {
+                    @Override
+                    public String apply(DDLField field)
+                    {
+                        return renderDropSequence(sequenceNameConverter, table, field);
+                    }
+                }
+        );
+    }
 
-        return back.toArray(new String[back.size()]);
-	}
+    private String renderDropSequence(SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
+    {
+        return new StringBuilder()
+                .append("DROP SEQUENCE ")
+                .append(withSchema(sequenceNameConverter.getName(table.getName(), field.getName())))
+                .toString();
+    }
 
-	@Override
-    protected String[] renderSequences(DDLTable table) {
-        List<String> back = new ArrayList<String>();
+    @Override
+    protected List<String> renderSequences(final SequenceNameConverter sequenceNameConverter, final DDLTable table)
+    {
+        return renderFields(
+                table,
+                new IsAutoIncrementFieldPredicate(),
+                new Function<DDLField, String>()
+                {
+                    @Override
+                    public String apply(DDLField field)
+                    {
+                        return renderSequence(sequenceNameConverter, table, field);
+                    }
+                }
+        );
+    }
 
-        for (DDLField field : table.getFields()) {
-        	if (field.isAutoIncrement()) {
-                StringBuilder seq = new StringBuilder();
-                seq.append("CREATE SEQUENCE ").append(withSchema(table.getName() + '_' + field.getName() + "_SEQ"));
-                seq.append(" INCREMENT BY 1 START WITH 1 ");
-                seq.append("NOMAXVALUE").append(" MINVALUE 1");
-                back.add(seq.toString());
-        	}
-        }
+    private String renderSequence(SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
+    {
+        final String sequenceName = sequenceNameConverter.getName(table.getName(), field.getName());
+        return new StringBuilder()
+                .append("CREATE SEQUENCE ")
+                .append(withSchema(sequenceName))
+                .append(" INCREMENT BY 1 START WITH 1 NOMAXVALUE MINVALUE 1")
+                .toString();
+    }
 
-        return back.toArray(new String[back.size()]);
-	}
-
-	@Override
+    @Override
 	protected boolean shouldQuoteID(String id) {
         return !"*".equals(id);
 	}
@@ -496,4 +518,13 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException {
 		stmt.setInt(index, value ? 1 : 0);
 	}
+
+    private static class IsAutoIncrementFieldPredicate implements Predicate<DDLField>
+    {
+        @Override
+        public boolean apply(DDLField field)
+        {
+            return field.isAutoIncrement();
+        }
+    }
 }
