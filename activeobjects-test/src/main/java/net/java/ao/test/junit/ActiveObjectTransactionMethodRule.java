@@ -4,7 +4,10 @@ import net.java.ao.EntityManager;
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
@@ -32,17 +35,30 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private final boolean withIndex;
     private final TableNameConverter tableNameConverter;
     private final FieldNameConverter fieldNameConverter;
+    private final SequenceNameConverter sequenceNameConverter;
+    private final TriggerNameConverter triggerNameConverter;
+    private final IndexNameConverter indexNameConverter;
 
     private EntityManager entityManager;
     private File indexDirectory;
 
-    public ActiveObjectTransactionMethodRule(Object test, JdbcConfiguration jdbc, boolean withIndex, TableNameConverter tableNameConverter, FieldNameConverter fieldNameConverter)
+    public ActiveObjectTransactionMethodRule(Object test,
+                                             JdbcConfiguration jdbc,
+                                             boolean withIndex,
+                                             TableNameConverter tableNameConverter,
+                                             FieldNameConverter fieldNameConverter,
+                                             SequenceNameConverter sequenceNameConverter,
+                                             TriggerNameConverter triggerNameConverter,
+                                             IndexNameConverter indexNameConverter)
     {
         this.test = test;
         this.jdbc = jdbc;
         this.withIndex = withIndex;
         this.tableNameConverter = tableNameConverter;
         this.fieldNameConverter = fieldNameConverter;
+        this.sequenceNameConverter = sequenceNameConverter;
+        this.triggerNameConverter = triggerNameConverter;
+        this.indexNameConverter = indexNameConverter;
     }
 
     public final Statement apply(final Statement base, final FrameworkMethod method, final Object target)
@@ -151,6 +167,18 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         if (fieldNameConverter != null)
         {
             entityManagerBuilder = entityManagerBuilder.fieldNameConverter(fieldNameConverter);
+        }
+        if (sequenceNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.sequenceNameConverter(sequenceNameConverter);
+        }
+        if (triggerNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.triggerNameConverter(triggerNameConverter);
+        }
+        if (indexNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.indexNameConverter(indexNameConverter);
         }
         return withIndex ? entityManagerBuilder.withIndex(indexDirectory).build() : entityManagerBuilder.build();
     }

@@ -2,8 +2,14 @@ package net.java.ao.test.converters;
 
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.CamelCaseTableNameConverter;
+import net.java.ao.schema.DefaultIndexNameConverter;
+import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
@@ -22,4 +28,10 @@ public @interface NameConverters
     Class<? extends TableNameConverter> table() default CamelCaseTableNameConverter.class;
 
     Class<? extends FieldNameConverter> field() default CamelCaseFieldNameConverter.class;
+
+    Class<? extends SequenceNameConverter> sequence() default DefaultSequenceNameConverter.class;
+
+    Class<? extends TriggerNameConverter> trigger() default DefaultTriggerNameConverter.class;
+
+    Class<? extends IndexNameConverter> index() default DefaultIndexNameConverter.class;
 }
