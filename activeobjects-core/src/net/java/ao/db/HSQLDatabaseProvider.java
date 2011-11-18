@@ -193,7 +193,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
+	protected String renderQuerySelect(final Query query, TableNameConverter converter, boolean count) {
 		StringBuilder sql = new StringBuilder();
 		String tableName = query.getTable();
 
@@ -217,29 +217,22 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 					sql.append(limit).append(' ');
 				}
 
-				if (count) {
-					sql.append("COUNT(*)");
-				} else {
-					StringBuilder fields = new StringBuilder();
-					for (String field : query.getFields()) {
-						fields.append(processID(field)).append(',');
-					}
-					if (query.getFields().length > 0) {
-						fields.setLength(fields.length() - 1);
-					}
-					
-					sql.append(fields);
-				}
-				sql.append(" FROM ");
-
-				sql.append(withSchema(tableName));
+                if (count)
+                {
+                    sql.append("COUNT(*)");
+                }
+                else
+                {
+                    sql.append(querySelectFields(query));
+                }
+                sql.append(" FROM ").append(queryTableName(query, converter));
 			break;
 		}
 
 		return sql.toString();
 	}
 
-	@Override
+    @Override
 	protected String renderQueryLimit(Query query) {
 		return "";
 	}

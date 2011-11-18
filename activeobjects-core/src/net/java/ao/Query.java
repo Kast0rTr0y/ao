@@ -15,10 +15,13 @@
  */
 package net.java.ao;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import java.io.Serializable;
@@ -30,17 +33,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.java.ao.types.TypeInfo;
+import static com.google.common.collect.Iterables.transform;
+import static com.google.common.collect.Lists.*;
+import static com.google.common.collect.Maps.*;
 
 /**
  * @author Daniel Spiewak
  */
-public class Query implements Serializable {
-	public enum QueryType {
-		SELECT
-	}
-	
-	private final static String PRIMARY_KEY_FIELD = "''''primary_key_field''''";
+public class Query implements Serializable
+{
+    public enum QueryType
+    {
+        SELECT
+    }
+
+    private final static String PRIMARY_KEY_FIELD = "''''primary_key_field''''";
 	
 	private final QueryType type;
 	private String fields;
@@ -59,8 +66,7 @@ public class Query implements Serializable {
 	private int offset = -1;
 	
 	private Map<Class<? extends RawEntity<?>>, String> joins;
-	
-	private static final long serialVersionUID = 1l;
+    private Map<Class<? extends RawEntity<?>>, String> aliases = newHashMap();
 	
 	public Query(QueryType type, String fields) {
 		this.type = type;
@@ -68,23 +74,27 @@ public class Query implements Serializable {
 		
 		joins = new LinkedHashMap<Class<? extends RawEntity<?>>, String>();
 	}
-	
-	public String[] getFields() {
-		if (fields.contains(PRIMARY_KEY_FIELD)) {
-			return new String[0];
-		}
-		
-		String[] fieldsArray = fields.split(",");
-		String[] back = new String[fieldsArray.length];
-		
-		for (int i = 0; i < fieldsArray.length; i++) {
-			back[i] = fieldsArray[i].trim();
-		}
-		
-		return back;
-	}
-	
-	void setFields(String[] fields) {
+
+    public Iterable<String> getFields()
+    {
+        if (fields.contains(PRIMARY_KEY_FIELD))
+        {
+            return Collections.emptyList();
+        }
+        else
+        {
+            return ImmutableList.copyOf(transform(newArrayList(fields.split(",")), new Function<String, String>()
+            {
+                @Override
+                public String apply(String field)
+                {
+                    return field.trim();
+                }
+            }));
+        }
+    }
+
+    void setFields(String[] fields) {
 		if (fields.length == 0) {
 			return;
 		}
@@ -154,7 +164,22 @@ public class Query implements Serializable {
 		
 		return this;
 	}
-	
+
+    public Query alias(Class<? extends RawEntity<?>> table, String alias)
+    {
+        if (aliases.containsValue(alias))
+        {
+            throw new ActiveObjectsException("There is already a table aliased '" + alias + "' for this query!");
+        }
+        aliases.put(table, alias);
+        return this;
+    }
+
+    public String getAlias(Class<? extends RawEntity<?>> table)
+    {
+        return aliases.get(table);
+    }
+
 	public Query join(Class<? extends RawEntity<?>> join, String on) {
 		joins.put(join, on);
 		

@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.collect.Iterables;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
@@ -648,9 +649,9 @@ public class EntityManager
 		String selectField = Common.getPrimaryKeyField(type, getFieldNameConverter());
 		query.resolveFields(type, getFieldNameConverter());
 
-		String[] fields = query.getFields();
-		if (fields.length == 1) {
-			selectField = fields[0];
+		Iterable<String> fields = query.getFields();
+		if (Iterables.size(fields) == 1) {
+			selectField = Iterables.get(fields, 0);
 		}
 
 		return find(type, selectField, query);
@@ -678,16 +679,16 @@ public class EntityManager
 
 		final Preload preloadAnnotation = type.getAnnotation(Preload.class);
 		if (preloadAnnotation != null) {
-			if (!query.getFields()[0].equals("*") && query.getJoins().isEmpty()) {
-				String[] oldFields = query.getFields();
+			if (!Iterables.get(query.getFields(),0).equals("*") && query.getJoins().isEmpty()) {
+				Iterable<String> oldFields = query.getFields();
 				List<String> newFields = new ArrayList<String>();
 
 				for (String newField : preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter())) {
 					newField = newField.trim();
 
 					int fieldLoc = -1;
-					for (int i = 0; i < oldFields.length; i++) {
-						if (oldFields[i].equals(newField)) {
+					for (int i = 0; i < Iterables.size(oldFields); i++) {
+						if (Iterables.get(oldFields, i).equals(newField)) {
 							fieldLoc = i;
 							break;
 						}
@@ -696,7 +697,7 @@ public class EntityManager
 					if (fieldLoc < 0) {
 						newFields.add(newField);
 					} else {
-						newFields.add(oldFields[fieldLoc]);
+						newFields.add(Iterables.get(oldFields, fieldLoc));
 					}
 				}
 

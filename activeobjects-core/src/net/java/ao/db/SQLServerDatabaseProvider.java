@@ -270,19 +270,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 				if (count) {
 					sql.append("COUNT(*)");
 				} else {
-					StringBuilder fields = new StringBuilder();
-					for (String field : query.getFields()) {
-						fields.append(processID(field)).append(',');
-					}
-					if (query.getFields().length > 0) {
-						fields.setLength(fields.length() - 1);
-					}
-
-					sql.append(fields);
+                    sql.append(querySelectFields(query));
 				}
-				sql.append(" FROM ");
-
-				sql.append(withSchema(tableName));
+                sql.append(" FROM ").append(queryTableName(query, converter));
 			break;
 		}
 

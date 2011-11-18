@@ -16,6 +16,7 @@
 package net.java.ao;
 
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -38,6 +39,7 @@ import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
+import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
@@ -64,6 +65,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.Common.*;
 
@@ -531,18 +533,10 @@ public abstract class DatabaseProvider
     protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count)
     {
         StringBuilder sql = new StringBuilder();
-        String tableName = query.getTable();
-
-        if (tableName == null)
-        {
-            tableName = converter.getName(query.getTableType());
-        }
-
         switch (query.getType())
         {
             case SELECT:
                 sql.append("SELECT ");
-
                 if (query.isDistinct())
                 {
                     sql.append("DISTINCT ");
@@ -554,25 +548,48 @@ public abstract class DatabaseProvider
                 }
                 else
                 {
-                    StringBuilder fields = new StringBuilder();
-                    for (String field : query.getFields())
-                    {
-                        fields.append(processID(field)).append(',');
-                    }
-                    if (query.getFields().length > 0)
-                    {
-                        fields.setLength(fields.length() - 1);
-                    }
-
-                    sql.append(fields);
+                    sql.append(querySelectFields(query));
                 }
-                sql.append(" FROM ");
-
-                sql.append(withSchema(tableName));
+                sql.append(" FROM ").append(queryTableName(query, converter));
                 break;
         }
 
         return sql.toString();
+    }
+
+    protected final String queryTableName(Query query, TableNameConverter converter)
+    {
+        final String queryTable = query.getTable();
+        final String tableName = queryTable != null ? queryTable : converter.getName(query.getTableType());
+
+        final StringBuilder queryTableName = new StringBuilder().append(withSchema(tableName));
+        if (query.getAlias(query.getTableType()) != null)
+        {
+            queryTableName.append(" AS ").append(query.getAlias(query.getTableType()));
+        }
+        return queryTableName.toString();
+    }
+
+    protected final String querySelectFields(final Query query)
+    {
+        return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>()
+        {
+            @Override
+            public String apply(String fieldName)
+            {
+                return withAlias(query, fieldName);
+            }
+        }));
+    }
+
+    private String withAlias(Query query, String field)
+    {
+        final StringBuilder withAlias = new StringBuilder();
+        if (query.getAlias(query.getTableType()) != null)
+        {
+            withAlias.append(query.getAlias(query.getTableType())).append(".");
+        }
+        return withAlias.append(processID(field)).toString();
     }
 
     /**
@@ -597,6 +614,10 @@ public abstract class DatabaseProvider
         for (Map.Entry<Class<? extends RawEntity<?>>, String> joinEntry : query.getJoins().entrySet())
         {
             sql.append(" JOIN ").append(withSchema(converter.getName(joinEntry.getKey())));
+            if (query.getAlias(joinEntry.getKey()) != null)
+            {
+                sql.append(" AS ").append(query.getAlias(joinEntry.getKey()));
+            }
             if (joinEntry.getValue() != null)
             {
                 sql.append(" ON ").append(processOnClause(joinEntry.getValue()));
@@ -661,7 +682,14 @@ public abstract class DatabaseProvider
 
     private String processGroupByClause(String groupBy)
     {
-        return SqlUtils.GROUP_BY_CLAUSE.matcher(groupBy).replaceAll(processID("$1"));
+        return SqlUtils.processGroupByClause(groupBy, new Function<String, String>()
+        {
+            @Override
+            public String apply(String field)
+            {
+                return processID(field);
+            }
+        });
     }
 
     /**
@@ -2045,7 +2073,14 @@ public abstract class DatabaseProvider
 
     protected String processOnClause(String on)
     {
-        return SqlUtils.ON_CLAUSE.matcher(on).replaceAll("$1" + processID("$2") + " = " + "$3" + processID("$4"));
+        return SqlUtils.processOnClause(on, new Function<String, String>()
+        {
+            @Override
+            public String apply(String id)
+            {
+                return processID(id);
+            }
+        });
     }
 
     /**

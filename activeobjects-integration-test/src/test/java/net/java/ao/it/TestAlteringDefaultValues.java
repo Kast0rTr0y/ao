@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 
 import static org.junit.Assert.*;
 
-@NameConverters(table = TestAlteringDefaultValues.TestTableNameConverter.class)
+@NameConverters(table = TestTableNameConverter.class)
 public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTest
 {
     private static final String DEFAULT_1 = "default_1";

@@ -146,20 +146,18 @@ public final class SqlUtilsTest
     }
 
     @Test
-    public void testOnClausePattern()
+    public void testProcessOnClausePattern()
     {
-        testOnClausePattern("id = otherId", null, "id", null, "otherId");
-        testOnClausePattern("a.id = b.otherId", "a.", "id", "b.", "otherId");
+        assertEquals("*id* = *otherId*", SqlUtils.processOnClause("id = otherId", TEST_ID_PROCESSOR));
+        assertEquals("a.*id* = b.*otherId*", SqlUtils.processOnClause("a.id = b.otherId", TEST_ID_PROCESSOR));
+        assertEquals("schema.*a*.*id* = schema.*b*.*otherId*", SqlUtils.processOnClause("schema.a.id = schema.b.otherId", TEST_ID_PROCESSOR));
     }
 
-    private void testOnClausePattern(String onClause, String one, String two, String three, String four)
+    @Test
+    public void testProcessGroupByClause()
     {
-        final Matcher matcher = SqlUtils.ON_CLAUSE.matcher(onClause);
-        assertTrue(matcher.matches());
-        assertEquals(one, matcher.group(1));
-        assertEquals(two, matcher.group(2));
-        assertEquals(three, matcher.group(3));
-        assertEquals(four, matcher.group(4));
+        assertEquals("*id*,*otherId*", SqlUtils.processGroupByClause("id,otherId", TEST_ID_PROCESSOR));
+        assertEquals("a.*id*,b.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
     }
 
     private static class TestIdProcessor implements Function<String, String>
