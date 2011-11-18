@@ -124,7 +124,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
             case Types.DATE:
             case Types.TIME:
             case Types.VARCHAR:
-                Matcher matcher = Pattern.compile("'(.+)'.*").matcher(value);
+                Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
                 if (matcher.find())
                 {
                     value = matcher.group(1);

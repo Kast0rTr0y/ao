@@ -88,16 +88,33 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
     }
 
     @Test
-    public void testNoDefaultNotMigrated() throws Exception
+    public void testNotMigratedTwiceWithDefault() throws Exception
     {
-        entityManager.migrate(EntityVersion2.class);
+        testEntityNotMigratedTwice(EntityVersion1.class);
+    }
+
+    @Test
+    public void testNotMigratedTwiceWithNoDefault() throws Exception
+    {
+        testEntityNotMigratedTwice(EntityVersion2.class);
+    }
+
+    @Test
+    public void testNotMigratedTwiceWithEmptyDefault() throws Exception
+    {
+        testEntityNotMigratedTwice(EntityVersion3.class);
+    }
+
+    private void testEntityNotMigratedTwice(final Class<? extends RawEntity<?>> entityClass) throws Exception
+    {
+        entityManager.migrate(entityClass);
 
         checkSqlNotExecuted(new Callable<Object>()
         {
             @Override
             public Void call() throws Exception
             {
-                entityManager.migrate(EntityVersion2.class);
+                entityManager.migrate(entityClass);
                 return null;
             }
         });

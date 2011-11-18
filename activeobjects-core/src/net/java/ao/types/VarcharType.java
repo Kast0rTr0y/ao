@@ -19,7 +19,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import com.google.common.base.Objects;
 import net.java.ao.EntityManager;
 
 /**
@@ -47,24 +46,7 @@ class VarcharType extends DatabaseType<String> {
 	}
 
     @Override
-    public boolean valueEquals(Object val1, Object val2)
-    {
-        final String v1 = transform(val1);
-        final String v2 = transform(val2);
-        return Objects.equal(v1, v2);
-    }
-
-    private String transform(Object value)
-    {
-        String v = null;
-        if (value != null)
-        {
-            v = value.toString();
-            if (v.equals("''"))
-            {
-                v = "";
-            }
-        }
-        return v;
+	public boolean valueEquals(Object val1, Object val2) {
+		return val1.toString().equals(val2.toString());
     }
 }
