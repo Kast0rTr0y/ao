@@ -203,13 +203,16 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(defaultConstraintName(table, field))
                     .toString());
-            
-            sql.add(new StringBuilder()
-                    .append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" ADD CONSTRAINT ").append(defaultConstraintName(table, field))
-                    .append(" DEFAULT ").append(renderValue(field.getDefaultValue()))
-                    .append(" FOR ").append(processID(field.getName()))
-                    .toString());
+
+            if (field.getDefaultValue() != null)
+            {
+                sql.add(new StringBuilder()
+                        .append("ALTER TABLE ").append(withSchema(table.getName()))
+                        .append(" ADD CONSTRAINT ").append(defaultConstraintName(table, field))
+                        .append(" DEFAULT ").append(renderValue(field.getDefaultValue()))
+                        .append(" FOR ").append(processID(field.getName()))
+                        .toString());
+            }
         }
 
         if (!oldField.isUnique() && field.isUnique())
