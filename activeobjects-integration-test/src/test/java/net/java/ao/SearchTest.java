@@ -49,7 +49,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
         Map<String, String[]> people = new LinkedHashMap<String, String[]>()
         {
             {
-                put("Daniel", new String[]{"Spiewak", "http://www.codecommit.com"});
+//                put("Daniel", new String[]{"Spiewak", "http://www.codecommit.com"}); // already is in the DB
                 put("Christopher", new String[]{"Spiewak", "http://www.weirdthings.com"});
 
                 put("Jack", new String[]{"O'Neil", "http://www.gateworld.net"});

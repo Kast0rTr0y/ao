@@ -32,7 +32,7 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public class ActiveObjectTransactionMethodRule implements MethodRule
 {
-    private static final Map<JdbcConfiguration, Class<? extends DatabaseUpdater>> DATABASES = new HashMap<JdbcConfiguration, Class<? extends DatabaseUpdater>>();
+    private static final Map<JdbcConfiguration, DatabaseConfiguration> DATABASES = new HashMap<JdbcConfiguration, DatabaseConfiguration>();
 
     private final Object test;
     private final JdbcConfiguration jdbc;
@@ -104,10 +104,9 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
     protected void before(FrameworkMethod method) throws Throwable
     {
-        createIndexDir();
-        entityManager = createEntityManager();
+        if (withIndex) createIndexDir();
+        entityManager = createEntityManagerAndUpdateDatabase();
         injectEntityManager();
-        updateDatabase();
     }
 
     private void createIndexDir()
@@ -132,7 +131,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         }
 
         entityManager = null;
-        removeIndexDir();
+        if (withIndex) removeIndexDir();
     }
 
     private boolean useTransaction(FrameworkMethod method)
@@ -164,6 +163,39 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             }
             file.delete(); // now we can delete the empty directory
         }
+    }
+
+    private EntityManager createEntityManagerAndUpdateDatabase() throws Exception
+    {
+        final Class<? extends DatabaseUpdater> databaseUpdater = isDataAnnotationPresent() ? getDataAnnotationValue() : getDataAnnotationDefaultValue();
+        final DatabaseConfiguration dbConfiguration = newDatabaseConfiguration(databaseUpdater);
+        final EntityManager entityManager;
+        if (databaseUpdater == NullDatabase.class)
+        {
+            entityManager = createEntityManager();
+            entityManager.migrate(); // empty the database
+            DATABASES.remove(jdbc);
+        }
+        else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex)
+        {
+            entityManager = createEntityManager();
+            entityManager.migrate(); // empty the database
+            newInstance(databaseUpdater).update(entityManager);
+            dbConfiguration.setEntityManager(entityManager);
+            DATABASES.put(jdbc, dbConfiguration);
+        }
+        else
+        {
+            entityManager = DATABASES.get(jdbc).getEntityManager();
+            entityManager.flushAll();
+        }
+
+        return entityManager;
+    }
+
+    private DatabaseConfiguration newDatabaseConfiguration(Class<? extends DatabaseUpdater> databaseUpdater)
+    {
+        return new DatabaseConfiguration(databaseUpdater, tableNameConverter.getClass(), fieldNameConverter.getClass(), sequenceNameConverter.getClass(), triggerNameConverter.getClass(), indexNameConverter.getClass(), withIndex);
     }
 
     private EntityManager createEntityManager()
@@ -212,22 +244,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         finally
         {
             field.setAccessible(isFieldAccessible);
-        }
-    }
-
-    private void updateDatabase() throws Exception
-    {
-        final Class<? extends DatabaseUpdater> databaseUpdater = isDataAnnotationPresent() ? getDataAnnotationValue() : getDataAnnotationDefaultValue();
-        if (databaseUpdater == NullDatabase.class)
-        {
-            entityManager.migrate(); // empty the database
-            DATABASES.remove(jdbc);
-        }
-        else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(databaseUpdater))
-        {
-            entityManager.migrate(); // empty the database
-            newInstance(databaseUpdater).update(entityManager);
-            DATABASES.put(jdbc, databaseUpdater);
         }
     }
 
@@ -288,4 +304,104 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
         return null;
     }
+
+    private static final class DatabaseConfiguration
+    {
+        private final Class<? extends DatabaseUpdater> databaseUpdaterClass;
+        private final Class<? extends TableNameConverter> tableNameConverterClass;
+        private final Class<? extends FieldNameConverter> fieldNameConverterClass;
+        private final Class<? extends SequenceNameConverter> sequenceNameConverterClass;
+        private final Class<? extends TriggerNameConverter> triggerNameConverterClass;
+        private final Class<? extends IndexNameConverter> indexNameConverterClass;
+        private final boolean withIndex;
+
+        private EntityManager entityManager;
+
+        public DatabaseConfiguration(Class<? extends DatabaseUpdater> databaseUpdaterClass,
+                                     Class<? extends TableNameConverter> tableNameConverterClass,
+                                     Class<? extends FieldNameConverter> fieldNameConverterClass,
+                                     Class<? extends SequenceNameConverter> sequenceNameConverterClass,
+                                     Class<? extends TriggerNameConverter> triggerNameConverterClass,
+                                     Class<? extends IndexNameConverter> indexNameConverterClass,
+                                     boolean withIndex)
+        {
+            this.databaseUpdaterClass = databaseUpdaterClass;
+            this.tableNameConverterClass = tableNameConverterClass;
+            this.fieldNameConverterClass = fieldNameConverterClass;
+            this.sequenceNameConverterClass = sequenceNameConverterClass;
+            this.triggerNameConverterClass = triggerNameConverterClass;
+            this.indexNameConverterClass = indexNameConverterClass;
+            this.withIndex = withIndex;
+        }
+
+        public void setEntityManager(EntityManager entityManager)
+        {
+            this.entityManager = entityManager;
+        }
+
+        public EntityManager getEntityManager()
+        {
+            return entityManager;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final DatabaseConfiguration that = (DatabaseConfiguration) o;
+
+            if (withIndex != that.withIndex)
+            {
+                return false;
+            }
+            if (databaseUpdaterClass != null ? !databaseUpdaterClass.equals(that.databaseUpdaterClass) : that.databaseUpdaterClass != null)
+            {
+                return false;
+            }
+            if (fieldNameConverterClass != null ? !fieldNameConverterClass.equals(that.fieldNameConverterClass) : that.fieldNameConverterClass != null)
+            {
+                return false;
+            }
+            if (indexNameConverterClass != null ? !indexNameConverterClass.equals(that.indexNameConverterClass) : that.indexNameConverterClass != null)
+            {
+                return false;
+            }
+            if (sequenceNameConverterClass != null ? !sequenceNameConverterClass.equals(that.sequenceNameConverterClass) : that.sequenceNameConverterClass != null)
+            {
+                return false;
+            }
+            if (tableNameConverterClass != null ? !tableNameConverterClass.equals(that.tableNameConverterClass) : that.tableNameConverterClass != null)
+            {
+                return false;
+            }
+            if (triggerNameConverterClass != null ? !triggerNameConverterClass.equals(that.triggerNameConverterClass) : that.triggerNameConverterClass != null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = databaseUpdaterClass != null ? databaseUpdaterClass.hashCode() : 0;
+            result = 31 * result + (tableNameConverterClass != null ? tableNameConverterClass.hashCode() : 0);
+            result = 31 * result + (fieldNameConverterClass != null ? fieldNameConverterClass.hashCode() : 0);
+            result = 31 * result + (sequenceNameConverterClass != null ? sequenceNameConverterClass.hashCode() : 0);
+            result = 31 * result + (triggerNameConverterClass != null ? triggerNameConverterClass.hashCode() : 0);
+            result = 31 * result + (indexNameConverterClass != null ? indexNameConverterClass.hashCode() : 0);
+            result = 31 * result + (withIndex ? 1 : 0);
+            return result;
+        }
+    }
+
 }
