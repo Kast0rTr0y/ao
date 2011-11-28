@@ -176,6 +176,14 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
+    public ResultSet getIndexes(Connection conn, String tableName) throws SQLException
+    {
+        final DatabaseMetaData metaData = conn.getMetaData();
+        final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
+        return conn.getMetaData().getIndexInfo(null, schemaPattern, tableName, false, true);
+    }
+
+    @Override
     public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException
     {
         final DatabaseMetaData metaData = connection.getMetaData();

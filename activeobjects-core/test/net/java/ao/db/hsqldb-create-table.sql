@@ -11,6 +11,6 @@ CREATE TABLE PUBLIC.person (
     modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     weight DOUBLE,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES PUBLIC.company(id),
-    UNIQUE(url),
+ CONSTRAINT U_person_url UNIQUE(url),
     PRIMARY KEY(id)
 )

@@ -23,7 +23,10 @@ import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -39,6 +42,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -305,19 +309,19 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderConstraintsForTable(DDLTable table) {
-		StringBuilder back = new StringBuilder(super.renderConstraintsForTable(table));
+	protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
+		StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
 
 		for (DDLField field : table.getFields()) {
 			if (field.isUnique()) {
-				back.append("    UNIQUE(").append(processID(field.getName())).append("),\n");
+				back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
 			}
 		}
 
 		return back.toString();
 	}
 
-	@Override
+    @Override
 	protected String convertTypeToString(DatabaseType<?> type) {
 		switch (type.getType()) {
 			case Types.CLOB:
@@ -355,6 +359,49 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		return super.renderValue(value);
 	}
 
+    @Override
+    protected List<String> renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        final List<String> back = super.renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, field);
+
+        if (field.isUnique())
+        {
+            back.add(renderAddUniqueConstraint(uniqueNameConverter, table, field));
+        }
+        return back;
+    }
+
+    @Override
+    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field)
+    {
+       final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, oldField, field);
+
+        if (!field.isPrimaryKey())
+        {
+            if (!oldField.isUnique() && field.isUnique())
+            {
+                sql.add(renderAddUniqueConstraint(uniqueNameConverter, table, field));
+            }
+            if (oldField.isUnique() && !field.isUnique())
+            {
+                sql.add(new StringBuilder().append("ALTER TABLE ")
+                        .append(withSchema(table.getName()))
+                        .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
+                        .toString());
+            }
+        }
+        return sql;
+    }
+
+    private String renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        return new StringBuilder()
+                .append("ALTER TABLE ").append(withSchema(table.getName()))
+                .append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
+                .append(" UNIQUE (").append(processID(field.getName())).append(")")
+                .toString();
+    }
+
 	@Override
 	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
@@ -378,7 +425,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("DROP INDEX ");
 
-		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+		back.append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())));
 
 		return back.toString();
 	}

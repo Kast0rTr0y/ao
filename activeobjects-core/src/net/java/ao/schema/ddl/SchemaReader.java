@@ -26,6 +26,7 @@ import net.java.ao.schema.helper.DatabaseMetaDataReader;
 import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
 import net.java.ao.schema.helper.Field;
 import net.java.ao.schema.helper.ForeignKey;
+import net.java.ao.schema.helper.Index;
 
 import java.sql.*;
 import java.text.ParseException;
@@ -113,6 +114,9 @@ public final class SchemaReader
             table.setForeignKeys(foreignKeys.toArray(new DDLForeignKey[foreignKeys.size()]));
         }
 
+        final List<DDLIndex> indexes = readIndexes(databaseMetaDataReader, databaseMetaData, tableName);
+        table.setIndexes(indexes.toArray(new DDLIndex[indexes.size()]));
+
         return table;
     }
 
@@ -132,6 +136,7 @@ public final class SchemaReader
                 field.setPrimaryKey(from.isPrimaryKey());
                 field.setScale(from.getScale());
                 field.setType(from.getDatabaseType());
+                field.setUnique(from.isUnique());
                 return field;
             }
         }));
@@ -149,6 +154,20 @@ public final class SchemaReader
                 key.setTable(from.getForeignTableName());
                 key.setDomesticTable(from.getLocalTableName());
                 return key;
+            }
+        }));
+    }
+
+    private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName)
+    {
+        return  newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>()
+        {
+            public DDLIndex apply(Index index)
+            {
+                DDLIndex ddl = new DDLIndex();
+                ddl.setTable(tableName);
+                ddl.setField(index.getFieldName());
+                return ddl;
             }
         }));
     }
@@ -317,9 +336,9 @@ public final class SchemaReader
 
             for (DDLField fromField : alterFields)
             {
-                String fieldName = transform(fromField.getName(), caseSensetive);
+                final String fieldName = transform(fromField.getName(), caseSensetive);
 
-                DDLField ontoField = ontoFields.get(fieldName);
+                final DDLField ontoField = ontoFields.get(fieldName);
 
                 if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null)
                 {
@@ -332,22 +351,16 @@ public final class SchemaReader
                         && !Common.fuzzyCompare(fromField.getDefaultValue(), ontoField.getDefaultValue()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                } /*else if (!fromField.getOnUpdate().equals(ontoField.getOnUpdate())) {
-					actions.add(createColumnAlterAction(fromTable, fromField));
-				} else if (fromField.getPrecision() != ontoField.getPrecision()) {
-					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-				} else if (fromField.getScale() != ontoField.getScale()) {
-					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-				}*/
+                }
                 else if (!Common.fuzzyTypeCompare(fromField.getType().getType(), ontoField.getType().getType()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                } /*else if (fromField.isAutoIncrement() != ontoField.isAutoIncrement()) {
-					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-				} else if (fromField.isNotNull() != ontoField.isNotNull()) {
-					actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-				} */
-                else if (fromField.isUnique() != ontoField.isUnique())
+                }
+                else if (fromField.isNotNull() != ontoField.isNotNull())
+                {
+                    actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
+                }
+                else if (!fromField.isPrimaryKey() && (fromField.isUnique() != ontoField.isUnique()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
@@ -392,52 +405,62 @@ public final class SchemaReader
             }
 
             // field indexes
-//			List<DDLIndex> addIndexes = new ArrayList<DDLIndex>();
-//			List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
-//			
-//			for (DDLIndex fromIndex : fromTable.getIndexes()) {
-//				boolean found = false;
-//				
-//				for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
-//					if (fromIndex.getTable().equalsIgnoreCase(ontoIndex.getTable()) 
-//							&& fromIndex.getField().equalsIgnoreCase(ontoIndex.getField())) {
-//						found = true;
-//						break;
-//					}
-//				}
-//				
-//				if (!found) {
-//					addIndexes.add(fromIndex);
-//				}
-//			}
-//			
-//			for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
-//				boolean found = false;
-//				
-//				for (DDLIndex fromIndex : fromTable.getIndexes()) {
-//					if (ontoIndex.getTable().equalsIgnoreCase(fromIndex.getTable()) 
-//							&& ontoIndex.getField().equalsIgnoreCase(fromIndex.getField())) {
-//						found = true;
-//						break;
-//					}
-//				}
-//				
-//				if (!found) {
-//					dropIndexes.add(ontoIndex);
-//				}
-//			}
-//			
-//			for (DDLIndex index : addIndexes) {
-//				DDLAction action = new DDLAction(DDLActionType.CREATE_INDEX);
-//				action.setIndex(index);
-//				actions.add(action);
-//			}
-//
-//			for (DDLIndex index : dropIndexes) {
-//				DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
-//				action.setIndex(index);
-//				actions.add(action);
-//			}
+            List<DDLIndex> addIndexes = new ArrayList<DDLIndex>();
+            List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
+
+            for (DDLIndex fromIndex : fromTable.getIndexes())
+            {
+                boolean found = false;
+
+                for (DDLIndex ontoIndex : ontoTable.getIndexes())
+                {
+                    if (fromIndex.getTable().equalsIgnoreCase(ontoIndex.getTable())
+                            && fromIndex.getField().equalsIgnoreCase(ontoIndex.getField()))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    addIndexes.add(fromIndex);
+                }
+            }
+
+            for (DDLIndex ontoIndex : ontoTable.getIndexes())
+            {
+                boolean found = false;
+
+                for (DDLIndex fromIndex : fromTable.getIndexes())
+                {
+                    if (ontoIndex.getTable().equalsIgnoreCase(fromIndex.getTable())
+                            && ontoIndex.getField().equalsIgnoreCase(fromIndex.getField()))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    dropIndexes.add(ontoIndex);
+                }
+            }
+
+            for (DDLIndex index : addIndexes)
+            {
+                DDLAction action = new DDLAction(DDLActionType.CREATE_INDEX);
+                action.setIndex(index);
+                actions.add(action);
+            }
+
+            for (DDLIndex index : dropIndexes)
+            {
+                DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
+                action.setIndex(index);
+                actions.add(action);
+            }
         }
 
         for (DDLForeignKey key : dropKeys)

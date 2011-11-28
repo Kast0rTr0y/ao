@@ -17,9 +17,11 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Sets.newHashSet;
 import static net.java.ao.sql.SqlUtils.*;
 
 public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
@@ -67,6 +69,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
     {
         final TypeManager manager = TypeManager.getInstance();
         final List<String> sequenceNames = getSequenceNames(databaseMetaData);
+        final Set<String> uniqueFields = getUniqueFields(databaseMetaData, tableName);
 
         final Map<String, FieldImpl> fields = newHashMap();
 
@@ -82,8 +85,10 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 final int scale = getScale(rsmd, i);
                 final boolean autoIncrement = isAutoIncrement(rsmd, i, sequenceNames, tableName, fieldName);
                 final boolean notNull = isNotNull(rsmd, i);
+                final boolean isUnique = isUnique(uniqueFields, fieldName);
 
-                fields.put(fieldName, newField(fieldName, databaseType, precision, scale, autoIncrement, notNull));
+                fields.put(fieldName, newField(fieldName, databaseType, precision, scale, autoIncrement, notNull, isUnique));
+
             }
 
             ResultSet rs = null;
@@ -128,6 +133,63 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         }
     }
 
+    @Override
+    public Iterable<? extends Index> getIndexes(DatabaseMetaData databaseMetaData, String tableName)
+    {
+        ResultSet resultSet = null;
+        try
+        {
+            final List<Index> indexes = newLinkedList();
+            resultSet = databaseProvider.getIndexes(databaseMetaData.getConnection(), tableName);
+            while (resultSet.next())
+            {
+                boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");
+                if (nonUnique)
+                {
+                    indexes.add(newIndex(resultSet, tableName));
+                }
+            }
+            return indexes;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            closeQuietly(resultSet);
+        }
+    }
+
+
+    private Set<String> getUniqueFields(DatabaseMetaData metaData, String tableName)
+    {
+        ResultSet rs = null;
+        try
+        {
+            rs = databaseProvider.getIndexes(metaData.getConnection(), tableName);
+
+            final Set<String> fields = newHashSet();
+            while (rs.next())
+            {
+                boolean nonUnique = rs.getBoolean("NON_UNIQUE");
+                if (!nonUnique)
+                {
+                    fields.add(rs.getString("COLUMN_NAME"));
+                }
+            }
+            return fields;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException("Could not get unique fields for table '" + tableName + "'", e);
+        }
+        finally
+        {
+            closeQuietly(rs);
+        }
+    }
+
     private List<String> getSequenceNames(DatabaseMetaData metaData)
     {
         ResultSet rs = null;
@@ -167,9 +229,14 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return sequenceNames.contains(databaseProvider.processID(nameConverters.getSequenceNameConverter().getName(tableName, fieldName)));
     }
 
-    private FieldImpl newField(String fieldName, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull)
+    private boolean isUnique(Set<String> uniqueFields, String fieldName) throws SQLException
     {
-        return new FieldImpl(fieldName, databaseType, precision, scale, autoIncrement, notNull);
+        return uniqueFields.contains(fieldName);
+    }
+
+    private FieldImpl newField(String fieldName, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull, boolean isUnique)
+    {
+        return new FieldImpl(fieldName, databaseType, precision, scale, autoIncrement, notNull, isUnique);
     }
 
     private boolean isNotNull(ResultSetMetaData resultSetMetaData, int fieldIndex) throws SQLException
@@ -251,6 +318,12 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return new ForeignKeyImpl(localTableName, localFieldName, foreignTableName, foreignFieldName);
     }
 
+    private Index newIndex(ResultSet rs, String tableName) throws SQLException
+    {
+        final String fieldName = rs.getString("COLUMN_NAME");
+        return new IndexImpl(tableName, fieldName);
+    }
+
     private static final class FieldImpl implements Field
     {
         private final String name;
@@ -260,8 +333,9 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         private boolean notNull;
         private Object defaultValue;
         private boolean primaryKey;
+        private boolean isUnique;
 
-        public FieldImpl(String name, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull)
+        public FieldImpl(String name, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull, boolean isUnique)
         {
             this.name = name;
             this.databaseType = databaseType;
@@ -269,33 +343,40 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             this.scale = scale;
             this.autoIncrement = autoIncrement;
             this.notNull = notNull;
+            this.isUnique = isUnique;
         }
 
+        @Override
         public String getName()
         {
             return name;
         }
 
+        @Override
         public DatabaseType<?> getDatabaseType()
         {
             return databaseType;
         }
 
+        @Override
         public int getPrecision()
         {
             return precision;
         }
 
+        @Override
         public int getScale()
         {
             return scale;
         }
 
+        @Override
         public boolean isAutoIncrement()
         {
             return autoIncrement;
         }
 
+        @Override
         public boolean isNotNull()
         {
             return notNull;
@@ -306,6 +387,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             this.notNull = notNull;
         }
 
+        @Override
         public Object getDefaultValue()
         {
             return defaultValue;
@@ -316,6 +398,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             this.defaultValue = defaultValue;
         }
 
+        @Override
         public boolean isPrimaryKey()
         {
             return primaryKey;
@@ -324,6 +407,12 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         public void setPrimaryKey(boolean primaryKey)
         {
             this.primaryKey = primaryKey;
+        }
+
+        @Override
+        public boolean isUnique()
+        {
+            return isUnique;
         }
     }
 
@@ -357,6 +446,27 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         public String getForeignFieldName()
         {
             return foreignFieldName;
+        }
+    }
+
+    private static final class IndexImpl implements Index
+    {
+        private final String tableName, fieldName;
+
+        public IndexImpl(String tableName, String fieldName)
+        {
+            this.tableName = tableName;
+            this.fieldName = fieldName;
+        }
+
+        public String getTableName()
+        {
+            return tableName;
+        }
+
+        public String getFieldName()
+        {
+            return fieldName;
         }
     }
 }

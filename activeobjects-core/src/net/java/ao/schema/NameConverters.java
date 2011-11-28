@@ -11,4 +11,6 @@ public interface NameConverters
     TriggerNameConverter getTriggerNameConverter();
 
     IndexNameConverter getIndexNameConverter();
+
+    UniqueNameConverter getUniqueNameConverter();
 }

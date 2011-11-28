@@ -9,6 +9,7 @@ import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
 import net.java.ao.schema.DefaultTriggerNameConverter;
+import net.java.ao.schema.DefaultUniqueNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
@@ -16,6 +17,7 @@ import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableAnnotationTableNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -109,6 +111,7 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private SequenceNameConverter sequenceNameConverter;
         private TriggerNameConverter triggerNameConverter;
         private IndexNameConverter indexNameConverter;
+        private UniqueNameConverter uniqueNameConverter;
 
         private boolean useWeakCache = false;
 
@@ -126,7 +129,8 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
                     getFieldNameConverter(),
                     getSequenceNameConverter(),
                     getTriggerNameConverter(),
-                    getIndexNameConverter());
+                    getIndexNameConverter(),
+                    getUniqueNameConverter());
         }
 
         private TableNameConverter getTableNameConverter()
@@ -147,6 +151,16 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private TriggerNameConverter getTriggerNameConverter()
         {
             return triggerNameConverter != null ? triggerNameConverter : defaultTriggerNameConverter();
+        }
+
+        private UniqueNameConverter getUniqueNameConverter()
+        {
+            return uniqueNameConverter != null ? uniqueNameConverter : defaultUniqueNameConverter();
+        }
+
+        private UniqueNameConverter defaultUniqueNameConverter()
+        {
+            return new DefaultUniqueNameConverter();
         }
 
         private IndexNameConverter getIndexNameConverter()

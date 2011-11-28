@@ -25,6 +25,7 @@ import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -295,7 +296,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field) {
+	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field) {
 		final List<String> back = new ArrayList<String>();
 
 		String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
@@ -371,7 +372,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			System.err.println("WARNING: Data contained in column '" + table.getName() + "." + oldField.getName() + "' will be lost");
 
 			back.addAll(Arrays.asList(renderAlterTableDropColumn(triggerNameConverter, table, oldField)));
-			back.addAll(Arrays.asList(renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, table, field)));
+			back.addAll(renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, field));
 		}
 
 		String toRender = renderFunctionForField(triggerNameConverter, table, field);

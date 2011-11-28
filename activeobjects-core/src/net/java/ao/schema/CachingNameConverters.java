@@ -9,6 +9,7 @@ public final class CachingNameConverters implements NameConverters
     private final SequenceNameConverter sequenceNameConverter;
     private final TriggerNameConverter triggerNameConverter;
     private final IndexNameConverter indexNameConverter;
+    private final UniqueNameConverter uniqueNameConverter;
 
     public CachingNameConverters(NameConverters nameConverters)
     {
@@ -18,6 +19,7 @@ public final class CachingNameConverters implements NameConverters
         this.sequenceNameConverter = nameConverters.getSequenceNameConverter();
         this.triggerNameConverter = nameConverters.getTriggerNameConverter();
         this.indexNameConverter = nameConverters.getIndexNameConverter();
+        this.uniqueNameConverter = nameConverters.getUniqueNameConverter();
     }
 
     @Override
@@ -48,5 +50,11 @@ public final class CachingNameConverters implements NameConverters
     public IndexNameConverter getIndexNameConverter()
     {
         return indexNameConverter;
+    }
+
+    @Override
+    public UniqueNameConverter getUniqueNameConverter()
+    {
+        return uniqueNameConverter;
     }
 }

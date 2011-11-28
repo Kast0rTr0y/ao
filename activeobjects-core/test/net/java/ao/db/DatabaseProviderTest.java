@@ -36,6 +36,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultUniqueNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
@@ -66,6 +67,7 @@ public final class DatabaseProviderTest
         when(nameConverters.getSequenceNameConverter()).thenReturn(new DefaultSequenceNameConverter());
         when(nameConverters.getTriggerNameConverter()).thenReturn(new DefaultTriggerNameConverter());
         when(nameConverters.getIndexNameConverter()).thenReturn(new DefaultIndexNameConverter());
+        when(nameConverters.getUniqueNameConverter()).thenReturn(new DefaultUniqueNameConverter());
     }
 
     @Test

@@ -36,6 +36,7 @@ import net.java.ao.Query;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -192,9 +193,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, table, oldField, field);
+        final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, oldField, field);
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
@@ -433,7 +434,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String[] renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
+	protected List<String> renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
 		List<String> back = new ArrayList<String>();
 
 		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(table, field, new RenderFieldOptions(true, true)));
@@ -448,7 +449,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			back.add(trigger);
 		}
 
-		return back.toArray(new String[back.size()]);
+		return back;
 	}
 
 	@Override

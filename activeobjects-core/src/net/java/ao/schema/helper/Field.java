@@ -19,4 +19,6 @@ public interface Field
     Object getDefaultValue();
 
     boolean isPrimaryKey();
+
+    boolean isUnique();
 }

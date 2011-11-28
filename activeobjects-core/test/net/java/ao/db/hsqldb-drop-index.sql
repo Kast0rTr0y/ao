@@ -1,1 +1,1 @@
-DROP INDEX index_person_companyid
+DROP INDEX PUBLIC.index_person_companyid
