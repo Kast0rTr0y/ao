@@ -3,6 +3,7 @@ package net.java.ao.types;
 import net.java.ao.it.DatabaseProcessor;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                 + age + " = ?, "
                 + url + " = ?, "
                 + favoriteClass + " = ? "
-                + "WHERE " + id + " = ?", new UpdateCallback()
+                + "WHERE " + id + " = ?", new DbUtils.UpdateCallback()
         {
             public void setParameters(PreparedStatement stmt) throws Exception
             {
@@ -54,7 +55,7 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                 + url + ","
                 + favoriteClass
                 + " FROM " + personTableName + " WHERE " + id + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {
@@ -91,7 +92,7 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                 + url + " = ?, "
                 + favoriteClass + " = ? "
                 + "WHERE " + id + " = ?",
-                new UpdateCallback()
+                new DbUtils.UpdateCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {
@@ -112,7 +113,7 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                 + url + ","
                 + favoriteClass
                 + " FROM " + personTableName + " WHERE " + id + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {

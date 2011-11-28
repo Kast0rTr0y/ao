@@ -19,34 +19,47 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import com.google.common.base.Objects;
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
+import net.java.ao.util.StringUtils;
 
 /**
  * @author Daniel Spiewak
  */
-class VarcharType extends DatabaseType<String> {
-
-	public VarcharType() {
-		super(Types.VARCHAR, 255, String.class);
-	}
-	
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
-	}
-	
-	@Override
-	public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException {
-		return res.getString(field);
-	}
-
-	@Override
-	public String defaultParseValue(String value) {
-		return value;
-	}
+class VarcharType extends DatabaseType<String>
+{
+    public VarcharType()
+    {
+        super(Types.VARCHAR, 255, String.class);
+    }
 
     @Override
-	public boolean valueEquals(Object val1, Object val2) {
-		return val1.toString().equals(val2.toString());
+    public String getDefaultName()
+    {
+        return "VARCHAR";
+    }
+
+    @Override
+    public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException
+    {
+        return res.getString(field);
+    }
+
+    @Override
+    public String defaultParseValue(String value)
+    {
+        if (StringUtils.isBlank(value))
+        {
+            throw new ActiveObjectsConfigurationException("Empty strings are not supported on all databases. Therefore is not supported by Active Objects.");
+        }
+
+        return value;
+    }
+
+    @Override
+    public boolean valueEquals(Object val1, Object val2)
+    {
+        return Objects.equal(val1, val2);
     }
 }

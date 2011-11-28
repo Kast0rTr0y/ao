@@ -48,7 +48,6 @@ import net.java.ao.cache.RAMRelationsCache;
 import net.java.ao.cache.RelationsCache;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.CachingNameConverters;
-import net.java.ao.schema.CachingTableNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SchemaGenerator;
@@ -57,6 +56,7 @@ import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
 import com.google.common.collect.MapMaker;
+import net.java.ao.util.StringUtils;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code>
@@ -418,11 +418,53 @@ public class EntityManager
             listParams.add(new DBParam(field, generator.generateValue(this)));
         }
 
+        final Method pkMethod = Common.getPrimaryKeyMethod(type);
+        final String pkField = Common.getPrimaryKeyField(type, getFieldNameConverter());
+
+        final Set<String> nonNullFields = Common.getNonNullFields(type, nameConverters.getFieldNameConverter());
+        final Set<String> fieldsThatShouldBeSet = Common.getNonNullFieldsWithNoDefaultAndNotGenerated(type, nameConverters.getFieldNameConverter());
+        final Map<String, DatabaseType> valueFields = Common.getValueFields(type, nameConverters.getFieldNameConverter());
+
+        for (DBParam param : params)
+        {
+            if (param.getField().equals(pkField))
+            {
+                if (param.getValue() instanceof String && StringUtils.isBlank((String) param.getValue()))
+                {
+                    throw new ActiveObjectsException("Cannot set primary key to blank String '" + param.getValue() + "'");
+                }
+                else if (param.getValue() == null)
+                {
+                    throw new IllegalArgumentException("Cannot set primary key to NULL");
+                }
+            }
+            else if (nonNullFields.contains(param.getField()) && param.getValue() == null)
+            {
+                throw new IllegalArgumentException("Cannot set non-null field " + param.getField() + " to null");
+            }
+            else if (nonNullFields.contains(param.getField()) && param.getValue() instanceof String && StringUtils.isBlank((String) param.getValue()))
+            {
+                throw new IllegalArgumentException("Cannot set non-null String field " + param.getField() + " to ''");
+            }
+
+            fieldsThatShouldBeSet.remove(param.getField());
+
+            final DatabaseType dbType = valueFields.get(param.getField());
+            if (dbType != null)
+            {
+                dbType.validate(param.getValue());
+            }
+        }
+
+        if (!fieldsThatShouldBeSet.isEmpty())
+        {
+            throw new IllegalArgumentException("There are some non-null fields that weren't set when trying to create entity '" + type.getName() + "', those fields are: " + nonNullFields);
+        }
+
 		Connection connection = null;
 		try
         {
             connection = provider.getConnection();
-			final Method pkMethod = Common.getPrimaryKeyMethod(type);
 			back = peer(type, provider.insertReturningKey(this, connection,
 					Common.getPrimaryKeyClassType(type),
 					Common.getPrimaryKeyField(type, getFieldNameConverter()),
@@ -934,7 +976,7 @@ public class EntityManager
 	 * Retrieves the {@link TableNameConverter} instance used for name
 	 * conversion of all entity types.
 	 */
-	TableNameConverter getTableNameConverter() {
+    public TableNameConverter getTableNameConverter() {
         return nameConverters.getTableNameConverter();
 	}
 
@@ -942,7 +984,7 @@ public class EntityManager
 	 * Retrieves the {@link FieldNameConverter} instance used for name
 	 * conversion of all entity methods.
 	 */
-	FieldNameConverter getFieldNameConverter() {
+    public FieldNameConverter getFieldNameConverter() {
         return nameConverters.getFieldNameConverter();
 	}
 

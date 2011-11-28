@@ -1,5 +1,6 @@
 package net.java.ao.test.junit;
 
+import net.java.ao.DelegateConnection;
 import net.java.ao.EntityManager;
 import net.java.ao.builder.EntityManagerBuilder;
 import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
@@ -12,6 +13,7 @@ import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
 import net.java.ao.test.jdbc.NonTransactional;
+import net.java.ao.test.jdbc.NullDatabase;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -22,6 +24,8 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  *
@@ -85,6 +89,12 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                     if (useTransaction && c != null)
                     {
                         entityManager.getProvider().rollbackTransaction(c);
+
+                        // make it closeable
+                        if (c instanceof DelegateConnection)
+                            ((DelegateConnection) c).setCloseable(true);
+                        // close it
+                        closeQuietly(c);
                     }
                     after(method);
                 }
@@ -118,7 +128,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     {
         if (!useTransaction(method))
         {
-            DATABASES.remove(jdbc.getClass()); // make sure that the next test gets a clean database
+            DATABASES.remove(jdbc); // make sure that the next test gets a clean database
         }
 
         entityManager = null;
@@ -208,7 +218,12 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private void updateDatabase() throws Exception
     {
         final Class<? extends DatabaseUpdater> databaseUpdater = isDataAnnotationPresent() ? getDataAnnotationValue() : getDataAnnotationDefaultValue();
-        if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(databaseUpdater))
+        if (databaseUpdater == NullDatabase.class)
+        {
+            entityManager.migrate(); // empty the database
+            DATABASES.remove(jdbc);
+        }
+        else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(databaseUpdater))
         {
             entityManager.migrate(); // empty the database
             newInstance(databaseUpdater).update(entityManager);

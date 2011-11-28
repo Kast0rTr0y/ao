@@ -15,6 +15,7 @@ import net.java.ao.it.model.Person;
 import net.java.ao.it.model.Profession;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import org.junit.Test;
 
@@ -77,7 +78,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {
@@ -106,7 +107,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {
@@ -140,7 +141,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
 
         executeStatement("SELECT " + escapeKeyword("url") + " FROM "
                 + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
 
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -178,7 +179,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {
@@ -214,7 +215,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         });
 
         executeStatement("SELECT " + escapeKeyword("url") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
                     {

@@ -26,24 +26,32 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.Default;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
+import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * WARNING: <strong>Not</strong> part of the public API.  This class is public only
@@ -270,6 +278,46 @@ public final class Common {
         return converter.getName(methods.iterator().next());
     }
 
+    public static Set<String> getNonNullFields(final Class<? extends RawEntity<?>> type, final FieldNameConverter converter)
+    {
+        return newHashSet(transform(getNonNullMethods(type), new Function<Method, String>()
+        {
+            @Override
+            public String apply(Method m)
+            {
+                return converter.getName(m);
+            }
+        }));
+    }
+
+    public static Set<String> getNonNullFieldsWithNoDefaultAndNotGenerated(final Class<? extends RawEntity<?>> type, final FieldNameConverter converter)
+    {
+        return newHashSet(transform(filter(getNonNullMethods(type),
+                new Predicate<Method>()
+                {
+                    @Override
+                    public boolean apply(Method m)
+                    {
+                        return !m.isAnnotationPresent(AutoIncrement.class) && !m.isAnnotationPresent(Generator.class) && !m.isAnnotationPresent(Default.class);
+                    }
+                }),
+                new Function<Method, String>()
+                {
+                    @Override
+                    public String apply(Method m)
+                    {
+                        return converter.getName(m);
+                    }
+                }
+        ));
+    }
+
+    public static Iterable<Method> getNonNullMethods(Class<? extends RawEntity<?>> type)
+    {
+        return methodFinder.findAnnotatedMethods(NotNull.class, type);
+    }
+
+
     public static Method getPrimaryKeyMethod(Class<? extends RawEntity<?>> type)
     {
         final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
@@ -407,6 +455,17 @@ public final class Common {
                         && !annotations.isAnnotationPresent(ManyToMany.class);
             }
         });
+    }
+
+    public static Map<String, DatabaseType> getValueFields(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)
+    {
+        final Set<Method> methods = getValueFieldsMethods(entity, converter);
+        final Map<String, DatabaseType> map = Maps.newHashMap();
+        for (Method m : methods)
+        {
+            map.put(converter.getName(m), TypeManager.getInstance().getType(getAttributeTypeFromMethod(m)));
+        }
+        return ImmutableMap.copyOf(map);
     }
 
     public static Set<String> getValueFieldsNames(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)

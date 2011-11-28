@@ -16,7 +16,9 @@
 package net.java.ao.schema;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
 import net.java.ao.DatabaseFunction;
@@ -58,7 +60,9 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  *
  * @author Daniel Spiewak
  */
-public final class SchemaGenerator {
+public final class SchemaGenerator
+{
+    private static final Set<Integer> AUTO_INCREMENT_LEGAL_TYPES = ImmutableSet.of(Types.INTEGER, Types.BIGINT);
 
     public static void migrate(DatabaseProvider provider,
                                SchemaConfiguration schemaConfiguration,
@@ -238,7 +242,7 @@ public final class SchemaGenerator {
                 field.setNotNull(annotations.isAnnotationPresent(NotNull.class));
                 field.setUnique(annotations.isAnnotationPresent(Unique.class));
 
-                final boolean isAutoIncrement = annotations.isAnnotationPresent(AutoIncrement.class);
+                final boolean isAutoIncrement = isAutoIncrement(type, annotations, field.getType());
                 field.setAutoIncrement(isAutoIncrement);
 
                 if (!isAutoIncrement && annotations.isAnnotationPresent(Default.class))
@@ -283,7 +287,18 @@ public final class SchemaGenerator {
 		return fields.toArray(new DDLField[fields.size()]);
 	}
 
-	private static DatabaseType<?> getSQLTypeFromMethod(Class<?> type, AnnotationDelegate annotations) {
+    private static boolean isAutoIncrement(Class<?> type, AnnotationDelegate annotations, DatabaseType<?> dbType)
+    {
+        final int sqlType1 = dbType.getType();
+        final boolean isAutoIncrement = annotations.isAnnotationPresent(AutoIncrement.class);
+        if (isAutoIncrement && (!AUTO_INCREMENT_LEGAL_TYPES.contains(sqlType1) || type.isEnum()))
+        {
+            throw new ActiveObjectsConfigurationException(AutoIncrement.class.getName() + " is not supported for type: " + dbType + " corresponding to SQL type: " + sqlType1);
+        }
+        return isAutoIncrement;
+    }
+
+    private static DatabaseType<?> getSQLTypeFromMethod(Class<?> type, AnnotationDelegate annotations) {
 		DatabaseType<?> sqlType = null;
 		TypeManager manager = TypeManager.getInstance();
 

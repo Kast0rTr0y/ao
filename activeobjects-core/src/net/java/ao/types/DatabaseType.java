@@ -91,6 +91,12 @@ public abstract class DatabaseType<T> {
 	public boolean shouldCache(Class<?> type) {
 		return true;
 	}
+
+    // validates the object before inserts
+    public Object validate(Object o)
+    {
+        return o;
+    }
 	
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, T value) throws SQLException {
 		stmt.setObject(index, value, getType());

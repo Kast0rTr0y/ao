@@ -27,6 +27,7 @@ import net.java.ao.it.model.Profession;
 import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.Postgres;
@@ -215,7 +216,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + ", " + escapeFieldName(Company.class, "isCool")
                 + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
                     {
@@ -244,7 +245,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         checkSqlExecutedWhenSaving(person);
 
         executeStatement("SELECT " + escapeFieldName(Person.class, "getProfession") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
                     {
@@ -344,7 +345,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         executeStatement("SELECT " + escapeFieldName(Comment.class, "getCommentable") + ", " + escapePolyFieldName(Comment.class, "getCommentable")
                 + " FROM " + getTableName(Comment.class) + " WHERE " + escapeFieldName(Comment.class, "getID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
                     {
@@ -524,7 +525,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         final Company company = entityManager.create(Company.class);
         executeStatement("SELECT " + escapeFieldName(Company.class, "getMotivation") + " FROM " + getTableName(Company.class)
                 + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
                     {
@@ -561,7 +562,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + getTableName(Company.class)
                 + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new StatementCallback()
+                new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
                     {

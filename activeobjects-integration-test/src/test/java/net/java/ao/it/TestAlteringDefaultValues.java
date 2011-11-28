@@ -16,7 +16,6 @@ import static org.junit.Assert.*;
 public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTest
 {
     private static final String DEFAULT_1 = "default_1";
-    private static final String DEFAULT_EMPTY = "";
 
     @Test
     public void testDefaultMigrated() throws Exception
@@ -50,30 +49,7 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
         final EntityVersion2 v2 = entityManager.create(EntityVersion2.class);
         assertEquals(null, v2.getDescription());
 
-        checkSqlExecuted(new Callable<Object>()
-        {
-            @Override
-            public Void call() throws Exception
-            {
-                entityManager.migrate(EntityVersion3.class);
-                return null;
-            }
-        });
-
-        final EntityVersion3 v3 = entityManager.create(EntityVersion3.class);
-        assertEquals(isOracle() ? null : "", v3.getDescription()); // oracle treats '' as NULL
-
         checkSqlNotExecuted(new Callable<Object>()
-        {
-            @Override
-            public Void call() throws Exception
-            {
-                entityManager.migrate(EntityVersion3.class);
-                return null;
-            }
-        });
-
-        checkSqlExecuted(new Callable<Object>()
         {
             @Override
             public Void call() throws Exception
@@ -97,12 +73,6 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
     public void testNotMigratedTwiceWithNoDefault() throws Exception
     {
         testEntityNotMigratedTwice(EntityVersion2.class);
-    }
-
-    @Test
-    public void testNotMigratedTwiceWithEmptyDefault() throws Exception
-    {
-        testEntityNotMigratedTwice(EntityVersion3.class);
     }
 
     private void testEntityNotMigratedTwice(final Class<? extends RawEntity<?>> entityClass) throws Exception
@@ -135,14 +105,6 @@ public final class TestAlteringDefaultValues extends ActiveObjectsIntegrationTes
 
     static interface EntityVersion2 extends TestEntity
     {
-        String getDescription();
-
-        void setDescription(String desc);
-    }
-
-    static interface EntityVersion3 extends TestEntity
-    {
-        @Default(DEFAULT_EMPTY)
         String getDescription();
 
         void setDescription(String desc);
