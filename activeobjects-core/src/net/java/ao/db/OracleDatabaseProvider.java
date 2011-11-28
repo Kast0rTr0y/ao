@@ -25,6 +25,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
@@ -327,10 +328,10 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (");
-		current.append(renderField(table, field, options)).append(')');
+		current.append(renderField(nameConverters, table, field, options)).append(')');
 		return current.toString();
 	}
 

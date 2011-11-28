@@ -23,6 +23,7 @@ import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
@@ -273,6 +274,12 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
+    }
+
 	@Override
 	protected String renderOnUpdate(DDLField field) {
 		return "";
@@ -296,10 +303,14 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field) {
-		final List<String> back = new ArrayList<String>();
+	protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
+        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
+        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
+        final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
 
-		String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
+        final List<String> back = new ArrayList<String>();
+
+        String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
 		if (trigger != null) {
 			StringBuilder str = new StringBuilder();
 			str.append("DROP TRIGGER ").append(processID(trigger));
@@ -312,6 +323,11 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			str.append("DROP FUNCTION ").append(withSchema(function));
 			back.add(str.toString());
 		}
+
+        if (!field.isUnique() && oldField.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).toString());
+        }
 
 		boolean foundChange = false;
 		if (!field.getName().equalsIgnoreCase(oldField.getName())) {
@@ -372,7 +388,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			System.err.println("WARNING: Data contained in column '" + table.getName() + "." + oldField.getName() + "' will be lost");
 
 			back.addAll(Arrays.asList(renderAlterTableDropColumn(triggerNameConverter, table, oldField)));
-			back.addAll(renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, field));
+			back.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 		}
 
 		String toRender = renderFunctionForField(triggerNameConverter, table, field);
@@ -401,7 +417,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         return new StringBuilder("DROP INDEX ")
-                .append(processID(indexNameConverter.getName(index.getTable(), index.getField())))
+                .append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())))
                 .toString();
     }
 

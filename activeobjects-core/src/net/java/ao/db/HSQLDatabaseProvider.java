@@ -23,9 +23,8 @@ import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -304,7 +303,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderUnique() {
+	protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
 		return "";
 	}
 
@@ -360,24 +359,25 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
     @Override
-    protected List<String> renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        final List<String> back = super.renderAlterTableAddColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, field);
+        final List<String> back = super.renderAlterTableAddColumn(nameConverters, table, field);
 
         if (field.isUnique())
         {
-            back.add(renderAddUniqueConstraint(uniqueNameConverter, table, field));
+            back.add(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
         }
         return back;
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-       final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, oldField, field);
+       final List<String> sql = super.renderAlterTableChangeColumn(nameConverters, table, oldField, field);
 
         if (!field.isPrimaryKey())
         {
+            final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
             if (!oldField.isUnique() && field.isUnique())
             {
                 sql.add(renderAddUniqueConstraint(uniqueNameConverter, table, field));
@@ -403,11 +403,11 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
     }
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
 
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(table, field, options));
+		current.append(renderField(nameConverters, table, field, options));
 
 		return current.toString();
 	}

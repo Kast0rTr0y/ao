@@ -3,7 +3,7 @@ CREATE TABLE public."person" (
     "firstName" VARCHAR(255) NOT NULL,
     "lastName" TEXT,
     "age" INTEGER,
-    "url" VARCHAR(255) UNIQUE NOT NULL,
+    "url" VARCHAR(255) CONSTRAINT U_person_url UNIQUE NOT NULL,
     "favoriteClass" VARCHAR(255),
     "height" DOUBLE PRECISION DEFAULT 62.3,
     "companyID" BIGINT,

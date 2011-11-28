@@ -35,9 +35,9 @@ import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
-import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
@@ -283,7 +283,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field) {
+	protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
 		logger.warn("Derby doesn't support CHANGE TABLE statements!");
 		logger.warn("Migration may not be entirely in sync as a result!");
 		

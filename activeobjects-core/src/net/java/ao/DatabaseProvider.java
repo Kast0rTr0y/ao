@@ -178,8 +178,8 @@ public abstract class DatabaseProvider
      * @see #renderDropFunctions(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
      * @see #renderDropSequences(net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable)
      * @see #renderDropTable(DDLTable)
-     * @see #renderAlterTableAddColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.UniqueNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
-     * @see #renderAlterTableChangeColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.UniqueNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)
+     * @see #renderAlterTableAddColumn(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderAlterTableChangeColumn(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)
      * @see #renderAlterTableDropColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderAlterTableAddKey(DDLForeignKey)
      * @see #renderAlterTableDropKey(DDLForeignKey)
@@ -220,10 +220,7 @@ public abstract class DatabaseProvider
 
             case ALTER_ADD_COLUMN:
                 back.addAll(renderAlterTableAddColumn(
-                        nameConverters.getTriggerNameConverter(),
-                        nameConverters.getSequenceNameConverter(),
-                        nameConverters.getUniqueNameConverter(),
-                        action.getTable(),
+                        nameConverters, action.getTable(),
                         action.getField()));
 
                 for (DDLIndex index : action.getTable().getIndexes())
@@ -238,7 +235,7 @@ public abstract class DatabaseProvider
                 break;
 
             case ALTER_CHANGE_COLUMN:
-                back.addAll(renderAlterTableChangeColumn(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), nameConverters.getUniqueNameConverter(), action.getTable(), action.getOldField(), action.getField()));
+                back.addAll(renderAlterTableChangeColumn(nameConverters, action.getTable(), action.getOldField(), action.getField()));
                 break;
 
             case ALTER_DROP_COLUMN:
@@ -943,7 +940,7 @@ public abstract class DatabaseProvider
         StringBuilder append = new StringBuilder();
         for (DDLField field : table.getFields())
         {
-            back.append("    ").append(renderField(table, field, new RenderFieldOptions(true, true))).append(",\n");
+            back.append("    ").append(renderField(nameConverters, table, field, new RenderFieldOptions(true, true))).append(",\n");
 
             if (field.isPrimaryKey())
             {
@@ -1181,27 +1178,26 @@ public abstract class DatabaseProvider
      * their values are not <code>null</code>.  Because of this, very
      * few database providers will need to override this method.
      *
-     * @param triggerNameConverter
-     * @param sequenceNameConverter
-     * @param uniqueNameConverter
+     *
+     * @param nameConverters
      * @param table The table which should receive the new column.
      * @param field The column to add to the specified table.   @return An array of DDL statements to execute.
      * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected List<String> renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         List<String> back = new ArrayList<String>();
 
-        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(table, field, new RenderFieldOptions(true, true)));
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
 
-        String function = renderFunctionForField(triggerNameConverter, table, field);
+        String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
         if (function != null)
         {
             back.add(function);
         }
 
-        final String trigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
+        final String trigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
         if (trigger != null)
         {
             back.add(trigger);
@@ -1231,12 +1227,11 @@ public abstract class DatabaseProvider
      * <p>For maximum flexibility, the default implementation of this method
      * only deals with the dropping and addition of functions and triggers.
      * The actual generation of the ALTER TABLE statement is done in the
-     * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}
+     * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}
      * method.</p>
      *
-     * @param triggerNameConverter
-     * @param sequenceNameConverter
-     * @param uniqueNameConverter
+     *
+     * @param nameConverters
      * @param table The table containing the column to change.
      * @param oldField The old column definition.
      * @param field The new column definition (defining the resultant DDL).    @return An array of DDL statements to be executed.
@@ -1245,33 +1240,31 @@ public abstract class DatabaseProvider
      * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter,
-                                                        SequenceNameConverter sequenceNameConverter,
-                                                        UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
         final List<String> back = new ArrayList<String>();
 
-        final String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
+        final String trigger = getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
         if (trigger != null)
         {
             back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
         }
 
-        final String function = getFunctionNameForField(triggerNameConverter, table, oldField);
+        final String function = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
         if (function != null)
         {
             back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
         }
 
-        back.add(renderAlterTableChangeColumnStatement(table, oldField, field, renderFieldOptionsInAlterColumn()));
+        back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
 
-        final String toRenderFunction = renderFunctionForField(triggerNameConverter, table, field);
+        final String toRenderFunction = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
         if (toRenderFunction != null)
         {
             back.add(toRenderFunction);
         }
 
-        final String toRenderTrigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
+        final String toRenderTrigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
         if (toRenderTrigger != null)
         {
             back.add(toRenderTrigger);
@@ -1290,23 +1283,25 @@ public abstract class DatabaseProvider
      * changing a column.  This method must only generate a single statement as it
      * does not need to concern itself with functions or triggers associated with
      * the column.  This method is only to be called as a delegate for the
-     * {@link #renderAlterTableChangeColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.UniqueNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)} method,
+     * {@link #renderAlterTableChangeColumn(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)} method,
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
+     *
+     * @param nameConverters
      * @param table The table containing the column to change.
      * @param oldField The old column definition.
      * @param field The new column definition (defining the resultant DDL).
      * @param options
      * @return A single DDL statement which is to be executed.
-     * @see #renderField(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, DatabaseProvider.RenderFieldOptions)
+     * @see #renderField(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)
      */
-    protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
+    protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
     {
         StringBuilder current = new StringBuilder();
         current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" CHANGE COLUMN ");
         current.append(processID(oldField.getName())).append(' ');
-        current.append(renderField(table, field, options));
+        current.append(renderField(nameConverters, table, field, options));
         return current.toString();
     }
 
@@ -1491,12 +1486,14 @@ public abstract class DatabaseProvider
      * would be a database like PostgreSQL which requires a different type
      * for auto-incremented fields.</p>
      *
+     *
+     * @param nameConverters
      * @param table
      * @param field The field to be rendered.
      * @param options
      * @return A DDL fragment to be embedded in a statement elsewhere.
      */
-    protected String renderField(DDLTable table, DDLField field, RenderFieldOptions options)
+    protected String renderField(NameConverters nameConverters, DDLTable table, DDLField field, RenderFieldOptions options)
     {
         StringBuilder back = new StringBuilder();
 
@@ -1520,7 +1517,7 @@ public abstract class DatabaseProvider
 
         if (options.renderUnique && field.isUnique())
         {
-            final String renderUniqueString = renderUnique();
+            final String renderUniqueString = renderUnique(nameConverters.getUniqueNameConverter(), table, field);
 
             if (!renderUniqueString.trim().equals(""))
             {
@@ -1647,14 +1644,17 @@ public abstract class DatabaseProvider
     /**
      * Renders the <code>UNIQUE</code> constraint as defined by the
      * database-specific DDL syntax.  This method is a delegate of other, more
-     * complex methods such as {@link #renderField(net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, DatabaseProvider.RenderFieldOptions)}.  The default
+     * complex methods such as {@link #renderField(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}.  The default
      * implementation just returns <code>UNIQUE</code>.  Implementations may
      * override this method to return an empty {@link String} if the database
      * in question does not support the constraint.
      *
      * @return The database-specific rendering of <code>UNIQUE</code>.
+     * @param uniqueNameConverter
+     * @param table
+     * @param field
      */
-    protected String renderUnique()
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "UNIQUE";
     }

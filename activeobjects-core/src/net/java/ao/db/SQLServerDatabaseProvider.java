@@ -33,10 +33,10 @@ import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
+import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
-import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -193,9 +193,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField oldField, DDLField field)
+    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = super.renderAlterTableChangeColumn(triggerNameConverter, sequenceNameConverter, uniqueNameConverter, table, oldField, field);
+        final List<String> sql = super.renderAlterTableChangeColumn(nameConverters, table, oldField, field);
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
@@ -424,20 +424,23 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
 
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(table, field, options));
+		current.append(renderField(nameConverters, table, field, options));
 
 		return current.toString();
 	}
 
 	@Override
-	protected List<String> renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
-		List<String> back = new ArrayList<String>();
+	protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
+        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
+        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
 
-		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(table, field, new RenderFieldOptions(true, true)));
+        List<String> back = new ArrayList<String>();
+
+		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
 
 		String function = renderFunctionForField(triggerNameConverter, table, field);
 		if (function != null) {
