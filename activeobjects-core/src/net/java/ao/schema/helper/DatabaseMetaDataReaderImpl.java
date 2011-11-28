@@ -88,7 +88,6 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 final boolean isUnique = isUnique(uniqueFields, fieldName);
 
                 fields.put(fieldName, newField(fieldName, databaseType, precision, scale, autoIncrement, notNull, isUnique));
-
             }
 
             ResultSet rs = null;
@@ -97,7 +96,12 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 rs = databaseMetaData.getColumns(null, null, tableName, null);
                 while (rs.next())
                 {
-                    FieldImpl current = fields.get(rs.getString("COLUMN_NAME"));
+                    final String columnName = rs.getString("COLUMN_NAME");
+                    final FieldImpl current = fields.get(columnName);
+                    if (current == null)
+                    {
+                        throw new IllegalStateException("Could not find column '" + columnName + "' in previously parsed query!");
+                    }
                     current.setDefaultValue(databaseProvider.parseValue(current.getDatabaseType().getType(), rs.getString("COLUMN_DEF")));
                     current.setNotNull(rs.getString("IS_NULLABLE").equals("NO"));
                 }

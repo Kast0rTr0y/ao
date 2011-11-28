@@ -16,6 +16,7 @@
 package net.java.ao.db;
 
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
@@ -25,17 +26,21 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
 import java.net.URL;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -293,6 +298,12 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		return super.renderFunction(func);
 	}
 
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
+    }
+
 	@Override
 	protected String getDateFormat() {
 		return "dd-MMM-yy hh:mm:ss.SSS a";
@@ -327,13 +338,88 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
-	@Override
-	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
-		StringBuilder current = new StringBuilder();
-		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (");
-		current.append(renderField(nameConverters, table, field, options)).append(')');
-		return current.toString();
-	}
+    @Override
+    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        List<String> back = new ArrayList<String>();
+
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)) + ")");
+
+        String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
+        if (function != null)
+        {
+            back.add(function);
+        }
+
+        String trigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
+        if (trigger != null)
+        {
+            back.add(trigger);
+        }
+
+        return back;
+    }
+
+    @Override
+    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+    {
+        final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
+        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
+        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
+
+        final List<String> back = new ArrayList<String>();
+
+        final String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
+        if (trigger != null)
+        {
+            back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
+        }
+
+        final String function = getFunctionNameForField(triggerNameConverter, table, oldField);
+        if (function != null)
+        {
+            back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
+        }
+
+        final String toRenderFunction = renderFunctionForField(triggerNameConverter, table, field);
+        if (toRenderFunction != null)
+        {
+            back.add(toRenderFunction);
+        }
+
+        final String toRenderTrigger = this.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
+        if (toRenderTrigger != null)
+        {
+            back.add(toRenderTrigger);
+        }
+
+        if (oldField.isNotNull() && !field.isNotNull())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NULL)").toString());
+        }
+
+        if (!oldField.isNotNull() && field.isNotNull())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NOT NULL)").toString());
+        }
+
+        if (!Objects.equal(oldField.getDefaultValue(), field.getDefaultValue()))
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).append(")").toString());
+        }
+
+        if (oldField.isUnique() && !field.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).toString());
+        }
+
+        if (!oldField.isUnique() && field.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString());
+        }
+
+        return back;
+    }
 
 	@Override
 	protected String renderAlterTableDropKey(DDLForeignKey key) {
@@ -343,6 +429,12 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
 		return back.toString();
 	}
+
+    @Override
+    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        return new StringBuilder().append("DROP INDEX ").append(withSchema(indexNameConverter.getName(index.getTable(), index.getField()))).toString();
+    }
 
     @Override
     protected String renderDropTable(DDLTable table) {

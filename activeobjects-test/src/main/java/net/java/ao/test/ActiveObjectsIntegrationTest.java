@@ -5,8 +5,12 @@ import net.java.ao.RawEntity;
 import net.java.ao.test.converters.DynamicFieldNameConverter;
 import net.java.ao.test.converters.DynamicTableNameConverter;
 import net.java.ao.test.converters.NameConverters;
+import net.java.ao.test.converters.UpperCaseFieldNameConverter;
+import net.java.ao.test.converters.UpperCaseTableNameConverter;
 import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.test.jdbc.Jdbc;
+import net.java.ao.test.jdbc.MySql;
+import net.java.ao.test.jdbc.Oracle;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
@@ -16,8 +20,8 @@ import java.util.concurrent.Callable;
  *
  */
 @RunWith(ActiveObjectsJUnitRunner.class)
-@NameConverters(table = DynamicTableNameConverter.class, field = DynamicFieldNameConverter.class)
-@Jdbc(DynamicJdbcConfiguration.class)
+@NameConverters(table = UpperCaseTableNameConverter.class, field = UpperCaseFieldNameConverter.class)
+@Jdbc(Oracle.class)
 public abstract class ActiveObjectsIntegrationTest
 {
     protected EntityManager entityManager;
