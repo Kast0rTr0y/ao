@@ -117,7 +117,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         }
         catch (SQLException e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Could not read fields for table " + tableName, e);
         }
         finally
         {

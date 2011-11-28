@@ -35,7 +35,6 @@ import net.java.ao.types.TypeManager;
 
 import java.net.URL;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -43,7 +42,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -311,7 +309,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	        back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())) +  '\n');
 	        back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
 	        back.append("BEGIN\n");
-	        back.append("    SELECT ").append(withSchema(sequenceNameConverter.getName(table.getName(), field.getName())) + ".NEXTVAL");
+	        back.append("    SELECT ").append(withSchema(sequenceNameConverter.getName(shorten(table.getName()), shorten(field.getName()))) + ".NEXTVAL");
 	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
 
 	        return back.toString();
@@ -468,7 +466,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     {
         return new StringBuilder()
                 .append("DROP SEQUENCE ")
-                .append(withSchema(sequenceNameConverter.getName(table.getName(), field.getName())))
+                .append(withSchema(sequenceNameConverter.getName(shorten(table.getName()), shorten(field.getName()))))
                 .toString();
     }
 
@@ -491,7 +489,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     private String renderSequence(SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
     {
-        final String sequenceName = sequenceNameConverter.getName(table.getName(), field.getName());
+        final String sequenceName = sequenceNameConverter.getName(shorten(table.getName()), shorten(field.getName()));
         return new StringBuilder()
                 .append("CREATE SEQUENCE ")
                 .append(withSchema(sequenceName))

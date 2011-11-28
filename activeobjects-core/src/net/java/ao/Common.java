@@ -610,7 +610,7 @@ public final class Common {
      */
     public static String shorten(String s, int length)
     {
-        if (s.length() <= length)
+        if (s == null || s.length() <= length)
         {
             return s;
         }

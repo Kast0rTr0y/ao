@@ -25,18 +25,18 @@ public final class EntityUtils
      */
     public static String getTableName(EntityManager em, Class<? extends RawEntity<?>> entityType, boolean escape)
     {
-        final String tableName = em.getTableNameConverter().getName(entityType);
+        final String tableName = em.getProvider().shorten(em.getTableNameConverter().getName(entityType));
         return escape ? em.getProvider().withSchema(tableName) : tableName;
     }
 
     public static String getFieldName(EntityManager em, Class<? extends RawEntity<?>> entityType, String methodName)
     {
-        return em.getFieldNameConverter().getName(findMethod(entityType, methodName));
+        return em.getProvider().shorten(em.getFieldNameConverter().getName(findMethod(entityType, methodName)));
     }
 
     public static String getPolyFieldName(EntityManager em, Class<? extends RawEntity<?>> entityType, String methodName)
     {
-        return em.getFieldNameConverter().getPolyTypeName(findMethod(entityType, methodName));
+        return em.getProvider().shorten(em.getFieldNameConverter().getPolyTypeName(findMethod(entityType, methodName)));
     }
 
     public static String escapeFieldName(EntityManager em, Class<? extends RawEntity<?>> entityType, String methodName)

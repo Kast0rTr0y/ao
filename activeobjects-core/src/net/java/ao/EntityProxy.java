@@ -397,8 +397,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
 	}
 
-	private <V> V invokeGetter(RawEntity<?> entity, K key, String table, String name, String polyName, Class<V> type, 
-			boolean shouldCache) throws Throwable {
+	private <V> V invokeGetter(RawEntity<?> entity, K key, String table, String name, String polyName, Class<V> type, boolean shouldCache) throws Throwable {
 		V back = null;
 		CacheLayer cacheLayer = getCacheLayer(entity);
 		
@@ -447,7 +446,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	
 				res = stmt.executeQuery();
 				if (res.next()) {
-					back = convertValue(res, name, polyName, type);
+					back = convertValue(res, provider.shorten(name), provider.shorten(polyName), type);
 				}
 			} finally {
                 closeQuietly(res, stmt, conn);

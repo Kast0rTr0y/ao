@@ -19,16 +19,16 @@ public final class ColumnNamesTest extends ActiveObjectsIntegrationTest
     @Test
     public void testCreateLongName() throws Exception
     {
-        entityManager.migrate(ThisIsAVeryLongTableNameLikeIntheOldTimes.class);
+        entityManager.migrate(ThisIsAVeryLongTableNameLikeInTheOldTimes.class);
 
-        ThisIsAVeryLongTableNameLikeIntheOldTimes e = entityManager.create(ThisIsAVeryLongTableNameLikeIntheOldTimes.class);
+        ThisIsAVeryLongTableNameLikeInTheOldTimes e = entityManager.create(ThisIsAVeryLongTableNameLikeInTheOldTimes.class);
 
         e.setThisIsAVeryLongColumnNameLikeInTheOldTimes("Test");
         e.save();
 
         entityManager.flushAll();
         assertEquals("Test", e.getThisIsAVeryLongColumnNameLikeInTheOldTimes());
-        checkFieldValue(ThisIsAVeryLongTableNameLikeIntheOldTimes.class, "getID", e.getID(), "getThisIsAVeryLongColumnNameLikeInTheOldTimes", "Test");
+        checkFieldValue(ThisIsAVeryLongTableNameLikeInTheOldTimes.class, "getID", e.getID(), "getThisIsAVeryLongColumnNameLikeInTheOldTimes", "Test");
     }
 
     /**
@@ -140,7 +140,7 @@ public final class ColumnNamesTest extends ActiveObjectsIntegrationTest
         );
     }
 
-    public static interface ThisIsAVeryLongTableNameLikeIntheOldTimes extends Entity
+    public static interface ThisIsAVeryLongTableNameLikeInTheOldTimes extends Entity
     {
         public String getThisIsAVeryLongColumnNameLikeInTheOldTimes();
 
