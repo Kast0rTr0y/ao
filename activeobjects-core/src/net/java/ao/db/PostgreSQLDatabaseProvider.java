@@ -320,7 +320,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		String function = getFunctionNameForField(triggerNameConverter, table, oldField);
 		if (function != null) {
 			StringBuilder str = new StringBuilder();
-			str.append("DROP FUNCTION ").append(withSchema(function));
+			str.append("DROP FUNCTION IF EXISTS ").append(withSchema(function));
 			back.add(str.toString());
 		}
 
@@ -434,7 +434,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
+        return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
     }
 
 
