@@ -239,7 +239,7 @@ public final class SchemaGenerator
                 field.setPrecision(getPrecisionFromMethod(type, method, fieldConverter));
                 field.setScale(getScaleFromMethod(type, method, fieldConverter));
                 field.setPrimaryKey(annotations.isAnnotationPresent(PrimaryKey.class));
-                field.setNotNull(annotations.isAnnotationPresent(NotNull.class));
+                field.setNotNull(annotations.isAnnotationPresent(NotNull.class) || annotations.isAnnotationPresent(Unique.class) || annotations.isAnnotationPresent(PrimaryKey.class));
                 field.setUnique(annotations.isAnnotationPresent(Unique.class));
 
                 final boolean isAutoIncrement = isAutoIncrement(type, annotations, field.getType());

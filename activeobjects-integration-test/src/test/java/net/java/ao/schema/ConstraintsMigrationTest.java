@@ -202,7 +202,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         entityManager.migrate(NoUniqueConstraintColumn.T.class);
         assertUniqueConstraint(false);
 
-        // Note: this currently fails because HSQLDatabaseProvider.renderUnique returns ""
         entityManager.migrate(UniqueConstraintColumn.T.class);
         assertUniqueConstraint(true);
     }

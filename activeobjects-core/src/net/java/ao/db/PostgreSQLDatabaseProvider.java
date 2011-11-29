@@ -329,6 +329,11 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
             back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).toString());
         }
 
+        if (field.isUnique() && !oldField.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString());
+        }
+
 		boolean foundChange = false;
 		if (!field.getName().equalsIgnoreCase(oldField.getName())) {
 			foundChange = true;
