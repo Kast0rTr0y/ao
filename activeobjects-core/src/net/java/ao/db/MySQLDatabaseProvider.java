@@ -16,15 +16,20 @@
 package net.java.ao.db;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
@@ -66,7 +71,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 					"SQL_CALC_FOUND_ROWS", "SQL_SMALL_RESULT", "SSL", "STARTING", 
 					"STRAIGHT_JOIN", "TABLE", "TABLES", "TERMINATED", "THEN", "TINYBLOB", 
 					"TINYINT", "TINYTEXT", "TO", "TRAILING", "TRIGGER", "TRUE", "UNDO", 
-					"UNION", "UNIQUE", "UNLOCK", "UNSIGNED", "UPDATE", "UPGRADE", "USAGE", 
+					"UNION", "UNIQUE", "UNLOCK", "UNSIGNED", "UPDATE", "UPGRADE", "USAGE",
 					"USE", "USING", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP", "VALUES", 
 					"VARBINARY", "VARCHAR", "VARCHARACTER", "VARYING", "WHEN", "WHERE", 
 					"WHILE", "WITH", "WRITE", "XOR", "YEAR_MONTH", "ZEROFILL"));
@@ -109,6 +114,69 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 	protected String renderAppend() {
 		return "ENGINE=InnoDB";
 	}
+
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        return "";
+    }
+
+    @Override
+    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
+        StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
+
+        for (DDLField field : table.getFields()) {
+            if (field.isUnique()) {
+                back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
+            }
+        }
+
+        return back.toString();
+    }
+
+    @Override
+    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+    {
+        final List<String> back = new ArrayList<String>();
+
+        final String trigger = getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
+        if (trigger != null)
+        {
+            back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
+        }
+
+        final String function = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
+        if (function != null)
+        {
+            back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
+        }
+
+        back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
+
+        if (oldField.isUnique() && !field.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP INDEX ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).toString());
+        }
+
+        if (!oldField.isUnique() && field.isUnique())
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString());
+        }
+
+        final String toRenderFunction = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
+        if (toRenderFunction != null)
+        {
+            back.add(toRenderFunction);
+        }
+
+        final String toRenderTrigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
+        if (toRenderTrigger != null)
+        {
+            back.add(toRenderTrigger);
+        }
+
+        return back;
+    }
 
     @Override
     protected String renderFieldType(DDLField field)
