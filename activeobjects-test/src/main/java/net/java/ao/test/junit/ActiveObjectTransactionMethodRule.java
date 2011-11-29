@@ -7,6 +7,7 @@ import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.Table;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.test.jdbc.Data;
@@ -195,7 +196,17 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
 
     private DatabaseConfiguration newDatabaseConfiguration(Class<? extends DatabaseUpdater> databaseUpdater)
     {
-        return new DatabaseConfiguration(databaseUpdater, tableNameConverter.getClass(), fieldNameConverter.getClass(), sequenceNameConverter.getClass(), triggerNameConverter.getClass(), indexNameConverter.getClass(), withIndex);
+        final Class<? extends TableNameConverter> tableNameConverterClass = (Class<? extends TableNameConverter>) getClass(tableNameConverter);
+        final Class<? extends FieldNameConverter> fieldNameConverterClass = (Class<? extends FieldNameConverter>) getClass(fieldNameConverter);
+        final Class<? extends SequenceNameConverter> sequenceNameConverterClass = (Class<? extends SequenceNameConverter>) getClass(sequenceNameConverter);
+        final Class<? extends TriggerNameConverter> triggerNameConverterClass = (Class<? extends TriggerNameConverter>) getClass(triggerNameConverter);
+        final Class<? extends IndexNameConverter> indexNameConverterClass = (Class<? extends IndexNameConverter>) getClass(indexNameConverter);
+        return new DatabaseConfiguration(databaseUpdater, tableNameConverterClass, fieldNameConverterClass, sequenceNameConverterClass, triggerNameConverterClass, indexNameConverterClass, withIndex);
+    }
+
+    private Class<?> getClass(Object o)
+    {
+        return o != null ? o.getClass() : null;
     }
 
     private EntityManager createEntityManager()

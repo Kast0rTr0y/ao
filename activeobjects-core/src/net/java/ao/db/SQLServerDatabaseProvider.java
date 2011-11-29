@@ -37,6 +37,7 @@ import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
@@ -220,7 +221,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         {
             sql.add(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" ADD CONSTRAINT ").append(uniqueConstraintName(field))
+                    .append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()))
                     .append(" UNIQUE(").append(processID(field.getName())).append(")")
                     .toString());
         }
@@ -229,7 +230,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         {
             sql.add(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" DROP CONSTRAINT ").append(uniqueConstraintName(oldField))
+                    .append(" DROP CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()))
                     .toString());
         }
 
@@ -241,9 +242,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         return "df_" + table.getName() + '_' + field.getName();
     }
 
-    private String uniqueConstraintName(DDLField field)
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
-        return "U_" + field.getName();
+        return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
     }
 
     @Override

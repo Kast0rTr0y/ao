@@ -24,11 +24,11 @@ public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
 {
     private final JdbcConfiguration jdbcConfiguration;
     private final boolean withIndex;
-    private TableNameConverter tableNameConverter;
-    private FieldNameConverter fieldNameConverter;
-    private SequenceNameConverter sequenceNameConverter;
-    private TriggerNameConverter triggerNameConverter;
-    private IndexNameConverter indexNameConverter;
+    private final TableNameConverter tableNameConverter;
+    private final FieldNameConverter fieldNameConverter;
+    private final SequenceNameConverter sequenceNameConverter;
+    private final TriggerNameConverter triggerNameConverter;
+    private final IndexNameConverter indexNameConverter;
 
     public ActiveObjectsJUnitRunner(Class<?> klass) throws InitializationError
     {
