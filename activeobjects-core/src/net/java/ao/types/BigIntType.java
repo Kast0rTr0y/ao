@@ -19,21 +19,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
 /**
  * @author Daniel Spiewak
  */
-class BigIntType extends DatabaseType<Long> {
-	
-	public BigIntType() {
-		super(Types.BIGINT, -1, long.class, Long.class);
-	}
+class BigIntType extends DatabaseType<Long>
+{
+    public BigIntType()
+    {
+        super(Types.BIGINT, -1, long.class, Long.class);
+    }
 
-	@Override
-	public String getDefaultName() {
-		return "BIGINT";
-	}
+    @Override
+    public String getDefaultName()
+    {
+        return "BIGINT";
+    }
 
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, int index) throws SQLException
@@ -48,7 +51,15 @@ class BigIntType extends DatabaseType<Long> {
     }
 
     @Override
-	public Long defaultParseValue(String value) {
-		return Long.parseLong(value);
-	}
+    public Long defaultParseValue(String value)
+    {
+        try
+        {
+            return Long.parseLong(value);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new ActiveObjectsConfigurationException("Could not parse default value '" + value + "' to Long", e);
+        }
+    }
 }
