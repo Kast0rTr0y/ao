@@ -425,17 +425,27 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
-	@Override
-	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
-		StringBuilder current = new StringBuilder();
+    @Override
+    protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
+    {
+        final boolean autoIncrement = field.isAutoIncrement();
+        try
+        {
+            field.setAutoIncrement(false); // we don't want the autoincrement aspect of the field to be taken in account for "alter column"
 
-		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(nameConverters, table, field, options));
+            final StringBuilder current = new StringBuilder();
+            current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
+            current.append(renderField(nameConverters, table, field, options));
 
-		return current.toString();
-	}
+            return current.toString();
+        }
+        finally
+        {
+            field.setAutoIncrement(autoIncrement);
+        }
+    }
 
-	@Override
+    @Override
 	protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
         final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
         final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
