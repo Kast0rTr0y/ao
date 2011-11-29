@@ -103,7 +103,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                         throw new IllegalStateException("Could not find column '" + columnName + "' in previously parsed query!");
                     }
                     current.setDefaultValue(databaseProvider.parseValue(current.getDatabaseType().getType(), rs.getString("COLUMN_DEF")));
-                    current.setNotNull(rs.getString("IS_NULLABLE").equals("NO"));
+                    current.setNotNull(current.isNotNull() || rs.getString("IS_NULLABLE").equals("NO"));
                 }
             }
             finally
