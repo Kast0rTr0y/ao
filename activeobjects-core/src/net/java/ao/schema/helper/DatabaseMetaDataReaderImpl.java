@@ -115,7 +115,10 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 rs = databaseMetaData.getPrimaryKeys(null, null, tableName);
                 while (rs.next())
                 {
-                    fields.get(rs.getString("COLUMN_NAME")).setPrimaryKey(true);
+                    final String fieldName = rs.getString("COLUMN_NAME");
+                    final FieldImpl field = fields.get(fieldName);
+                    field.setPrimaryKey(true);
+                    field.setUnique(false); // MSSQL server 2005 tells us that the primary key is a unique key, this isn't what we want, we want real 'added' by hand unique keys.
                 }
             }
             finally
@@ -417,6 +420,11 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         public boolean isUnique()
         {
             return isUnique;
+        }
+
+        public void setUnique(boolean unique)
+        {
+            isUnique = unique;
         }
     }
 
