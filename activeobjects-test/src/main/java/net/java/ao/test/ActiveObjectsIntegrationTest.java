@@ -2,6 +2,9 @@ package net.java.ao.test;
 
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.test.converters.DynamicFieldNameConverter;
+import net.java.ao.test.converters.DynamicTableNameConverter;
+import net.java.ao.test.converters.NameConverters;
 import net.java.ao.test.jdbc.DynamicJdbcConfiguration;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
@@ -13,6 +16,7 @@ import java.util.concurrent.Callable;
  *
  */
 @RunWith(ActiveObjectsJUnitRunner.class)
+@NameConverters(table = DynamicTableNameConverter.class, field = DynamicFieldNameConverter.class)
 @Jdbc(DynamicJdbcConfiguration.class)
 public abstract class ActiveObjectsIntegrationTest
 {
