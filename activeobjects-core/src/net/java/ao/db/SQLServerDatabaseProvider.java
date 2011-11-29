@@ -33,6 +33,7 @@ import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
@@ -40,6 +41,7 @@ import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
 
@@ -242,6 +244,28 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         return "df_" + table.getName() + '_' + field.getName();
     }
 
+    @Override
+    protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        StringBuilder back = new StringBuilder();
+
+        back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
+
+        return back.toString();
+    }
+
+    @Override
+    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        StringBuilder back = new StringBuilder();
+
+        back.append("DROP INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append(" ON ").append(withSchema(index.getTable()));
+
+        return back.toString();
+    }
+    
     @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {

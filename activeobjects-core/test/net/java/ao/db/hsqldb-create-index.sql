@@ -1,1 +1,1 @@
-CREATE INDEX index_person_companyid ON PUBLIC.person(companyID)
+CREATE INDEX PUBLIC.index_person_companyid ON PUBLIC.person(companyID)
