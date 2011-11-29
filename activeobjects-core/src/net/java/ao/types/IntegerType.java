@@ -19,34 +19,48 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
 /**
  * @author Daniel Spiewak
  */
-class IntegerType extends DatabaseType<Integer> {
-	
-	public IntegerType() {
-		super(Types.INTEGER, -1, int.class, Integer.class);
-	}
+class IntegerType extends DatabaseType<Integer>
+{
 
-	@Override
-	public String getDefaultName() {
-		return "INTEGER";
-	}
-	
-	@Override
-	public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Integer> type, int index) throws SQLException {
-		return res.getInt(index);		// for oracle
-	}
-	
-	@Override
-	public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Integer> type, String field) throws SQLException {
-		return res.getInt(field);
-	}
+    public IntegerType()
+    {
+        super(Types.INTEGER, -1, int.class, Integer.class);
+    }
 
-	@Override
-	public Integer defaultParseValue(String value) {
-		return Integer.parseInt(value);
-	}
+    @Override
+    public String getDefaultName()
+    {
+        return "INTEGER";
+    }
+
+    @Override
+    public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Integer> type, int index) throws SQLException
+    {
+        return res.getInt(index); // for oracle
+    }
+
+    @Override
+    public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Integer> type, String field) throws SQLException
+    {
+        return res.getInt(field);
+    }
+
+    @Override
+    public Integer defaultParseValue(String value)
+    {
+        try
+        {
+            return Integer.parseInt(value);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new ActiveObjectsConfigurationException("Could not parse default value '" + value + "' to Integer", e);
+        }
+    }
 }
