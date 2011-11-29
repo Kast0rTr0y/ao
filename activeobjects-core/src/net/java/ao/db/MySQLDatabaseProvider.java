@@ -134,6 +134,35 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
         return back.toString();
     }
 
+    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        List<String> back = new ArrayList<String>();
+        back.addAll(super.renderAlterTableAddColumn(nameConverters, table, field));
+        if (field.isUnique())
+        {
+            back.add(alterAddUniqueConstraint(nameConverters, table, field));
+        }
+
+        String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
+        if (function != null)
+        {
+            back.add(function);
+        }
+
+        final String trigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
+        if (trigger != null)
+        {
+            back.add(trigger);
+        }
+
+        return back;
+    }
+
+    private String alterAddUniqueConstraint(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        return new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString();
+    }
+
     @Override
     protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
@@ -160,7 +189,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 
         if (!oldField.isUnique() && field.isUnique())
         {
-            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString());
+            back.add(alterAddUniqueConstraint(nameConverters, table, field));
         }
 
         final String toRenderFunction = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
