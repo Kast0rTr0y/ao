@@ -135,11 +135,11 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         {
             public Person call() throws Exception
             {
-                return entityManager.create(Person.class, new DBParam("url", "http://www.codecommit.com"));
+                return entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://www.codecommit.com"));
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("url") + " FROM "
+        executeStatement("SELECT " + escapeFieldName(Person.class, "getURL") + " FROM "
                 + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
                 new DbUtils.StatementCallback()
                 {
@@ -153,7 +153,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("http://www.codecommit.com", res.getString("url"));
+                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")));
                         }
                         else
                         {
@@ -209,12 +209,12 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             {
                 return entityManager.create(Person.class, new HashMap<String, Object>()
                 {{
-                        put("url", "http://www.codecommit.com");
+                        put(getFieldName(Person.class, "getURL"), "http://www.codecommit.com");
                     }});
             }
         });
 
-        executeStatement("SELECT " + escapeKeyword("url") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
+        executeStatement("SELECT " + escapeFieldName(Person.class, "getURL") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
                 new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement stmt) throws Exception
@@ -226,7 +226,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("http://www.codecommit.com", res.getString("url"));
+                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")));
                         }
                         else
                         {

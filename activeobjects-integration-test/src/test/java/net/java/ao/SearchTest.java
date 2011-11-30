@@ -66,7 +66,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         for (String firstName : people.keySet())
         {
-            Person person = entityManager.create(Person.class, new DBParam("url", people.get(firstName)[1]));
+            Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), people.get(firstName)[1]));
             person.setFirstName(firstName);
             person.setLastName(people.get(firstName)[0]);
             person.save();
@@ -215,7 +215,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam("url", "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();
@@ -234,7 +234,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam("url", "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();
@@ -258,7 +258,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam("url", "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();

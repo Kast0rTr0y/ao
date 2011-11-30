@@ -104,7 +104,7 @@ public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
 
     private Person createPerson() throws Exception
     {
-        return entityManager.create(Person.class, new DBParam("url", new URL("http://www.howtogeek.com")));
+        return entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://www.howtogeek.com")));
     }
 
     private Company createCompany() throws Exception

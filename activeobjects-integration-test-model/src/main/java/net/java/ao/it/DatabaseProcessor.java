@@ -1,6 +1,5 @@
 package net.java.ao.it;
 
-import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.EntityManager;
 import net.java.ao.it.model.Address;
@@ -9,6 +8,7 @@ import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
 import net.java.ao.it.model.PostalAddress;
 import net.java.ao.it.model.UserBase;
+import net.java.ao.test.EntityUtils;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.types.ClassType;
 import net.java.ao.it.model.Comment;
@@ -226,7 +226,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
     private Message addMessage(EntityManager entityManager, Address to, Address from, final String content) throws Exception
     {
-        final String contents = Common.convert(entityManager.getNameConverters().getFieldNameConverter(), "contents");
+        final String contents = EntityUtils.getFieldName(entityManager, Message.class, "getContents");
         final Message message = entityManager.create(Message.class, new DBParam(contents, content));
         message.setTo(to);
         message.setFrom(from);

@@ -751,7 +751,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     {
         final Person person = entityManager.create(Person.class, new HashMap<String, Object>()
         {{
-                put("url", "test-url");
+                put(getFieldName(Person.class, "getURL"), "test-url");
             }});
 
         final Company company = entityManager.create(Company.class);

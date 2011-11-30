@@ -50,10 +50,11 @@ public final class DynamicFieldNameConverter implements FieldNameConverter, Fiel
 
     private static final class SystemPropertyFieldNameConverterSupplier implements Supplier<FieldNameConverter>
     {
-        private static final String DEFAULT = "camelcase";
+        private static final String DEFAULT = "test";
 
         private final ImmutableMap<String, FieldNameConverter> converters = ImmutableMap.<String, FieldNameConverter>of(
-                DEFAULT, new CamelCaseFieldNameConverter(),
+                "test", new TestFieldNameConverter(),
+                "camelcase", new CamelCaseFieldNameConverter(),
                 "uppercase", new UpperCaseFieldNameConverter()
         );
 

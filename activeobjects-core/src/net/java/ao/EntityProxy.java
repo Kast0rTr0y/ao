@@ -166,13 +166,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		Transient transientAnnotation = annotations.getAnnotation(Transient.class);
 
 		// check annotations first, they trump all
-		if (mutatorAnnotation != null) {
-			invokeSetter((T) proxy, mutatorAnnotation.value(), args[0], polyFieldName);
-			return Void.TYPE;
-		} else if (accessorAnnotation != null) {
-			return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, accessorAnnotation.value(), polyFieldName, 
-					method.getReturnType(), onUpdateAnnotation == null && transientAnnotation == null);
-		} else if (oneToOneAnnotation != null && Common.interfaceInheritsFrom(method.getReturnType(), RawEntity.class)) {
+        if (oneToOneAnnotation != null && Common.interfaceInheritsFrom(method.getReturnType(), RawEntity.class)) {
 			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
 
             Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0], 

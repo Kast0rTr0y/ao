@@ -104,13 +104,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
             return null;
         }
         
-        Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
-
-        // check annotations first, they trump all
-        if (accessorAnnotation != null) {
-            return invokeGetter((RawEntity<?>) proxy, getKey(), accessorAnnotation.value(), method.getReturnType());
-            
-        } else if (accessors.contains(method)) {
+        if (accessors.contains(method)) {
             return invokeGetter((RawEntity<?>) proxy, getKey(), fieldNames.get(method), method.getReturnType());
             
         } else if (Common.isMutator(method) || method.isAnnotationPresent(Mutator.class)) {
