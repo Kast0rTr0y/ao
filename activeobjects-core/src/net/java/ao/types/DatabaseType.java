@@ -45,22 +45,12 @@ public abstract class DatabaseType<T> {
 		return type;
 	}
 	
+	public Class<?>[] getHandledTypes() {
+	    return handledTypes;
+	}
+	
 	public int getDefaultPrecision() {
 		return defaultPrecision;
-	}
-	
-	public boolean isHandlerFor(int type) {
-		return this.type == type;
-	}
-	
-	public boolean isHandlerFor(Class<?> type) {
-		for (Class<?> handled : handledTypes) {
-			if (isSubclass(handled, type)) {
-				return true;
-			}
-		}
-		
-		return false;
 	}
 	
 	@SuppressWarnings("unchecked") 
