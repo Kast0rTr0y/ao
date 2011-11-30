@@ -148,8 +148,7 @@ public class EntityManager
 
 	/**
 	 * Flushes all value caches contained within entities controlled by this <code>EntityManager</code>
-	 * instance.  This does not actually remove the entities from the instance cache maintained
-	 * within this class.  Rather, it simply dumps all of the field values cached within the entities
+	 * instance. Rather, it simply dumps all of the field values cached within the entities
 	 * themselves (with the exception of the primary key value).  This should be used in the case
 	 * of a complex process outside AO control which may have changed values in the database.  If
 	 * it is at all possible to determine precisely which rows have been changed, the {@link #flush(RawEntity[])} }
@@ -171,8 +170,17 @@ public class EntityManager
 			entry.getValue().flushCache(entry.getKey());
 		}
 
-		relationsCache.flush();
-	}
+        entityCacheLock.writeLock().lock();
+        try
+        {
+            entityCache.clear();
+            relationsCache.flush();
+        }
+        finally
+        {
+            entityCacheLock.writeLock().unlock();
+        }
+    }
 
 	/**
 	 * Flushes the value caches of the specified entities along with all of the relevant

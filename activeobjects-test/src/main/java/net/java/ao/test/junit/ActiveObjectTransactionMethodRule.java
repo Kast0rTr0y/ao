@@ -97,6 +97,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                         // close it
                         closeQuietly(c);
                     }
+                    entityManager.flushAll();
                     after(method);
                 }
             }
@@ -130,7 +131,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         {
             DATABASES.remove(jdbc); // make sure that the next test gets a clean database
         }
-
         entityManager = null;
         if (withIndex) removeIndexDir();
     }
@@ -188,7 +188,6 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         else
         {
             entityManager = DATABASES.get(jdbc).getEntityManager();
-            entityManager.flushAll();
         }
 
         return entityManager;
