@@ -4,7 +4,6 @@ CREATE TABLE person (
     lastName CLOB,
     age NUMBER(11),
     url VARCHAR(255) CONSTRAINT U_person_url UNIQUE NOT NULL,
-    favoriteClass VARCHAR(255),
     height NUMBER(32,6) DEFAULT 62.3,
     companyID NUMBER(20),
     cool NUMBER(1) DEFAULT 1,

@@ -196,7 +196,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
 		} else if (Common.isAccessor(method)) {
             return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, getFieldNameConverter().getName(method),
-					polyFieldName, method.getReturnType(), onUpdateAnnotation == null && transientAnnotation == null);
+                    polyFieldName, method.getReturnType(), onUpdateAnnotation == null && transientAnnotation == null);
 		} else if (Common.isMutator(method)) {
             invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], polyFieldName);
 
@@ -225,8 +225,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
 
         String table = getTableNameConverter().getName(type);
-		TypeManager manager = TypeManager.getInstance();
         final DatabaseProvider provider = this.manager.getProvider();
+        final TypeManager typeManager = provider.getTypeManager();
         Connection conn = null;
         PreparedStatement stmt = null;
         try
@@ -271,7 +271,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						javaType = ((RawEntity) value).getEntityType();
 					}
 
-					DatabaseType dbType = manager.getType(javaType);
+					DatabaseType dbType = typeManager.getType(javaType);
                     dbType.putToDatabase(this.manager, stmt, index++, value);
 					
 					if (!dbType.shouldCache(javaType)) {
@@ -279,7 +279,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 			}
-            Common.getPrimaryKeyType(type).putToDatabase(this.manager, stmt, index++, key);
+            Common.getPrimaryKeyType(provider.getTypeManager(), type).putToDatabase(this.manager, stmt, index++, key);
 
             this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
@@ -395,7 +395,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		V back = null;
 		CacheLayer cacheLayer = getCacheLayer(entity);
 		
-		shouldCache = shouldCache && TypeManager.getInstance().getType(type).shouldCache(type);
+		shouldCache = shouldCache && getTypeManager().getType(type).shouldCache(type);
 		
 		getLock(name).writeLock().lock();
 		try {
@@ -436,7 +436,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
 
 				stmt = provider.preparedStatement(conn, sql);
-                Common.getPrimaryKeyType(this.type).putToDatabase(manager, stmt, 1, key);
+                Common.getPrimaryKeyType(provider.getTypeManager(), this.type).putToDatabase(manager, stmt, 1, key);
 	
 				res = stmt.executeQuery();
 				if (res.next()) {
@@ -775,7 +775,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			stmt = provider.preparedStatement(conn, sql);
 
-            DatabaseType<K> dbType =  TypeManager.getInstance().getType(getClass(key));
+            DatabaseType<K> dbType =  getTypeManager().getType(getClass(key));
 			int index = 0;
 			for (; index < numParams; index++) {
                 dbType.putToDatabase(manager, stmt, index + 1, key);
@@ -787,8 +787,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				stmt.setString(index + 1, typeValue);
 			}
 
-			dbType = Common.getPrimaryKeyType(finalType);
-			final DatabaseType<Object> throughDBType = Common.getPrimaryKeyType((Class<? extends RawEntity<Object>>) type);
+			dbType = Common.getPrimaryKeyType(provider.getTypeManager(), finalType);
+			final DatabaseType<Object> throughDBType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<Object>>) type);
 			
 			res = stmt.executeQuery();
 			while (res.next()) {
@@ -840,6 +840,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return cached;
 	}
 
+    private TypeManager getTypeManager()
+    {
+        return manager.getProvider().getTypeManager();
+    }
+
     /**
      * Gets the generic class of the given type
      * @param object the type for which to get the class
@@ -882,9 +887,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			
 			type = (Class<V>) entityType;		// avoiding Java cast oddities with generics
 		}
-		
-		TypeManager manager = TypeManager.getInstance();
-		DatabaseType<V> databaseType = manager.getType(type);
+
+        final DatabaseType<V> databaseType = getTypeManager().getType(type);
 		
 		if (databaseType == null) {
 			throw new RuntimeException("UnrecognizedType: " + type.toString());

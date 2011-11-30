@@ -222,8 +222,8 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
             type = (Class<V>) entityType;       // avoiding Java cast oddities with generics
         }
         
-        TypeManager manager = TypeManager.getInstance();
-        DatabaseType<V> databaseType = manager.getType(type);
+        final TypeManager manager = getTypeManager();
+        final DatabaseType<V> databaseType = manager.getType(type);
         
         if (databaseType == null) {
             throw new RuntimeException("UnrecognizedType: " + type.toString());
@@ -231,7 +231,12 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         
         return databaseType.pullFromDatabase(getManager(), res, type, field);
     }
-    
+
+    private TypeManager getTypeManager()
+    {
+        return getManager().getProvider().getTypeManager();
+    }
+
     private boolean isNull(ResultSet res, String field) throws SQLException
     {
         res.getObject(field);

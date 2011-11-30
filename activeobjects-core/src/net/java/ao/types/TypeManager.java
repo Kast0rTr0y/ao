@@ -42,9 +42,8 @@ import net.java.ao.RawEntity;
  * @author Daniel Spiewak
  * @see net.java.ao.types.DatabaseType
  */
-public class TypeManager {
-	private static TypeManager instance;
-	
+public class TypeManager
+{
 	private final List<DatabaseType<?>> types;
 	
 	private final Map<Class<?>, DatabaseType<?>> classIndex;
@@ -53,7 +52,7 @@ public class TypeManager {
 	private final Map<Integer, DatabaseType<?>> intIndex;
 	private final ReadWriteLock intIndexLock;
 	
-	private TypeManager() {
+	public TypeManager() {
 		types = Collections.synchronizedList(new ArrayList<DatabaseType<?>>());
 		classIndex = new HashMap<Class<?>, DatabaseType<?>>();
 		intIndex = new HashMap<Integer, DatabaseType<?>>();
@@ -84,19 +83,6 @@ public class TypeManager {
 	}
 	
 	/**
-	 * Adds a new type to the container.  Once the type is added, it
-	 * will be availble to <i>every</i> {@link EntityManager} instance.
-	 * This method is used internally to set up the default types
-	 * (such as <code>int</code>, <code>String</code> and so on).  Any
-	 * custom types should be added using this method.
-	 * 
-	 * @param type	The type instance to add to the container.
-	 */
-	public void addType(DatabaseType<?> type) {
-		types.add(type);
-	}
-	
-	/**
 	 * <p>Returns the corresponding {@link DatabaseType} for a given Java
 	 * class.  This is the primary mechanism used by ActiveObjects
 	 * internally to obtain type instances.  Code external to the
@@ -123,7 +109,7 @@ public class TypeManager {
 		DatabaseType<T> back = null;
 		
 		if (Common.typeInstanceOf(javaType, RawEntity.class)) {
-			return (DatabaseType<T>) new EntityType<Object>((Class<? extends RawEntity<Object>>) javaType);
+			return (DatabaseType<T>) new EntityType<Object>(this, (Class<? extends RawEntity<Object>>) javaType);
 		}
 		
 		classIndexLock.writeLock().lock();
@@ -198,21 +184,5 @@ public class TypeManager {
 		}
 		
 		return back;
-	}
-	
-	/**
-	 * Retrieves the singleton instance of the container.  This method is
-	 * thread-safe and synchronized using pre-Java 5 mechanisms (meaning it
-	 * may be a little slower than it could be).  For optimal efficiency, 
-	 * do not make repeated calls.
-	 * 
-	 * @return	The global singleton instance.
-	 */
-	public static synchronized TypeManager getInstance() {
-		if (instance == null) {
-			instance = new TypeManager();
-		}
-		
-		return instance;
 	}
 }

@@ -66,8 +66,6 @@ public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
                             person.save();
 
                             company.getImage();
-
-                            person.getFavoriteClass();
                         }
                         catch (Throwable t)
                         {

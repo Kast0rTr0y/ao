@@ -49,7 +49,6 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
                 getFieldName(Person.class, "getProfession"),
                 getFieldName(Person.class, "getAge"),
                 getFieldName(Person.class, "getURL"),
-                getFieldName(Person.class, "getFavoriteClass"),
                 getFieldName(Person.class, "getCompany"),
                 getFieldName(Person.class, "getImage"),
                 getFieldName(Person.class, "isActive"),
@@ -58,7 +57,7 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         String[] expectedIndexes = {getFieldName(Person.class, "getAge"), getFieldName(Person.class, "getCompany")};
 
         TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
-        DDLTable[] parsedTables = SchemaGenerator.parseDDL(entityManager.getNameConverters(), PersonSuit.class, Pen.class);
+        DDLTable[] parsedTables = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
 
         assertEquals(6, parsedTables.length);
 

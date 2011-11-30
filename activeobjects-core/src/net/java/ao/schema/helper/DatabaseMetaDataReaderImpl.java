@@ -67,7 +67,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     public Iterable<? extends Field> getFields(DatabaseMetaData databaseMetaData, String tableName)
     {
-        final TypeManager manager = TypeManager.getInstance();
+        final TypeManager manager = databaseProvider.getTypeManager();
         final List<String> sequenceNames = getSequenceNames(databaseMetaData);
         final Set<String> uniqueFields = getUniqueFields(databaseMetaData, tableName);
 

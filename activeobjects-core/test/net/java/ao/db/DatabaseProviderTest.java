@@ -15,27 +15,11 @@
  */
 package net.java.ao.db;
 
-import static net.java.ao.DatabaseProviders.getEmbeddedDerbyDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getHsqlDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getMsSqlDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getMySqlDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getOracleDatabaseProvider;
-import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Types;
-import java.util.Calendar;
-
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.DefaultIndexNameConverter;
-import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.DefaultUniqueNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLAction;
@@ -44,26 +28,40 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.ClassType;
 import net.java.ao.types.TypeManager;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import test.schema.Company;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.sql.Types;
+import java.util.Calendar;
+import java.util.List;
+
+import static com.google.common.collect.Lists.newArrayList;
+import static net.java.ao.DatabaseProviders.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 @RunWith(MockitoJUnitRunner.class)
 public final class DatabaseProviderTest
 {
+    private TypeManager typeManager;
+
     @Mock
     private NameConverters nameConverters;
 
     @Before
     public final void setUp()
     {
+        typeManager = new TypeManager();
+
         when(nameConverters.getSequenceNameConverter()).thenReturn(new DefaultSequenceNameConverter());
         when(nameConverters.getTriggerNameConverter()).thenReturn(new DefaultTriggerNameConverter());
         when(nameConverters.getIndexNameConverter()).thenReturn(new DefaultIndexNameConverter());
@@ -200,88 +198,138 @@ public final class DatabaseProviderTest
         assertEquals("\"field1\" = 2 and \"field2\" like %er", getPostgreSqlDatabaseProvider().processWhereClause(where));
     }
 
-    private DDLAction createActionCreateTable() {
-		TypeManager tm = TypeManager.getInstance();
-		tm.addType(new ClassType());
-		
-		DDLTable table = new DDLTable();
-		table.setName("person");
-		
-		DDLField[] fields = new DDLField[11];
-		table.setFields(fields);
-		
-		fields[0] = new DDLField();
-		fields[0].setName("id");
-		fields[0].setType(tm.getType(int.class));
-		fields[0].setAutoIncrement(true);
-		fields[0].setPrimaryKey(true);
-		fields[0].setNotNull(true);
-		
-		fields[1] = new DDLField();
-		fields[1].setName("firstName");
-		fields[1].setType(tm.getType(String.class));
-		fields[1].setNotNull(true);
-		
-		fields[2] = new DDLField();
-		fields[2].setName("lastName");
-		fields[2].setType(tm.getType(Types.CLOB));
-		
-		fields[3] = new DDLField();
-		fields[3].setName("age");
-		fields[3].setType(tm.getType(int.class));
-		fields[3].setPrecision(12);
-		
-		fields[4] = new DDLField();
-		fields[4].setName("url");
-		fields[4].setType(tm.getType(URL.class));
-		fields[4].setUnique(true);
-		
-		fields[5] = new DDLField();
-		fields[5].setName("favoriteClass");
-		fields[5].setType(tm.getType(Class.class));
-		
-		fields[6] = new DDLField();
-		fields[6].setName("height");
-		fields[6].setType(tm.getType(double.class));
-		fields[6].setPrecision(32);
-		fields[6].setScale(6);
-		fields[6].setDefaultValue(62.3);
-		
-		fields[7] = new DDLField();
-		fields[7].setName("companyID");
-		fields[7].setType(tm.getType(Company.class));
-		
-		fields[8] = new DDLField();
-		fields[8].setName("cool");
-		fields[8].setType(tm.getType(boolean.class));
-		fields[8].setDefaultValue(true);
-		
-		fields[9] = new DDLField();
-		fields[9].setName("modified");
-		fields[9].setType(tm.getType(Calendar.class));
-		fields[9].setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
-		fields[9].setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
+    private DDLAction createActionCreateTable()
+    {
+        final DDLTable table = new DDLTable();
+        table.setName("person");
 
-        fields[10] = new DDLField();
-		fields[10].setName("weight");
-		fields[10].setType(tm.getType(double.class));
+        final List<DDLField> fields = newArrayList(
+                newIdField(),
+                newFirstNameField(),
+                newLastNameField(),
+                newAgeField(),
+                newUrlField(),
+                newHeightField(),
+                newCompanyField(),
+                newCoolField(),
+                newModifiedField(),
+                newWeightField());
+        DDLField[] fieldsArray = new DDLField[fields.size()];
+        table.setFields(fieldsArray);
+        fields.toArray(fieldsArray);
 
-		DDLForeignKey[] keys = new DDLForeignKey[1];
-		table.setForeignKeys(keys);
-		
-		keys[0] = new DDLForeignKey();
-		keys[0].setDomesticTable("person");
-		keys[0].setField("companyID");
-		keys[0].setForeignField("id");
-		keys[0].setTable("company");
-		
-		DDLAction back = new DDLAction(DDLActionType.CREATE);
-		back.setTable(table);
-		
-		return back;
-	}
-	
-	private DDLAction createActionDropTable() {
+        final List<DDLForeignKey> keys = newArrayList(newForeignKey());
+        table.setForeignKeys(keys.toArray(new DDLForeignKey[keys.size()]));
+
+        DDLAction back = new DDLAction(DDLActionType.CREATE);
+        back.setTable(table);
+
+        return back;
+    }
+
+    private DDLForeignKey newForeignKey()
+    {
+        DDLForeignKey fk = new DDLForeignKey();
+        fk.setDomesticTable("person");
+        fk.setField("companyID");
+        fk.setForeignField("id");
+        fk.setTable("company");
+        return fk;
+    }
+
+    private DDLField newWeightField()
+    {
+        DDLField f =  new DDLField();
+        f.setName("weight");
+        f.setType(typeManager.getType(double.class));
+        return f;
+    }
+
+    private DDLField newModifiedField()
+    {
+        DDLField f =  new DDLField();
+        f.setName("modified");
+        f.setType(typeManager.getType(Calendar.class));
+        f.setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
+        f.setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
+        return f;
+    }
+
+    private DDLField newCoolField()
+    {
+        DDLField f =  new DDLField();
+        f.setName("cool");
+        f.setType(typeManager.getType(boolean.class));
+        f.setDefaultValue(true);
+        return f;
+    }
+
+    private DDLField newCompanyField()
+    {
+        DDLField f  = new DDLField();
+        f.setName("companyID");
+        f.setType(typeManager.getType(Company.class));
+        return f;
+    }
+
+    private DDLField newHeightField()
+    {
+        DDLField f  = new DDLField();
+        f.setName("height");
+        f.setType(typeManager.getType(double.class));
+        f.setPrecision(32);
+        f.setScale(6);
+        f.setDefaultValue(62.3);
+        return f;
+    }
+
+    private DDLField newUrlField()
+    {
+        DDLField f = new DDLField();
+        f.setName("url");
+        f.setType(typeManager.getType(URL.class));
+        f.setUnique(true);
+        return f;
+    }
+
+    private DDLField newAgeField()
+    {
+        DDLField f = new DDLField();
+        f.setName("age");
+        f.setType(typeManager.getType(int.class));
+        f.setPrecision(12);
+        return f;
+    }
+
+    private DDLField newLastNameField()
+    {
+        DDLField f = new DDLField();
+        f.setName("lastName");
+        f.setType(typeManager.getType(Types.CLOB));
+        return f;
+    }
+
+    private DDLField newFirstNameField()
+    {
+        DDLField f  = new DDLField();
+        f.setName("firstName");
+        f.setType(typeManager.getType(String.class));
+        f.setNotNull(true);
+        return f;
+    }
+
+    private DDLField newIdField()
+    {
+        DDLField f = new DDLField();
+        f.setName("id");
+        f.setType(typeManager.getType(int.class));
+        f.setAutoIncrement(true);
+        f.setPrimaryKey(true);
+        f.setNotNull(true);
+        return f;
+    }
+
+    private DDLAction createActionDropTable() {
 		DDLAction back = new DDLAction(DDLActionType.DROP);
 		
 		DDLTable table = new DDLTable();
@@ -290,14 +338,14 @@ public final class DatabaseProviderTest
 		
 		DDLField idField = new DDLField();
 		idField.setName("id");
-		idField.setType(TypeManager.getInstance().getType(int.class));
+		idField.setType(typeManager.getType(int.class));
 		idField.setAutoIncrement(true);
 		idField.setNotNull(true);
 		idField.setPrimaryKey(true);
 		
 		DDLField nameField = new DDLField();
 		nameField.setName("name");
-		nameField.setType(TypeManager.getInstance().getType(String.class));
+		nameField.setType(typeManager.getType(String.class));
 		
 		table.setFields(new DDLField[] {idField, nameField});
 		
@@ -310,7 +358,7 @@ public final class DatabaseProviderTest
 		
 		DDLField field = new DDLField();
 		field.setName("name");
-		field.setType(TypeManager.getInstance().getType(String.class));
+		field.setType(typeManager.getType(String.class));
 		field.setNotNull(true);
 		
 		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_COLUMN);
@@ -326,13 +374,13 @@ public final class DatabaseProviderTest
 		
 		DDLField oldField = new DDLField();
 		oldField.setName("name");
-		oldField.setType(TypeManager.getInstance().getType(int.class));
+		oldField.setType(typeManager.getType(int.class));
 		oldField.setNotNull(false);
 		table.setFields(new DDLField[] {oldField});
 		
 		DDLField field = new DDLField();
 		field.setName("name");
-		field.setType(TypeManager.getInstance().getType(String.class));
+		field.setType(typeManager.getType(String.class));
 		field.setNotNull(true);
 		
 		DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
@@ -349,7 +397,7 @@ public final class DatabaseProviderTest
 		
 		DDLField field = new DDLField();
 		field.setName("name");
-		field.setType(TypeManager.getInstance().getType(String.class));
+		field.setType(typeManager.getType(String.class));
 		field.setNotNull(true);
 		
 		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
@@ -361,27 +409,13 @@ public final class DatabaseProviderTest
 	
 	private DDLAction createActionAddKey() {
 		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_KEY);
-		
-		DDLForeignKey key = new DDLForeignKey();
-		key.setDomesticTable("person");
-		key.setField("companyID");
-		key.setForeignField("id");
-		key.setTable("company");
-		back.setKey(key);
-		
+        back.setKey(newForeignKey());
 		return back;
 	}
 	
 	private DDLAction createActionDropKey() {
 		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_KEY);
-		
-		DDLForeignKey key = new DDLForeignKey();
-		key.setDomesticTable("person");
-		key.setField("companyID");
-		key.setForeignField("id");
-		key.setTable("company");
-		back.setKey(key);
-		
+        back.setKey(newForeignKey());
 		return back;
 	}
 	
@@ -391,7 +425,7 @@ public final class DatabaseProviderTest
 		DDLIndex index = new DDLIndex();
 		index.setField("companyID");
 		index.setTable("person");
-		index.setType(TypeManager.getInstance().getType(Types.VARCHAR));
+		index.setType(typeManager.getType(Types.VARCHAR));
 		back.setIndex(index);
 		
 		return back;
@@ -403,7 +437,7 @@ public final class DatabaseProviderTest
 		DDLIndex index = new DDLIndex();
 		index.setField("companyID");
 		index.setTable("person");
-		index.setType(TypeManager.getInstance().getType(Types.VARCHAR));
+		index.setType(typeManager.getType(Types.VARCHAR));
 		back.setIndex(index);
 		
 		return back;

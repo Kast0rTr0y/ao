@@ -4,7 +4,6 @@ CREATE TABLE dbo.person (
     lastName NTEXT,
     age INTEGER,
     url VARCHAR(255) CONSTRAINT U_person_url UNIQUE NOT NULL,
-    favoriteClass VARCHAR(255),
     height DECIMAL(32,6) CONSTRAINT df_person_height DEFAULT 62.3,
     companyID BIGINT,
     cool BIT CONSTRAINT df_person_cool DEFAULT 1,

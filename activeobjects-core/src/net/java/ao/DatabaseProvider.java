@@ -103,6 +103,7 @@ public abstract class DatabaseProvider
 
     private final ThreadLocal<Connection> transactionThreadLocal = new ThreadLocal<Connection>();
     private final DisposableDataSource dataSource;
+    protected final TypeManager typeManager;
 
     private final String schema;
 
@@ -111,10 +112,16 @@ public abstract class DatabaseProvider
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
     {
         this.dataSource = checkNotNull(dataSource);
+        this.typeManager = new TypeManager();
         this.schema = isBlank(schema) ? null : schema; // can be null
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
         loadQuoteString();
+    }
+
+    public final TypeManager getTypeManager()
+    {
+        return typeManager;
     }
 
     public String getSchema()
@@ -2054,7 +2061,7 @@ public abstract class DatabaseProvider
             }
             else
             {
-                DatabaseType<Object> type = (DatabaseType<Object>) TypeManager.getInstance().getType(value.getClass());
+                DatabaseType<Object> type = (DatabaseType<Object>) typeManager.getType(value.getClass());
                 type.putToDatabase(manager, stmt, i + 1, value);
             }
         }
@@ -2066,7 +2073,7 @@ public abstract class DatabaseProvider
             ResultSet res = stmt.getGeneratedKeys();
             if (res.next())
             {
-                back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
+                back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
             }
             res.close();
         }

@@ -328,8 +328,8 @@ public final class Common {
         return methods.iterator().next();
     }
 
-    public static <K> DatabaseType<K> getPrimaryKeyType(Class<? extends RawEntity<K>> type) {
-		return TypeManager.getInstance().getType(getPrimaryKeyClassType(type));
+    public static <K> DatabaseType<K> getPrimaryKeyType(TypeManager typeManager, Class<? extends RawEntity<K>> type) {
+		return typeManager.getType(getPrimaryKeyClassType(type));
 	}
 
     public static <K> Class<K> getPrimaryKeyClassType(Class<? extends RawEntity<K>> type)
@@ -362,7 +362,7 @@ public final class Common {
 		}
 	}
 
-	public static boolean fuzzyCompare(Object a, Object b) {
+	public static boolean fuzzyCompare(TypeManager typeManager, Object a, Object b) {
 		if (a == null && b == null) {
 			return true;
 		} else if (a == null || b == null) {	// implicitly, one or other is null, not both
@@ -382,7 +382,7 @@ public final class Common {
 
 		if (array != null) {
 			for (int i = 0; i < Array.getLength(array); i++) {
-				if (fuzzyCompare(Array.get(array, i), other)) {
+				if (fuzzyCompare(typeManager, Array.get(array, i), other)) {
 					return true;
 				}
 			}
@@ -392,8 +392,8 @@ public final class Common {
 			return a.equals(b);
 		}
 
-		return TypeManager.getInstance().getType(a.getClass()).valueEquals(a, b)
-			|| TypeManager.getInstance().getType(b.getClass()).valueEquals(b, a);
+		return typeManager.getType(a.getClass()).valueEquals(a, b)
+			|| typeManager.getType(b.getClass()).valueEquals(b, a);
 	}
 
 	public static boolean fuzzyTypeCompare(int typeA, int typeB) {
@@ -457,13 +457,13 @@ public final class Common {
         });
     }
 
-    public static Map<String, DatabaseType> getValueFields(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)
+    public static Map<String, DatabaseType> getValueFields(TypeManager typeManager, final FieldNameConverter converter, final Class<? extends RawEntity<?>> entity)
     {
         final Set<Method> methods = getValueFieldsMethods(entity, converter);
         final Map<String, DatabaseType> map = Maps.newHashMap();
         for (Method m : methods)
         {
-            map.put(converter.getName(m), TypeManager.getInstance().getType(getAttributeTypeFromMethod(m)));
+            map.put(converter.getName(m), typeManager.getType(getAttributeTypeFromMethod(m)));
         }
         return ImmutableMap.copyOf(map);
     }

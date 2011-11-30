@@ -95,10 +95,10 @@ public final class SchemaGenerator
     {
         final Collection<String> statements = newLinkedHashSet(); // preserve the order of the elements
 
-        final DDLTable[] parsedTables = parseDDL(nameConverters, classes);
+        final DDLTable[] parsedTables = parseDDL(provider, nameConverters, classes);
         final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
-        final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(parsedTables, readTables, provider.isCaseSensetive()));
+        final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensetive()));
         for (DDLAction action : actions)
         {
             statements.addAll(Arrays.asList(provider.renderAction(nameConverters, action)));
@@ -118,7 +118,7 @@ public final class SchemaGenerator
         });
     }
 
-    static DDLTable[] parseDDL(NameConverters nameConverters, Class<? extends RawEntity<?>>... classes) {
+    static DDLTable[] parseDDL(DatabaseProvider provider, NameConverters nameConverters, Class<? extends RawEntity<?>>... classes) {
 		final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps = new HashMap<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>>();
 		final Set<Class<? extends RawEntity<?>>> roots = new LinkedHashSet<Class<? extends RawEntity<?>>>();
 
@@ -138,7 +138,7 @@ public final class SchemaGenerator
 
 			Class<? extends RawEntity<?>> clazz = rootsArray[0];
 			if (clazz.getAnnotation(Polymorphic.class) == null) {
-				parsedTables.add(parseInterface(nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
+				parsedTables.add(parseInterface(provider, nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
 			}
 
 			List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();
@@ -163,8 +163,8 @@ public final class SchemaGenerator
 		return parsedTables.toArray(new DDLTable[parsedTables.size()]);
 	}
 
-	private static void parseDependencies(FieldNameConverter fieldConverter, Map<Class <? extends RawEntity<?>>,
-			Set<Class<? extends RawEntity<?>>>> deps, Set<Class <? extends RawEntity<?>>> roots, Class<? extends RawEntity<?>>... classes) {
+	private static void parseDependencies(FieldNameConverter fieldConverter, Map<Class<? extends RawEntity<?>>,
+            Set<Class<? extends RawEntity<?>>>> deps, Set<Class<? extends RawEntity<?>>> roots, Class<? extends RawEntity<?>>... classes) {
 		for (Class<? extends RawEntity<?>> clazz : classes) {
 			if (deps.containsKey(clazz)) {
 				continue;
@@ -193,16 +193,16 @@ public final class SchemaGenerator
 		}
 	}
 
-	private static DDLTable parseInterface(TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
+	private static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
     {
 		String sqlName = nameConverter.getName(clazz);
 
 		DDLTable table = new DDLTable();
 		table.setName(sqlName);
 
-		table.setFields(parseFields(clazz, fieldConverter));
+		table.setFields(parseFields(provider, fieldConverter, clazz));
 		table.setForeignKeys(parseForeignKeys(nameConverter, fieldConverter, clazz));
-		table.setIndexes(parseIndexes(nameConverter, fieldConverter, clazz));
+		table.setIndexes(parseIndexes(provider, nameConverter, fieldConverter, clazz));
 
 		return table;
 	}
@@ -212,7 +212,7 @@ public final class SchemaGenerator
 	 * only to enable use within other ActiveObjects packages.  Consider this
 	 * function <b>unsupported</b>.
 	 */
-	public static DDLField[] parseFields(Class<? extends RawEntity<?>> clazz, FieldNameConverter fieldConverter) {
+	public static DDLField[] parseFields(DatabaseProvider provider, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz) {
 		List<DDLField> fields = new ArrayList<DDLField>();
 		List<String> attributes = new LinkedList<String>();
 
@@ -233,10 +233,11 @@ public final class SchemaGenerator
                 DDLField field = new DDLField();
                 field.setName(attributeName);
 
-                final DatabaseType<?> sqlType = getSQLTypeFromMethod(type, annotations);
+                final TypeManager typeManager = provider.getTypeManager();
+                final DatabaseType<?> sqlType = getSQLTypeFromMethod(typeManager, type, annotations);
                 field.setType(sqlType);
 
-                field.setPrecision(getPrecisionFromMethod(type, method, fieldConverter));
+                field.setPrecision(getPrecisionFromMethod(typeManager, type, method, fieldConverter));
                 field.setScale(getScaleFromMethod(type, method, fieldConverter));
                 field.setPrimaryKey(annotations.isAnnotationPresent(PrimaryKey.class));
                 field.setNotNull(annotations.isAnnotationPresent(NotNull.class) || annotations.isAnnotationPresent(Unique.class) || annotations.isAnnotationPresent(PrimaryKey.class));
@@ -271,7 +272,7 @@ public final class SchemaGenerator
 					field = new DDLField();
 
 					field.setName(attributeName);
-					field.setType(TypeManager.getInstance().getType(String.class));
+					field.setType(typeManager.getType(String.class));
 					field.setPrecision(127);
 					field.setScale(-1);
 
@@ -298,29 +299,26 @@ public final class SchemaGenerator
         return isAutoIncrement;
     }
 
-    private static DatabaseType<?> getSQLTypeFromMethod(Class<?> type, AnnotationDelegate annotations) {
+    private static DatabaseType<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, AnnotationDelegate annotations) {
 		DatabaseType<?> sqlType = null;
-		TypeManager manager = TypeManager.getInstance();
-
-		sqlType = manager.getType(type);
+		sqlType = typeManager.getType(type);
 
 		SQLType sqlTypeAnnotation = annotations.getAnnotation(SQLType.class);
 		if (sqlTypeAnnotation != null) {
 			final int annoType = sqlTypeAnnotation.value();
 
 			if (annoType != Types.NULL) {
-				sqlType = manager.getType(annoType);
+				sqlType = typeManager.getType(annoType);
 			}
 		}
 
 		return sqlType;
 	}
 
-	private static int getPrecisionFromMethod(Class<?> type, Method method, FieldNameConverter converter) {
-		TypeManager manager = TypeManager.getInstance();
+	private static int getPrecisionFromMethod(TypeManager typeManager, Class<?> type, Method method, FieldNameConverter converter) {
 		int precision = -1;
 
-		precision = manager.getType(type).getDefaultPrecision();
+		precision = typeManager.getType(type).getDefaultPrecision();
 
 		SQLType sqlTypeAnnotation = Common.getAnnotationDelegate(converter, method).getAnnotation(SQLType.class);
 		if (sqlTypeAnnotation != null) {
@@ -365,8 +363,8 @@ public final class SchemaGenerator
 		return back.toArray(new DDLForeignKey[back.size()]);
 	}
 
-	private static DDLIndex[] parseIndexes(TableNameConverter nameConverter, FieldNameConverter fieldConverter,
-			Class<? extends RawEntity<?>> clazz) {
+	private static DDLIndex[] parseIndexes(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+                                           Class<? extends RawEntity<?>> clazz) {
 		Set<DDLIndex> back = new LinkedHashSet<DDLIndex>();
 		String tableName = nameConverter.getName(clazz);
 
@@ -382,7 +380,7 @@ public final class SchemaGenerator
 					DDLIndex index = new DDLIndex();
 					index.setField(attributeName);
 					index.setTable(tableName);
-					index.setType(getSQLTypeFromMethod(type, annotations));
+					index.setType(getSQLTypeFromMethod(provider.getTypeManager(), type, annotations));
 
 					back.add(index);
 				}
@@ -391,7 +389,7 @@ public final class SchemaGenerator
 
 		for (Class<?> superInterface : clazz.getInterfaces()) {
 			if (!superInterface.equals(RawEntity.class) && !superInterface.isAnnotationPresent(Polymorphic.class)) {
-				back.addAll(Arrays.asList(parseIndexes(nameConverter, fieldConverter, (Class<? extends RawEntity<?>>) superInterface)));
+				back.addAll(Arrays.asList(parseIndexes(provider, nameConverter, fieldConverter, (Class<? extends RawEntity<?>>) superInterface)));
 			}
 		}
 

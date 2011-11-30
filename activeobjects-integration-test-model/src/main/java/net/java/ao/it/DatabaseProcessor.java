@@ -6,11 +6,6 @@ import net.java.ao.it.model.Address;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
-import net.java.ao.it.model.PostalAddress;
-import net.java.ao.it.model.UserBase;
-import net.java.ao.test.EntityUtils;
-import net.java.ao.test.jdbc.DatabaseUpdater;
-import net.java.ao.types.ClassType;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Commentable;
 import net.java.ao.it.model.Company;
@@ -26,12 +21,15 @@ import net.java.ao.it.model.PersonLegalDefence;
 import net.java.ao.it.model.PersonSuit;
 import net.java.ao.it.model.Photo;
 import net.java.ao.it.model.Post;
+import net.java.ao.it.model.PostalAddress;
 import net.java.ao.it.model.PrintDistribution;
 import net.java.ao.it.model.Profession;
 import net.java.ao.it.model.Publication;
 import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
-import net.java.ao.types.TypeManager;
+import net.java.ao.it.model.UserBase;
+import net.java.ao.test.EntityUtils;
+import net.java.ao.test.jdbc.DatabaseUpdater;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -43,11 +41,6 @@ import java.net.URL;
  */
 public final class DatabaseProcessor implements DatabaseUpdater
 {
-    static
-    {
-        TypeManager.getInstance().addType(new ClassType());
-    }
-
     public void update(EntityManager entityManager) throws Exception
     {
         // creating the schema

@@ -27,6 +27,7 @@ import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
 import net.java.ao.schema.helper.Field;
 import net.java.ao.schema.helper.ForeignKey;
 import net.java.ao.schema.helper.Index;
+import net.java.ao.types.TypeManager;
 
 import java.sql.*;
 import java.text.ParseException;
@@ -179,7 +180,7 @@ public final class SchemaReader
      * <code>onto</code>, a <code>CREATE TABLE</code>
      * statement will be generated.
      */
-    public static DDLAction[] diffSchema(DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensetive)
+    public static DDLAction[] diffSchema(TypeManager typeManager, DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensetive)
     {
         Set<DDLAction> actions = new HashSet<DDLAction>();
 
@@ -348,7 +349,7 @@ public final class SchemaReader
                     }
                 }
                 else if (fromField.getDefaultValue() != null
-                        && !Common.fuzzyCompare(fromField.getDefaultValue(), ontoField.getDefaultValue()))
+                        && !Common.fuzzyCompare(typeManager, fromField.getDefaultValue(), ontoField.getDefaultValue()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }

@@ -15,7 +15,6 @@
  */
 package net.java.ao;
 
-import com.google.common.collect.ImmutableMap;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
@@ -258,14 +257,14 @@ public class Query implements Serializable {
 		return type;
 	}
 	
-	public String[] getCanonicalFields(Class<? extends RawEntity<?>> type, FieldNameConverter converter) {
+	public String[] getCanonicalFields(DatabaseProvider provider, FieldNameConverter converter, Class<? extends RawEntity<?>> type) {
         String[] back = fields.split(",");
                
         List<String> result = new ArrayList<String>();
 		for(String fieldName : back) {
             if (fieldName.trim().equals("*")) {
 
-				for (DDLField field : SchemaGenerator.parseFields(type, converter)) {
+				for (DDLField field : SchemaGenerator.parseFields(provider, converter, type)) {
 					result.add(field.getName());
 				}
 			}  else {
@@ -290,7 +289,7 @@ public class Query implements Serializable {
 	@SuppressWarnings("unchecked")
 	protected void setParameters(EntityManager manager, PreparedStatement stmt) throws SQLException {
 		if (whereParams != null) {
-			TypeManager typeManager = TypeManager.getInstance();
+			final TypeManager typeManager = manager.getProvider().getTypeManager();
 			
 			for (int i = 0; i < whereParams.length; i++) {
 				if (whereParams[i] == null) {

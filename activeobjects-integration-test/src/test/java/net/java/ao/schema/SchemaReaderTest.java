@@ -51,7 +51,6 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
                 getFieldName(Person.class, "getProfession"),
                 getFieldName(Person.class, "getAge"),
                 getFieldName(Person.class, "getURL"),
-                getFieldName(Person.class, "getFavoriteClass"),
                 getFieldName(Person.class, "getCompany"),
                 getFieldName(Person.class, "getImage"),
                 getFieldName(Person.class, "isActive"),
@@ -159,10 +158,10 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
     @Test
     public void testDiffSchema()
     {
-        DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getNameConverters(), PersonSuit.class, Pen.class);
-        DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getNameConverters(), PersonSuit.class, Pen.class);
+        DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
+        DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
 
-        assertEquals(0, SchemaReader.diffSchema(ddl1, ddl2, true).length);
+        assertEquals(0, SchemaReader.diffSchema(entityManager.getProvider().getTypeManager(), ddl1, ddl2, true).length);
     }
 
     @Test
@@ -216,7 +215,7 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         table3.setFields(table3Fields);
 
         // rendering
-        DDLAction[] actions = SchemaReader.diffSchema(new DDLTable[]{table1, table2, table3}, new DDLTable[0], true);
+        DDLAction[] actions = SchemaReader.diffSchema(entityManager.getProvider().getTypeManager(), new DDLTable[]{table1, table2, table3}, new DDLTable[0], true);
         actions = SchemaReader.sortTopologically(actions);
 
         assertEquals(3, actions.length);

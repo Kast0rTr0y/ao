@@ -249,7 +249,7 @@ public class EntityManager
 
 					stmt = conn.prepareStatement(sql.toString());
 
-					DatabaseType<K> dbType = (DatabaseType<K>) TypeManager.getInstance().getType(key.getClass());
+					DatabaseType<K> dbType = (DatabaseType<K>) provider.getTypeManager().getType(key.getClass());
 					dbType.putToDatabase(EntityManager.this, stmt, 1, key);
 
 					res = stmt.executeQuery();
@@ -423,7 +423,7 @@ public class EntityManager
 
         final Set<String> nonNullFields = Common.getNonNullFields(type, nameConverters.getFieldNameConverter());
         final Set<String> fieldsThatShouldBeSet = Common.getNonNullFieldsWithNoDefaultAndNotGenerated(type, nameConverters.getFieldNameConverter());
-        final Map<String, DatabaseType> valueFields = Common.getValueFields(type, nameConverters.getFieldNameConverter());
+        final Map<String, DatabaseType> valueFields = Common.getValueFields(provider.getTypeManager(), nameConverters.getFieldNameConverter(), type);
 
         for (DBParam param : params)
         {
@@ -570,7 +570,7 @@ public class EntityManager
 
 					int index = 1;
 					for (RawEntity<?> entity : entityList) {
-						TypeManager.getInstance().getType((Class) entity.getEntityType()).putToDatabase(this, stmt, index++, entity);
+						provider.getTypeManager().getType((Class) entity.getEntityType()).putToDatabase(this, stmt, index++, entity);
 					}
 
 					relationsCache.remove(type);
@@ -735,9 +735,9 @@ public class EntityManager
             res = stmt.executeQuery();
             provider.setQueryResultSetProperties(res, query);
 
-            final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
+            final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
             final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-            final String[] canonicalFields = query.getCanonicalFields(type, getFieldNameConverter());
+            final String[] canonicalFields = query.getCanonicalFields(provider, getFieldNameConverter(), type);
             while (res.next())
             {
                 final T entity = peer(type, primaryKeyType.pullFromDatabase(this, res, primaryKeyClassType, field));
@@ -797,7 +797,7 @@ public class EntityManager
             connection = provider.getConnection();
 			stmt = provider.preparedStatement(connection, sql);
 
-			TypeManager manager = TypeManager.getInstance();
+			final TypeManager manager = provider.getTypeManager();
 			for (int i = 0; i < parameters.length; i++) {
 				Class javaType = parameters[i].getClass();
 
@@ -810,7 +810,7 @@ public class EntityManager
 
 			res = stmt.executeQuery();
 			while (res.next()) {
-				back.add(peer(type, Common.getPrimaryKeyType(type).pullFromDatabase(this, res, (Class<? extends K>) type, keyField)));
+				back.add(peer(type, Common.getPrimaryKeyType(provider.getTypeManager(), type).pullFromDatabase(this, res, (Class<? extends K>) type, keyField)));
 			}
 		} finally {
             closeQuietly(res);
@@ -855,9 +855,9 @@ public class EntityManager
 
         // fetch some information about the fields we're dealing with. These calls are expensive when
         // executed too often, and since we're always working on the same type of object, we only need them once.
-        final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(type);
+        final DatabaseType<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
         final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-        final String[] canonicalFields = query.getCanonicalFields(type, getFieldNameConverter());
+        final String[] canonicalFields = query.getCanonicalFields(provider, getFieldNameConverter(), type);
         String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
 
         // the factory caches details about the proxied interface, since reflection calls are expensive

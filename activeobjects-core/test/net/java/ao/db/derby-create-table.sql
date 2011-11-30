@@ -4,7 +4,6 @@ CREATE TABLE person (
     lastName CLOB,
     age INTEGER,
     url VARCHAR(255) UNIQUE NOT NULL,
-    favoriteClass VARCHAR(255),
     height DOUBLE DEFAULT 62.3,
     companyID BIGINT,
     cool SMALLINT(1) DEFAULT 1,

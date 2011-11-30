@@ -482,7 +482,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
                 res = stmt.getGeneratedKeys();
                 if (res.next())
                 {
-                    back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
+                    back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
                 }
             }
             return back;

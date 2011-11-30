@@ -31,7 +31,6 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -154,7 +153,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 			if (value == null) {
 				putNull(stmt, i + 1);
 			} else {
-				DatabaseType<Object> type = (DatabaseType<Object>) TypeManager.getInstance().getType(value.getClass());
+				DatabaseType<Object> type = (DatabaseType<Object>) typeManager.getType(value.getClass());
 				type.putToDatabase(manager, stmt, i + 1, value);
 			}
 		}
@@ -167,7 +166,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
 			ResultSet res = stmt.executeQuery();
 			if (res.next()) {
-				 back = TypeManager.getInstance().getType(pkType).pullFromDatabase(null, res, pkType, 1);
+				 back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
 			}
 			res.close();
 			stmt.close();
@@ -282,7 +281,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
     {
         if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
         {
-            field.setType(TypeManager.getInstance().getType(Types.INTEGER));
+            field.setType(typeManager.getType(Types.INTEGER));
         }
         return super.renderFieldType(field);
     }

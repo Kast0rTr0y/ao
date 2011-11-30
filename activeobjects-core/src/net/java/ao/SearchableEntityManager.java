@@ -115,7 +115,7 @@ public class SearchableEntityManager extends EntityManager {
 		List<String> indexFields = Common.getSearchableFields(this, type);
 		String[] searchFields = new String[indexFields.size()];
 		String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
-		DatabaseType dbType = Common.getPrimaryKeyType(type);
+		DatabaseType dbType = Common.getPrimaryKeyType(getProvider().getTypeManager(), type);
 
 		for (int i = 0; i < searchFields.length; i++) {
 			searchFields[i] = table + '.' + indexFields.get(i);
@@ -177,7 +177,7 @@ public class SearchableEntityManager extends EntityManager {
 			Document doc = new Document();
 			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
 					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
+					Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 
 			boolean shouldAdd = false;
@@ -237,7 +237,7 @@ public class SearchableEntityManager extends EntityManager {
 	private void removeFromIndexImpl(RawEntity<?> entity, IndexReader reader) throws IOException {
 		reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
 				+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-				Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))));
+				Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))));
 	}
 
 	/**
@@ -294,7 +294,7 @@ public class SearchableEntityManager extends EntityManager {
 			doc = new Document();
 			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
 					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
+					Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 		}
 
@@ -310,7 +310,7 @@ public class SearchableEntityManager extends EntityManager {
 					writer = new IndexWriter(getIndexDir(), getAnalyzer(), false);
 					writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
 							+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-							Common.getPrimaryKeyType(entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))), doc);
+							Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))), doc);
 				} catch (IOException e) {
 				} finally {
 					if (writer != null) {

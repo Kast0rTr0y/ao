@@ -65,9 +65,6 @@ public interface Person extends Entity {
 	@Mutator("url")
 	public void setURL(URL url);
 	
-	public Class<?> getFavoriteClass();
-	public void setFavoriteClass(Class<?> clazz);
-	
 	public Company getCompany();
 	public void setCompany(Company company);
 

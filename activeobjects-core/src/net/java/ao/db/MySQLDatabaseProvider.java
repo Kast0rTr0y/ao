@@ -212,7 +212,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
     {
         if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
         {
-            field.setType(TypeManager.getInstance().getType(Types.INTEGER));
+            field.setType(typeManager.getType(Types.INTEGER));
         }
         return super.renderFieldType(field);
     }

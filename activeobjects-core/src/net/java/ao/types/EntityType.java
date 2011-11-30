@@ -24,16 +24,19 @@ import net.java.ao.Common;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Daniel Spiewak
  */
 class EntityType<T> extends DatabaseType<RawEntity<T>> {
-	private DatabaseType<T> primaryKeyType;
-	
-	public EntityType(Class<? extends RawEntity<T>> type) {
+	private final DatabaseType<T> primaryKeyType;
+    private final TypeManager typeManager;
+
+    public EntityType(TypeManager typeManager, Class<? extends RawEntity<T>> type) {
 		super(Types.INTEGER, -1, RawEntity.class);
-		
-		primaryKeyType = Common.getPrimaryKeyType(type);
+        this.typeManager = checkNotNull(typeManager);
+        this.primaryKeyType = Common.getPrimaryKeyType(typeManager, type);
 	}
 	
 	@Override
@@ -44,13 +47,13 @@ class EntityType<T> extends DatabaseType<RawEntity<T>> {
 	@Override
 	@SuppressWarnings("unchecked")
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, RawEntity value) throws SQLException {
-		DatabaseType dbType = Common.getPrimaryKeyType(value.getEntityType());
+		DatabaseType dbType = Common.getPrimaryKeyType(typeManager, value.getEntityType());
 		dbType.putToDatabase(manager, stmt, index, Common.getPrimaryKeyValue(value));
 	}
 	
 	@Override
 	public RawEntity<T> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends RawEntity<T>> type, String field) throws SQLException {
-		DatabaseType<T> dbType = Common.getPrimaryKeyType(type);
+		DatabaseType<T> dbType = Common.getPrimaryKeyType(typeManager, type);
 		Class<T> pkType = Common.getPrimaryKeyClassType(type);
 		
 		return Common.createPeer(manager, type, dbType.pullFromDatabase(manager, res, pkType, field));

@@ -4,7 +4,6 @@ CREATE TABLE public."person" (
     "lastName" TEXT,
     "age" INTEGER,
     "url" VARCHAR(255) CONSTRAINT U_person_url UNIQUE NOT NULL,
-    "favoriteClass" VARCHAR(255),
     "height" DOUBLE PRECISION DEFAULT 62.3,
     "companyID" BIGINT,
     "cool" BOOLEAN DEFAULT TRUE,

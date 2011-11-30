@@ -30,39 +30,38 @@ import test.schema.Person;
 /**
  * @author Daniel Spiewak
  */
-public class TypeManagerTest {
-	
-	@Before
-	public void preTest() {
-		TypeManager.getInstance().addType(new ClassType());
+public final class TypeManagerTest
+{
+    private TypeManager typeManager;
+
+    @Before
+    public final void setUp()
+    {
+        typeManager = new TypeManager();
+    }
+
+    @Test
+	public void testGetTypeClass()
+    {
+		assertEquals(new VarcharType(), typeManager.getType(String.class));
+		assertEquals(new IntegerType(), typeManager.getType(int.class));
+		assertEquals(new IntegerType(), typeManager.getType(Integer.class));
+		assertEquals(new DoubleType(), typeManager.getType(double.class));
+		assertEquals(new TimestampType(), typeManager.getType(Calendar.class));
+		assertEquals(new TimestampDateType(), typeManager.getType(Date.class));
+		assertEquals(new EntityType<Integer>(typeManager, Person.class), typeManager.getType(Person.class));
+		assertEquals(new URLType(), typeManager.getType(URL.class));
 	}
 
 	@Test
-	public void testGetTypeClass() {
-		TypeManager manager = TypeManager.getInstance();
-
-		assertEquals(new VarcharType(), manager.getType(String.class));
-		assertEquals(new IntegerType(), manager.getType(int.class));
-		assertEquals(new IntegerType(), manager.getType(Integer.class));
-		assertEquals(new DoubleType(), manager.getType(double.class));
-		assertEquals(new TimestampType(), manager.getType(Calendar.class));
-		assertEquals(new TimestampDateType(), manager.getType(Date.class));
-		assertEquals(new EntityType<Integer>(Person.class), manager.getType(Person.class));
-		assertEquals(new URLType(), manager.getType(URL.class));
-		
-		assertEquals(new ClassType(), manager.getType(Class.class));
-	}
-
-	@Test
-	public void testGetTypeInt() {
-		TypeManager manager = TypeManager.getInstance();
-
-		assertEquals(new VarcharType(), manager.getType(Types.VARCHAR));
-		assertEquals(new IntegerType(), manager.getType(Types.INTEGER));
-		assertEquals(new TimestampType(), manager.getType(Types.TIMESTAMP));
-		assertEquals(new CharType(), manager.getType(Types.CHAR));
-		assertEquals(new GenericType(Types.JAVA_OBJECT), manager.getType(Types.JAVA_OBJECT));
-		assertEquals(new DateType(), manager.getType(Types.DATE));
-		assertEquals(new RealType(), manager.getType(Types.REAL));
+	public void testGetTypeInt()
+    {
+		assertEquals(new VarcharType(), typeManager.getType(Types.VARCHAR));
+		assertEquals(new IntegerType(), typeManager.getType(Types.INTEGER));
+		assertEquals(new TimestampType(), typeManager.getType(Types.TIMESTAMP));
+		assertEquals(new CharType(), typeManager.getType(Types.CHAR));
+		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
+		assertEquals(new DateType(), typeManager.getType(Types.DATE));
+		assertEquals(new RealType(), typeManager.getType(Types.REAL));
 	}
 }
