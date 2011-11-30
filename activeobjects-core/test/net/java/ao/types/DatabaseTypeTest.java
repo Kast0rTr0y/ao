@@ -19,13 +19,10 @@ import org.junit.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Types;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Daniel Spiewak
@@ -46,11 +43,9 @@ public class DatabaseTypeTest
 
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.MILLISECOND, 0);
+		Date date = new Date(0L);
 
-		assertEquals(cal, new TimestampType().defaultParseValue(dateFormatter.format(cal.getTime())));
-		assertEquals(cal.getTime(), new TimestampDateType().defaultParseValue(dateFormatter.format(cal.getTime())));
+		assertEquals(date, new TimestampDateType().defaultParseValue(dateFormatter.format(date)));
 	}
 
 	@Test
@@ -68,10 +63,8 @@ public class DatabaseTypeTest
 
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.MILLISECOND, 0);
+        Date date = new Date(0L);
 
-		assertEquals(dateFormatter.format(cal.getTime()), new TimestampType().valueToString(cal));
-		assertEquals(dateFormatter.format(cal.getTime()), new TimestampDateType().valueToString(cal.getTime()));
+		assertEquals(dateFormatter.format(date), new TimestampDateType().valueToString(date));
 	}
 }

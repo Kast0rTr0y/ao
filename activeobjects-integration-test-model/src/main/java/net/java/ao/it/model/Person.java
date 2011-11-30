@@ -31,7 +31,7 @@ import net.java.ao.schema.SQLType;
 import net.java.ao.schema.Unique;
 
 import java.net.URL;
-import java.util.Calendar;
+import java.util.Date;
 
 /**
  * @author Daniel Spiewak
@@ -75,7 +75,7 @@ public interface Person extends Entity {
 	public void setActive(boolean active);
 	
 	@OnUpdate("CURRENT_TIMESTAMP")
-	public Calendar getModified();
+	public Date getModified();
 	
 	@OneToOne
 	public Nose getNose();

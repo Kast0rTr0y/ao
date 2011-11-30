@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.sql.Types;
-import java.util.Calendar;
 import java.util.Date;
 
 import org.junit.Before;
@@ -47,7 +46,6 @@ public final class TypeManagerTest
 		assertEquals(new IntegerType(), typeManager.getType(int.class));
 		assertEquals(new IntegerType(), typeManager.getType(Integer.class));
 		assertEquals(new DoubleType(), typeManager.getType(double.class));
-		assertEquals(new TimestampType(), typeManager.getType(Calendar.class));
 		assertEquals(new TimestampDateType(), typeManager.getType(Date.class));
 		assertEquals(new EntityType<Integer>(typeManager, Person.class), typeManager.getType(Person.class));
 		assertEquals(new URLType(), typeManager.getType(URL.class));
@@ -58,10 +56,10 @@ public final class TypeManagerTest
     {
 		assertEquals(new VarcharType(), typeManager.getType(Types.VARCHAR));
 		assertEquals(new IntegerType(), typeManager.getType(Types.INTEGER));
-		assertEquals(new TimestampType(), typeManager.getType(Types.TIMESTAMP));
+		assertEquals(new TimestampDateType(), typeManager.getType(Types.TIMESTAMP));
 		assertEquals(new CharType(), typeManager.getType(Types.CHAR));
 		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
-		assertEquals(new DateType(), typeManager.getType(Types.DATE));
+		assertEquals(new DateDateType(), typeManager.getType(Types.DATE));
 		assertEquals(new RealType(), typeManager.getType(Types.REAL));
 	}
 }

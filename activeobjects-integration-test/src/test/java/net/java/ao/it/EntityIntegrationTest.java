@@ -43,6 +43,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -435,7 +436,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         person.setFirstName(person.getFirstName());        // no-op to guarentee value
         person.save();
 
-        final Calendar old = person.getModified();
+        final Date old = person.getModified();
         person.getAge();
 
         try
@@ -455,7 +456,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         {
             public Void call() throws Exception
             {
-                assertFalse(old.getTimeInMillis() == person.getModified().getTimeInMillis());
+                assertFalse(old.getTime() == person.getModified().getTime());
                 return null;
             }
         });

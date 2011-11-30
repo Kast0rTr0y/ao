@@ -63,13 +63,11 @@ public class TypeManager
         addType(new FloatType(), true, true);
         addType(new IntegerType(), true, true);
         addType(new TimestampDateType(), true, true);
-        addType(new TimestampType(), true, true);
         addType(new TinyIntType(), true, true);
         addType(new VarcharType(), true, true);
 
         addType(new ClobType(), false, true);     // must come *after* VarcharType
-        addType(new DateType(), false, true);
-        addType(new DateDateType(), false, false);
+        addType(new DateDateType(), false, true);
         addType(new EnumType(), true, false);
         addType(new RealType(), false, true);
         addType(new URLType(), true, false);
