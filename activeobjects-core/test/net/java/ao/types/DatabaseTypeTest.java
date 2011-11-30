@@ -32,31 +32,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class DatabaseTypeTest
 {
-	@Test
-	public void testIsHandlerForInt() {
-		assertTrue(new IntegerType().isHandlerFor(Types.INTEGER));
-		assertTrue(new DoubleType().isHandlerFor(Types.DOUBLE));
-		assertTrue(new URLType().isHandlerFor(Types.VARCHAR));
-		assertTrue(new VarcharType().isHandlerFor(Types.VARCHAR));
-		assertTrue(new TimestampType().isHandlerFor(Types.TIMESTAMP));
-		assertTrue(new GenericType(Types.ARRAY).isHandlerFor(Types.ARRAY));
-	}
-
-	@Test
-	public void testIsHandlerForClass() {
-		assertTrue(new IntegerType().isHandlerFor(int.class));
-		assertTrue(new IntegerType().isHandlerFor(Integer.class));
-
-		assertTrue(new DoubleType().isHandlerFor(double.class));
-		assertTrue(new DoubleType().isHandlerFor(Double.class));
-
-		assertTrue(new URLType().isHandlerFor(URL.class));
-		assertTrue(new VarcharType().isHandlerFor(String.class));
-		assertTrue(new TimestampType().isHandlerFor(Calendar.class));
-
-		assertFalse(new GenericType(Types.ARRAY).isHandlerFor(Object.class));
-	}
-
     @Test
 	public void testDefaultParseValue() throws MalformedURLException {
 		assertEquals(123, new IntegerType().defaultParseValue("123").intValue());

@@ -109,14 +109,19 @@ public abstract class DatabaseProvider
 
     private String quote;
 
-    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager)
     {
         this.dataSource = checkNotNull(dataSource);
-        this.typeManager = new TypeManager();
+        this.typeManager = typeManager;
         this.schema = isBlank(schema) ? null : schema; // can be null
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
         loadQuoteString();
+    }
+
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        this(dataSource, schema, new TypeManager());
     }
 
     public final TypeManager getTypeManager()

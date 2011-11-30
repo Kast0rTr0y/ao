@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import net.java.ao.Entity;
+
 import net.java.ao.Common;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
@@ -44,42 +46,54 @@ import net.java.ao.RawEntity;
  */
 public class TypeManager
 {
-	private final List<DatabaseType<?>> types;
-	
-	private final Map<Class<?>, DatabaseType<?>> classIndex;
-	private final ReadWriteLock classIndexLock;
-	
-	private final Map<Integer, DatabaseType<?>> intIndex;
-	private final ReadWriteLock intIndexLock;
-	
-	public TypeManager() {
-		types = Collections.synchronizedList(new ArrayList<DatabaseType<?>>());
-		classIndex = new HashMap<Class<?>, DatabaseType<?>>();
-		intIndex = new HashMap<Integer, DatabaseType<?>>();
-		
-		classIndexLock = new ReentrantReadWriteLock();
-		intIndexLock = new ReentrantReadWriteLock();
-		
-		// init built-in types
-		types.add(new BigIntType());
-		types.add(new BooleanType());
-		types.add(new BlobType());
-		types.add(new CharType());
-		types.add(new DoubleType());
-		types.add(new FloatType());
-		types.add(new IntegerType());
-		types.add(new TimestampType());
-		types.add(new TimestampDateType());
-		types.add(new TinyIntType());
-		types.add(new VarcharType());
+    private final Map<Class<?>, DatabaseType<?>> classIndex;
+    private final Map<Integer, DatabaseType<?>> intIndex;
 
-		types.add(new ClobType());		// must come *after* VarcharType
-		types.add(new DateType());
-		types.add(new DateDateType());
-		types.add(new EnumType());
-		types.add(new RealType());
-		types.add(new URLType());
-		types.add(new URIType());
+    public TypeManager(DatabaseType<?>... overrideTypes)
+    {
+        classIndex = new HashMap<Class<?>, DatabaseType<?>>();
+        intIndex = new HashMap<Integer, DatabaseType<?>>();
+        
+        // init built-in types
+        addType(new BigIntType(), true, true);
+        addType(new BooleanType(), true, true);
+        addType(new BlobType(), true, true);
+        addType(new CharType(), true, true);
+        addType(new DoubleType(), true, true);
+        addType(new FloatType(), true, true);
+        addType(new IntegerType(), true, true);
+        addType(new TimestampDateType(), true, true);
+        addType(new TimestampType(), true, true);
+        addType(new TinyIntType(), true, true);
+        addType(new VarcharType(), true, true);
+
+        addType(new ClobType(), false, true);     // must come *after* VarcharType
+        addType(new DateType(), false, true);
+        addType(new DateDateType(), false, false);
+        addType(new EnumType(), true, false);
+        addType(new RealType(), false, true);
+        addType(new URLType(), true, false);
+        addType(new URIType(), true, false);
+        
+        for (DatabaseType<?> overrideType : overrideTypes)
+        {
+            addType(overrideType, true, true);
+        }
+    }
+    
+	private final void addType(DatabaseType<?> typeInfo, boolean useAsDefaultForJavaType, boolean useAsDefaultForSqlType)
+	{
+        if (useAsDefaultForJavaType)
+        {
+    	    for (Class<?> clazz : typeInfo.getHandledTypes())
+    	    {
+    	        classIndex.put(clazz, typeInfo);
+    	    }
+        }
+        if (useAsDefaultForSqlType)
+        {
+            intIndex.put(typeInfo.getType(), typeInfo);
+        }
 	}
 	
 	/**
@@ -88,15 +102,7 @@ public class TypeManager
 	 * internally to obtain type instances.  Code external to the
 	 * framework may also make use of this method to obtain the relevant
 	 * type information or to just test if a type is in fact
-	 * available.  Types are internally prioritized by entry order.  The
-	 * first type to respond <code>true</code> to the {@link DatabaseType#isHandlerFor(Class)}
-	 * method will be returned.</p>
-	 * 
-	 * <p>It's worth noting that this method worst case runs in <code>O(n)</code>
-	 * time.  This is because a linear search must be made through the
-	 * raw list of available types.  However, once the type has been found
-	 * it is placed into a hash indexed by class type.  Thus for most types,
-	 * this method will run in constant time (<code>O(1)</code>).</p>
+	 * available.
 	 * 
 	 * @param javaType	The {@link Class} type for which a type instance
 	 * 		should be returned.
@@ -105,36 +111,22 @@ public class TypeManager
 	 * 		given class.
 	 * @see #getType(int)
 	 */
-	public <T> DatabaseType<T> getType(Class<T> javaType) {
-		DatabaseType<T> back = null;
-		
-		if (Common.typeInstanceOf(javaType, RawEntity.class)) {
-			return (DatabaseType<T>) new EntityType<Object>(this, (Class<? extends RawEntity<Object>>) javaType);
-		}
-		
-		classIndexLock.writeLock().lock();
-		try {
-			if (classIndex.containsKey(javaType)) {
-				return (DatabaseType<T>) classIndex.get(javaType);
-			}
-			
-			for (DatabaseType<?> type : types) {
-				if (type.isHandlerFor(javaType)) {
-					back = (DatabaseType<T>) type;
-					break;
-				}
-			}
-			
-			if (back != null) {
-				classIndex.put(javaType, back);
-			} else {
-				throw new RuntimeException("Unrecognized type: " + javaType.getName());
-			}
-		} finally {
-			classIndexLock.writeLock().unlock();
-		}
-		
-		return back;
+	@SuppressWarnings("unchecked")
+	public <T> DatabaseType<T> getType(Class<T> javaType)
+	{
+	    if (RawEntity.class.isAssignableFrom(javaType))
+	    {
+	        return (DatabaseType<T>) new EntityType<Object>(this, (Class<? extends RawEntity<Object>>) javaType);
+	    }
+	    for (Class<?> clazz = javaType; clazz != null; clazz = clazz.getSuperclass())
+	    {
+	        DatabaseType<?> typeInfo = classIndex.get(clazz);
+	        if (typeInfo != null)
+	        {
+	            return (DatabaseType<T>) typeInfo;
+	        }
+	    }
+	    throw new RuntimeException("Unrecognized type: " + javaType.getName());
 	}
 	
 	/**
@@ -142,14 +134,7 @@ public class TypeManager
 	 * integer type.  Code external to the framework may also make use of 
 	 * this method to obtain the relevant type information or to just test 
 	 * if a type is in fact available.  Types are internally prioritized by 
-	 * entry order.  The first type to respond <code>true</code> to the 
-	 * {@link DatabaseType#isHandlerFor(int)} method will be returned.</p>
-	 * 
-	 * <p>It's worth noting that this method worst case runs in <code>O(n)</code>
-	 * time.  This is because a linear search must be made through the
-	 * raw list of available types.  However, once the type has been found
-	 * it is placed into a hash indexed by int value.  Thus for most types,
-	 * this method will run in constant time (<code>O(1)</code>).</p>
+	 * entry order.
 	 * 
 	 * @param sqlType	The JDBC {@link Types} constant for which a type
 	 * 		instance should be retrieved.
@@ -158,31 +143,9 @@ public class TypeManager
 	 * 		given type constant.
 	 * @see #getType(Class)
 	 */
-	public DatabaseType<?> getType(int sqlType) {
-		DatabaseType<?> back = null;
-		
-		intIndexLock.writeLock().lock();
-		try {
-			if (intIndex.containsKey(sqlType)) {
-				return intIndex.get(sqlType);
-			}
-			
-			for (DatabaseType<?> type : types) {
-				if (type.isHandlerFor(sqlType)) {
-					back = type;
-					break;
-				}
-			}
-			
-			if (back == null) {
-				back = new GenericType(sqlType);
-			}
-			
-			intIndex.put(sqlType, back);
-		} finally {
-			intIndexLock.writeLock().unlock();
-		}
-		
-		return back;
+	public DatabaseType<?> getType(int sqlType)
+	{
+	    DatabaseType<?> typeInfo = intIndex.get(sqlType);
+	    return (typeInfo != null) ? typeInfo : new GenericType(sqlType);
 	}
 }
