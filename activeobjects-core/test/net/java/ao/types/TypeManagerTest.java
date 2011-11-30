@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.URL;
 import java.sql.Types;
-import java.util.Calendar;
 import java.util.Date;
 
 import org.junit.Before;

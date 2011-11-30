@@ -46,37 +46,52 @@ import net.java.ao.RawEntity;
  */
 public class TypeManager
 {
-	private final List<DatabaseType<?>> types;
-	
-	private final Map<Class<?>, DatabaseType<?>> classIndex;
-	private final ReadWriteLock classIndexLock;
-	
-	private final Map<Integer, DatabaseType<?>> intIndex;
-	private final ReadWriteLock intIndexLock;
-	
-	public TypeManager() {
-		types = Collections.synchronizedList(new ArrayList<DatabaseType<?>>());
-		classIndex = new HashMap<Class<?>, DatabaseType<?>>();
-		intIndex = new HashMap<Integer, DatabaseType<?>>();
-		
-		classIndexLock = new ReentrantReadWriteLock();
-		intIndexLock = new ReentrantReadWriteLock();
-		
-		// init built-in types
-		types.add(new BigIntType());
-		types.add(new BooleanType());
-		types.add(new BlobType());
-		types.add(new DoubleType());
-		types.add(new FloatType());
-		types.add(new IntegerType());
-		types.add(new TimestampDateType());
-		types.add(new VarcharType());
+    private final Map<Class<?>, DatabaseType<?>> classIndex;
+    private final Map<Integer, DatabaseType<?>> intIndex;
 
-		types.add(new ClobType());		// must come *after* VarcharType
-		types.add(new DateDateType());
-		types.add(new EnumType());
-		types.add(new URLType());
-		types.add(new URIType());
+    public TypeManager(DatabaseType<?>... overrideTypes)
+    {
+        classIndex = new HashMap<Class<?>, DatabaseType<?>>();
+        intIndex = new HashMap<Integer, DatabaseType<?>>();
+        
+        // init built-in types
+        addType(new BigIntType(), true, true);
+        addType(new BooleanType(), true, true);
+        addType(new BlobType(), true, true);
+        addType(new CharType(), true, true);
+        addType(new DoubleType(), true, true);
+        addType(new FloatType(), true, true);
+        addType(new IntegerType(), true, true);
+        addType(new TimestampDateType(), true, true);
+        addType(new TinyIntType(), true, true);
+        addType(new VarcharType(), true, true);
+
+        addType(new ClobType(), false, true);     // must come *after* VarcharType
+        addType(new DateDateType(), false, true);
+        addType(new EnumType(), true, false);
+        addType(new RealType(), false, true);
+        addType(new URLType(), true, false);
+        addType(new URIType(), true, false);
+        
+        for (DatabaseType<?> overrideType : overrideTypes)
+        {
+            addType(overrideType, true, true);
+        }
+    }
+    
+	private final void addType(DatabaseType<?> typeInfo, boolean useAsDefaultForJavaType, boolean useAsDefaultForSqlType)
+	{
+        if (useAsDefaultForJavaType)
+        {
+    	    for (Class<?> clazz : typeInfo.getHandledTypes())
+    	    {
+    	        classIndex.put(clazz, typeInfo);
+    	    }
+        }
+        if (useAsDefaultForSqlType)
+        {
+            intIndex.put(typeInfo.getType(), typeInfo);
+        }
 	}
 	
 	/**

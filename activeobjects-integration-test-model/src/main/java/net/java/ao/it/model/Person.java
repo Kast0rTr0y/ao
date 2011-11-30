@@ -31,7 +31,6 @@ import net.java.ao.schema.SQLType;
 import net.java.ao.schema.Unique;
 
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Date;
 
 /**
