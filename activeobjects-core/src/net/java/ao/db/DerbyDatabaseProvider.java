@@ -301,7 +301,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("DROP INDEX ");
 		
-		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
 		
 		return back.toString();
 	}

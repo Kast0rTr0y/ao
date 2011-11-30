@@ -1413,7 +1413,7 @@ public abstract class DatabaseProvider
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("CREATE INDEX ").append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append("CREATE INDEX ").append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
         back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
 
         return back.toString();
@@ -1438,7 +1438,7 @@ public abstract class DatabaseProvider
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("DROP INDEX ").append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append("DROP INDEX ").append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
         back.append(" ON ").append(withSchema(index.getTable()));
 
         return back.toString();

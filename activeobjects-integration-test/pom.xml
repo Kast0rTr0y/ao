@@ -99,7 +99,7 @@
     </dependencies>
 
     <properties>
-        <ao.test.tablenameconverter>camelcase</ao.test.tablenameconverter>
+        <ao.test.tablenameconverter>prefix</ao.test.tablenameconverter>
         <ao.test.fieldnameconverter>camelcase</ao.test.fieldnameconverter>
     </properties>
 </project>

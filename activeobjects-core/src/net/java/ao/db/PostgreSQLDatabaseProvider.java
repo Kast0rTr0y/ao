@@ -49,6 +49,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
+
+    private static final int MAX_SEQUENCE_LENGTH = 64;
+
 	private static final Set<String> RESERVED_WORDS = new HashSet<String>() {
 		{
 			addAll(Arrays.asList("ABS", "ABSOLUTE", "ACTION", "ADD", "ADMIN", "AFTER", "AGGREGATE",
@@ -422,7 +425,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         return new StringBuilder("DROP INDEX ")
-                .append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())))
+                .append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
                 .toString();
     }
 
@@ -466,7 +469,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		if (back == null) {
-			final String sql = "SELECT NEXTVAL('" + processID(table + "_" + pkField + "_seq") + "')";
+			final String sql = "SELECT NEXTVAL('" + processID(sequenceName(pkField, table)) + "')";
 
 			final PreparedStatement stmt = preparedStatement(conn, sql);
 
@@ -489,7 +492,23 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return back;
 	}
 
-	@Override
+    private String sequenceName(String pkField, String table)
+    {
+        final String suffix = "_" + pkField + "_seq";
+        final int tableLength = table.length();
+        final int theoreticalLength = tableLength + suffix.length();
+        if (theoreticalLength > MAX_SEQUENCE_LENGTH)
+        {
+            final int extraCharacters = theoreticalLength - MAX_SEQUENCE_LENGTH;
+            return table.substring(0, tableLength - extraCharacters - 1) + suffix;
+        }
+        else
+        {
+            return table + suffix;
+        }
+    }
+
+    @Override
 	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
                                               String sql, DBParam... params) throws SQLException {
 

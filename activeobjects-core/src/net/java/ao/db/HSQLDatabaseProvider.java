@@ -425,7 +425,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("DROP INDEX ");
 
-		back.append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())));
+		back.append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
 
 		return back.toString();
 	}

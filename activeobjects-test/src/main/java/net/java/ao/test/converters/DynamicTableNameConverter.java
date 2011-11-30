@@ -29,10 +29,11 @@ public final class DynamicTableNameConverter implements TableNameConverter
 
     private static final class SystemPropertyTableNameConverterSupplier implements Supplier<TableNameConverter>
     {
-        public static final String DEFAULT = "camelcase";
+        public static final String DEFAULT = "prefix";
 
         private final ImmutableMap<String, TableNameConverter> converters = ImmutableMap.of(
-                DEFAULT, new CamelCaseTableNameConverter(),
+                "prefix", new TestTableNameConverter(new SimplePrefix("AO_000000")),
+                "camelcase", new CamelCaseTableNameConverter(),
                 "uppercase", new UpperCaseTableNameConverter()
         );
 

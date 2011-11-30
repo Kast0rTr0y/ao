@@ -433,7 +433,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     @Override
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        return new StringBuilder().append("DROP INDEX ").append(withSchema(indexNameConverter.getName(index.getTable(), index.getField()))).toString();
+        return new StringBuilder().append("DROP INDEX ").append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))).toString();
     }
 
     @Override

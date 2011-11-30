@@ -220,7 +220,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
     @Override
 	protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("CREATE INDEX ");
-		back.append(processID(indexNameConverter.getName(index.getTable(), index.getField()))).append(" ON ");
+		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))).append(" ON ");
 		back.append(processID(index.getTable())).append('(').append(processID(index.getField()));
 		
 		if (index.getType().getType() == Types.CLOB || index.getType().getType() == Types.VARCHAR) {

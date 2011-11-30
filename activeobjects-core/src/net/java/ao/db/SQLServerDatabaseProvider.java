@@ -249,7 +249,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
         back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
 
         return back.toString();
@@ -260,7 +260,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     {
         StringBuilder back = new StringBuilder();
 
-        back.append("DROP INDEX ").append(processID(indexNameConverter.getName(index.getTable(), index.getField())));
+        back.append("DROP INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
         back.append(" ON ").append(withSchema(index.getTable()));
 
         return back.toString();
