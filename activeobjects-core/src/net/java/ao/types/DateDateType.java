@@ -26,18 +26,21 @@ import java.util.Date;
 import net.java.ao.EntityManager;
 
 /**
+ * Type mapping between Java Date and JDBC date.  The underlying SQL type name defaults to "DATE",
+ * but may be overridden by some database providers.
  * @author Daniel Spiewak
  */
-class DateDateType extends DatabaseType<Date> {
-	
-	public DateDateType() {
-		super(Types.DATE, -1, Date.class);
+public class DateDateType extends DatabaseType<Date>
+{
+	public DateDateType(String sqlTypeIdentifier)
+	{
+		super(Types.DATE, -1, sqlTypeIdentifier, Date.class);
 	}
 
-	@Override
-	public String getDefaultName() {
-		return "DATE";
-	}
+	public DateDateType()
+	{
+        this("DATE");
+    }
 	
 	@Override
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Date value) throws SQLException {

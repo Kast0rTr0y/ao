@@ -32,19 +32,46 @@ import net.java.ao.EntityManager;
  */
 public abstract class DatabaseType<T> {
 	private final int type, defaultPrecision;
-	
+	private final String sqlTypeIdentifier;
 	private final Class<?>[] handledTypes;
-	
-	protected DatabaseType(int type, int defaultPrecision, Class<?>... handledTypes) {
-		this.type = type;
-		this.defaultPrecision = defaultPrecision;
-		this.handledTypes = handledTypes;
-	}
-	
+
+    protected DatabaseType(int type, int defaultPrecision, String sqlTypeIdentifier, Class<?>... handledTypes) {
+        this.type = type;
+        this.defaultPrecision = defaultPrecision;
+        this.sqlTypeIdentifier = sqlTypeIdentifier;
+        this.handledTypes = handledTypes;
+    }
+
+    /**
+     * The JDBC type constant from java.sql.Types.
+     */
 	public int getType() {
 		return type;
 	}
-	
+
+	/**
+	 * What the type should be called in SQL statements.  This will vary by database dialect.
+	 */
+    public String getSqlTypeIdentifier() {
+        return sqlTypeIdentifier;
+    }
+    
+    /**
+     * Should this be considered the default type mapping for the given Java type?
+     * (This method will become obsolete when we stop looking up type mappings by Java class only.)
+     */
+    public boolean isDefaultForJavaType() {
+        return true;
+    }
+    
+    /**
+     * Should this be considered the default type mapping for the given JDBC type?
+     * (This method will become obsolete when we stop looking up type mappings by Java class only.)
+     */
+    public boolean isDefaultForSqlType() {
+        return true;
+    }
+    
 	public Class<?>[] getHandledTypes() {
 	    return handledTypes;
 	}
@@ -95,8 +122,6 @@ public abstract class DatabaseType<T> {
 	public boolean valueEquals(Object val1, Object val2) {
 		return val1.equals(val2);
 	}
-	
-	public abstract String getDefaultName();
 	
 	public abstract T pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends T> type, String field) throws SQLException;
 	

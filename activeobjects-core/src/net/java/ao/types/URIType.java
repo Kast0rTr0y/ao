@@ -30,17 +30,16 @@ import java.sql.Types;
 /**
  * @author Nathan Hamblen
  */
-class URIType extends DatabaseType<URI>
-{
-    public URIType()
-    {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URI.class);
-    }
+class URIType extends DatabaseType<URI> {
 
+	public URIType() {
+		super(Types.VARCHAR, 255, "VARCHAR", URI.class);
+	}
+    
     @Override
-    public String getDefaultName()
+    public boolean isDefaultForSqlType()
     {
-        return "VARCHAR";
+        return false;
     }
 
     @Override
@@ -53,24 +52,20 @@ class URIType extends DatabaseType<URI>
         return o;
     }
 
-    @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URI value) throws SQLException
-    {
-        stmt.setString(index, value.toString());
-    }
-
-    @Override
-    public URI pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URI> type, String field) throws SQLException
-    {
-        try
-        {
-            return new URI(res.getString(field));
-        }
-        catch (URISyntaxException e)
-        {
-            throw new SQLException(e.getMessage());
-        }
-    }
+	
+	@Override
+	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URI value) throws SQLException {
+		stmt.setString(index, value.toString());
+	}
+	
+	@Override
+	public URI pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URI> type, String field) throws SQLException {
+		try {
+			return new URI(res.getString(field));
+		} catch (URISyntaxException e) {
+			throw new SQLException(e.getMessage());
+		}
+	}
 
     @Override
     public URI defaultParseValue(String value)

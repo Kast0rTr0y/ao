@@ -30,28 +30,31 @@ import net.java.ao.util.StringUtils;
 /**
  * @author Daniel Spiewak
  */
-class URLType extends DatabaseType<URL>
-{
-    public URLType()
-    {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URL.class);
-    }
+class URLType extends DatabaseType<URL> {
 
+	public URLType() {
+		super(Types.VARCHAR, 255, "VARCHAR", URL.class);
+	}
+    
     @Override
-    public String getDefaultName()
+    public boolean isDefaultForSqlType()
     {
-        return "VARCHAR";
+        return false;
     }
-
-    @Override
-    public Object validate(Object o)
-    {
-        if (!(o instanceof URL))
-        {
-            throw new ActiveObjectsException(o + " is not of type URL");
-        }
-        return o;
-    }
+	
+	@Override
+	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException {
+		stmt.setString(index, value.toString());
+	}
+	
+	@Override
+	public URL pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URL> type, String field) throws SQLException {
+		try {
+			return new URL(res.getString(field));
+		} catch (MalformedURLException e) {
+			throw new SQLException(e.getMessage());
+		}
+	}
 
     @Override
     public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException

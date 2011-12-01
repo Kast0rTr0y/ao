@@ -25,19 +25,18 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class BigIntType extends DatabaseType<Long>
+public class BigIntType extends DatabaseType<Long>
 {
+    public BigIntType(String sqlTypeIdentifier)
+    {
+        super(Types.BIGINT, -1, sqlTypeIdentifier, long.class, Long.class);
+    }
+
     public BigIntType()
     {
-        super(Types.BIGINT, -1, long.class, Long.class);
+        this("BIGINT");
     }
-
-    @Override
-    public String getDefaultName()
-    {
-        return "BIGINT";
-    }
-
+    
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, int index) throws SQLException
     {

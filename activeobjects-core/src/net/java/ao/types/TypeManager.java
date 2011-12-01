@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.collect.ImmutableMap;
+
 import net.java.ao.Entity;
 
 import net.java.ao.Common;
@@ -46,53 +48,61 @@ import net.java.ao.RawEntity;
  */
 public class TypeManager
 {
-    private final Map<Class<?>, DatabaseType<?>> classIndex;
-    private final Map<Integer, DatabaseType<?>> intIndex;
+    private final ImmutableMap<Class<?>, DatabaseType<?>> classIndex;
+    private final ImmutableMap<Integer, DatabaseType<?>> intIndex;
 
-    public TypeManager(DatabaseType<?>... overrideTypes)
+    private TypeManager(Builder builder)
     {
-        classIndex = new HashMap<Class<?>, DatabaseType<?>>();
-        intIndex = new HashMap<Integer, DatabaseType<?>>();
-        
-        // init built-in types
-        addType(new BigIntType(), true, true);
-        addType(new BooleanType(), true, true);
-        addType(new BlobType(), true, true);
-        addType(new CharType(), true, true);
-        addType(new DoubleType(), true, true);
-        addType(new FloatType(), true, true);
-        addType(new IntegerType(), true, true);
-        addType(new TimestampDateType(), true, true);
-        addType(new TinyIntType(), true, true);
-        addType(new VarcharType(), true, true);
-
-        addType(new ClobType(), false, true);     // must come *after* VarcharType
-        addType(new DateDateType(), false, true);
-        addType(new EnumType(), true, false);
-        addType(new RealType(), false, true);
-        addType(new URLType(), true, false);
-        addType(new URIType(), true, false);
-        
-        for (DatabaseType<?> overrideType : overrideTypes)
-        {
-            addType(overrideType, true, true);
-        }
+        this.classIndex = ImmutableMap.copyOf(builder.classIndex);
+        this.intIndex = ImmutableMap.copyOf(builder.intIndex);
     }
     
-	private final void addType(DatabaseType<?> typeInfo, boolean useAsDefaultForJavaType, boolean useAsDefaultForSqlType)
-	{
-        if (useAsDefaultForJavaType)
+    public static class Builder
+    {
+        private final Map<Class<?>, DatabaseType<?>> classIndex = new HashMap<Class<?>, DatabaseType<?>>();
+        private final Map<Integer, DatabaseType<?>> intIndex = new HashMap<Integer, DatabaseType<?>>();
+        
+        public Builder()
         {
-    	    for (Class<?> clazz : typeInfo.getHandledTypes())
-    	    {
-    	        classIndex.put(clazz, typeInfo);
-    	    }
+            addMapping(new BigIntType());
+            addMapping(new BooleanType());
+            addMapping(new BlobType());
+            addMapping(new CharType());
+            addMapping(new DoubleType());
+            addMapping(new FloatType());
+            addMapping(new IntegerType());
+            addMapping(new TimestampDateType());
+            addMapping(new TinyIntType());
+            addMapping(new VarcharType());
+            addMapping(new TinyIntType());
+            addMapping(new ClobType());
+            addMapping(new EnumType());
+            addMapping(new RealType());
+            addMapping(new URLType());
+            addMapping(new URIType());
         }
-        if (useAsDefaultForSqlType)
+        
+        public TypeManager build()
         {
-            intIndex.put(typeInfo.getType(), typeInfo);
+            return new TypeManager(this);
         }
-	}
+        
+        public Builder addMapping(DatabaseType<?> typeInfo)
+        {
+            if (typeInfo.isDefaultForJavaType())
+            {
+                for (Class<?> clazz : typeInfo.getHandledTypes())
+                {
+                    classIndex.put(clazz, typeInfo);
+                }
+            }
+            if (typeInfo.isDefaultForSqlType())
+            {
+                intIndex.put(typeInfo.getType(), typeInfo);
+            }
+            return this;
+        }
+    }
 	
 	/**
 	 * <p>Returns the corresponding {@link DatabaseType} for a given Java

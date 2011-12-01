@@ -27,19 +27,16 @@ import net.java.ao.util.StringUtils;
 /**
  * @author Daniel Spiewak
  */
-class VarcharType extends DatabaseType<String>
+public class VarcharType extends DatabaseType<String>
 {
-    static final int MAX_PRECISION = 767; // this is MySQL's.
-
+    public VarcharType(String sqlTypeIdentifier)
+    {
+        super(Types.VARCHAR, 255, sqlTypeIdentifier, String.class);
+    }
+    
     public VarcharType()
     {
-        super(Types.VARCHAR, 255, String.class);
-    }
-
-    @Override
-    public String getDefaultName()
-    {
-        return "VARCHAR";
+        this("VARCHAR");
     }
 
     @Override

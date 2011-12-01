@@ -24,15 +24,16 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class FloatType extends DatabaseType<Float> {
+public class FloatType extends DatabaseType<Float> {
 	
-	public FloatType() {
-		super(Types.FLOAT, -1, float.class, Float.class);
+	public FloatType(String sqlTypeIdentifier)
+	{
+		super(Types.FLOAT, -1, sqlTypeIdentifier, float.class, Float.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "FLOAT";
+	
+	public FloatType()
+	{
+	    this("FLOAT");
 	}
 	
 	@Override

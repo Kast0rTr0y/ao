@@ -27,19 +27,18 @@ import net.java.ao.util.StringUtils;
 /**
  * @author Daniel Spiewak
  */
-class BooleanType extends DatabaseType<Boolean>
+public class BooleanType extends DatabaseType<Boolean>
 {
-    protected BooleanType()
+    public BooleanType(String sqlTypeIdentifier)
     {
-        super(Types.BOOLEAN, 1, boolean.class, Boolean.class);
+        super(Types.BOOLEAN, 1, sqlTypeIdentifier, boolean.class, Boolean.class);
     }
 
-    @Override
-    public String getDefaultName()
+    public BooleanType()
     {
-        return "BOOLEAN";
+        this("BOOLEAN");
     }
-
+    
     @Override
     public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Boolean value) throws SQLException
     {

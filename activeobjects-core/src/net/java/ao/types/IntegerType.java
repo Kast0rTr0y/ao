@@ -25,18 +25,16 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class IntegerType extends DatabaseType<Integer>
+public class IntegerType extends DatabaseType<Integer>
 {
-
+    public IntegerType(String sqlTypeIdentifier)
+    {
+        super(Types.INTEGER, -1, sqlTypeIdentifier, int.class, Integer.class);
+    }
+    
     public IntegerType()
     {
-        super(Types.INTEGER, -1, int.class, Integer.class);
-    }
-
-    @Override
-    public String getDefaultName()
-    {
-        return "INTEGER";
+        this("INTEGER");
     }
 
     @Override

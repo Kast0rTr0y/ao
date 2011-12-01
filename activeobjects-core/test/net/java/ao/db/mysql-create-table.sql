@@ -8,7 +8,7 @@ CREATE TABLE person (
     companyID BIGINT,
     cool BOOLEAN DEFAULT 1,
     modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    weight DOUBLE(32,16),
+    weight DOUBLE,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
  CONSTRAINT U_person_url UNIQUE(url),
     PRIMARY KEY(id)

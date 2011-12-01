@@ -24,17 +24,18 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class DoubleType extends DatabaseType<Double> {
+public class DoubleType extends DatabaseType<Double> {
 
-	public DoubleType() {
-		super(Types.DOUBLE, -1, double.class, Double.class);
+	public DoubleType(String sqlTypeIdentifier)
+	{
+		super(Types.DOUBLE, -1, sqlTypeIdentifier, double.class, Double.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "DOUBLE";
+	
+	public DoubleType()
+	{
+	    this("DOUBLE");
 	}
-		
+	
 	@Override
 	public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Double> type, String field) throws SQLException {
 		return res.getDouble(field);

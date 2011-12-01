@@ -36,7 +36,7 @@ public final class TypeManagerTest
     @Before
     public final void setUp()
     {
-        typeManager = new TypeManager();
+        typeManager = new TypeManager.Builder().build();
     }
 
     @Test
@@ -57,5 +57,6 @@ public final class TypeManagerTest
 		assertEquals(new VarcharType(), typeManager.getType(Types.VARCHAR));
 		assertEquals(new IntegerType(), typeManager.getType(Types.INTEGER));
 		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
+
 	}
 }

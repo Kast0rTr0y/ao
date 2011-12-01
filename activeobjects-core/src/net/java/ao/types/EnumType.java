@@ -32,62 +32,56 @@ import static net.java.ao.util.EnumUtils.values;
 /**
  * @author Daniel Spiewak
  */
-class EnumType extends DatabaseType<Enum<?>>
-{
+public class EnumType extends DatabaseType<Enum<?>> {
 
-    protected EnumType()
-    {
-        super(Types.INTEGER, 4, Enum.class);
-    }
+	public EnumType(String sqlTypeIdentifier)
+	{
+		super(Types.INTEGER, 4, sqlTypeIdentifier, Enum.class);
+	}
 
+	public EnumType()
+	{
+	    this("INTEGER");
+	}
+	
     @Override
-    public String getDefaultName()
+    public boolean isDefaultForSqlType()
     {
-        return "INTEGER";
+        return false;
     }
+	
+	@Override
+	public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Enum<?>> type, 
+			String field) throws SQLException {
+		Enum<?>[] values = null;
+		int dbValue = res.getInt(field);
+		
+		try {
+			values = (Enum<?>[]) type.getMethod("values").invoke(null);
+		} catch (IllegalArgumentException e) {
+		} catch (SecurityException e) {
+		} catch (IllegalAccessException e) {
+		} catch (InvocationTargetException e) {
+		} catch (NoSuchMethodException e) {
+		}
+		
+		assert values != null;
+		for (Enum<?> value : values) {
+			if (dbValue == value.ordinal()) {
+				return value;
+			}
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value) throws SQLException {
+		stmt.setInt(index, value.ordinal());
+	}
 
-    @Override
-    public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Enum<?>> type, String field) throws SQLException
-    {
-        final int dbValue = res.getInt(field);
-        try
-        {
-            return findEnum(type, dbValue);
-        }
-        catch (NoSuchElementException e)
-        {
-            throw new ActiveObjectsException("Could not find enum value for '" + type + "' corresponding to database value '" + dbValue + "'");
-        }
-    }
-
-    private Enum findEnum(Class<? extends Enum<?>> type, final int dbValue)
-    {
-        return Iterables.find(values(type), new Predicate<Enum>()
-        {
-            @Override
-            public boolean apply(Enum e)
-            {
-                return e.ordinal() == dbValue;
-            }
-        });
-    }
-
-    @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value) throws SQLException
-    {
-        stmt.setInt(index, value.ordinal());
-    }
-
-    @Override
-    public Object defaultParseValue(String value)
-    {
-        try
-        {
-            return Integer.parseInt(value);
-        }
-        catch (NumberFormatException e)
-        {
-            throw new ActiveObjectsConfigurationException("Could not parse '" + value + "' as an integer to match enum ordinal");
-        }
-    }
+	@Override
+	public Object defaultParseValue(String value) {
+		return Integer.parseInt(value);
+	}
 }
