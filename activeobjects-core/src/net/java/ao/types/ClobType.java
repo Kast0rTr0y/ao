@@ -29,8 +29,8 @@ public class ClobType extends DatabaseType<String> {
 
     public ClobType(String sqlTypeIdentifier)
     {
-        return res.getString(field);
-    }
+		super(Types.CLOB, -1, sqlTypeIdentifier, String.class);
+	}
 
     @Override
     public String defaultParseValue(String value)
