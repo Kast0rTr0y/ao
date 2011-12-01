@@ -64,20 +64,17 @@ public class TypeManager
 		types.add(new BigIntType());
 		types.add(new BooleanType());
 		types.add(new BlobType());
-		types.add(new CharType());
 		types.add(new DoubleType());
 		types.add(new FloatType());
 		types.add(new IntegerType());
 		types.add(new TimestampType());
 		types.add(new TimestampDateType());
-		types.add(new TinyIntType());
 		types.add(new VarcharType());
 
 		types.add(new ClobType());		// must come *after* VarcharType
 		types.add(new DateType());
 		types.add(new DateDateType());
 		types.add(new EnumType());
-		types.add(new RealType());
 		types.add(new URLType());
 		types.add(new URIType());
 	}

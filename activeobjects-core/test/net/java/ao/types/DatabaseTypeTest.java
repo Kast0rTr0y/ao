@@ -66,8 +66,6 @@ public class DatabaseTypeTest
 		assertEquals(new URL("http://www.google.com"), new URLType().defaultParseValue("http://www.google.com"));
 		assertEquals(false, new BooleanType().defaultParseValue("false"));
 		assertEquals(String.class, new ClassType().defaultParseValue("java.lang.String"));
-		assertEquals((short) 123, new TinyIntType().defaultParseValue("123").shortValue());
-		assertEquals('c', new CharType().defaultParseValue("c").charValue());
 
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -87,9 +85,6 @@ public class DatabaseTypeTest
 		assertEquals("http://www.google.com", new URLType().valueToString(new URL("http://www.google.com")));
 		assertEquals("false", new BooleanType().valueToString(false));
 		assertEquals("java.lang.String", new ClassType().valueToString(String.class));
-		assertEquals("123", new TinyIntType().valueToString(123));
-		assertEquals("c", new CharType().valueToString('c'));
-
 
 		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 

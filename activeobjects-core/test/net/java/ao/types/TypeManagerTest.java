@@ -59,9 +59,7 @@ public final class TypeManagerTest
 		assertEquals(new VarcharType(), typeManager.getType(Types.VARCHAR));
 		assertEquals(new IntegerType(), typeManager.getType(Types.INTEGER));
 		assertEquals(new TimestampType(), typeManager.getType(Types.TIMESTAMP));
-		assertEquals(new CharType(), typeManager.getType(Types.CHAR));
 		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
 		assertEquals(new DateType(), typeManager.getType(Types.DATE));
-		assertEquals(new RealType(), typeManager.getType(Types.REAL));
 	}
 }
