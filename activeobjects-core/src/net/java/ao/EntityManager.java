@@ -239,41 +239,34 @@ public class EntityManager
 		final String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
 		final String tableName = getTableNameConverter().getName(type);
 
-		return getFromCache(type, new Function<T, K>() {
-			public T invoke(K key) throws SQLException
-            {
-				T back = null;
-				Connection conn = null;
-                PreparedStatement stmt = null;
-                ResultSet res = null;
-				try {
-					conn = provider.getConnection();
-
-					StringBuilder sql = new StringBuilder("SELECT ");
-					sql.append(provider.processID(primaryKeyField));
-					sql.append(" FROM ").append(provider.withSchema(tableName));
-					sql.append(" WHERE ").append(provider.processID(primaryKeyField));
-					sql.append(" = ?");
-
-					stmt = conn.prepareStatement(sql.toString());
-
-					DatabaseType<K> dbType = (DatabaseType<K>) provider.getTypeManager().getType(key.getClass());
-					dbType.putToDatabase(EntityManager.this, stmt, 1, key);
-
-					res = stmt.executeQuery();
-					if (res.next()) {
-						back = getAndInstantiate(type, key);
-					}
-				} finally {
-                    closeQuietly(res, stmt, conn);
-				}
-
-				return back;
-			}
-		}, keys);
+		return getFromCache(type, findByPrimaryKey(type, primaryKeyField), keys);
 	}
 
-	protected <T extends RawEntity<K>, K> T[] peer(final Class<T> type, K... keys) throws SQLException
+    private <T extends RawEntity<K>, K> Function<T, K> findByPrimaryKey(final Class<T> type, final String primaryKeyField)
+    {
+        return new Function<T, K>()
+        {
+            @Override
+            public T invoke(K k) throws SQLException
+            {
+                final T[] ts = find(type, primaryKeyField + " = ?", k);
+                if (ts.length == 1)
+                {
+                    return ts[0];
+                }
+                else if (ts.length == 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    throw new ActiveObjectsException("Found more that one object of type '" + type.getName() + "' for key '" + k + "'");
+                }
+            }
+        };
+    }
+
+    protected <T extends RawEntity<K>, K> T[] peer(final Class<T> type, K... keys) throws SQLException
     {
 		return getFromCache(type, new Function<T, K>() {
 			public T invoke(K key) {
