@@ -34,7 +34,7 @@ class URLType extends DatabaseType<URL>
 {
     public URLType()
     {
-        super(Types.VARCHAR, 1024, URL.class);
+        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URL.class);
     }
 
     @Override

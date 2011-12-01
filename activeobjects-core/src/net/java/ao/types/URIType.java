@@ -34,7 +34,7 @@ class URIType extends DatabaseType<URI>
 {
     public URIType()
     {
-        super(Types.VARCHAR, 1024, URI.class);
+        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URI.class);
     }
 
     @Override

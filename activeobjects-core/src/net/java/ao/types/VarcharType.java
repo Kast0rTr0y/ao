@@ -29,6 +29,8 @@ import net.java.ao.util.StringUtils;
  */
 class VarcharType extends DatabaseType<String>
 {
+    static final int MAX_PRECISION = 767; // this is MySQL's.
+
     public VarcharType()
     {
         super(Types.VARCHAR, 255, String.class);
