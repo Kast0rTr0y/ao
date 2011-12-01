@@ -36,9 +36,7 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
 
-import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -473,7 +471,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         {
             onSql(sql);
             stmt = conn.prepareStatement(sql, new String[]{pkField});
-            T back = setParameters(stmt, params, pkField, pkType);
+            T back = setParameters(manager, stmt, params, pkField);
 
             stmt.executeUpdate();
 
@@ -494,7 +492,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         }
     }
 
-    private <T> T setParameters(PreparedStatement stmt, DBParam[] params, String pkField, Class<T> pkType) throws SQLException
+    private <T> T setParameters(EntityManager manager, PreparedStatement stmt, DBParam[] params, String pkField) throws SQLException
     {
         T back = null;
         int i = 0;
@@ -505,18 +503,18 @@ public class OracleDatabaseProvider extends DatabaseProvider {
             {
                 value = Common.getPrimaryKeyValue((RawEntity<?>) value);
             }
-            if (value instanceof URL)
-            {
-                stmt.setURL(i + 1, (URL) value);
-            }
-            else
-            {
-                stmt.setObject(i + 1, value);
-            }
-
             if (params[i].getField().equalsIgnoreCase(pkField))
             {
                 back = (T) value;
+            }
+            if (value == null)
+            {
+                putNull(stmt, i + 1);
+            }
+            else
+            {
+                DatabaseType<Object> type = (DatabaseType<Object>) getTypeManager().getType(value.getClass());
+                type.putToDatabase(manager, stmt, i + 1, value);
             }
         }
         return back;

@@ -22,43 +22,70 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
+import net.java.ao.util.StringUtils;
 
 /**
  * @author Daniel Spiewak
  */
-class URLType extends DatabaseType<URL> {
+class URLType extends DatabaseType<URL>
+{
+    public URLType()
+    {
+        super(Types.VARCHAR, 1024, URL.class);
+    }
 
-	public URLType() {
-		super(Types.VARCHAR, 255, URL.class);
-	}
+    @Override
+    public String getDefaultName()
+    {
+        return "VARCHAR";
+    }
 
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
-	}
-	
-	@Override
-	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException {
-		stmt.setString(index, value.toString());
-	}
-	
-	@Override
-	public URL pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URL> type, String field) throws SQLException {
-		try {
-			return new URL(res.getString(field));
-		} catch (MalformedURLException e) {
-			throw new SQLException(e.getMessage());
-		}
-	}
+    @Override
+    public Object validate(Object o)
+    {
+        if (!(o instanceof URL))
+        {
+            throw new ActiveObjectsException(o + " is not of type URL");
+        }
+        return o;
+    }
 
-	@Override
-	public URL defaultParseValue(String value) {
-		try {
-			return new URL(value);
-		} catch (MalformedURLException e) {
-		}
-		
-		return null;
-	}
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException
+    {
+        stmt.setString(index, value.toString());
+    }
+
+    @Override
+    public URL pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URL> type, String field) throws SQLException
+    {
+        try
+        {
+            return new URL(res.getString(field));
+        }
+        catch (MalformedURLException e)
+        {
+            throw new SQLException(e.getMessage());
+        }
+    }
+
+    @Override
+    public URL defaultParseValue(String value)
+    {
+        if (StringUtils.isBlank(value))
+        {
+            throw new ActiveObjectsConfigurationException("Empty URLs are not allowed as default values.");
+        }
+        try
+        {
+            return new URL(value);
+        }
+        catch (MalformedURLException e)
+        {
+            throw new ActiveObjectsConfigurationException("'" + value + "' is not a valid URL");
+        }
+    }
 }

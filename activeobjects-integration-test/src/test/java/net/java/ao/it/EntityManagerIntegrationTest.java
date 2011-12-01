@@ -19,6 +19,7 @@ import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import org.junit.Test;
 
+import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,7 +38,7 @@ import static org.junit.Assert.fail;
  *
  */
 @Data(DatabaseProcessor.class)
-public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
+public final class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
     public void testGetCheckID() throws Exception
@@ -135,7 +136,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
         {
             public Person call() throws Exception
             {
-                return entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://www.codecommit.com"));
+                return entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://www.codecommit.com")));
             }
         });
 
@@ -153,7 +154,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")));
+                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
                         }
                         else
                         {
@@ -209,7 +210,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
             {
                 return entityManager.create(Person.class, new HashMap<String, Object>()
                 {{
-                        put(getFieldName(Person.class, "getURL"), "http://www.codecommit.com");
+                        put(getFieldName(Person.class, "getURL"), new URL("http://www.codecommit.com"));
                     }});
             }
         });
@@ -226,7 +227,7 @@ public class EntityManagerIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")));
+                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
                         }
                         else
                         {

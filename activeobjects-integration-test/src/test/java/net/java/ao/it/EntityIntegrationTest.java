@@ -29,8 +29,6 @@ import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
-import net.java.ao.test.jdbc.Postgres;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,6 +37,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -751,7 +750,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     {
         final Person person = entityManager.create(Person.class, new HashMap<String, Object>()
         {{
-                put(getFieldName(Person.class, "getURL"), "test-url");
+                put(getFieldName(Person.class, "getURL"), new URL("http://test-url.example.com"));
             }});
 
         final Company company = entityManager.create(Company.class);

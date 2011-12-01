@@ -25,6 +25,7 @@ import org.apache.lucene.index.IndexReader;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +42,7 @@ import static org.junit.Assert.*;
  */
 @Data(DatabaseProcessor.class)
 @WithIndex
-public class SearchTest extends ActiveObjectsIntegrationTest
+public final class SearchTest extends ActiveObjectsIntegrationTest
 {
     @Before
     public void setUp() throws Exception
@@ -66,7 +67,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         for (String firstName : people.keySet())
         {
-            Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), people.get(firstName)[1]));
+            Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL(people.get(firstName)[1])));
             person.setFirstName(firstName);
             person.setLastName(people.get(firstName)[0]);
             person.save();
@@ -215,7 +216,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://en.wikipedia.org")));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();
@@ -234,7 +235,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://en.wikipedia.org")));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();
@@ -258,7 +259,7 @@ public class SearchTest extends ActiveObjectsIntegrationTest
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
 
-        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), "http://en.wikipedia.org"));
+        Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://en.wikipedia.org")));
         person.setFirstName("George");
         person.setLastName("Foreman");
         person.save();

@@ -34,6 +34,7 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
+import net.java.ao.util.EnumUtils;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -246,9 +247,26 @@ public final class SchemaGenerator
                 final boolean isAutoIncrement = isAutoIncrement(type, annotations, field.getType());
                 field.setAutoIncrement(isAutoIncrement);
 
-                if (!isAutoIncrement && annotations.isAnnotationPresent(Default.class))
+                if (!isAutoIncrement)
                 {
-                    field.setDefaultValue(convertStringValue(annotations.getAnnotation(Default.class).value(), sqlType));
+                    if (annotations.isAnnotationPresent(Default.class))
+                    {
+                        final Object defaultValue = convertStringValue(annotations.getAnnotation(Default.class).value(), sqlType);
+                        if (type.isEnum() && ((Integer) defaultValue) > EnumUtils.size((Class<? extends Enum>) type) - 1)
+                        {
+                            throw new ActiveObjectsConfigurationException("There is no enum value of '" + type + "'for which the ordinal is " + defaultValue);
+                        }
+                        field.setDefaultValue(defaultValue);
+                    }
+                    else if (ImmutableSet.<Class<?>>of(short.class, float.class, int.class, long.class, double.class).contains(type))
+                    {
+                        // set the default value for primitive types (float, short, int, long, char)
+                        field.setDefaultValue(convertStringValue("0", sqlType));
+                    }
+                    else if (char.class.equals(type))
+                    {
+                        throw new ActiveObjectsConfigurationException("Setting a default value is mandatory when using the primitive 'char'");
+                    }
                 }
 
                 if (annotations.isAnnotationPresent(OnUpdate.class))
@@ -396,18 +414,19 @@ public final class SchemaGenerator
 		return back.toArray(new DDLIndex[back.size()]);
 	}
 
-	private static Object convertStringValue(String value, DatabaseType<?> type) {
-		if (value == null) {
-			return null;
-		} else if (value.trim().equalsIgnoreCase("NULL")) {
-			return value.trim();
-		}
+    private static Object convertStringValue(String value, DatabaseType<?> type)
+    {
+        if (value == null)
+        {
+            return null;
+        }
 
-		DatabaseFunction func = DatabaseFunction.get(value.trim());
-		if (func != null) {
-			return func;
-		}
+        final DatabaseFunction func = DatabaseFunction.get(value.trim());
+        if (func != null)
+        {
+            return func;
+        }
 
-		return type.defaultParseValue(value);
-	}
+        return type.defaultParseValue(value);
+    }
 }

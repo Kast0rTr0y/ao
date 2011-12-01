@@ -272,6 +272,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 
 					DatabaseType dbType = typeManager.getType(javaType);
+                    dbType.validate(value);
                     dbType.putToDatabase(this.manager, stmt, index++, value);
 					
 					if (!dbType.shouldCache(javaType)) {

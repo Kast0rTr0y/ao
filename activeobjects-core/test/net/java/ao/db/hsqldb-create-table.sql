@@ -3,7 +3,7 @@ CREATE TABLE PUBLIC.person (
     firstName VARCHAR(255) NOT NULL,
     lastName LONGVARCHAR,
     age INTEGER,
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(1024) NOT NULL,
     height DOUBLE DEFAULT 62.3,
     companyID BIGINT,
     cool BOOLEAN DEFAULT TRUE,
