@@ -67,17 +67,13 @@ public class TypeManager
             addMapping(new BigIntType());
             addMapping(new BooleanType());
             addMapping(new BlobType());
-            addMapping(new CharType());
             addMapping(new DoubleType());
             addMapping(new FloatType());
             addMapping(new IntegerType());
             addMapping(new TimestampDateType());
-            addMapping(new TinyIntType());
             addMapping(new VarcharType());
-            addMapping(new TinyIntType());
             addMapping(new ClobType());
             addMapping(new EnumType());
-            addMapping(new RealType());
             addMapping(new URLType());
             addMapping(new URIType());
         }

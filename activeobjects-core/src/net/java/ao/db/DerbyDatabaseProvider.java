@@ -33,8 +33,6 @@ import java.util.regex.Pattern;
 
 import net.java.ao.types.BooleanType;
 
-import net.java.ao.types.TinyIntType;
-
 import net.java.ao.types.TypeManager;
 
 import net.java.ao.DisposableDataSource;
@@ -90,7 +88,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, null,
               new TypeManager.Builder()
-                .addMapping(new TinyIntType("SMALLINT"))
                 .addMapping(new BooleanType("SMALLINT"))
                 .build());
     }

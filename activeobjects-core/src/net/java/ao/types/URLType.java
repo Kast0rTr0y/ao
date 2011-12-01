@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at
  * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
+ *          http://www.apache.org/licenses/LICENSE-2.0 
  * 
  * Unless required by applicable law or agreed to in writing, software 
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,31 +30,33 @@ import net.java.ao.util.StringUtils;
 /**
  * @author Daniel Spiewak
  */
-class URLType extends DatabaseType<URL> {
+public class URLType extends DatabaseType<URL>
+{
+    public URLType(String sqlTypeIdentifier)
+    {
+        super(Types.VARCHAR, VarcharType.MAX_PRECISION, sqlTypeIdentifier, URL.class);
+    }
 
-	public URLType() {
-		super(Types.VARCHAR, 255, "VARCHAR", URL.class);
-	}
-    
+    public URLType()
+    {
+        this("VARCHAR");
+    }
+
     @Override
     public boolean isDefaultForSqlType()
     {
         return false;
     }
-	
-	@Override
-	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException {
-		stmt.setString(index, value.toString());
-	}
-	
-	@Override
-	public URL pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends URL> type, String field) throws SQLException {
-		try {
-			return new URL(res.getString(field));
-		} catch (MalformedURLException e) {
-			throw new SQLException(e.getMessage());
-		}
-	}
+    
+    @Override
+    public Object validate(Object o)
+    {
+        if (!(o instanceof URL))
+        {
+            throw new ActiveObjectsException(o + " is not of type URL");
+        }
+        return o;
+    }
 
     @Override
     public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException

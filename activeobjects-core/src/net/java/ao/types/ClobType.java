@@ -32,6 +32,22 @@ public class ClobType extends DatabaseType<String> {
 		super(Types.CLOB, -1, sqlTypeIdentifier, String.class);
 	}
 
+    public ClobType()
+    {
+        this("CLOB");
+    }
+
+    @Override
+    public boolean isDefaultForJavaType()
+    {
+        return false;
+    }
+    
+    @Override
+    public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException {
+        return res.getString(field);
+    }
+
     @Override
     public String defaultParseValue(String value)
     {

@@ -15,29 +15,30 @@
  */
 package net.java.ao.db;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 
-import net.java.ao.types.ClobType;
-
-import net.java.ao.types.RealType;
-
-import net.java.ao.types.DoubleType;
-
-import net.java.ao.types.FloatType;
-
-import net.java.ao.types.IntegerType;
-
-import net.java.ao.types.BooleanType;
-
-import net.java.ao.types.BigIntType;
-
-import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
@@ -50,16 +51,14 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.BigIntType;
+import net.java.ao.types.BooleanType;
+import net.java.ao.types.ClobType;
 import net.java.ao.types.DatabaseType;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import net.java.ao.types.DoubleType;
+import net.java.ao.types.FloatType;
+import net.java.ao.types.IntegerType;
+import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -159,7 +158,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
                 .addMapping(new IntegerType("NUMBER"))
                 .addMapping(new FloatType("NUMBER"))
                 .addMapping(new DoubleType("NUMBER"))
-                .addMapping(new RealType("NUMBER"))
                 .addMapping(new ClobType("CLOB")).build());
     }
 
