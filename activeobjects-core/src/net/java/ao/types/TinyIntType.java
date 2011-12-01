@@ -24,15 +24,16 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class TinyIntType extends DatabaseType<Short> {
+public class TinyIntType extends DatabaseType<Short> {
 
-	protected TinyIntType() {
-		super(Types.TINYINT, -1, short.class, Short.class);
+	public TinyIntType(String sqlTypeIdentifier)
+	{
+		super(Types.TINYINT, -1, sqlTypeIdentifier, short.class, Short.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "TINYINT";
+	
+	public TinyIntType()
+	{
+	    this("TINYINT");
 	}
 	
 	@Override

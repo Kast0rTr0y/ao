@@ -24,17 +24,24 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class ClobType extends DatabaseType<String> {
+public class ClobType extends DatabaseType<String> {
 
-	public ClobType() {
-		super(Types.CLOB, -1, String.class);
+    public ClobType(String sqlTypeIdentifier)
+    {
+		super(Types.CLOB, -1, sqlTypeIdentifier, String.class);
 	}
-	
-	@Override
-	public String getDefaultName() {
-		return "CLOB";
-	}
-	
+
+    public ClobType()
+    {
+        this("CLOB");
+    }
+
+    @Override
+    public boolean isDefaultForJavaType()
+    {
+        return false;
+    }
+
 	@Override
 	public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException {
 		return res.getString(field);

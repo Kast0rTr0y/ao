@@ -24,17 +24,18 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class CharType extends DatabaseType<Character> {
+public class CharType extends DatabaseType<Character> {
 
-	public CharType() {
-		super(Types.CHAR, -1, char.class, Character.class);
+	public CharType(String sqlTypeIdentifier)
+	{
+		super(Types.CHAR, -1, sqlTypeIdentifier, char.class, Character.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "CHAR";
+	
+	public CharType()
+	{
+	    this("CHAR");
 	}
-		
+	
 	@Override
 	public Character pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Character> type, String field) throws SQLException {
 		return res.getString(field).charAt(0);

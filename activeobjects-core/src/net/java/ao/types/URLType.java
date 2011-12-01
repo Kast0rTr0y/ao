@@ -30,13 +30,14 @@ import net.java.ao.EntityManager;
 class URLType extends DatabaseType<URL> {
 
 	public URLType() {
-		super(Types.VARCHAR, 255, URL.class);
+		super(Types.VARCHAR, 255, "VARCHAR", URL.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
-	}
+    
+    @Override
+    public boolean isDefaultForSqlType()
+    {
+        return false;
+    }
 	
 	@Override
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URL value) throws SQLException {

@@ -30,7 +30,7 @@ import net.java.ao.EntityManager;
 public class ClassType extends DatabaseType<Class<?>> {
 
 	public ClassType() {
-		super(Types.VARCHAR, 255, Class.class);
+		super(Types.VARCHAR, 255, "VARCHAR", Class.class);
 	}
 
 	@Override
@@ -63,10 +63,5 @@ public class ClassType extends DatabaseType<Class<?>> {
 		}
 		
 		return super.valueToString(value);
-	}
-
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
 	}
 }

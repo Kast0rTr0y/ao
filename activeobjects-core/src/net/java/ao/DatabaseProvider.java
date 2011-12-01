@@ -121,7 +121,7 @@ public abstract class DatabaseProvider
 
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        this(dataSource, schema, new TypeManager());
+        this(dataSource, schema, new TypeManager.Builder().build());
     }
 
     public final TypeManager getTypeManager()
@@ -925,7 +925,7 @@ public abstract class DatabaseProvider
      */
     protected String convertTypeToString(DatabaseType<?> type)
     {
-        return type.getDefaultName();
+        return type.getSqlTypeIdentifier();
     }
 
     /**

@@ -45,6 +45,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import com.google.common.base.Function;
+
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.DatabaseProviders.*;
 import static org.junit.Assert.*;
@@ -53,16 +55,12 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public final class DatabaseProviderTest
 {
-    private TypeManager typeManager;
-
     @Mock
     private NameConverters nameConverters;
 
     @Before
     public final void setUp()
     {
-        typeManager = new TypeManager();
-
         when(nameConverters.getSequenceNameConverter()).thenReturn(new DefaultSequenceNameConverter());
         when(nameConverters.getTriggerNameConverter()).thenReturn(new DefaultTriggerNameConverter());
         when(nameConverters.getIndexNameConverter()).thenReturn(new DefaultIndexNameConverter());
@@ -72,7 +70,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionCreateTable() throws IOException
     {
-        final DDLAction action = createActionCreateTable();
+        final Function<DatabaseProvider, DDLAction> action = createActionCreateTable;
 
         testRenderAction("derby-create-table.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-create-table.sql", action, getHsqlDatabaseProvider());
@@ -85,7 +83,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionDropTable() throws IOException
     {
-        final DDLAction action = createActionDropTable();
+        final Function<DatabaseProvider, DDLAction> action = createActionDropTable;
         final String[] ddl = {"DROP TABLE person"};
 
         testRenderAction(ddl, action, getEmbeddedDerbyDatabaseProvider());
@@ -99,7 +97,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionAddColumn() throws IOException
     {
-        final DDLAction action = createActionAddColumn();
+        final Function<DatabaseProvider, DDLAction> action = createActionAddColumn;
 
         testRenderAction("derby-add-column.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-add-column.sql", action, getHsqlDatabaseProvider());
@@ -112,7 +110,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionAlterColumn() throws IOException
     {
-        final DDLAction action = createActionAlterColumn();
+        final Function<DatabaseProvider, DDLAction> action = createActionAlterColumn;
 
         testRenderAction(new String[0], action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-alter-column.sql", action, getHsqlDatabaseProvider());
@@ -125,7 +123,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionDropColumn() throws IOException
     {
-        final DDLAction action = createActionDropColumn();
+        final Function<DatabaseProvider, DDLAction> action = createActionDropColumn;
 
         testRenderAction(new String[0], action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-drop-column.sql", action, getHsqlDatabaseProvider());
@@ -138,7 +136,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionCreateIndex() throws IOException
     {
-        final DDLAction action = createActionCreateIndex();
+        final Function<DatabaseProvider, DDLAction> action = createActionCreateIndex;
 
         testRenderAction("derby-create-index.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-create-index.sql", action, getHsqlDatabaseProvider());
@@ -151,7 +149,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionDropIndex() throws IOException
     {
-        final DDLAction action = createActionDropIndex();
+        final Function<DatabaseProvider, DDLAction> action = createActionDropIndex;
 
         testRenderAction("derby-drop-index.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-drop-index.sql", action, getHsqlDatabaseProvider());
@@ -164,7 +162,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionAddKey() throws IOException
     {
-        final DDLAction action = createActionAddKey();
+        final Function<DatabaseProvider, DDLAction> action = createActionAddKey;
 
         testRenderAction("derby-add-key.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-add-key.sql", action, getHsqlDatabaseProvider());
@@ -177,7 +175,7 @@ public final class DatabaseProviderTest
     @Test
     public void testRenderActionDropKey() throws IOException
     {
-        final DDLAction action = createActionDropKey();
+        final Function<DatabaseProvider, DDLAction> action = createActionDropKey;
 
         testRenderAction("derby-drop-key.sql", action, getEmbeddedDerbyDatabaseProvider());
         testRenderAction("hsqldb-drop-key.sql", action, getHsqlDatabaseProvider());
@@ -199,36 +197,39 @@ public final class DatabaseProviderTest
         assertEquals("\"field1\" = 2 and \"field2\" like %er", getPostgreSqlDatabaseProvider().processWhereClause(where));
     }
 
-    private DDLAction createActionCreateTable()
+    private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
     {
-        final DDLTable table = new DDLTable();
-        table.setName("person");
+        public DDLAction apply(DatabaseProvider db)
+        {
+            final DDLTable table = new DDLTable();
+            table.setName("person");
+    
+            final List<DDLField> fields = newArrayList(
+                    newIdField(db),
+                    newFirstNameField(db),
+                    newLastNameField(db),
+                    newAgeField(db),
+                    newUrlField(db),
+                    newHeightField(db),
+                    newCompanyField(db),
+                    newCoolField(db),
+                    newModifiedField(db),
+                    newWeightField(db));
+            DDLField[] fieldsArray = new DDLField[fields.size()];
+            table.setFields(fieldsArray);
+            fields.toArray(fieldsArray);
+    
+            final List<DDLForeignKey> keys = newArrayList(newForeignKey(db));
+            table.setForeignKeys(keys.toArray(new DDLForeignKey[keys.size()]));
+    
+            DDLAction back = new DDLAction(DDLActionType.CREATE);
+            back.setTable(table);
+    
+            return back;
+        }
+    };
 
-        final List<DDLField> fields = newArrayList(
-                newIdField(),
-                newFirstNameField(),
-                newLastNameField(),
-                newAgeField(),
-                newUrlField(),
-                newHeightField(),
-                newCompanyField(),
-                newCoolField(),
-                newModifiedField(),
-                newWeightField());
-        DDLField[] fieldsArray = new DDLField[fields.size()];
-        table.setFields(fieldsArray);
-        fields.toArray(fieldsArray);
-
-        final List<DDLForeignKey> keys = newArrayList(newForeignKey());
-        table.setForeignKeys(keys.toArray(new DDLForeignKey[keys.size()]));
-
-        DDLAction back = new DDLAction(DDLActionType.CREATE);
-        back.setTable(table);
-
-        return back;
-    }
-
-    private DDLForeignKey newForeignKey()
+    private DDLForeignKey newForeignKey(DatabaseProvider db)
     {
         DDLForeignKey fk = new DDLForeignKey();
         fk.setDomesticTable("person");
@@ -238,220 +239,252 @@ public final class DatabaseProviderTest
         return fk;
     }
 
-    private DDLField newWeightField()
+    private DDLField newWeightField(DatabaseProvider db)
     {
         DDLField f =  new DDLField();
         f.setName("weight");
-        f.setType(typeManager.getType(double.class));
+        f.setType(db.getTypeManager().getType(double.class));
         return f;
     }
 
-    private DDLField newModifiedField()
+    private DDLField newModifiedField(DatabaseProvider db)
     {
         DDLField f =  new DDLField();
         f.setName("modified");
-        f.setType(typeManager.getType(Date.class));
+        f.setType(db.getTypeManager().getType(Date.class));
         f.setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
         f.setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
         return f;
     }
 
-    private DDLField newCoolField()
+    private DDLField newCoolField(DatabaseProvider db)
     {
         DDLField f =  new DDLField();
         f.setName("cool");
-        f.setType(typeManager.getType(boolean.class));
+        f.setType(db.getTypeManager().getType(boolean.class));
         f.setDefaultValue(true);
         return f;
     }
 
-    private DDLField newCompanyField()
+    private DDLField newCompanyField(DatabaseProvider db)
     {
         DDLField f  = new DDLField();
         f.setName("companyID");
-        f.setType(typeManager.getType(Company.class));
+        f.setType(db.getTypeManager().getType(Company.class));
         return f;
     }
 
-    private DDLField newHeightField()
+    private DDLField newHeightField(DatabaseProvider db)
     {
         DDLField f  = new DDLField();
         f.setName("height");
-        f.setType(typeManager.getType(double.class));
+        f.setType(db.getTypeManager().getType(double.class));
         f.setPrecision(32);
         f.setScale(6);
         f.setDefaultValue(62.3);
         return f;
     }
 
-    private DDLField newUrlField()
+    private DDLField newUrlField(DatabaseProvider db)
     {
         DDLField f = new DDLField();
         f.setName("url");
-        f.setType(typeManager.getType(URL.class));
+        f.setType(db.getTypeManager().getType(URL.class));
         f.setUnique(true);
         return f;
     }
 
-    private DDLField newAgeField()
+    private DDLField newAgeField(DatabaseProvider db)
     {
         DDLField f = new DDLField();
         f.setName("age");
-        f.setType(typeManager.getType(int.class));
+        f.setType(db.getTypeManager().getType(int.class));
         f.setPrecision(12);
         return f;
     }
 
-    private DDLField newLastNameField()
+    private DDLField newLastNameField(DatabaseProvider db)
     {
         DDLField f = new DDLField();
         f.setName("lastName");
-        f.setType(typeManager.getType(Types.CLOB));
+        f.setType(db.getTypeManager().getType(Types.CLOB));
         return f;
     }
 
-    private DDLField newFirstNameField()
+    private DDLField newFirstNameField(DatabaseProvider db)
     {
         DDLField f  = new DDLField();
         f.setName("firstName");
-        f.setType(typeManager.getType(String.class));
+        f.setType(db.getTypeManager().getType(String.class));
         f.setNotNull(true);
         return f;
     }
 
-    private DDLField newIdField()
+    private DDLField newIdField(DatabaseProvider db)
     {
         DDLField f = new DDLField();
         f.setName("id");
-        f.setType(typeManager.getType(int.class));
+        f.setType(db.getTypeManager().getType(int.class));
         f.setAutoIncrement(true);
         f.setPrimaryKey(true);
         f.setNotNull(true);
         return f;
     }
 
-    private DDLAction createActionDropTable() {
-		DDLAction back = new DDLAction(DDLActionType.DROP);
-		
-		DDLTable table = new DDLTable();
-		table.setName("person");
-		back.setTable(table);
-		
-		DDLField idField = new DDLField();
-		idField.setName("id");
-		idField.setType(typeManager.getType(int.class));
-		idField.setAutoIncrement(true);
-		idField.setNotNull(true);
-		idField.setPrimaryKey(true);
-		
-		DDLField nameField = new DDLField();
-		nameField.setName("name");
-		nameField.setType(typeManager.getType(String.class));
-		
-		table.setFields(new DDLField[] {idField, nameField});
-		
-		return back;
-	}
+    private Function<DatabaseProvider, DDLAction> createActionDropTable = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+        	DDLAction back = new DDLAction(DDLActionType.DROP);
+    		
+    		DDLTable table = new DDLTable();
+    		table.setName("person");
+    		back.setTable(table);
+    		
+    		DDLField idField = new DDLField();
+    		idField.setName("id");
+    		idField.setType(db.getTypeManager().getType(int.class));
+    		idField.setAutoIncrement(true);
+    		idField.setNotNull(true);
+    		idField.setPrimaryKey(true);
+    		
+    		DDLField nameField = new DDLField();
+    		nameField.setName("name");
+    		nameField.setType(db.getTypeManager().getType(String.class));
+    		
+    		table.setFields(new DDLField[] {idField, nameField});
+    		
+    		return back;
+    	}
+    };
 	
-	private DDLAction createActionAddColumn() {
-		DDLTable table = new DDLTable();
-		table.setName("company");
-		
-		DDLField field = new DDLField();
-		field.setName("name");
-		field.setType(typeManager.getType(String.class));
-		field.setNotNull(true);
-		
-		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_COLUMN);
-		back.setField(field);
-		back.setTable(table);
-		
-		return back;
-	}
+    private Function<DatabaseProvider, DDLAction> createActionAddColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLTable table = new DDLTable();
+    		table.setName("company");
+    		
+    		DDLField field = new DDLField();
+    		field.setName("name");
+    		field.setType(db.getTypeManager().getType(String.class));
+    		field.setNotNull(true);
+    		
+    		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_COLUMN);
+    		back.setField(field);
+    		back.setTable(table);
+    		
+    		return back;
+    	}
+    };
+    
+    private Function<DatabaseProvider, DDLAction> createActionAlterColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLTable table = new DDLTable();
+    		table.setName("company");
+    		
+    		DDLField oldField = new DDLField();
+    		oldField.setName("name");
+    		oldField.setType(db.getTypeManager().getType(int.class));
+    		oldField.setNotNull(false);
+    		table.setFields(new DDLField[] {oldField});
+    		
+    		DDLField field = new DDLField();
+    		field.setName("name");
+    		field.setType(db.getTypeManager().getType(String.class));
+    		field.setNotNull(true);
+    		
+    		DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+    		back.setOldField(oldField);
+    		back.setField(field);
+    		back.setTable(table);
+    		
+    		return back;
+    	}
+    };
 	
-	private DDLAction createActionAlterColumn() {
-		DDLTable table = new DDLTable();
-		table.setName("company");
-		
-		DDLField oldField = new DDLField();
-		oldField.setName("name");
-		oldField.setType(typeManager.getType(int.class));
-		oldField.setNotNull(false);
-		table.setFields(new DDLField[] {oldField});
-		
-		DDLField field = new DDLField();
-		field.setName("name");
-		field.setType(typeManager.getType(String.class));
-		field.setNotNull(true);
-		
-		DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
-		back.setOldField(oldField);
-		back.setField(field);
-		back.setTable(table);
-		
-		return back;
-	}
+    private Function<DatabaseProvider, DDLAction> createActionDropColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLTable table = new DDLTable();
+    		table.setName("company");
+    		
+    		DDLField field = new DDLField();
+    		field.setName("name");
+    		field.setType(db.getTypeManager().getType(String.class));
+    		field.setNotNull(true);
+    		
+    		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
+    		back.setField(field);
+    		back.setTable(table);
+    		
+    		return back;
+    	}
+    };
+    
+    private Function<DatabaseProvider, DDLAction> createActionAddKey = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_KEY);
+            back.setKey(newForeignKey(db));
+    		return back;
+        }
+	};
 	
-	private DDLAction createActionDropColumn() {
-		DDLTable table = new DDLTable();
-		table.setName("company");
-		
-		DDLField field = new DDLField();
-		field.setName("name");
-		field.setType(typeManager.getType(String.class));
-		field.setNotNull(true);
-		
-		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
-		back.setField(field);
-		back.setTable(table);
-		
-		return back;
-	}
+     private Function<DatabaseProvider, DDLAction> createActionDropKey = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_KEY);
+            back.setKey(newForeignKey(db));
+    		return back;
+        }
+	};
 	
-	private DDLAction createActionAddKey() {
-		DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_KEY);
-        back.setKey(newForeignKey());
-		return back;
-	}
+    private Function<DatabaseProvider, DDLAction> createActionCreateIndex = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLAction back = new DDLAction(DDLActionType.CREATE_INDEX);
+    		
+    		DDLIndex index = new DDLIndex();
+    		index.setField("companyID");
+    		index.setTable("person");
+    		index.setType(db.getTypeManager().getType(Types.VARCHAR));
+    		back.setIndex(index);
+    		
+    		return back;
+        }
+	};
 	
-	private DDLAction createActionDropKey() {
-		DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_KEY);
-        back.setKey(newForeignKey());
-		return back;
-	}
-	
-	private DDLAction createActionCreateIndex() {
-		DDLAction back = new DDLAction(DDLActionType.CREATE_INDEX);
-		
-		DDLIndex index = new DDLIndex();
-		index.setField("companyID");
-		index.setTable("person");
-		index.setType(typeManager.getType(Types.VARCHAR));
-		back.setIndex(index);
-		
-		return back;
-	}
-	
-	private DDLAction createActionDropIndex() {
-		DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
-		
-		DDLIndex index = new DDLIndex();
-		index.setField("companyID");
-		index.setTable("person");
-		index.setType(typeManager.getType(Types.VARCHAR));
-		back.setIndex(index);
-		
-		return back;
-	}
+	private Function<DatabaseProvider, DDLAction> createActionDropIndex = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+    		DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
+    		
+    		DDLIndex index = new DDLIndex();
+    		index.setField("companyID");
+    		index.setTable("person");
+    		index.setType(db.getTypeManager().getType(Types.VARCHAR));
+    		back.setIndex(index);
+    		
+    		return back;
+        }
+	};
 
-    private void testRenderAction(String expectedSqlFile, DDLAction action, DatabaseProvider databaseProvider) throws IOException
+    private void testRenderAction(String expectedSqlFile, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider) throws IOException
     {
         testRenderAction(readStatements(expectedSqlFile), action, databaseProvider);
     }
 
-    private void testRenderAction(String[] expectedSql, DDLAction action, DatabaseProvider databaseProvider)
+    private void testRenderAction(String[] expectedSql, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider)
     {
-        assertArrayEquals(expectedSql, databaseProvider.renderAction(nameConverters, action));
+        assertArrayEquals(expectedSql, databaseProvider.renderAction(nameConverters, action.apply(databaseProvider)));
     }
 
 	private String[] readStatements(String resource) throws IOException {

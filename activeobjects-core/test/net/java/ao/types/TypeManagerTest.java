@@ -36,7 +36,7 @@ public final class TypeManagerTest
     @Before
     public final void setUp()
     {
-        typeManager = new TypeManager();
+        typeManager = new TypeManager.Builder().build();
     }
 
     @Test
@@ -59,7 +59,6 @@ public final class TypeManagerTest
 		assertEquals(new TimestampDateType(), typeManager.getType(Types.TIMESTAMP));
 		assertEquals(new CharType(), typeManager.getType(Types.CHAR));
 		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
-		assertEquals(new DateDateType(), typeManager.getType(Types.DATE));
 		assertEquals(new RealType(), typeManager.getType(Types.REAL));
 	}
 }

@@ -28,20 +28,23 @@ import java.util.Date;
 import net.java.ao.EntityManager;
 
 /**
+ * Type mapping between Java Date and JDBC timestamp.  The underlying SQL type name defaults to "TIMESTAMP",
+ * but may be overridden by some database providers.
  * @author Daniel Spiewak
  */
-class TimestampDateType extends DatabaseType<Date> {
+public class TimestampDateType extends DatabaseType<Date> {
 	private DateFormat dateFormat;
 	
-	public TimestampDateType() {
-		super(Types.TIMESTAMP, -1, Date.class);
+	public TimestampDateType(String sqlTypeIdentifier)
+	{
+		super(Types.TIMESTAMP, -1, sqlTypeIdentifier, Date.class);
 		
 		dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	}
 
-	@Override
-	public String getDefaultName() {
-		return "TIMESTAMP";
+	public TimestampDateType()
+	{
+	    this("TIMESTAMP");
 	}
 	
 	@Override

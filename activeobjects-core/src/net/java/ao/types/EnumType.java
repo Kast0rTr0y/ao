@@ -26,12 +26,24 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class EnumType extends DatabaseType<Enum<?>> {
+public class EnumType extends DatabaseType<Enum<?>> {
 
-	protected EnumType() {
-		super(Types.INTEGER, 4, Enum.class);
+	public EnumType(String sqlTypeIdentifier)
+	{
+		super(Types.INTEGER, 4, sqlTypeIdentifier, Enum.class);
 	}
 
+	public EnumType()
+	{
+	    this("INTEGER");
+	}
+	
+    @Override
+    public boolean isDefaultForSqlType()
+    {
+        return false;
+    }
+	
 	@Override
 	public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Enum<?>> type, 
 			String field) throws SQLException {
@@ -65,10 +77,5 @@ class EnumType extends DatabaseType<Enum<?>> {
 	@Override
 	public Object defaultParseValue(String value) {
 		return Integer.parseInt(value);
-	}
-
-	@Override
-	public String getDefaultName() {
-		return "INTEGER";
 	}
 }

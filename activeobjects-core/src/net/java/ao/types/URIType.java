@@ -30,13 +30,14 @@ import net.java.ao.EntityManager;
 class URIType extends DatabaseType<URI> {
 
 	public URIType() {
-		super(Types.VARCHAR, 255, URI.class);
+		super(Types.VARCHAR, 255, "VARCHAR", URI.class);
 	}
-
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
-	}
+    
+    @Override
+    public boolean isDefaultForSqlType()
+    {
+        return false;
+    }
 	
 	@Override
 	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, URI value) throws SQLException {

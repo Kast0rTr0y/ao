@@ -24,12 +24,24 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class RealType extends DatabaseType<Double> {
+public class RealType extends DatabaseType<Double> {
 
-	protected RealType() {
-		super(Types.REAL, -1, double.class, Double.class);
+	public RealType(String sqlTypeIdentifier)
+	{
+		super(Types.REAL, -1, sqlTypeIdentifier, double.class, Double.class);
 	}
 
+	public RealType()
+	{
+	    this("REAL");
+	}
+
+    @Override
+    public boolean isDefaultForJavaType()
+    {
+        return false;
+    }
+	
 	@Override
 	public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Double> type, String field) throws SQLException {
 		return res.getDouble(field);
@@ -38,10 +50,5 @@ class RealType extends DatabaseType<Double> {
 	@Override
 	public Object defaultParseValue(String value) {
 		return new Double(value);
-	}
-
-	@Override
-	public String getDefaultName() {
-		return "REAL";
 	}
 }
