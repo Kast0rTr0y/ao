@@ -942,25 +942,25 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         {
             return false;
         }
-        return type.equals(int.class) || type.equals(long.class) || type.equals(float.class) || type.equals(double.class);
+        return isInteger(type) || isLong(type) || isFloat(type) || isDouble(type);
     }
 
     private Object handleBigDecimal(Object value, Class<?> type)
     {
         final BigDecimal bd = (BigDecimal) value;
-        if (type.equals(int.class))
+        if (isInteger(type))
         {
             return bd.intValue();
         }
-        else if (type.equals(long.class))
+        else if (isLong(type))
         {
             return bd.longValue();
         }
-        else if (type.equals(float.class))
+        else if (isFloat(type))
         {
             return bd.floatValue();
         }
-        else if (type.equals(double.class))
+        else if (isDouble(type))
         {
             return bd.doubleValue();
         }
@@ -970,7 +970,27 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         }
     }
 
-	private void checkConstraints(Method method, Object[] args) {
+    private boolean isDouble(Class<?> type)
+    {
+        return type.equals(double.class) || type.equals(Double.class);
+    }
+
+    private boolean isFloat(Class<?> type)
+    {
+        return type.equals(float.class) || type.equals(Float.class);
+    }
+
+    private boolean isLong(Class<?> type)
+    {
+        return type.equals(long.class) || type.equals(Long.class);
+    }
+
+    private boolean isInteger(Class<?> type)
+    {
+        return type.equals(int.class) || type.equals(Integer.class);
+    }
+
+    private void checkConstraints(Method method, Object[] args) {
         AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
 		
 		NotNull notNullAnnotation = annotations.getAnnotation(NotNull.class);
