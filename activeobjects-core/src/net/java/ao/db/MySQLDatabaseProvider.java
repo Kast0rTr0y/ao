@@ -22,6 +22,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import net.java.ao.types.TimestampDateType;
+
+import net.java.ao.types.ClobType;
+
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.IndexNameConverter;
@@ -80,9 +84,12 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 
     public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null);
+        super(dataSource, null,
+              new TypeManager.Builder()
+                .addMapping(new ClobType("TEXT"))
+                .build());
     }
-
+    
     @Override
     protected boolean considerPrecision(DDLField field) {
         switch (field.getType().getType()) {
@@ -93,17 +100,6 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 
         return super.considerPrecision(field);
     }
-
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.CLOB:
-			case Types.LONGVARCHAR:
-				return "TEXT";
-		}
-		
-		return super.convertTypeToString(type);
-	}
 
 	@Override
 	protected String renderAutoIncrement() {

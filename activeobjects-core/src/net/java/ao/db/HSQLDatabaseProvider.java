@@ -45,6 +45,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.BlobType;
+
+import net.java.ao.types.ClobType;
+
+import net.java.ao.types.TypeManager;
+
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -98,7 +104,11 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
     public HSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new ClobType("LONGVARCHAR"))
+                .addMapping(new BlobType("BINARY"))
+                .build());
     }
 
     @Override
@@ -317,19 +327,6 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		return back.toString();
-	}
-
-    @Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.CLOB:
-				return "LONGVARCHAR";
-
-			case Types.BLOB:
-				return "BINARY";
-		}
-
-		return super.convertTypeToString(type);
 	}
 
 	@Override

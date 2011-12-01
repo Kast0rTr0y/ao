@@ -31,6 +31,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.BooleanType;
+
+import net.java.ao.types.TinyIntType;
+
+import net.java.ao.types.TypeManager;
+
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Query;
@@ -82,7 +88,11 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 
     DerbyDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null);
+        super(dataSource, null,
+              new TypeManager.Builder()
+                .addMapping(new TinyIntType("SMALLINT"))
+                .addMapping(new BooleanType("SMALLINT"))
+                .build());
     }
 
     @Override
@@ -146,22 +156,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected String renderQueryLimit(Query query) {
 		return "";
-	}
-	
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.TINYINT:
-				return "SMALLINT";
-				
-			case Types.BOOLEAN:
-				return "SMALLINT";
-				
-			case Types.BIT:
-				return "SMALLINT";
-		}
-		
-		return super.convertTypeToString(type);
 	}
 	
 	@Override
