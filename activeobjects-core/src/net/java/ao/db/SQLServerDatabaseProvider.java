@@ -382,11 +382,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-	@Override
 	protected boolean considerPrecision(DDLField field) {
 		switch (field.getType().getType()) {
 			case Types.INTEGER:
@@ -435,37 +430,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		}
 
 		return super.renderFunction(func);
-	}
-
-	@Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-			DDLField pkField = null;
-			for (DDLField f : table.getFields()) {
-				if (f.isPrimaryKey()) {
-					pkField = f;
-					break;
-				}
-			}
-
-			if (pkField == null) {
-				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
-			}
-
-			back.append("CREATE TRIGGER ").append(processID(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + "\n");
-			back.append("ON ").append(withSchema(table.getName())).append("\n");
-			back.append("FOR UPDATE\nAS\n");
-			back.append("    UPDATE ").append(withSchema(table.getName())).append(" SET ").append(processID(field.getName()));
-			back.append(" = ").append(renderValue(onUpdate));
-			back.append(" WHERE " + processID(pkField.getName()) + " = (SELECT " + processID(pkField.getName()) + " FROM inserted)");
-
-			return back.toString();
-		}
-
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
     @Override

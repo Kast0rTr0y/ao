@@ -53,6 +53,7 @@ import net.java.ao.types.DoubleType;
 import net.java.ao.types.BlobType;
 
 import net.java.ao.types.ClobType;
+import net.java.ao.util.StringUtils;
 
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
@@ -234,54 +235,11 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return super.renderFunction(func);
 	}
 
-	@Override
-	protected String renderFunctionForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
-
-            back.append("CREATE FUNCTION ").append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
-            back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
-			back.append("    NEW.").append(processID(field.getName())).append(" := ").append(renderValue(onUpdate));
-            back.append(";\n    RETURN NEW;\nEND;\n$").append(triggerName).append("$ LANGUAGE plpgsql");
-
-			return back.toString();
-		}
-
-		return super.renderFunctionForField(triggerNameConverter, table, field);
-	}
-
-    @Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
-
-            back.append("CREATE TRIGGER ").append(triggerName).append('\n');
-            back.append(" BEFORE UPDATE OR INSERT ON ").append(withSchema(table.getName())).append('\n');
-			back.append("    FOR EACH ROW EXECUTE PROCEDURE ");
-            back.append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
-
-            return back.toString();
-		}
-
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-	}
-
     @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
     }
-
-	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
 
     @Override
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
@@ -429,27 +387,22 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
         final List<String> dropFunctions = new ArrayList<String>();
         for (DDLField field : table.getFields())
         {
-            field.setOnUpdate(new Object()); // kind of a hack
-            dropFunctions.add(renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field)));
+            String function = renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field));
+            if(!StringUtils.isBlank(function))
+            {
+                dropFunctions.add(function);
+            }
         }
         return dropFunctions.toArray(new String[dropFunctions.size()]);
     }
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
-    }
-
-
-    @Override
-    protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
-    {
-        if (field.getOnUpdate() != null)
+        if(!StringUtils.isBlank(functionName))
         {
-            return triggerNameConverter.onUpdateName(table.getName(), field.getName());
+            return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
         }
-
-        return super.getTriggerNameForField(triggerNameConverter, table, field);
+        return null;
     }
 
     @Override

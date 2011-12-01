@@ -18,7 +18,6 @@ package net.java.ao;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NotNull;
-import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
@@ -162,7 +161,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
         AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
 		
-		OnUpdate onUpdateAnnotation = annotations.getAnnotation(OnUpdate.class);
 		Transient transientAnnotation = annotations.getAnnotation(Transient.class);
 
 		// check annotations first, they trump all
@@ -196,7 +194,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
 		} else if (Common.isAccessor(method)) {
             return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, getFieldNameConverter().getName(method),
-                    polyFieldName, method.getReturnType(), onUpdateAnnotation == null && transientAnnotation == null);
+                    polyFieldName, method.getReturnType(), transientAnnotation == null);
 		} else if (Common.isMutator(method)) {
             invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], polyFieldName);
 

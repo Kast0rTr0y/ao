@@ -13,13 +13,3 @@ CREATE TABLE public."person" (
     PRIMARY KEY("id")
 )
 
-CREATE FUNCTION public.person_modified_onupdate() RETURNS trigger AS $person_modified_onupdate$
-BEGIN
-    NEW."modified" := now();
-    RETURN NEW;
-END;
-$person_modified_onupdate$ LANGUAGE plpgsql
-
-CREATE TRIGGER person_modified_onupdate
- BEFORE UPDATE OR INSERT ON public."person"
-    FOR EACH ROW EXECUTE PROCEDURE public.person_modified_onupdate()

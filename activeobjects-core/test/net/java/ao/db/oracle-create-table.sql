@@ -22,10 +22,3 @@ BEGIN
     SELECT person_id_SEQ.NEXTVAL INTO :NEW.id FROM DUAL;
 END;
 
-CREATE TRIGGER person_modified_onupdate
-BEFORE UPDATE
-    ON person
-    FOR EACH ROW
-BEGIN
-    :NEW.modified := SYSDATE;
-END;

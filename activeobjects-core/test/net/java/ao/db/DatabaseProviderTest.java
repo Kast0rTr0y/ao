@@ -253,7 +253,6 @@ public final class DatabaseProviderTest
         f.setName("modified");
         f.setType(db.getTypeManager().getType(Date.class));
         f.setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
-        f.setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
         return f;
     }
 

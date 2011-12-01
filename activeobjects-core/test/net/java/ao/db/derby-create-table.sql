@@ -12,10 +12,3 @@ CREATE TABLE person (
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )
-
-CREATE TRIGGER person_modified_onupdate
-    AFTER UPDATE ON person
-    REFERENCING NEW AS inserted
-    FOR EACH ROW MODE DB2SQL
-        UPDATE person SET modified = CURRENT_TIMESTAMP
-            WHERE id = inserted.id AND inserted.modified <> CURRENT_TIMESTAMP

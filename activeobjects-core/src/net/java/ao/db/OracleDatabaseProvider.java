@@ -278,11 +278,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         return super.parseValue(type, value);
     }
 
-    @Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
 	@Override
 	protected String renderFunction(DatabaseFunction func) {
 		switch (func) {
@@ -311,17 +306,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter,
                                            SequenceNameConverter sequenceNameConverter,
                                            DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			StringBuilder back = new StringBuilder();
-			String value = renderValue(field.getOnUpdate());
-
-			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
-			back.append("BEFORE UPDATE\n").append("    ON ").append(withSchema(table.getName())).append("\n    FOR EACH ROW\n");
-			back.append("BEGIN\n");
-			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
-
-			return back.toString();
-		} else if (field.isAutoIncrement()) {
+		if (field.isAutoIncrement()) {
 			StringBuilder back = new StringBuilder();
 
 	        back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())) +  '\n');

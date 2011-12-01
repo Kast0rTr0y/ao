@@ -7,7 +7,7 @@ CREATE TABLE person (
     height DOUBLE(32,6) DEFAULT 62.3,
     companyID BIGINT,
     cool BOOLEAN DEFAULT 1,
-    modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     weight DOUBLE,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
  CONSTRAINT U_person_url UNIQUE(url),

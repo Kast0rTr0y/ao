@@ -307,11 +307,6 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-	@Override
 	protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
 		return "";
 	}

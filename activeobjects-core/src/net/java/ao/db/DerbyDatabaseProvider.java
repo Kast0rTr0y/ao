@@ -161,11 +161,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	}
 	
 	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-    @Override
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
     {
         final Blob blob = res.getBlob(field);
@@ -183,48 +178,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
         }
     }
 
-    @Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-			
-			DDLField pkField = null;
-			for (DDLField f : table.getFields()) {
-				if (f.isPrimaryKey()) {
-					pkField = f;
-					break;
-				}
-			}
-			
-			if (pkField == null) {
-				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
-			}
-			
-			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
-			back.append("    AFTER UPDATE ON ").append(withSchema(table.getName()));
-			back.append("\n    REFERENCING NEW AS inserted\n    FOR EACH ROW MODE DB2SQL\n        ");
-			back.append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(
-					processID(field.getName())).append(" = ").append(renderValue(onUpdate));
-			back.append("\n            WHERE " + processID(pkField.getName()) + " = inserted." 
-					+ processID(pkField.getName()) + " AND inserted.");
-			back.append(processID(field.getName())).append(" <> ").append(renderValue(onUpdate));
-			
-			return back.toString();
-		}
-		
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-	}
-	
-	@Override
-	protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			return processID(triggerNameConverter.onUpdateName(table.getName(), field.getName()));
-		}
-		
-		return super.getTriggerNameForField(triggerNameConverter, table, field);
-	}
-	
 	@Override
 	protected boolean considerPrecision(DDLField field) {
 		boolean considerPrecision = true;

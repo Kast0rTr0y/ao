@@ -269,11 +269,6 @@ public final class SchemaGenerator
                     }
                 }
 
-                if (annotations.isAnnotationPresent(OnUpdate.class))
-                {
-                    field.setOnUpdate(convertStringValue(annotations.getAnnotation(OnUpdate.class).value(), sqlType));
-                }
-
                 if (field.isPrimaryKey()) {
 					fields.add(0, field);
 				} else {
@@ -283,7 +278,6 @@ public final class SchemaGenerator
 				if (Common.interfaceInheritsFrom(type, RawEntity.class)
 						&& type.getAnnotation(Polymorphic.class) != null) {
 					field.setDefaultValue(null);		// polymorphic fields can't have default
-					field.setOnUpdate(null);		// or on update
 
 					attributeName = fieldConverter.getPolyTypeName(method);
 

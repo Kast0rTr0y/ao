@@ -63,7 +63,6 @@ public final class SchemaReader
      * Currently doesn't account for:
      *
      * <ul>
-     * <li>setOnUpdate</li>
      * <li>setUnique</li>
      * </ul>
      */

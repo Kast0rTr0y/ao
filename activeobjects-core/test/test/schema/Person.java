@@ -30,7 +30,6 @@ import net.java.ao.Searchable;
 import net.java.ao.Transient;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.Indexed;
-import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.SQLType;
 import net.java.ao.schema.Unique;
 
@@ -75,7 +74,6 @@ public interface Person extends Entity {
 	public boolean isActive();
 	public void setActive(boolean active);
 	
-	@OnUpdate("CURRENT_TIMESTAMP")
 	public Date getModified();
 	
 	@OneToOne

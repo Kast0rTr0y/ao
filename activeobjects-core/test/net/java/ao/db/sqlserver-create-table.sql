@@ -12,9 +12,3 @@ CREATE TABLE dbo.person (
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id),
     PRIMARY KEY(id)
 )
-
-CREATE TRIGGER person_modified_onupdate
-ON dbo.person
-FOR UPDATE
-AS
-    UPDATE dbo.person SET modified = GetDate() WHERE id = (SELECT id FROM inserted)
