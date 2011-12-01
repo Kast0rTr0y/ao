@@ -42,6 +42,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
@@ -249,7 +250,7 @@ public final class DatabaseProviderTest
     {
         DDLField f =  new DDLField();
         f.setName("modified");
-        f.setType(typeManager.getType(Calendar.class));
+        f.setType(typeManager.getType(Date.class));
         f.setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
         f.setOnUpdate(DatabaseFunction.CURRENT_TIMESTAMP);
         return f;

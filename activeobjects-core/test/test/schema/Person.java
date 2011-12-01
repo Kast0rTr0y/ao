@@ -17,6 +17,7 @@ package test.schema;
 
 import java.net.URL;
 import java.util.Calendar;
+import java.util.Date;
 
 import net.java.ao.Accessor;
 import net.java.ao.Entity;
@@ -75,7 +76,7 @@ public interface Person extends Entity {
 	public void setActive(boolean active);
 	
 	@OnUpdate("CURRENT_TIMESTAMP")
-	public Calendar getModified();
+	public Date getModified();
 	
 	@OneToOne
 	public Nose getNose();

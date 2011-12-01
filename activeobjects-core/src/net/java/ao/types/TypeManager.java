@@ -67,12 +67,10 @@ public class TypeManager
 		types.add(new DoubleType());
 		types.add(new FloatType());
 		types.add(new IntegerType());
-		types.add(new TimestampType());
 		types.add(new TimestampDateType());
 		types.add(new VarcharType());
 
 		types.add(new ClobType());		// must come *after* VarcharType
-		types.add(new DateType());
 		types.add(new DateDateType());
 		types.add(new EnumType());
 		types.add(new URLType());

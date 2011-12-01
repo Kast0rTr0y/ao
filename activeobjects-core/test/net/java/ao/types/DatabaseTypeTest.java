@@ -38,7 +38,6 @@ public class DatabaseTypeTest
 		assertTrue(new DoubleType().isHandlerFor(Types.DOUBLE));
 		assertTrue(new URLType().isHandlerFor(Types.VARCHAR));
 		assertTrue(new VarcharType().isHandlerFor(Types.VARCHAR));
-		assertTrue(new TimestampType().isHandlerFor(Types.TIMESTAMP));
 		assertTrue(new GenericType(Types.ARRAY).isHandlerFor(Types.ARRAY));
 	}
 
@@ -52,7 +51,6 @@ public class DatabaseTypeTest
 
 		assertTrue(new URLType().isHandlerFor(URL.class));
 		assertTrue(new VarcharType().isHandlerFor(String.class));
-		assertTrue(new TimestampType().isHandlerFor(Calendar.class));
 
 		assertFalse(new GenericType(Types.ARRAY).isHandlerFor(Object.class));
 	}
@@ -72,7 +70,6 @@ public class DatabaseTypeTest
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.MILLISECOND, 0);
 
-		assertEquals(cal, new TimestampType().defaultParseValue(dateFormatter.format(cal.getTime())));
 		assertEquals(cal.getTime(), new TimestampDateType().defaultParseValue(dateFormatter.format(cal.getTime())));
 	}
 
@@ -91,7 +88,6 @@ public class DatabaseTypeTest
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.MILLISECOND, 0);
 
-		assertEquals(dateFormatter.format(cal.getTime()), new TimestampType().valueToString(cal));
 		assertEquals(dateFormatter.format(cal.getTime()), new TimestampDateType().valueToString(cal.getTime()));
 	}
 }
