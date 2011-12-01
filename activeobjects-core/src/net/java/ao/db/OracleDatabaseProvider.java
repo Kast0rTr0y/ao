@@ -18,6 +18,21 @@ package net.java.ao.db;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
+
+import net.java.ao.types.ClobType;
+
+import net.java.ao.types.RealType;
+
+import net.java.ao.types.DoubleType;
+
+import net.java.ao.types.FloatType;
+
+import net.java.ao.types.IntegerType;
+
+import net.java.ao.types.BooleanType;
+
+import net.java.ao.types.BigIntType;
+
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
@@ -139,7 +154,15 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new BigIntType("NUMBER"))
+                .addMapping(new BooleanType("NUMBER"))
+                .addMapping(new IntegerType("NUMBER"))
+                .addMapping(new FloatType("NUMBER"))
+                .addMapping(new DoubleType("NUMBER"))
+                .addMapping(new RealType("NUMBER"))
+                .addMapping(new ClobType("CLOB")).build());
     }
 
     @Override
@@ -195,27 +218,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         final DatabaseMetaData metaData = connection.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return metaData.getImportedKeys(null, schemaPattern, tableName);
-    }
-
-    @Override
-    protected String convertTypeToString(DatabaseType<?> type)
-    {
-        switch (type.getType())
-        {
-            case Types.BIGINT:
-            case Types.BOOLEAN:
-            case Types.INTEGER:
-            case Types.NUMERIC:
-            case Types.SMALLINT:
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                return "NUMBER";
-            case Types.LONGVARCHAR:
-                return "CLOB";
-        }
-        return super.convertTypeToString(type);
     }
 
     @Override

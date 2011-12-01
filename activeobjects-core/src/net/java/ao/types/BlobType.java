@@ -30,7 +30,7 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class BlobType extends DatabaseType<Object> {
+public class BlobType extends DatabaseType<Object> {
 	
     public BlobType(String sqlTypeIdentifier)
     {

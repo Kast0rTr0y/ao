@@ -48,6 +48,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.DoubleType;
+
+import net.java.ao.types.BlobType;
+
+import net.java.ao.types.ClobType;
+
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     private static final int MAX_SEQUENCE_LENGTH = 64;
@@ -122,7 +128,12 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new ClobType("TEXT"))
+                .addMapping(new BlobType("BYTEA"))
+                .addMapping(new DoubleType("DOUBLE PRECISION"))
+                .build());
     }
 
 	@Override
@@ -196,22 +207,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
             return "SERIAL";
         }
         return super.renderFieldType(field);
-    }
-
-    @Override
-    protected String convertTypeToString(DatabaseType<?> type)
-    {
-        switch (type.getType())
-        {
-            case Types.CLOB:
-            case Types.LONGVARCHAR:
-                return "TEXT";
-            case Types.BLOB:
-                return "BYTEA";
-            case Types.DOUBLE:
-                return "DOUBLE PRECISION";
-        }
-        return super.convertTypeToString(type);
     }
 
     @Override

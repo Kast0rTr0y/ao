@@ -27,6 +27,18 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.BlobType;
+
+import net.java.ao.types.ClobType;
+
+import net.java.ao.types.TypeManager;
+
+import net.java.ao.types.TimestampDateType;
+
+import net.java.ao.types.DoubleType;
+
+import net.java.ao.types.BooleanType;
+
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
@@ -133,7 +145,40 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new BooleanType("BIT"))
+                .addMapping(new DoubleType("DECIMAL"))
+                .addMapping(new TimestampDateType("DATETIME"))
+                .addMapping(new ClobType("NTEXT"))
+                .addMapping(new BlobType("IMAGE"))
+                .build());
+    }
+
+    @Override
+    protected String convertTypeToString(DatabaseType<?> type) {
+        switch (type.getType()) {
+            case Types.BOOLEAN:
+                return "BIT";
+
+            case Types.DOUBLE:
+                return "DECIMAL";
+
+            case Types.TIMESTAMP:
+                return "DATETIME";
+
+            case Types.DATE:
+                return "SMALLDATETIME";
+
+            case Types.CLOB:
+            case Types.LONGVARCHAR:
+                return "NTEXT";
+
+            case Types.BLOB:
+                return "IMAGE";
+        }
+
+        return super.convertTypeToString(type);
     }
 
 	@Override
@@ -339,32 +384,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 	@Override
 	protected String renderOnUpdate(DDLField field) {
 		return "";
-	}
-
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.BOOLEAN:
-				return "BIT";
-
-			case Types.DOUBLE:
-				return "DECIMAL";
-
-			case Types.TIMESTAMP:
-				return "DATETIME";
-
-			case Types.DATE:
-				return "SMALLDATETIME";
-
-			case Types.CLOB:
-			case Types.LONGVARCHAR:
-				return "NTEXT";
-
-			case Types.BLOB:
-				return "IMAGE";
-		}
-
-		return super.convertTypeToString(type);
 	}
 
 	@Override
