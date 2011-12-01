@@ -471,7 +471,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         {
             onSql(sql);
             stmt = conn.prepareStatement(sql, new String[]{pkField});
-            T back = setParameters(manager, stmt, params, pkField, pkType);
+            T back = (T) setParameters(manager, stmt, params, pkField);
 
             stmt.executeUpdate();
 
@@ -492,9 +492,9 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         }
     }
 
-    private <T> T setParameters(EntityManager manager, PreparedStatement stmt, DBParam[] params, String pkField, Class<T> pkType) throws SQLException
+    private Object setParameters(EntityManager manager, PreparedStatement stmt, DBParam[] params, String pkField) throws SQLException
     {
-        T back = null;
+        Object back = null;
         int i = 0;
         for (; i < params.length; i++)
         {
@@ -505,7 +505,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
             }
             if (params[i].getField().equalsIgnoreCase(pkField))
             {
-                back = pkType.cast(value);
+                back = value;
             }
             if (value == null)
             {
