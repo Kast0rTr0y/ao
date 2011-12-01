@@ -19,34 +19,40 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
 /**
  * @author Daniel Spiewak
  */
-class ClobType extends DatabaseType<String> {
+class ClobType extends DatabaseType<String>
+{
+    public ClobType()
+    {
+        super(Types.CLOB, -1, String.class);
+    }
 
-	public ClobType() {
-		super(Types.CLOB, -1, String.class);
-	}
-	
-	@Override
-	public String getDefaultName() {
-		return "CLOB";
-	}
-	
-	@Override
-	public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException {
-		return res.getString(field);
-	}
+    @Override
+    public String getDefaultName()
+    {
+        return "CLOB";
+    }
 
-	@Override
-	public String defaultParseValue(String value) {
-		return value;
-	}
-	
-	@Override
-	public boolean valueEquals(Object val1, Object val2) {
-		return val1.toString().equals(val2.toString());
-	}
+    @Override
+    public String pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends String> type, String field) throws SQLException
+    {
+        return res.getString(field);
+    }
+
+    @Override
+    public String defaultParseValue(String value)
+    {
+        throw new ActiveObjectsConfigurationException("Default value not support for CLOBs");
+    }
+
+    @Override
+    public boolean valueEquals(Object val1, Object val2)
+    {
+        return val1.toString().equals(val2.toString());
+    }
 }
