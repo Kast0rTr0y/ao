@@ -38,9 +38,9 @@ import static org.junit.Assert.*;
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
+public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 {
-    @Ignore("currently failing in mysql; Eli will fix after merge")
+//    @Ignore("currently failing in mysql; Eli will fix after merge")
     @SuppressWarnings("null")
     @Test
     public void testParseDDL()
