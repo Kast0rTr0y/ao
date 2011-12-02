@@ -15,6 +15,9 @@
  */
 package net.java.ao.it.model;
 
+import java.net.URL;
+import java.util.Date;
+
 import net.java.ao.Accessor;
 import net.java.ao.Entity;
 import net.java.ao.Implementation;
@@ -27,11 +30,8 @@ import net.java.ao.Transient;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.Indexed;
 import net.java.ao.schema.OnUpdate;
-import net.java.ao.schema.SQLType;
+import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Unique;
-
-import java.net.URL;
-import java.util.Date;
 
 /**
  * @author Daniel Spiewak
@@ -43,7 +43,7 @@ public interface Person extends Entity {
 	public String getFirstName();
 	public void setFirstName(String firstName);
 	
-	@SQLType(precision=127)
+    @StringLength(127)
 	@Searchable
 	public void setLastName(String lastName);
 	public String getLastName();
@@ -53,7 +53,6 @@ public interface Person extends Entity {
 	
 	@Transient
 	@Indexed
-	@SQLType(precision=20)
 	public int getAge();
 	public void setAge(int age);
 

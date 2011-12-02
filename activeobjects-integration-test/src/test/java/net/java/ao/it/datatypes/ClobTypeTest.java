@@ -1,17 +1,17 @@
 package net.java.ao.it.datatypes;
 
+import org.junit.Test;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
-import net.java.ao.schema.SQLType;
+import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
-import org.junit.Test;
 
-import java.sql.Types;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 {
@@ -153,7 +153,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 
     public static interface SimpleColumn extends Entity
     {
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         String getText();
 
         void setText(String text);
@@ -162,7 +162,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
     public static interface EmptyDefaultColumn extends Entity
     {
         @Default("")
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         String getText();
 
         void setText(String text);
@@ -171,7 +171,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
     public static interface DefaultColumn extends Entity
     {
         @Default("Test")
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         String getText();
 
         void setText(String text);
@@ -180,7 +180,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
     public static interface NotNullColumn extends Entity
     {
         @NotNull
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         String getText();
 
         void setText(String text);

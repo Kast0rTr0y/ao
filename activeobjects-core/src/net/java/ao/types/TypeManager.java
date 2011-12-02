@@ -16,21 +16,15 @@
 package net.java.ao.types;
 
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.collect.ImmutableMap;
 
-import net.java.ao.Entity;
-
-import net.java.ao.Common;
-import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 /**
  * <p>Central managing class for the ActiveObjects type system.  The type
@@ -64,16 +58,16 @@ public class TypeManager
         
         public Builder()
         {
-            addMapping(new BigIntType());
-            addMapping(new BooleanType());
+            addMapping(new BigIntType(numericType("BIGINT").ignorePrecision(true)));
+            addMapping(new BooleanType(numericType("BOOLEAN").ignorePrecision(true)));
             addMapping(new BlobType());
-            addMapping(new DoubleType());
-            addMapping(new FloatType());
-            addMapping(new IntegerType());
+            addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)));
+            addMapping(new FloatType(numericType("FLOAT").ignorePrecision(true)));
+            addMapping(new IntegerType(numericType("INTEGER").ignorePrecision(true)));
             addMapping(new TimestampDateType());
-            addMapping(new VarcharType());
-            addMapping(new ClobType());
-            addMapping(new EnumType());
+            addMapping(new VarcharType(stringType("VARCHAR", "CLOB")));
+            addMapping(new ClobType("CLOB"));
+            addMapping(new EnumType(numericType("INTEGER").ignorePrecision(true)));
             addMapping(new URLType());
             addMapping(new URIType());
         }

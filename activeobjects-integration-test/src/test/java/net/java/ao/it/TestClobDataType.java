@@ -1,19 +1,20 @@
 package net.java.ao.it;
 
+import java.sql.SQLException;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+
+import org.junit.Test;
+
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
-import net.java.ao.schema.SQLType;
+import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
-import org.junit.Test;
 
-import java.sql.SQLException;
-import java.sql.Types;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @Data(TestClobDataType.TestBigClobDatabaseUpdater.class)
 public final class TestClobDataType extends ActiveObjectsIntegrationTest
@@ -49,10 +50,10 @@ public final class TestClobDataType extends ActiveObjectsIntegrationTest
 
         void setName(String name);
 
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         String getText();
 
-        @SQLType(Types.CLOB)
+        @StringLength(StringLength.UNLIMITED)
         void setText(String text);
     }
 

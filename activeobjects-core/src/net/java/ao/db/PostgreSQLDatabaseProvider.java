@@ -15,6 +15,24 @@
  */
 package net.java.ao.db;
 
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
@@ -31,28 +49,13 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.BlobType;
+import net.java.ao.types.ClobType;
 import net.java.ao.types.DatabaseType;
+import net.java.ao.types.DoubleType;
 import net.java.ao.types.TypeManager;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import net.java.ao.types.DoubleType;
-
-import net.java.ao.types.BlobType;
-
-import net.java.ao.types.ClobType;
+import static net.java.ao.types.NumericTypeProperties.numericType;
 
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
@@ -130,24 +133,12 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, schema,
               new TypeManager.Builder()
+                .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
                 .addMapping(new ClobType("TEXT"))
                 .addMapping(new BlobType("BYTEA"))
-                .addMapping(new DoubleType("DOUBLE PRECISION"))
+                .addMapping(new DoubleType(numericType("DOUBLE PRECISION").ignorePrecision(true)))
                 .build());
     }
-
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		switch (field.getType().getType()) {
-			case Types.INTEGER:
-			case Types.DOUBLE:
-			case Types.BOOLEAN:
-			case Types.BIGINT:
-                return false;
-		}
-
-		return super.considerPrecision(field);
-	}
 
 	@Override
 	public Object parseValue(int type, String value) {
@@ -348,7 +339,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" TYPE ");
-			str.append(renderFieldType(field)).append(renderFieldPrecision(field));
+			str.append(renderFieldType(field));
 			back.add(str.toString());
 		}
 
@@ -453,12 +444,14 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-			boolean pkIdentity, String table, DBParam... params) throws SQLException {
-		T back = null;
+    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+            Class<T> entityType, Class<K> pkType,
+            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
+    {
+        K back = null;
 		for (DBParam param : params) {
 			if (param.getField().trim().equalsIgnoreCase(pkField)) {
-				back = (T) param.getValue();
+				back = (K) param.getValue();
 				break;
 			}
 		}
@@ -482,7 +475,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			params = newParams.toArray(new DBParam[newParams.size()]);
 		}
 
-		super.insertReturningKey(manager, conn, pkType, pkField, pkIdentity, table, params);
+		super.insertReturningKey(manager, conn, entityType, pkType, pkField, pkIdentity, table, params);
 
 		return back;
 	}
@@ -504,9 +497,10 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-                                              String sql, DBParam... params) throws SQLException {
-
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                                                      Class<T> entityType, Class<K> pkType,
+                                                                      String pkField, String sql, DBParam... params) throws SQLException
+    {
 		final PreparedStatement stmt = preparedStatement(conn, sql);
 
 		for (int i = 0; i < params.length; i++) {

@@ -45,6 +45,15 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
+import net.java.ao.types.BigIntType;
+import net.java.ao.types.IntegerType;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 import net.java.ao.types.BlobType;
 
 import net.java.ao.types.ClobType;
@@ -106,6 +115,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, schema,
               new TypeManager.Builder()
+                .addMapping(new VarcharType(stringType("VARCHAR", "LONGVARCHAR")))
                 .addMapping(new ClobType("LONGVARCHAR"))
                 .addMapping(new BlobType("BINARY"))
                 .build());
@@ -113,7 +123,10 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
     @Override
 	@SuppressWarnings("unused")
-	public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException {
+    public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+                                                            Class<T> entityType, Class<K> pkType,
+                                                            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
+    {
 		StringBuilder sql = new StringBuilder("INSERT INTO " + processID(table) + " (");
 
 		for (DBParam param : params) {
@@ -139,13 +152,15 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 
 		sql.append(")");
 
-		return executeInsertReturningKey(manager, conn, pkType, pkField, sql.toString(), params);
+		return executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
 	}
 
 	@Override
-	protected synchronized <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-                                                           String sql, DBParam... params) throws SQLException {
-		T back = null;
+    protected synchronized <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+            Class<T> entityType, Class<K> pkType,
+            String pkField, String sql, DBParam... params) throws SQLException
+    {
+	    K back = null;
 
 		PreparedStatement stmt = preparedStatement(conn, sql);
 
@@ -157,7 +172,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 			}
 
 			if (params[i].getField().equalsIgnoreCase(pkField)) {
-				back = (T) value;
+				back = (K) value;
 			}
 
 			if (value == null) {
@@ -286,7 +301,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		return "";
 	}
 
-@Override
+	@Override
     protected String renderFieldType(DDLField field)
     {
         if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
@@ -327,18 +342,6 @@ public class HSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		return back.toString();
-	}
-
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		switch (field.getType().getType()) {
-			case Types.INTEGER:
-            case Types.BOOLEAN:
-            case Types.DOUBLE:
-				return false;
-		}
-
-		return super.considerPrecision(field);
 	}
 
 	@Override

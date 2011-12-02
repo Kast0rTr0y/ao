@@ -22,19 +22,21 @@ import java.sql.Types;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 /**
  * @author Daniel Spiewak
  */
-public class BigIntType extends DatabaseType<Long>
+public class BigIntType extends AbstractNumericType<Long>
 {
-    public BigIntType(String sqlTypeIdentifier)
+    public BigIntType(NumericTypeProperties properties)
     {
-        super(Types.BIGINT, -1, sqlTypeIdentifier, long.class, Long.class);
+        super(Types.BIGINT, properties, long.class, Long.class);
     }
-
+    
     public BigIntType()
     {
-        this("BIGINT");
+        this(numericType("BIGINT"));
     }
     
     @Override

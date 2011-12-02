@@ -34,7 +34,7 @@ public class BlobType extends DatabaseType<Object> {
 	
     public BlobType(String sqlTypeIdentifier)
     {
-		super(Types.BLOB, -1, sqlTypeIdentifier, byte[].class, InputStream.class);
+		super(Types.BLOB, sqlTypeIdentifier, byte[].class, InputStream.class);
 	}
     
     public BlobType()

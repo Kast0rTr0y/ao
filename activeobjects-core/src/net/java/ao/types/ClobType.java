@@ -29,7 +29,7 @@ public class ClobType extends DatabaseType<String> {
 
     public ClobType(String sqlTypeIdentifier)
     {
-		super(Types.CLOB, -1, sqlTypeIdentifier, String.class);
+		super(Types.CLOB, sqlTypeIdentifier, String.class);
 	}
 
     public ClobType()

@@ -17,9 +17,7 @@ package net.java.ao.it.model;
 
 import net.java.ao.Entity;
 import net.java.ao.Preload;
-import net.java.ao.schema.SQLType;
-
-import java.sql.Types;
+import net.java.ao.schema.StringLength;
 
 /**
  * @author Daniel Spiewak
@@ -29,10 +27,10 @@ public interface Comment extends Entity {
 	public String getTitle();
 	public void setTitle(String title);
 	
-	@SQLType(Types.CLOB)
+    @StringLength(StringLength.UNLIMITED)
 	public String getText();
 
-	@SQLType(Types.CLOB)
+    @StringLength(StringLength.UNLIMITED)
 	public void setText(String text);
 	
 	public Commentable getCommentable();

@@ -15,31 +15,32 @@
  */
 package net.java.ao.types;
 
-import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.ActiveObjectsException;
-import net.java.ao.EntityManager;
-import net.java.ao.util.StringUtils;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
+import net.java.ao.EntityManager;
+import net.java.ao.util.StringUtils;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 /**
  * @author Nathan Hamblen
  */
-public class URIType extends DatabaseType<URI>
+public class URIType extends AbstractStringType<URI>
 {
-    public URIType(String sqlTypeIdentifier)
+    public URIType(StringTypeProperties properties)
     {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, sqlTypeIdentifier, URI.class);
+        super(properties, URI.class);
     }
 
     public URIType()
     {
-        this("VARCHAR");
+        this(stringType("VARCHAR", "CLOB").withLength(MAX_PRECISION));
     }
 
     @Override
@@ -78,7 +79,7 @@ public class URIType extends DatabaseType<URI>
     }
 
     @Override
-    public URI defaultParseValue(String value)
+    protected URI parseValueInternal(String value)
     {
         if (StringUtils.isBlank(value))
         {

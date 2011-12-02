@@ -20,6 +20,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
@@ -27,16 +29,16 @@ import net.java.ao.util.StringUtils;
 /**
  * @author Daniel Spiewak
  */
-public class BooleanType extends DatabaseType<Boolean>
+public class BooleanType extends AbstractNumericType<Boolean>
 {
-    public BooleanType(String sqlTypeIdentifier)
+    public BooleanType(NumericTypeProperties properties)
     {
-        super(Types.BOOLEAN, 1, sqlTypeIdentifier, boolean.class, Boolean.class);
+        super(Types.BOOLEAN, properties, boolean.class, Boolean.class);
     }
 
     public BooleanType()
     {
-        this("BOOLEAN");
+        this(numericType("BOOLEAN"));
     }
     
     @Override

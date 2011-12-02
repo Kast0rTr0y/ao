@@ -35,7 +35,7 @@ public class EntityType<T> extends DatabaseType<RawEntity<T>> {
 
     public EntityType(TypeManager typeManager, Class<? extends RawEntity<T>> type)
     {
-		super(Types.INTEGER, -1, null, RawEntity.class);
+		super(Types.INTEGER, null, RawEntity.class);
         this.typeManager = checkNotNull(typeManager);
         this.primaryKeyType = Common.getPrimaryKeyType(typeManager, type);
 	}

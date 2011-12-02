@@ -21,19 +21,21 @@ import java.sql.Types;
 
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 /**
  * @author Daniel Spiewak
  */
-public class FloatType extends DatabaseType<Float> {
-	
-	public FloatType(String sqlTypeIdentifier)
-	{
-		super(Types.FLOAT, -1, sqlTypeIdentifier, float.class, Float.class);
-	}
-	
+public class FloatType extends AbstractNumericType<Float>
+{
+    public FloatType(NumericTypeProperties properties)
+    {
+        super(Types.FLOAT, properties, float.class, Float.class);
+    }
+    
 	public FloatType()
 	{
-	    this("FLOAT");
+        this(numericType("FLOAT"));
 	}
 	
 	@Override

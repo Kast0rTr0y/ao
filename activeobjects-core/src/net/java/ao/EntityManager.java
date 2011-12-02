@@ -465,6 +465,7 @@ public class EntityManager
         {
             connection = provider.getConnection();
 			back = peer(type, provider.insertReturningKey(this, connection,
+                    type,
 					Common.getPrimaryKeyClassType(type),
 					Common.getPrimaryKeyField(type, getFieldNameConverter()),
 					pkMethod.getAnnotation(AutoIncrement.class) != null, table, listParams.toArray(new DBParam[listParams.size()])));

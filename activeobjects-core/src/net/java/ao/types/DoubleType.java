@@ -21,19 +21,21 @@ import java.sql.Types;
 
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 /**
  * @author Daniel Spiewak
  */
-public class DoubleType extends DatabaseType<Double> {
-
-	public DoubleType(String sqlTypeIdentifier)
-	{
-		super(Types.DOUBLE, -1, sqlTypeIdentifier, double.class, Double.class);
-	}
+public class DoubleType extends AbstractNumericType<Double>
+{
+    public DoubleType(NumericTypeProperties properties)
+    {
+        super(Types.DOUBLE, properties, double.class, Double.class);
+    }
 	
 	public DoubleType()
 	{
-	    this("DOUBLE");
+	    this(numericType("DOUBLE"));
 	}
 	
 	@Override

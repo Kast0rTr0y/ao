@@ -23,26 +23,27 @@ import java.util.NoSuchElementException;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
 import static net.java.ao.util.EnumUtils.values;
 
 /**
  * @author Daniel Spiewak
  */
-public class EnumType extends DatabaseType<Enum<?>>
+public class EnumType extends AbstractNumericType<Enum<?>>
 {
-
-    public EnumType(String sqlTypeIdentifier)
+    public EnumType(NumericTypeProperties properties)
     {
-        super(Types.INTEGER, 4, sqlTypeIdentifier, Enum.class);
+        super(Types.INTEGER, properties, Enum.class);
     }
-
+    
     public EnumType()
     {
-        this("INTEGER");
+        this(numericType("INTEGER"));
     }
     
     @Override

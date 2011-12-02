@@ -56,28 +56,6 @@ public class DDLField {
 		this.type = type;
 	}
 
-	public int getPrecision() {
-		if (precision <= 0) {
-			if (type != null && type.getDefaultPrecision() > 0) {
-				return type.getDefaultPrecision();
-			}
-		}
-		
-		return precision;
-	}
-
-	public void setPrecision(int precision) {
-		this.precision = precision;
-	}
-
-	public int getScale() {
-		return scale;
-	}
-
-	public void setScale(int scale) {
-		this.scale = scale;
-	}
-
 	public boolean isPrimaryKey() {
 		return primaryKey;
 	}
@@ -128,7 +106,7 @@ public class DDLField {
 	
 	@Override
 	public String toString() {
-		return getName() + "(" + getPrecision() + "," + getScale() + ")";
+		return getName();
 	}
 	
 	@Override

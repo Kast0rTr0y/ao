@@ -29,7 +29,7 @@ import net.java.ao.EntityManager;
 public class GenericType extends DatabaseType<Object> {
 
 	public GenericType(int type) {
-		super(type, -1, null);
+		super(type, null);
 	}
 	
 	@Override

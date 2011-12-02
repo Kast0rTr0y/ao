@@ -22,19 +22,21 @@ import java.sql.Types;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 /**
  * @author Daniel Spiewak
  */
-public class IntegerType extends DatabaseType<Integer>
+public class IntegerType extends AbstractNumericType<Integer>
 {
-    public IntegerType(String sqlTypeIdentifier)
+    public IntegerType(NumericTypeProperties properties)
     {
-        super(Types.INTEGER, -1, sqlTypeIdentifier, int.class, Integer.class);
+        super(Types.INTEGER, properties, int.class, Integer.class);
     }
-    
+
     public IntegerType()
     {
-        this("INTEGER");
+        this(numericType("INTEGER"));
     }
 
     @Override

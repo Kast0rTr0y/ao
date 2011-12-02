@@ -133,9 +133,7 @@ public final class SchemaReader
                 field.setDefaultValue(from.getDefaultValue());
                 field.setName(from.getName());
                 field.setNotNull(from.isNotNull());
-                field.setPrecision(from.getPrecision());
                 field.setPrimaryKey(from.isPrimaryKey());
-                field.setScale(from.getScale());
                 field.setType(from.getDatabaseType());
                 field.setUnique(from.isUnique());
                 return field;

@@ -31,12 +31,14 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.java.ao.types.BooleanType;
+import net.java.ao.types.DoubleType;
 
-import net.java.ao.types.TypeManager;
+import net.java.ao.types.BigIntType;
 
-import net.java.ao.DisposableDataSource;
+import net.java.ao.types.IntegerType;
+
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
@@ -45,7 +47,10 @@ import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.BooleanType;
+import net.java.ao.types.TypeManager;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
 
 /**
  * @author Daniel Spiewak
@@ -88,7 +93,8 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, null,
               new TypeManager.Builder()
-                .addMapping(new BooleanType("SMALLINT"))
+                .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
+                .addMapping(new BooleanType(numericType("SMALLINT").withPrecision(1).ignorePrecision(false)))
                 .build());
     }
 
@@ -223,54 +229,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 		}
 		
 		return super.getTriggerNameForField(triggerNameConverter, table, field);
-	}
-	
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		boolean considerPrecision = true;
-		switch (field.getType().getType()) {
-			case Types.BIGINT:
-				considerPrecision = false;
-			break;
-			
-			case Types.DATE:
-				considerPrecision = false;
-			break;
-			
-			case Types.DOUBLE:
-				considerPrecision = false;
-			break;
-			
-			case Types.INTEGER:
-				considerPrecision = false;
-			break;
-			
-			case Types.REAL:
-				considerPrecision = false;
-			break;
-			
-			case Types.SMALLINT:
-				considerPrecision = false;
-			break;
-			
-			case Types.TIME:
-				considerPrecision = false;
-			break;
-			
-			case Types.TIMESTAMP:
-				considerPrecision = false;
-			break;
-			
-			case Types.TINYINT:
-				considerPrecision = false;
-			break;
-			
-			case Types.BIT:
-				considerPrecision = false;
-			break;
-		}
-		
-		return considerPrecision;
 	}
 	
 	@Override

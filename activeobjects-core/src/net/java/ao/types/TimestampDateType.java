@@ -38,7 +38,7 @@ public class TimestampDateType extends DatabaseType<Date>
     
     public TimestampDateType(String sqlTypeIdentifier)
     {
-            super(Types.TIMESTAMP, -1, sqlTypeIdentifier, Date.class);
+            super(Types.TIMESTAMP, sqlTypeIdentifier, Date.class);
             
             dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     }

@@ -28,7 +28,6 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.TypeManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.Types;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -278,9 +276,7 @@ public final class DatabaseProviderTest
     {
         DDLField f  = new DDLField();
         f.setName("height");
-        f.setType(db.getTypeManager().getType(double.class));
-        f.setPrecision(32);
-        f.setScale(6);
+        f.setType(db.getTypeManager().getType(double.class).withPrecision(32).withScale(6));
         f.setDefaultValue(62.3);
         return f;
     }
@@ -298,8 +294,7 @@ public final class DatabaseProviderTest
     {
         DDLField f = new DDLField();
         f.setName("age");
-        f.setType(db.getTypeManager().getType(int.class));
-        f.setPrecision(12);
+        f.setType(db.getTypeManager().getType(int.class).withPrecision(12));
         return f;
     }
 

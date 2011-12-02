@@ -27,6 +27,18 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
+import net.java.ao.types.FloatType;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
+import net.java.ao.types.NumericTypeProperties;
+
+import net.java.ao.RawEntity;
+
 import net.java.ao.types.BlobType;
 
 import net.java.ao.types.ClobType;
@@ -147,38 +159,14 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, schema,
               new TypeManager.Builder()
-                .addMapping(new BooleanType("BIT"))
-                .addMapping(new DoubleType("DECIMAL"))
+                .addMapping(new BooleanType(numericType("BIT").ignorePrecision(true)))
+                .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
+                .addMapping(new FloatType(numericType("REAL").ignorePrecision(true)))
                 .addMapping(new TimestampDateType("DATETIME"))
+                .addMapping(new VarcharType(stringType("VARCHAR", "NTEXT")))
                 .addMapping(new ClobType("NTEXT"))
                 .addMapping(new BlobType("IMAGE"))
                 .build());
-    }
-
-    @Override
-    protected String convertTypeToString(DatabaseType<?> type) {
-        switch (type.getType()) {
-            case Types.BOOLEAN:
-                return "BIT";
-
-            case Types.DOUBLE:
-                return "DECIMAL";
-
-            case Types.TIMESTAMP:
-                return "DATETIME";
-
-            case Types.DATE:
-                return "SMALLDATETIME";
-
-            case Types.CLOB:
-            case Types.LONGVARCHAR:
-                return "NTEXT";
-
-            case Types.BLOB:
-                return "IMAGE";
-        }
-
-        return super.convertTypeToString(type);
     }
 
 	@Override
@@ -386,42 +374,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		return "";
 	}
 
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		switch (field.getType().getType()) {
-			case Types.INTEGER:
-			case Types.BOOLEAN:
-				return false;
-		}
-
-		return super.considerPrecision(field);
-	}
-
     @Override
     protected String renderFieldDefault(DDLTable table, DDLField field)
     {
         return new StringBuilder().append(" CONSTRAINT ").append(defaultConstraintName(table, field)).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
-    }
-
-    @Override
-    protected String renderFieldPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                if (field.getPrecision() <= 0)
-                {
-                    field.setPrecision(32);
-                }
-                if (field.getScale() <= 0)
-                {
-                    field.setScale(16);
-                }
-        }
-        return super.renderFieldPrecision(field);
     }
 
     @Override
@@ -521,8 +477,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	@SuppressWarnings("unused")
-	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-			boolean pkIdentity, String table, DBParam... params) throws SQLException {
+    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+            Class<T> entityType, Class<K> pkType,
+            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
+    {
 		boolean identityInsert = false;
 		StringBuilder sql = new StringBuilder();
 
@@ -562,7 +520,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			sql.append("\nSET IDENTITY_INSERT ").append(processID(table)).append(" OFF");
 		}
 
-		T back = executeInsertReturningKey(manager, conn, pkType, pkField, sql.toString(), params);
+		K back = executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
 
 		return back;
 	}

@@ -20,26 +20,27 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
 
+import static net.java.ao.types.StringTypeProperties.stringType;
+
 /**
  * @author Daniel Spiewak
  */
-public class URLType extends DatabaseType<URL>
+public class URLType extends AbstractStringType<URL>
 {
-    public URLType(String sqlTypeIdentifier)
+    public URLType(StringTypeProperties properties)
     {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, sqlTypeIdentifier, URL.class);
+        super(properties, URL.class);
     }
 
     public URLType()
     {
-        this("VARCHAR");
+        this(stringType("VARCHAR", "CLOB").withLength(MAX_PRECISION));
     }
 
     @Override
@@ -78,7 +79,7 @@ public class URLType extends DatabaseType<URL>
     }
 
     @Override
-    public URL defaultParseValue(String value)
+    protected URL parseValueInternal(String value)
     {
         if (StringUtils.isBlank(value))
         {

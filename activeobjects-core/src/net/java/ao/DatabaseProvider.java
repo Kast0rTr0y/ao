@@ -1513,7 +1513,6 @@ public abstract class DatabaseProvider
         back.append(processID(field.getName()));
         back.append(" ");
         back.append(renderFieldType(field));
-        back.append(renderFieldPrecision(field));
 
         if (field.isAutoIncrement())
         {
@@ -1554,47 +1553,6 @@ public abstract class DatabaseProvider
     protected String renderFieldDefault(DDLTable table, DDLField field)
     {
         return new StringBuilder().append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
-    }
-
-    /**
-     * <p>Renders the statement fragment for the given field representative of
-     * its precision only.  Consider the following statement:</p>
-     * <p/>
-     * <code>ALTER TABLE ADD COLUMN name VARCHAR(255)</code>
-     * <p/>
-     * <p>In this statement, the bit which is rendered by this method is the
-     * "<code>(255)</code>" (without quotes).  This is intended to allow
-     * maximum flexibility in field type rendering (as required by PostgreSQL
-     * and others which sometimes render types separately from the rest of
-     * the field info).  The default implementation should suffice for every
-     * conceivable database.  Any sort of odd functionality relating to
-     * type precision rendering should be handled in the {@link #considerPrecision(DDLField)}
-     * method if possible.</p>
-     *
-     * @param field The field for which the precision must be rendered.
-     * @return A DDL fragment which will be concatenated into a statement later.
-     */
-    protected String renderFieldPrecision(DDLField field)
-    {
-        StringBuilder back = new StringBuilder();
-
-        if (considerPrecision(field) && field.getPrecision() > 0)
-        {
-            back.append('(');
-            if (field.getScale() > 0)
-            {
-                back.append(field.getPrecision());
-                back.append(',');
-                back.append(field.getScale());
-            }
-            else
-            {
-                back.append(field.getPrecision());
-            }
-            back.append(')');
-        }
-
-        return back.toString();
     }
 
     /**
@@ -1776,30 +1734,6 @@ public abstract class DatabaseProvider
     }
 
     /**
-     * <p>Determines whether or not the database allows explicit precisions
-     * for the field in question.  This is to support databases such as
-     * Derby which do not support precisions for certain types.  By
-     * default, this method returns <code>true</code>.</p>
-     * <p/>
-     * <p>More often than not, all that is required for this determination
-     * is the type.  As such, the method signature may change in a future
-     * release.</p>
-     *
-     * @param field The field for which precision should/shouldn't be rendered.
-     * @return <code>true</code> if precision should be rendered, otherwise
-     *         <code>false</code>.
-     */
-    protected boolean considerPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.TIMESTAMP:
-                return false;
-        }
-        return true;
-    }
-
-    /**
      * Retrieves the name of the trigger which corresponds to the field
      * in question (if any).  If no trigger will be automatically created
      * for the specified field, <code>null</code> should be returned.
@@ -1927,6 +1861,7 @@ public abstract class DatabaseProvider
      * the INSERT in question.
      * @param conn The connection to be used in the eventual execution of the
      * generated SQL statement.
+     * @param entityType The Java class of the entity.
      * @param pkType The Java type of the primary key value.  Can be used to
      * perform a linear search for a specified primary key value in the
      * <code>params</code> list.  The return value of the method must be of
@@ -1945,7 +1880,8 @@ public abstract class DatabaseProvider
      * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)
      */
     @SuppressWarnings("unused")
-    public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
+    public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+                                    Class<T> entityType, Class<K> pkType,
                                     String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
     {
         final StringBuilder sql = new StringBuilder("INSERT INTO " + withSchema(table) + " (");
@@ -1981,7 +1917,7 @@ public abstract class DatabaseProvider
 
         sql.append(")");
 
-        return executeInsertReturningKey(manager, conn, pkType, pkField, sql.toString(), params);
+        return executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
     }
 
     /**
@@ -2028,6 +1964,7 @@ public abstract class DatabaseProvider
      * @param manager The <code>EntityManager</code> which was used to dispatch
      * the INSERT in question.
      * @param conn The database connection to use in executing the INSERT statement.
+     * @param entityType The Java class of the entity.
      * @param pkType The Java class type of the primary key field (for use both in
      * searching the <code>params</code> as well as performing value conversion
      * of auto-generated DB values into proper Java instances).
@@ -2040,10 +1977,11 @@ public abstract class DatabaseProvider
      * if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
-    protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                              Class<T> entityType, Class<K> pkType,
                                               String pkField, String sql, DBParam... params) throws SQLException
     {
-        T back = null;
+        K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -2058,7 +1996,7 @@ public abstract class DatabaseProvider
 
             if (params[i].getField().equalsIgnoreCase(pkField))
             {
-                back = (T) value;
+                back = (K) value;
             }
 
             if (value == null)

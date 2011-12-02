@@ -34,6 +34,16 @@ import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
+import net.java.ao.types.StringTypeProperties;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
+import net.java.ao.types.NumericTypeProperties;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
@@ -153,12 +163,14 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     {
         super(dataSource, schema,
               new TypeManager.Builder()
-                .addMapping(new BigIntType("NUMBER"))
-                .addMapping(new BooleanType("NUMBER"))
-                .addMapping(new IntegerType("NUMBER"))
-                .addMapping(new FloatType("NUMBER"))
-                .addMapping(new DoubleType("NUMBER"))
-                .addMapping(new ClobType("CLOB")).build());
+                .addMapping(new BigIntType(numericType("NUMBER").withPrecision(20)))
+                .addMapping(new BooleanType(numericType("NUMBER").withPrecision(1)))
+                .addMapping(new IntegerType(numericType("NUMBER").withPrecision(11)))
+                .addMapping(new FloatType(numericType("NUMBER").withPrecision(32).withScale(16)))
+                .addMapping(new DoubleType(numericType("NUMBER").withPrecision(32).withScale(16)))
+                .addMapping(new VarcharType(stringType("VARCHAR", "CLOB")))
+                .addMapping(new ClobType("CLOB"))
+                .build());
     }
 
     @Override
@@ -214,39 +226,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         final DatabaseMetaData metaData = connection.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return metaData.getImportedKeys(null, schemaPattern, tableName);
-    }
-
-    @Override
-    protected String renderFieldPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.BIGINT:
-                field.setPrecision(20);
-                field.setScale(-1);
-                break;
-            case Types.INTEGER:
-            case Types.NUMERIC:
-            case Types.SMALLINT:
-                field.setPrecision(11);
-                field.setScale(-1);
-                break;
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                if (field.getPrecision() <= 0)
-                {
-                    field.setPrecision(32);
-                }
-                if (field.getScale() <= 0)
-                {
-                    field.setScale(16);
-                }
-                break;
-
-        }
-        return super.renderFieldPrecision(field);
     }
 
     @Override
@@ -463,7 +442,9 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                                                      Class<T> entityType, Class<K> pkType,
+                                                                      String pkField, String sql, DBParam... params) throws SQLException
     {
         PreparedStatement stmt = null;
         ResultSet res = null;
@@ -471,7 +452,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         {
             onSql(sql);
             stmt = conn.prepareStatement(sql, new String[]{pkField});
-            T back = (T) setParameters(manager, stmt, params, pkField);
+            K back = (K) setParameters(manager, stmt, params, pkField);
 
             stmt.executeUpdate();
 

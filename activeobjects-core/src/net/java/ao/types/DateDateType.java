@@ -34,7 +34,7 @@ public class DateDateType extends DatabaseType<Date>
 {
 	public DateDateType(String sqlTypeIdentifier)
 	{
-		super(Types.DATE, -1, sqlTypeIdentifier, Date.class);
+		super(Types.DATE, sqlTypeIdentifier, Date.class);
 	}
 
 	public DateDateType()
