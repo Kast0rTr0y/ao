@@ -34,15 +34,11 @@ import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 
+import net.java.ao.types.TimestampDateType;
 import net.java.ao.types.VarcharType;
 
 import static net.java.ao.types.StringTypeProperties.stringType;
-
-import net.java.ao.types.StringTypeProperties;
-
 import static net.java.ao.types.NumericTypeProperties.numericType;
-
-import net.java.ao.types.NumericTypeProperties;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
@@ -167,6 +163,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
                 .addMapping(new IntegerType(numericType("NUMBER").withPrecision(11)))
                 .addMapping(new FloatType(numericType("NUMBER").withPrecision(32).withScale(16)))
                 .addMapping(new DoubleType(numericType("NUMBER").withPrecision(32).withScale(16)))
+                .addMapping(new TimestampDateType("TIMESTAMP"))
                 .addMapping(new VarcharType(stringType("VARCHAR", "CLOB")))
                 .addMapping(new ClobType("CLOB"))
                 .build());
