@@ -36,7 +36,7 @@ import static net.java.ao.util.DateUtils.*;
  */
 public final class TimestampDateType extends DatabaseType<Date>
 {
-    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     public TimestampDateType(String sqlTypeIdentifier)
     {

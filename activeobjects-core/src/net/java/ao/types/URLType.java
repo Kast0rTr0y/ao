@@ -48,6 +48,12 @@ public class URLType extends AbstractStringType<URL>
     {
         return false;
     }
+
+    @Override
+    public boolean isAllowedAsPrimaryKey()
+    {
+        return true;
+    }
     
     @Override
     public Object validate(Object o)

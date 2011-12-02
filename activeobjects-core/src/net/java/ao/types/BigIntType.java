@@ -38,7 +38,13 @@ public class BigIntType extends AbstractNumericType<Long>
     {
         this(numericType("BIGINT"));
     }
-    
+
+    @Override
+    public boolean isAllowedAsPrimaryKey()
+    {
+        return true;
+    }
+
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, int index) throws SQLException
     {

@@ -40,6 +40,12 @@ public class IntegerType extends AbstractNumericType<Integer>
     }
 
     @Override
+    public boolean isAllowedAsPrimaryKey()
+    {
+        return true;
+    }
+
+    @Override
     public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Integer> type, int index) throws SQLException
     {
         return res.getInt(index); // for oracle

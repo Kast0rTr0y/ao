@@ -16,6 +16,7 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.EntityUtils;
 import net.java.ao.util.DateUtils;
 
 import static org.junit.Assert.*;
@@ -35,9 +36,9 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test simple creation
+     * Test PK throws
      */
-    @Test
+    @Test(expected = ActiveObjectsException.class)
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -70,19 +71,34 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test different values for an Date column (ID column in this case)
+     * Test different values for an Date column
      */
     @Test
     public void testSpecialIds() throws Exception
     {
-        entityManager.migrate(SimpleId.class);
+        entityManager.migrate(SimpleColumn.class);
 
         // create a row with normal id
         for (Date value : new Date[] {new Date(0), new Date(), DateUtils.MAX_DATE })
         {
-            SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", value));
-            assertEquals(value, e.getId());
-            checkFieldValue(SimpleId.class, e.getId(), "getId", value);
+            SimpleColumn e = entityManager.create(SimpleColumn.class);
+            e.setCreated(value);
+            e.save();
+
+            entityManager.flushAll();
+
+            Calendar expected = Calendar.getInstance();
+            expected.setTime(value);
+
+            Calendar actual = Calendar.getInstance();
+            actual.setTime(e.getCreated());
+
+            expected.set(Calendar.MILLISECOND, 0);
+            actual.set(Calendar.MILLISECOND, 0);
+
+            assertEquals(expected.getTime(),actual.getTime());
+
+            checkFieldValue(SimpleId.class, e.getID(), "getCreated", value);
         }
     }
 
@@ -140,7 +156,6 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Valid default value
      */
     @Test
-    @Ignore("What should we do here?")
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -149,6 +164,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         DefaultColumn e = entityManager.create(DefaultColumn.class);
 
         entityManager.flushAll();
+
         Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2011-11-11 12:34:56");
 
         Calendar expected = Calendar.getInstance();
@@ -238,10 +254,37 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     @Test
     public void testDelete() throws Exception
     {
-        entityManager.migrate(SimpleId.class);
+        entityManager.migrate(SimpleColumn.class);
 
-        SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", new Date()));
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class);
+        assertNull(e.getCreated());
+
+        // set
+        Date date = new Date();
+        e.setCreated(date);
+        e.save();
+
+        entityManager.flushAll();
+        checkFieldValue(SimpleColumn.class, e.getID(), "getCreated", date);
+
         entityManager.delete(e);
+        entityManager.flushAll();
+
+        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleColumn.class), new DbUtils.StatementCallback()
+        {
+
+            @Override
+            public void setParameters(PreparedStatement statement) throws Exception
+            {
+            }
+
+            @Override
+            public void processResult(ResultSet resultSet) throws Exception
+            {
+                assertFalse("table should have been empty", resultSet.next());
+            }
+        });
     }
 
     private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, final Object id, final String getterName, final Date fieldValue) throws Exception
@@ -296,7 +339,6 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     public static interface SimpleId extends RawEntity<Date>
     {
         @PrimaryKey("ID")
-        /* Not required as falls back to timestamp by default @SQLType(Types.TIMESTAMP) */
         public Date getId();
     }
 

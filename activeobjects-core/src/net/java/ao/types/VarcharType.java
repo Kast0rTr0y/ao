@@ -17,6 +17,7 @@ package net.java.ao.types;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
@@ -29,6 +30,7 @@ import static net.java.ao.types.StringTypeProperties.stringType;
  */
 public class VarcharType extends AbstractStringType<String>
 {
+
     public VarcharType(StringTypeProperties properties)
     {
         super(properties, String.class);
@@ -37,6 +39,12 @@ public class VarcharType extends AbstractStringType<String>
     public VarcharType()
     {
         this(stringType("VARCHAR", "CLOB"));
+    }
+
+    @Override
+    public boolean isAllowedAsPrimaryKey()
+    {
+        return (getType() != Types.CLOB);
     }
 
     @Override

@@ -1,9 +1,6 @@
 package net.java.ao.it.datatypes;
 
-import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.DBParam;
-import net.java.ao.Entity;
-import net.java.ao.RawEntity;
+import net.java.ao.*;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
@@ -32,9 +29,9 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test that a normal PK works
+     * Test that a normal PK throws.
      */
-    @Test
+    @Test(expected = ActiveObjectsException.class)
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -63,14 +60,18 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
     @Test
     public void testPossibleValues() throws Exception
     {
-        entityManager.migrate(SimpleId.class);
+        entityManager.migrate(SimpleColumn.class);
 
         // create a row with normal id
         for (Boolean data : new Boolean[] {Boolean.TRUE, Boolean.FALSE })
         {
-            SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", data));
-            assertEquals(data, e.getId());
-            checkFieldData(SimpleId.class, "getId", e.getId(), "getId", data);
+            SimpleColumn e = entityManager.create(SimpleColumn.class);
+            e.setData(data);
+            e.save();
+            entityManager.flushAll();
+
+            assertEquals(data, e.getData());
+            checkFieldData(SimpleColumn.class, "getID", e.getID(), "getData", data);
         }
     }
 
@@ -96,22 +97,25 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test that delete with a boolean PK works
+     * Test that delete works
      */
     @Test
     public void testDelete() throws Exception
     {
-        entityManager.migrate(SimpleId.class);
+        entityManager.migrate(SimpleColumn.class);
 
         // create a record and assure it's in the DB
-        SimpleId newRecord = entityManager.create(SimpleId.class, new DBParam("ID", Boolean.TRUE));
+        SimpleColumn newRecord = entityManager.create(SimpleColumn.class);
+        newRecord.setData(Boolean.TRUE);
+        newRecord.save();
         entityManager.flushAll();
-        checkFieldData(SimpleId.class, "getId", Boolean.TRUE, "getId", Boolean.TRUE);
+
+        checkFieldData(SimpleColumn.class, "getID", newRecord.getID(), "getData", Boolean.TRUE);
 
         entityManager.delete(newRecord);
         entityManager.flushAll();
 
-        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleId.class), new DbUtils.StatementCallback()
+        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleColumn.class), new DbUtils.StatementCallback()
         {
 
             @Override

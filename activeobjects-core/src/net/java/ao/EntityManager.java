@@ -384,7 +384,6 @@ public class EntityManager
 	 * 	values will be passed to the database within the INSERT statement.
 	 * @return	The new entity instance corresponding to the INSERTed row.
 	 * @see net.java.ao.DBParam
-	 * @see net.java.ao.DatabaseProvider#insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
@@ -428,14 +427,7 @@ public class EntityManager
         {
             if (param.getField().equals(pkField))
             {
-                if (param.getValue() instanceof String && StringUtils.isBlank((String) param.getValue()))
-                {
-                    throw new ActiveObjectsException("Cannot set primary key to blank String '" + param.getValue() + "'");
-                }
-                else if (param.getValue() == null)
-                {
-                    throw new IllegalArgumentException("Cannot set primary key to NULL");
-                }
+                Common.validatePrimaryKey(provider.getTypeManager(),type,param.getValue());
             }
             else if (nonNullFields.contains(param.getField()) && param.getValue() == null)
             {

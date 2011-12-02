@@ -47,6 +47,7 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
+import net.java.ao.util.StringUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Iterables.*;
@@ -361,6 +362,29 @@ public final class Common {
 			return null;
 		}
 	}
+    
+    public static <K> void validatePrimaryKey(TypeManager typeManager, Class<? extends RawEntity<K>> type, Object value)
+    {
+        if(null == value)
+        {
+            throw new IllegalArgumentException("Cannot set primary key to NULL");
+        }
+
+        DatabaseType<K> dbType = getPrimaryKeyType(typeManager,type);
+        Class<K> javaTypeClass = getPrimaryKeyClassType(type);
+
+        if(!dbType.isAllowedAsPrimaryKey())
+        {
+            throw new ActiveObjectsException(javaTypeClass.getName() + " cannot be used as a primary key!");
+        }
+
+        dbType.validate(value);
+
+        if((value instanceof String) && StringUtils.isBlank((String)value))
+        {
+            throw new ActiveObjectsException("Cannot set primary key to blank String");
+        }
+    }
 
 	public static boolean fuzzyCompare(TypeManager typeManager, Object a, Object b) {
 		if (a == null && b == null) {

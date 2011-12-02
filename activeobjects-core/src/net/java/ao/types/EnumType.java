@@ -53,6 +53,12 @@ public class EnumType extends AbstractNumericType<Enum<?>>
     }
 
     @Override
+    public boolean isAllowedAsPrimaryKey()
+    {
+        return true;
+    }
+
+    @Override
     public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Enum<?>> type, String field) throws SQLException
     {
         final int dbValue = res.getInt(field);

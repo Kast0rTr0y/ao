@@ -70,6 +70,15 @@ public abstract class DatabaseType<T> {
     public boolean isDefaultForSqlType() {
         return true;
     }
+
+    /**
+     * Returns a boolean specifying if this type can be used as a primary key value.
+     * Subclasses should override if they are valid primary key types;
+     * @return  if it's allowed or not
+     */
+    public boolean isAllowedAsPrimaryKey() {
+        return false;
+    }
     
 	public Class<?>[] getHandledTypes() {
 	    return handledTypes;

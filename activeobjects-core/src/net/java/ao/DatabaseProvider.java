@@ -1532,7 +1532,7 @@ public abstract class DatabaseProvider
      * @param value The Java instance to be rendered as a database literal.
      * @return The database-specific String rendering of the instance in
      *         question.
-     * @see #renderCalendar(Calendar)
+     * @see #renderDate(Date)
      */
     protected String renderValue(Object value)
     {
@@ -1540,9 +1540,9 @@ public abstract class DatabaseProvider
         {
             return "NULL";
         }
-        else if (value instanceof Calendar)
+        else if (value instanceof Date)
         {
-            return "'" + renderCalendar((Calendar) value) + "'";
+            return "'" + renderDate((Date) value) + "'";
         }
         else if (value instanceof Boolean)
         {
@@ -1557,19 +1557,19 @@ public abstract class DatabaseProvider
     }
 
     /**
-     * Renders the provided {@link Calendar} instance as a TIMESTAMP literal
+     * Renders the provided {@link Date} instance as a DATETIME literal
      * in the database-specific format.  The return value should <i>not</i>
      * be enclosed within quotes, as this is accomplished within other
      * functions when rendering is required.  This method is actually a
      * boiler-plate usage of the {@link SimpleDateFormat} class, using the
      * date format defined within the {@link #getDateFormat()} method.
      *
-     * @param calendar The time instance to be rendered.
+     * @param date The time instance to be rendered.
      * @return The database-specific String representation of the time.
      */
-    protected String renderCalendar(Calendar calendar)
+    protected String renderDate(Date date)
     {
-        return new SimpleDateFormat(getDateFormat()).format(calendar.getTime());
+        return new SimpleDateFormat(getDateFormat()).format(date);
     }
 
     /**
