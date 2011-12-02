@@ -20,56 +20,72 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
+
+import static net.java.ao.util.DateUtils.*;
 
 /**
  * Type mapping between Java Date and JDBC timestamp.  The underlying SQL type name defaults to "DATETIME",
  * but may be overridden by some database providers.
  * @author Daniel Spiewak
  */
-public class TimestampDateType extends DatabaseType<Date>
+public final class TimestampDateType extends DatabaseType<Date>
 {
-    private DateFormat dateFormat;
-    
+    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     public TimestampDateType(String sqlTypeIdentifier)
     {
             super(Types.TIMESTAMP, sqlTypeIdentifier, Date.class);
-            
-            dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     }
 
     public TimestampDateType()
     {
         this("DATETIME");
     }
-    
+
     @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Date value) throws SQLException {
-            stmt.setTimestamp(index, new Timestamp(value.getTime()));
-    }
-    
-    @Override
-    public Date pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Date> type, String field) throws SQLException {
-            return res.getTimestamp(field);
+    public Object validate(Object o)
+    {
+        if (!(o instanceof Date))
+        {
+            throw new ActiveObjectsException(o + " is not of type " + Date.class.getName());
+        }
+        return checkAgainstMaxDate((Date) o);
     }
 
     @Override
-    public Date defaultParseValue(String value) {
-            try {
-                    return dateFormat.parse(value);
-            } catch (ParseException e) {
-            }
-            
-            return new Date();
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Date value) throws SQLException
+    {
+        stmt.setTimestamp(index, new Timestamp(value.getTime()));
     }
-    
+
     @Override
-    public String valueToString(Object value) {
-            return dateFormat.format((Date) value);
+    public Date pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Date> type, String field) throws SQLException
+    {
+        return res.getTimestamp(field);
+    }
+
+    @Override
+    public Date defaultParseValue(String value)
+    {
+        try
+        {
+            return checkAgainstMaxDate(newDateFormat(DATE_FORMAT).parse(value));
+        }
+        catch (ParseException e)
+        {
+            throw new ActiveObjectsConfigurationException("Could not parse '" + value + "' as a valid date following " + DATE_FORMAT);
+        }
+    }
+
+    @Override
+    public String valueToString(Object value)
+    {
+        return newDateFormat(DATE_FORMAT).format((Date) value);
     }
 }

@@ -23,8 +23,7 @@ import static org.junit.Assert.*;
 /**
  * Tests for Date data type (mapped to the Date class)
  */
-@Ignore
-public class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
+public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 {
     /**
      * Test AutoIncrement - not supported
@@ -38,7 +37,6 @@ public class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Test simple creation
      */
-    @Ignore //ignoring until we kill off dates in ID fields
     @Test
     public void testSimpleId() throws Exception
     {
@@ -55,7 +53,6 @@ public class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Null not a valid id value
      */
-    @Ignore //ignoring until we kill off dates in ID fields
     @Test(expected = IllegalArgumentException.class)
     public void testNullId() throws Exception
     {
@@ -75,7 +72,6 @@ public class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Test different values for an Date column (ID column in this case)
      */
-    @Ignore //ignoring until we kill off dates in ID fields
     @Test
     public void testSpecialIds() throws Exception
     {
@@ -144,6 +140,7 @@ public class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Valid default value
      */
     @Test
+    @Ignore("What should we do here?")
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
