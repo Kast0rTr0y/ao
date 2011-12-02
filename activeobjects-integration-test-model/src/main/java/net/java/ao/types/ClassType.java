@@ -34,7 +34,7 @@ public class ClassType extends AbstractStringType<Class<?>>
 	}
 
 	@Override
-	public Object defaultParseValue(String value) {
+	protected Class<?> parseValueInternal(String value) {
 		try {
 			return Class.forName(value);
 		} catch (Throwable t) {

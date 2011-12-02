@@ -28,7 +28,7 @@ import java.util.Date;
 import net.java.ao.EntityManager;
 
 /**
- * Type mapping between Java Date and JDBC timestamp.  The underlying SQL type name defaults to "TIMESTAMP",
+ * Type mapping between Java Date and JDBC timestamp.  The underlying SQL type name defaults to "DATETIME",
  * but may be overridden by some database providers.
  * @author Daniel Spiewak
  */
@@ -45,7 +45,7 @@ public class TimestampDateType extends DatabaseType<Date>
 
     public TimestampDateType()
     {
-        this("TIMESTAMP");
+        this("DATETIME");
     }
     
     @Override

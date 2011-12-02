@@ -35,7 +35,6 @@ import java.lang.annotation.Target;
  * primary keys, rather than an application-layer ON UPDATE.</p>
  * 
  * @author Daniel Spiewak
- * @see net.java.ao.schema.OnUpdate
  * @see net.java.ao.ValueGenerator
  */
 @Retention(RetentionPolicy.RUNTIME)

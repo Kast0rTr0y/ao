@@ -46,7 +46,6 @@ import net.java.ao.types.NumericTypeProperties;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
@@ -258,24 +257,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-	@Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_TIMESTAMP:
-				return "SYSDATE";
-
-			case CURRENT_DATE:
-				return "SYSDATE";
-		}
-
-		return super.renderFunction(func);
-	}
-
-    @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
@@ -290,17 +271,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter,
                                            SequenceNameConverter sequenceNameConverter,
                                            DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			StringBuilder back = new StringBuilder();
-			String value = renderValue(field.getOnUpdate());
-
-			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
-			back.append("BEFORE UPDATE\n").append("    ON ").append(withSchema(table.getName())).append("\n    FOR EACH ROW\n");
-			back.append("BEGIN\n");
-			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
-
-			return back.toString();
-		} else if (field.isAutoIncrement()) {
+		if (field.isAutoIncrement()) {
 			StringBuilder back = new StringBuilder();
 
 	        back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())) +  '\n');

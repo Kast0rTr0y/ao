@@ -53,7 +53,6 @@ import net.java.ao.types.BooleanType;
 
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
@@ -369,60 +368,11 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		return "IDENTITY(1,1)";
 	}
 
-	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
     @Override
     protected String renderFieldDefault(DDLTable table, DDLField field)
     {
         return new StringBuilder().append(" CONSTRAINT ").append(defaultConstraintName(table, field)).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
     }
-
-    @Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_DATE:
-				return "GetDate()";
-
-			case CURRENT_TIMESTAMP:
-				return "GetDate()";
-		}
-
-		return super.renderFunction(func);
-	}
-
-	@Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-			DDLField pkField = null;
-			for (DDLField f : table.getFields()) {
-				if (f.isPrimaryKey()) {
-					pkField = f;
-					break;
-				}
-			}
-
-			if (pkField == null) {
-				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
-			}
-
-			back.append("CREATE TRIGGER ").append(processID(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + "\n");
-			back.append("ON ").append(withSchema(table.getName())).append("\n");
-			back.append("FOR UPDATE\nAS\n");
-			back.append("    UPDATE ").append(withSchema(table.getName())).append(" SET ").append(processID(field.getName()));
-			back.append(" = ").append(renderValue(onUpdate));
-			back.append(" WHERE " + processID(pkField.getName()) + " = (SELECT " + processID(pkField.getName()) + " FROM inserted)");
-
-			return back.toString();
-		}
-
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-	}
 
     @Override
     protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)

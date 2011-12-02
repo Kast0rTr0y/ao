@@ -23,7 +23,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
@@ -354,19 +353,6 @@ public abstract class DatabaseProvider
         if (value == null || value.equals("NULL"))
         {
             return null;
-        }
-
-        List<DatabaseFunction> posFuncs = new ArrayList<DatabaseFunction>();
-        for (DatabaseFunction func : DatabaseFunction.values())
-        {
-            if (renderFunction(func).equalsIgnoreCase(value))
-            {
-                posFuncs.add(func);
-            }
-        }
-        if (posFuncs.size() > 0)
-        {
-            return posFuncs.toArray(new DatabaseFunction[posFuncs.size()]);
         }
         try
         {
@@ -922,7 +908,6 @@ public abstract class DatabaseProvider
      *
      * @param type The type instance to convert to a DDL string.
      * @return The database-specific DDL representation of the type (e.g. "VARCHAR").
-     * @see net.java.ao.types.DatabaseType#getDefaultName()
      */
     protected String convertTypeToString(DatabaseType<?> type)
     {
@@ -1050,16 +1035,7 @@ public abstract class DatabaseProvider
     /**
      * Generates the database-specific DDL statements required to drop all
      * associated triggers for the given table representation.  The default
-     * implementation is to return an empty array.  Most databases require
-     * the <code>@OnUpdate</code> function to be implemented using triggers
-     * explicitly (rather than the implicit MySQL syntax).  For such
-     * databases, some tables will thus have triggers which are associated
-     * directly with the table.  It is these triggers which must be
-     * dropped prior to the dropping of the table itself.  For databases
-     * which associate functions with triggers (such as PostgreSQL), these
-     * functions will be dropped using another delegate method and need
-     * not be dealt with in this method's implementation.
-     *
+     * implementation is to return an empty array.
      *
      *
      * @param triggerNameConverter
@@ -1132,13 +1108,7 @@ public abstract class DatabaseProvider
     /**
      * <p>Generates the database-specific DDL statements required to create
      * all of the triggers necessary for the given table.  For MySQL, this
-     * will likely return an empty array.  The functionality is required
-     * for databases which do not provide an implicit syntax for the
-     * <code>@OnUpdate</code> functionality.  In MySQL, it is possible to
-     * provide this functionality with the
-     * <code>field TIMESTAMP ON UPDATE CURRENT_DATE</code> style syntax.
-     * This syntax is not common to all databases, hence triggers must be
-     * used to provide the functionality.</p>
+     * will likely return an empty array.
      * <p/>
      * <p>Most of the work for this functionality is delegated to the
      * {@link #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
@@ -1542,11 +1512,6 @@ public abstract class DatabaseProvider
             back.append(" NOT NULL");
         }
 
-        if (field.getOnUpdate() != null)
-        {
-            back.append(renderOnUpdate(field));
-        }
-
         return back.toString();
     }
 
@@ -1568,7 +1533,6 @@ public abstract class DatabaseProvider
      * @return The database-specific String rendering of the instance in
      *         question.
      * @see #renderCalendar(Calendar)
-     * @see #renderFunction(DatabaseFunction)
      */
     protected String renderValue(Object value)
     {
@@ -1583,10 +1547,6 @@ public abstract class DatabaseProvider
         else if (value instanceof Boolean)
         {
             return ((Boolean) value ? "1" : "0");
-        }
-        else if (value instanceof DatabaseFunction)
-        {
-            return renderFunction((DatabaseFunction) value);
         }
         else if (value instanceof Number)
         {
@@ -1657,63 +1617,6 @@ public abstract class DatabaseProvider
     protected String renderFieldType(DDLField field)
     {
         return convertTypeToString(field.getType());
-    }
-
-    /**
-     * <p>Renders the specified {@link DatabaseFunction} in its
-     * database-specific form.  For example, for MySQL the
-     * <code>CURRENT_DATE</code> enum value would be rendered as
-     * "<code>CURRENT_DATE</code>" (without the quotes).  For functions
-     * which do not have a database equivalent, a default literal value
-     * of the appropriate type should be returned.  For example, if MySQL
-     * did <i>not</i> define either a CURRENT_DATE or a CURRENT_TIMESTAMP
-     * function, the appropriate return value for both functions would
-     * be <code>'0000-00-00 00:00:00'</code> (including the quotes).
-     * This is to prevent migrations from failing even in cases where
-     * non-standard functions are used.</p>
-     * <p/>
-     * <p>As of 1.0, no unconventional functions are allowed by the
-     * {@link DatabaseFunction} enum, thus no database should have any
-     * problems with any allowed functions.</p>
-     *
-     * @param func The abstract function to be rendered.
-     * @return The database-specific DDL representation of the function
-     *         in question.
-     */
-    protected String renderFunction(DatabaseFunction func)
-    {
-        switch (func)
-        {
-            case CURRENT_DATE:
-                return "CURRENT_DATE";
-
-            case CURRENT_TIMESTAMP:
-                return "CURRENT_TIMESTAMP";
-        }
-
-        return null;
-    }
-
-    /**
-     * <p>Renders the appropriate field suffix to allow for the
-     * {@link OnUpdate} functionality.  For most databases (read:
-     * all but MySQL) this will return an empty String.  This is
-     * because few databases provide an implicit ON UPDATE syntax for
-     * fields.  As such, most databases will be compelled to return
-     * an empty String and implement the functionality using triggers.
-     *
-     * @param field The field for which the ON UPDATE clause should
-     * be rendered.
-     * @return The database-specific ON UPDATE field clause.
-     */
-    protected String renderOnUpdate(DDLField field)
-    {
-        StringBuilder back = new StringBuilder();
-
-        back.append(" ON UPDATE ");
-        back.append(renderValue(field.getOnUpdate()));
-
-        return back.toString();
     }
 
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException

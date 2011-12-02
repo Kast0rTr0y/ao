@@ -7,14 +7,8 @@ CREATE TABLE dbo.person (
     height DOUBLE CONSTRAINT df_person_height DEFAULT 62.3,
     companyID BIGINT,
     cool BIT CONSTRAINT df_person_cool DEFAULT 1,
-    modified DATETIME CONSTRAINT df_person_modified DEFAULT GetDate(),
+    modified DATETIME,
     weight DOUBLE,
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id),
     PRIMARY KEY(id)
 )
-
-CREATE TRIGGER person_modified_onupdate
-ON dbo.person
-FOR UPDATE
-AS
-    UPDATE dbo.person SET modified = GetDate() WHERE id = (SELECT id FROM inserted)

@@ -423,54 +423,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    @Ignore("Need to be able to disable for HSQL")
-    public void testOnUpdate() throws Exception
-    {
-//        if (isHsql())
-//        {
-//            return; // hsqldb doesn't support @OnUpdate
-//        }
-
-        final Person person = getPerson();
-        person.setFirstName(person.getFirstName());        // no-op to guarentee value
-        person.save();
-
-        final Date old = person.getModified();
-        person.getAge();
-
-        try
-        {
-            Thread.sleep(1000);
-        }
-        catch (InterruptedException e)
-        {
-        }
-
-        person.setAge(2);
-        person.save();
-
-        assertNotNull(old);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                assertFalse(old.getTime() == person.getModified().getTime());
-                return null;
-            }
-        });
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getModified();
-                return null;
-            }
-        });
-    }
-
-    @Test
     public void testAccessNullPrimitive() throws Exception
     {
         final Company company = entityManager.create(Company.class);

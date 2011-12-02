@@ -133,7 +133,6 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertFalse(urlField.isPrimaryKey());
         assertTrue(urlField.isUnique());
 
-        assertNull(urlField.getOnUpdate());
         assertNotNull(urlField.getDefaultValue());
 
         assertEquals(Types.INTEGER, ageField.getType().getType());
@@ -157,7 +156,6 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertTrue(idField.isPrimaryKey());
         assertFalse(idField.isUnique());
 
-        assertNull(idField.getOnUpdate());
         assertNull(idField.getDefaultValue());
 
         assertEquals(Types.BIGINT, cidField.getType().getType());
@@ -167,7 +165,6 @@ public class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertFalse(cidField.isPrimaryKey());
         assertFalse(cidField.isUnique());
 
-        assertNull(cidField.getOnUpdate());
         assertNull(cidField.getDefaultValue());
 
         DDLForeignKey cidKey = null;
