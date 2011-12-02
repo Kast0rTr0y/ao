@@ -27,9 +27,32 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
+import net.java.ao.types.FloatType;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
+import net.java.ao.types.NumericTypeProperties;
+
+import net.java.ao.RawEntity;
+
+import net.java.ao.types.BlobType;
+
+import net.java.ao.types.ClobType;
+
+import net.java.ao.types.TypeManager;
+
+import net.java.ao.types.TimestampDateType;
+
+import net.java.ao.types.DoubleType;
+
+import net.java.ao.types.BooleanType;
+
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
@@ -133,7 +156,16 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new BooleanType(numericType("BIT").ignorePrecision(true)))
+                .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
+                .addMapping(new FloatType(numericType("REAL").ignorePrecision(true)))
+                .addMapping(new TimestampDateType("DATETIME"))
+                .addMapping(new VarcharType(stringType("VARCHAR", "NTEXT")))
+                .addMapping(new ClobType("NTEXT"))
+                .addMapping(new BlobType("IMAGE"))
+                .build());
     }
 
 	@Override
@@ -336,118 +368,11 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 		return "IDENTITY(1,1)";
 	}
 
-	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.BOOLEAN:
-				return "BIT";
-
-			case Types.DOUBLE:
-				return "DECIMAL";
-
-			case Types.TIMESTAMP:
-				return "DATETIME";
-
-			case Types.DATE:
-				return "SMALLDATETIME";
-
-			case Types.CLOB:
-			case Types.LONGVARCHAR:
-				return "NTEXT";
-
-			case Types.BLOB:
-				return "IMAGE";
-		}
-
-		return super.convertTypeToString(type);
-	}
-
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		switch (field.getType().getType()) {
-			case Types.INTEGER:
-			case Types.BOOLEAN:
-				return false;
-		}
-
-		return super.considerPrecision(field);
-	}
-
     @Override
     protected String renderFieldDefault(DDLTable table, DDLField field)
     {
         return new StringBuilder().append(" CONSTRAINT ").append(defaultConstraintName(table, field)).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
     }
-
-    @Override
-    protected String renderFieldPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                if (field.getPrecision() <= 0)
-                {
-                    field.setPrecision(32);
-                }
-                if (field.getScale() <= 0)
-                {
-                    field.setScale(16);
-                }
-        }
-        return super.renderFieldPrecision(field);
-    }
-
-    @Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_DATE:
-				return "GetDate()";
-
-			case CURRENT_TIMESTAMP:
-				return "GetDate()";
-		}
-
-		return super.renderFunction(func);
-	}
-
-	@Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-			DDLField pkField = null;
-			for (DDLField f : table.getFields()) {
-				if (f.isPrimaryKey()) {
-					pkField = f;
-					break;
-				}
-			}
-
-			if (pkField == null) {
-				throw new IllegalArgumentException("No primary key field found in table '" + table.getName() + '\'');
-			}
-
-			back.append("CREATE TRIGGER ").append(processID(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + "\n");
-			back.append("ON ").append(withSchema(table.getName())).append("\n");
-			back.append("FOR UPDATE\nAS\n");
-			back.append("    UPDATE ").append(withSchema(table.getName())).append(" SET ").append(processID(field.getName()));
-			back.append(" = ").append(renderValue(onUpdate));
-			back.append(" WHERE " + processID(pkField.getName()) + " = (SELECT " + processID(pkField.getName()) + " FROM inserted)");
-
-			return back.toString();
-		}
-
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-	}
 
     @Override
     protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
@@ -502,8 +427,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
 	@Override
 	@SuppressWarnings("unused")
-	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-			boolean pkIdentity, String table, DBParam... params) throws SQLException {
+    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+            Class<T> entityType, Class<K> pkType,
+            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
+    {
 		boolean identityInsert = false;
 		StringBuilder sql = new StringBuilder();
 
@@ -543,7 +470,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 			sql.append("\nSET IDENTITY_INSERT ").append(processID(table)).append(" OFF");
 		}
 
-		T back = executeInsertReturningKey(manager, conn, pkType, pkField, sql.toString(), params);
+		K back = executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
 
 		return back;
 	}

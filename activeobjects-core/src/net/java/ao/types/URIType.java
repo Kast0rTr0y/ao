@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at
  * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
+ *          http://www.apache.org/licenses/LICENSE-2.0 
  * 
  * Unless required by applicable law or agreed to in writing, software 
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,34 +15,40 @@
  */
 package net.java.ao.types;
 
-import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.ActiveObjectsException;
-import net.java.ao.EntityManager;
-import net.java.ao.util.StringUtils;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
+import net.java.ao.EntityManager;
+import net.java.ao.util.StringUtils;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 /**
  * @author Nathan Hamblen
  */
-class URIType extends DatabaseType<URI>
+public class URIType extends AbstractStringType<URI>
 {
+    public URIType(StringTypeProperties properties)
+    {
+        super(properties, URI.class);
+    }
+
     public URIType()
     {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URI.class);
+        this(stringType("VARCHAR", "CLOB").withLength(MAX_PRECISION));
     }
 
     @Override
-    public String getDefaultName()
+    public boolean isDefaultForSqlType()
     {
-        return "VARCHAR";
+        return false;
     }
-
+    
     @Override
     public Object validate(Object o)
     {
@@ -73,7 +79,7 @@ class URIType extends DatabaseType<URI>
     }
 
     @Override
-    public URI defaultParseValue(String value)
+    protected URI parseValueInternal(String value)
     {
         if (StringUtils.isBlank(value))
         {

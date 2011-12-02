@@ -15,25 +15,6 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.Common;
-import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.DisposableDataSource;
-import net.java.ao.EntityManager;
-import net.java.ao.RawEntity;
-import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.SequenceNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
-import net.java.ao.schema.UniqueNameConverter;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.TypeManager;
-
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -47,6 +28,32 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import net.java.ao.Common;
+import net.java.ao.DBParam;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
+import net.java.ao.EntityManager;
+import net.java.ao.RawEntity;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.BlobType;
+import net.java.ao.types.ClobType;
+import net.java.ao.types.DatabaseType;
+import net.java.ao.types.DoubleType;
+import net.java.ao.types.TypeManager;
+import net.java.ao.types.VarcharType;
+import net.java.ao.util.StringUtils;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
@@ -122,21 +129,14 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
+                .addMapping(new ClobType("TEXT"))
+                .addMapping(new BlobType("BYTEA"))
+                .addMapping(new DoubleType(numericType("DOUBLE PRECISION").ignorePrecision(true)))
+                .build());
     }
-
-	@Override
-	protected boolean considerPrecision(DDLField field) {
-		switch (field.getType().getType()) {
-			case Types.INTEGER:
-			case Types.DOUBLE:
-			case Types.BOOLEAN:
-			case Types.BIGINT:
-                return false;
-		}
-
-		return super.considerPrecision(field);
-	}
 
 	@Override
 	public Object parseValue(int type, String value) {
@@ -199,22 +199,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected String convertTypeToString(DatabaseType<?> type)
-    {
-        switch (type.getType())
-        {
-            case Types.CLOB:
-            case Types.LONGVARCHAR:
-                return "TEXT";
-            case Types.BLOB:
-                return "BYTEA";
-            case Types.DOUBLE:
-                return "DOUBLE PRECISION";
-        }
-        return super.convertTypeToString(type);
-    }
-
-    @Override
 	protected String renderValue(Object value) {
 		if (value instanceof Boolean) {
 			if (value.equals(true)) {
@@ -226,67 +210,11 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		return super.renderValue(value);
 	}
 
-	@Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_DATE:
-				return "now()";
-
-			case CURRENT_TIMESTAMP:
-				return "now()";
-		}
-
-		return super.renderFunction(func);
-	}
-
-	@Override
-	protected String renderFunctionForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
-
-            back.append("CREATE FUNCTION ").append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
-            back.append(" RETURNS trigger AS $").append(triggerName).append("$\nBEGIN\n");
-			back.append("    NEW.").append(processID(field.getName())).append(" := ").append(renderValue(onUpdate));
-            back.append(";\n    RETURN NEW;\nEND;\n$").append(triggerName).append("$ LANGUAGE plpgsql");
-
-			return back.toString();
-		}
-
-		return super.renderFunctionForField(triggerNameConverter, table, field);
-	}
-
-    @Override
-	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field) {
-		Object onUpdate = field.getOnUpdate();
-		if (onUpdate != null) {
-			StringBuilder back = new StringBuilder();
-
-            final String triggerName = triggerNameConverter.onUpdateName(table.getName(), field.getName());
-
-            back.append("CREATE TRIGGER ").append(triggerName).append('\n');
-            back.append(" BEFORE UPDATE OR INSERT ON ").append(withSchema(table.getName())).append('\n');
-			back.append("    FOR EACH ROW EXECUTE PROCEDURE ");
-            back.append(isSchemaNotEmpty() ? getSchema() + "." + triggerName : triggerName).append("()");
-
-            return back.toString();
-		}
-
-		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-	}
-
     @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
     }
-
-	@Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
 
     @Override
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
@@ -353,7 +281,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" TYPE ");
-			str.append(renderFieldType(field)).append(renderFieldPrecision(field));
+			str.append(renderFieldType(field));
 			back.add(str.toString());
 		}
 
@@ -434,36 +362,33 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
         final List<String> dropFunctions = new ArrayList<String>();
         for (DDLField field : table.getFields())
         {
-            field.setOnUpdate(new Object()); // kind of a hack
-            dropFunctions.add(renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field)));
+            String function = renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field));
+            if(!StringUtils.isBlank(function))
+            {
+                dropFunctions.add(function);
+            }
         }
         return dropFunctions.toArray(new String[dropFunctions.size()]);
     }
 
     private String renderDropFunction(String functionName)
     {
-        return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
-    }
-
-
-    @Override
-    protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
-    {
-        if (field.getOnUpdate() != null)
+        if(!StringUtils.isBlank(functionName))
         {
-            return triggerNameConverter.onUpdateName(table.getName(), field.getName());
+            return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
         }
-
-        return super.getTriggerNameForField(triggerNameConverter, table, field);
+        return null;
     }
 
     @Override
-	public synchronized <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-			boolean pkIdentity, String table, DBParam... params) throws SQLException {
-		T back = null;
+    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+            Class<T> entityType, Class<K> pkType,
+            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
+    {
+        K back = null;
 		for (DBParam param : params) {
 			if (param.getField().trim().equalsIgnoreCase(pkField)) {
-				back = (T) param.getValue();
+				back = (K) param.getValue();
 				break;
 			}
 		}
@@ -487,7 +412,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 			params = newParams.toArray(new DBParam[newParams.size()]);
 		}
 
-		super.insertReturningKey(manager, conn, pkType, pkField, pkIdentity, table, params);
+		super.insertReturningKey(manager, conn, entityType, pkType, pkField, pkIdentity, table, params);
 
 		return back;
 	}
@@ -509,9 +434,10 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField,
-                                              String sql, DBParam... params) throws SQLException {
-
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                                                      Class<T> entityType, Class<K> pkType,
+                                                                      String pkField, String sql, DBParam... params) throws SQLException
+    {
 		final PreparedStatement stmt = preparedStatement(conn, sql);
 
 		for (int i = 0; i < params.length; i++) {

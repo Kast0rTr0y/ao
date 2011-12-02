@@ -26,10 +26,10 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class GenericType extends DatabaseType<Object> {
+public class GenericType extends DatabaseType<Object> {
 
-	protected GenericType(int type) {
-		super(type, -1);
+	public GenericType(int type) {
+		super(type, null);
 	}
 	
 	@Override
@@ -38,7 +38,7 @@ class GenericType extends DatabaseType<Object> {
 	}
 
 	@Override
-	public String getDefaultName() {
+	public String getSqlTypeIdentifier() {
 		String back = "GENERIC";
 		
 		Class<Types> clazz = Types.class;

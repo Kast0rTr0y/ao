@@ -30,11 +30,17 @@ import net.java.ao.EntityManager;
 /**
  * @author Daniel Spiewak
  */
-class BlobType extends DatabaseType<Object> {
+public class BlobType extends DatabaseType<Object> {
 	
-	public BlobType() {
-		super(Types.BLOB, -1, byte[].class, InputStream.class);
+    public BlobType(String sqlTypeIdentifier)
+    {
+		super(Types.BLOB, sqlTypeIdentifier, byte[].class, InputStream.class);
 	}
+    
+    public BlobType()
+    {
+        this("BLOB");
+    }
 	
 	@Override
 	public boolean shouldCache(Class<?> type) {
@@ -100,10 +106,5 @@ class BlobType extends DatabaseType<Object> {
 		}
 		
 		throw new IllegalArgumentException("Cannot assign a String representation to a BLOB");
-	}
-
-	@Override
-	public String getDefaultName() {
-		return "BLOB";
 	}
 }

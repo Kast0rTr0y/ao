@@ -2,12 +2,12 @@ CREATE TABLE person (
     id NUMBER(11) NOT NULL,
     firstName VARCHAR(255) NOT NULL,
     lastName CLOB,
-    age NUMBER(11),
+    age NUMBER(12),
     url VARCHAR(767) CONSTRAINT U_person_url UNIQUE NOT NULL,
     height NUMBER(32,6) DEFAULT 62.3,
     companyID NUMBER(20),
     cool NUMBER(1) DEFAULT 1,
-    modified TIMESTAMP DEFAULT SYSDATE,
+    modified DATETIME,
     weight NUMBER(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
@@ -22,10 +22,3 @@ BEGIN
     SELECT person_id_SEQ.NEXTVAL INTO :NEW.id FROM DUAL;
 END;
 
-CREATE TRIGGER person_modified_onupdate
-BEFORE UPDATE
-    ON person
-    FOR EACH ROW
-BEGIN
-    :NEW.modified := SYSDATE;
-END;

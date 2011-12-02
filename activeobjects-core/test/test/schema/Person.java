@@ -16,7 +16,6 @@
 package test.schema;
 
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Date;
 
 import net.java.ao.Accessor;
@@ -30,8 +29,7 @@ import net.java.ao.Searchable;
 import net.java.ao.Transient;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.Indexed;
-import net.java.ao.schema.OnUpdate;
-import net.java.ao.schema.SQLType;
+import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Unique;
 
 /**
@@ -44,7 +42,7 @@ public interface Person extends Entity {
 	public String getFirstName();
 	public void setFirstName(String firstName);
 	
-	@SQLType(precision=127)
+	@StringLength(127)
 	@Searchable
 	public void setLastName(String lastName);
 	public String getLastName();
@@ -54,7 +52,6 @@ public interface Person extends Entity {
 	
 	@Transient
 	@Indexed
-	@SQLType(precision=20)
 	public int getAge();
 	public void setAge(int age);
 
@@ -75,7 +72,6 @@ public interface Person extends Entity {
 	public boolean isActive();
 	public void setActive(boolean active);
 	
-	@OnUpdate("CURRENT_TIMESTAMP")
 	public Date getModified();
 	
 	@OneToOne

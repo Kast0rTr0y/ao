@@ -22,16 +22,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.java.ao.DisposableDataSource;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.ClobType;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 /**
  * @author Daniel Spiewak
@@ -80,31 +83,13 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 
     public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null);
+        super(dataSource, null,
+              new TypeManager.Builder()
+                .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
+                .addMapping(new ClobType("TEXT"))
+                .build());
     }
-
-    @Override
-    protected boolean considerPrecision(DDLField field) {
-        switch (field.getType().getType()) {
-            case Types.BOOLEAN:
-            case Types.LONGVARCHAR:
-                return false;
-        }
-
-        return super.considerPrecision(field);
-    }
-
-	@Override
-	protected String convertTypeToString(DatabaseType<?> type) {
-		switch (type.getType()) {
-			case Types.CLOB:
-			case Types.LONGVARCHAR:
-				return "TEXT";
-		}
-		
-		return super.convertTypeToString(type);
-	}
-
+    
 	@Override
 	protected String renderAutoIncrement() {
 		return "AUTO_INCREMENT";
@@ -221,13 +206,7 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 	protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
 		StringBuilder back = new StringBuilder("CREATE INDEX ");
 		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))).append(" ON ");
-		back.append(processID(index.getTable())).append('(').append(processID(index.getField()));
-		
-		if (index.getType().getType() == Types.CLOB || index.getType().getType() == Types.VARCHAR) {
-			int defaultPrecision = index.getType().getDefaultPrecision();
-			back.append('(').append(defaultPrecision > 0 ? defaultPrecision : 255).append(')');
-		}
-		back.append(')');
+		back.append(processID(index.getTable())).append('(').append(processID(index.getField())).append(')');
 		
 		return back.toString();
 	}

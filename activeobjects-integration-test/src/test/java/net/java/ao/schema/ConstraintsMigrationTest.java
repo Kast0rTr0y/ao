@@ -223,8 +223,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertUniqueConstraint(false);
     }
 
-    // TODO: Test for OnUpdate annotation
-
     private void assertEmpty() throws Exception
     {
         SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");

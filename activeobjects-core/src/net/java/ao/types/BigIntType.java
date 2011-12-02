@@ -22,22 +22,23 @@ import java.sql.Types;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
 /**
  * @author Daniel Spiewak
  */
-class BigIntType extends DatabaseType<Long>
+public class BigIntType extends AbstractNumericType<Long>
 {
+    public BigIntType(NumericTypeProperties properties)
+    {
+        super(Types.BIGINT, properties, long.class, Long.class);
+    }
+    
     public BigIntType()
     {
-        super(Types.BIGINT, -1, long.class, Long.class);
+        this(numericType("BIGINT"));
     }
-
-    @Override
-    public String getDefaultName()
-    {
-        return "BIGINT";
-    }
-
+    
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Long> type, int index) throws SQLException
     {

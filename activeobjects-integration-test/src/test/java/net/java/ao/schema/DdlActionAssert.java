@@ -112,14 +112,6 @@ public final class DdlActionAssert
         return sb.append("]").toString();
     }
 
-    public static void assertFieldEquals(String expectedName, Set<Integer> expectedTypes, int expectedPrecision, DDLField field, boolean caseSensitive)
-    {
-        assertEqualsAccordingToCaseSensitivity(expectedName, fieldName(field), caseSensitive);
-        final int sqlType = field.getType().getType();
-        assertTrue("Excepted on of " + expectedTypes + " but got " + sqlType, expectedTypes.contains(sqlType));
-        assertEquals(expectedPrecision, field.getPrecision());
-    }
-
     public static void assertActionsEquals(Iterable<DDLAction> expected, Iterable<DDLAction> actual)
     {
         assertActionsEquals(expected.iterator(), actual.iterator());

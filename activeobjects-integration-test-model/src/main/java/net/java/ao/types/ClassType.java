@@ -1,21 +1,21 @@
 package net.java.ao.types;
 
-import net.java.ao.EntityManager;
-import net.java.ao.types.DatabaseType;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+
+import net.java.ao.EntityManager;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
 
 /**
  *
  */
-public class ClassType extends DatabaseType<Class<?>>
+public class ClassType extends AbstractStringType<Class<?>>
 {
 
 	public ClassType() {
-		super(Types.VARCHAR, 255, Class.class);
+		super(stringType("VARCHAR", "CLOB").withLength(255), Class.class);
 	}
 
 	@Override
@@ -34,7 +34,7 @@ public class ClassType extends DatabaseType<Class<?>>
 	}
 
 	@Override
-	public Object defaultParseValue(String value) {
+	protected Class<?> parseValueInternal(String value) {
 		try {
 			return Class.forName(value);
 		} catch (Throwable t) {
@@ -49,10 +49,5 @@ public class ClassType extends DatabaseType<Class<?>>
 		}
 
 		return super.valueToString(value);
-	}
-
-	@Override
-	public String getDefaultName() {
-		return "VARCHAR";
 	}
 }

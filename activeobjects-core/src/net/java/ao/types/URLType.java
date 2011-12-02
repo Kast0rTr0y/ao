@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at
  * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
+ *          http://www.apache.org/licenses/LICENSE-2.0 
  * 
  * Unless required by applicable law or agreed to in writing, software 
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,29 +20,35 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
 
+import static net.java.ao.types.StringTypeProperties.stringType;
+
 /**
  * @author Daniel Spiewak
  */
-class URLType extends DatabaseType<URL>
+public class URLType extends AbstractStringType<URL>
 {
+    public URLType(StringTypeProperties properties)
+    {
+        super(properties, URL.class);
+    }
+
     public URLType()
     {
-        super(Types.VARCHAR, VarcharType.MAX_PRECISION, URL.class);
+        this(stringType("VARCHAR", "CLOB").withLength(MAX_PRECISION));
     }
 
     @Override
-    public String getDefaultName()
+    public boolean isDefaultForSqlType()
     {
-        return "VARCHAR";
+        return false;
     }
-
+    
     @Override
     public Object validate(Object o)
     {
@@ -73,7 +79,7 @@ class URLType extends DatabaseType<URL>
     }
 
     @Override
-    public URL defaultParseValue(String value)
+    protected URL parseValueInternal(String value)
     {
         if (StringUtils.isBlank(value))
         {

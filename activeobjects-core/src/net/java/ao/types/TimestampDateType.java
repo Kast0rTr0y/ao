@@ -28,44 +28,48 @@ import java.util.Date;
 import net.java.ao.EntityManager;
 
 /**
+ * Type mapping between Java Date and JDBC timestamp.  The underlying SQL type name defaults to "DATETIME",
+ * but may be overridden by some database providers.
  * @author Daniel Spiewak
  */
-class TimestampDateType extends DatabaseType<Date> {
-	private DateFormat dateFormat;
-	
-	public TimestampDateType() {
-		super(Types.TIMESTAMP, -1, Date.class);
-		
-		dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	}
+public class TimestampDateType extends DatabaseType<Date>
+{
+    private DateFormat dateFormat;
+    
+    public TimestampDateType(String sqlTypeIdentifier)
+    {
+            super(Types.TIMESTAMP, sqlTypeIdentifier, Date.class);
+            
+            dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    }
 
-	@Override
-	public String getDefaultName() {
-		return "TIMESTAMP";
-	}
-	
-	@Override
-	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Date value) throws SQLException {
-		stmt.setTimestamp(index, new Timestamp(value.getTime()));
-	}
-	
-	@Override
-	public Date pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Date> type, String field) throws SQLException {
-		return res.getTimestamp(field);
-	}
+    public TimestampDateType()
+    {
+        this("DATETIME");
+    }
+    
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Date value) throws SQLException {
+            stmt.setTimestamp(index, new Timestamp(value.getTime()));
+    }
+    
+    @Override
+    public Date pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Date> type, String field) throws SQLException {
+            return res.getTimestamp(field);
+    }
 
-	@Override
-	public Date defaultParseValue(String value) {
-		try {
-			return dateFormat.parse(value);
-		} catch (ParseException e) {
-		}
-		
-		return new Date();
-	}
-	
-	@Override
-	public String valueToString(Object value) {
-		return dateFormat.format((Date) value);
-	}
+    @Override
+    public Date defaultParseValue(String value) {
+            try {
+                    return dateFormat.parse(value);
+            } catch (ParseException e) {
+            }
+            
+            return new Date();
+    }
+    
+    @Override
+    public String valueToString(Object value) {
+            return dateFormat.format((Date) value);
+    }
 }

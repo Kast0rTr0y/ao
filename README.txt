@@ -11,3 +11,5 @@ The active objects project uses maven for its build. To build:
 3. From the root of the project, run: mvn install
 
 4. That's it! You will find the active objects library under ${basedir}/activeobjects/target/activeobject-<version>.jar
+
+test

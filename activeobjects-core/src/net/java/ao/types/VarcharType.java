@@ -17,29 +17,26 @@ package net.java.ao.types;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
-import com.google.common.base.Objects;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
 
+import static net.java.ao.types.StringTypeProperties.stringType;
+
 /**
  * @author Daniel Spiewak
  */
-class VarcharType extends DatabaseType<String>
+public class VarcharType extends AbstractStringType<String>
 {
-    static final int MAX_PRECISION = 767; // this is MySQL's.
+    public VarcharType(StringTypeProperties properties)
+    {
+        super(properties, String.class);
+    }
 
     public VarcharType()
     {
-        super(Types.VARCHAR, 255, String.class);
-    }
-
-    @Override
-    public String getDefaultName()
-    {
-        return "VARCHAR";
+        this(stringType("VARCHAR", "CLOB"));
     }
 
     @Override
@@ -49,7 +46,7 @@ class VarcharType extends DatabaseType<String>
     }
 
     @Override
-    public String defaultParseValue(String value)
+    protected String parseValueInternal(String value)
     {
         if (StringUtils.isBlank(value))
         {
@@ -57,11 +54,5 @@ class VarcharType extends DatabaseType<String>
         }
 
         return value;
-    }
-
-    @Override
-    public boolean valueEquals(Object val1, Object val2)
-    {
-        return Objects.equal(val1, val2);
     }
 }

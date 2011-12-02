@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License. 
  * You may obtain a copy of the License at
  * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
+ *          http://www.apache.org/licenses/LICENSE-2.0 
  * 
  * Unless required by applicable law or agreed to in writing, software 
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,27 +23,33 @@ import java.util.NoSuchElementException;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 
+import static net.java.ao.types.NumericTypeProperties.numericType;
 import static net.java.ao.util.EnumUtils.values;
 
 /**
  * @author Daniel Spiewak
  */
-class EnumType extends DatabaseType<Enum<?>>
+public class EnumType extends AbstractNumericType<Enum<?>>
 {
-
-    protected EnumType()
+    public EnumType(NumericTypeProperties properties)
     {
-        super(Types.INTEGER, 4, Enum.class);
+        super(Types.INTEGER, properties, Enum.class);
     }
-
-    @Override
-    public String getDefaultName()
+    
+    public EnumType()
     {
-        return "INTEGER";
+        this(numericType("INTEGER"));
+    }
+    
+    @Override
+    public boolean isDefaultForSqlType()
+    {
+        return false;
     }
 
     @Override

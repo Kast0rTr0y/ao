@@ -15,54 +15,99 @@
  */
 package net.java.ao.types;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
+import net.java.ao.schema.StringLength;
 
 /**
  * @author Daniel Spiewak
  */
 public abstract class DatabaseType<T> {
-	private final int type, defaultPrecision;
-	
+	private final int type;
+	private final String sqlTypeIdentifier;
 	private final Class<?>[] handledTypes;
-	
-	protected DatabaseType(int type, int defaultPrecision, Class<?>... handledTypes) {
-		this.type = type;
-		this.defaultPrecision = defaultPrecision;
-		this.handledTypes = handledTypes;
-	}
-	
+
+    protected DatabaseType(int type, String sqlTypeIdentifier, Class<?>... handledTypes) {
+        this.type = type;
+        this.sqlTypeIdentifier = sqlTypeIdentifier;
+        this.handledTypes = handledTypes;
+    }
+
+    /**
+     * The JDBC type constant from java.sql.Types.
+     */
 	public int getType() {
 		return type;
 	}
-	
-	public int getDefaultPrecision() {
-		return defaultPrecision;
+
+	/**
+	 * What the type should be called in SQL statements.  This will vary by database dialect.
+	 * It should include precision, length, or scale parameters if appropriate (e.g. "VARCHAR(255)").
+	 */
+    public String getSqlTypeIdentifier() {
+        return sqlTypeIdentifier;
+    }
+    
+    /**
+     * Should this be considered the default type mapping for the given Java type?
+     * (This method will become obsolete when we stop looking up type mappings by Java class only.)
+     */
+    public boolean isDefaultForJavaType() {
+        return true;
+    }
+    
+    /**
+     * Should this be considered the default type mapping for the given JDBC type?
+     * (This method will become obsolete when we stop looking up type mappings by Java class only.)
+     */
+    public boolean isDefaultForSqlType() {
+        return true;
+    }
+    
+	public Class<?>[] getHandledTypes() {
+	    return handledTypes;
 	}
 	
-	public boolean isHandlerFor(int type) {
-		return this.type == type;
+	/**
+	 * Returns a new DatabaseType instance with the same properties as this one except that it
+	 * specifies the given maximum string length (which may be {@link StringLength#UNLIMITED}).
+	 * @param length  a maximum string length greater than zero, or UNLIMITED
+	 * @return  a DatabaseType instance
+	 * @throws ActiveObjectsConfigurationException  if setting string length for this type is not allowed
+	 */
+	public DatabaseType<T> withStringLength(int length) {
+	    throw new ActiveObjectsConfigurationException("@StringLength can only be specified for string properties");
 	}
-	
-	public boolean isHandlerFor(Class<?> type) {
-		for (Class<?> handled : handledTypes) {
-			if (isSubclass(handled, type)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
+
+    /**
+     * Returns a new DatabaseType instance with the same properties as this one except that it
+     * specifies the field's numeric precision.
+     * @param precision  the numeric precision; must be greater than zero
+     * @return  a DatabaseType instance
+     * @throws ActiveObjectsConfigurationException  if setting numeric precision for this type is not allowed
+     */
+    public DatabaseType<T> withPrecision(int length) {
+        throw new ActiveObjectsConfigurationException("Precision can only be specified for numeric properties");
+    }
+    
+    /**
+     * Returns a new DatabaseType instance with the same properties as this one except that it
+     * specifies the field's numeric scale.
+     * @param precision  the numeric scale; must be greater than or equal to zero
+     * @return  a DatabaseType instance
+     * @throws ActiveObjectsConfigurationException  if setting numeric scale for this type is not allowed
+     */
+    public DatabaseType<T> withScale(int scale) {
+        throw new ActiveObjectsConfigurationException("Scale can only be specified for numeric properties");
+    }
+    
 	@SuppressWarnings("unchecked") 
 	private boolean isSubclass(Class sup, Class sub) {
 		if (sub.equals(sup)) {
@@ -106,8 +151,6 @@ public abstract class DatabaseType<T> {
 		return val1.equals(val2);
 	}
 	
-	public abstract String getDefaultName();
-	
 	public abstract T pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends T> type, String field) throws SQLException;
 	
 	public T pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends T> type, int index) throws SQLException {
@@ -125,7 +168,7 @@ public abstract class DatabaseType<T> {
 		if (obj instanceof DatabaseType<?>) {
 			DatabaseType<?> type = (DatabaseType<?>) obj;
 			
-			if (type.type == this.type && type.defaultPrecision == defaultPrecision && Arrays.equals(type.handledTypes, handledTypes)) {
+			if (type.type == this.type && Arrays.equals(type.handledTypes, handledTypes)) {
 				return true;
 			}
 		}
@@ -135,7 +178,7 @@ public abstract class DatabaseType<T> {
 	
 	@Override
 	public int hashCode() {
-		int hashCode = type + defaultPrecision;
+		int hashCode = type;
 		
 		for (Class<?> type : handledTypes) {
 			hashCode += type.hashCode();
@@ -147,25 +190,6 @@ public abstract class DatabaseType<T> {
 	
 	@Override
 	public String toString() {
-		String back = "GENERIC";
-		
-		Class<Types> clazz = Types.class;
-		for (Field field : clazz.getFields()) {
-			if (Modifier.isStatic(field.getModifiers())) {
-				try {
-					if (field.get(null).equals(type)) {
-						back = field.getName();
-					}
-				} catch (IllegalArgumentException e) {
-				} catch (IllegalAccessException e) {
-				}
-			}
-		}
-		
-		if (defaultPrecision > 0) {
-			back += "(" + defaultPrecision + ")";
-		}
-		
-		return back;
+	    return getClass().getSimpleName() + " (" + getSqlTypeIdentifier() + ")";
 	}
 }

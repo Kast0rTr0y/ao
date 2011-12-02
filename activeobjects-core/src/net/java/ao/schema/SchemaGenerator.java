@@ -21,7 +21,6 @@ import com.google.common.collect.Iterables;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Polymorphic;
 import net.java.ao.RawEntity;
@@ -235,11 +234,9 @@ public final class SchemaGenerator
                 field.setName(attributeName);
 
                 final TypeManager typeManager = provider.getTypeManager();
-                final DatabaseType<?> sqlType = getSQLTypeFromMethod(typeManager, type, annotations);
+                final DatabaseType<?> sqlType = getSQLTypeFromMethod(typeManager, type, method, annotations);
                 field.setType(sqlType);
 
-                field.setPrecision(getPrecisionFromMethod(typeManager, type, method, fieldConverter));
-                field.setScale(getScaleFromMethod(type, method, fieldConverter));
                 field.setPrimaryKey(annotations.isAnnotationPresent(PrimaryKey.class));
                 field.setNotNull(annotations.isAnnotationPresent(NotNull.class) || annotations.isAnnotationPresent(Unique.class) || annotations.isAnnotationPresent(PrimaryKey.class));
                 field.setUnique(annotations.isAnnotationPresent(Unique.class));
@@ -269,11 +266,6 @@ public final class SchemaGenerator
                     }
                 }
 
-                if (annotations.isAnnotationPresent(OnUpdate.class))
-                {
-                    field.setOnUpdate(convertStringValue(annotations.getAnnotation(OnUpdate.class).value(), sqlType));
-                }
-
                 if (field.isPrimaryKey()) {
 					fields.add(0, field);
 				} else {
@@ -283,16 +275,13 @@ public final class SchemaGenerator
 				if (Common.interfaceInheritsFrom(type, RawEntity.class)
 						&& type.getAnnotation(Polymorphic.class) != null) {
 					field.setDefaultValue(null);		// polymorphic fields can't have default
-					field.setOnUpdate(null);		// or on update
 
 					attributeName = fieldConverter.getPolyTypeName(method);
 
 					field = new DDLField();
 
 					field.setName(attributeName);
-					field.setType(typeManager.getType(String.class));
-					field.setPrecision(127);
-					field.setScale(-1);
+					field.setType(typeManager.getType(String.class).withStringLength(127));
 
 					if (annotations.getAnnotation(NotNull.class) != null) {
 						field.setNotNull(true);
@@ -317,47 +306,25 @@ public final class SchemaGenerator
         return isAutoIncrement;
     }
 
-    private static DatabaseType<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, AnnotationDelegate annotations) {
+    private static DatabaseType<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, Method method, AnnotationDelegate annotations) {
 		DatabaseType<?> sqlType = null;
 		sqlType = typeManager.getType(type);
 
-		SQLType sqlTypeAnnotation = annotations.getAnnotation(SQLType.class);
-		if (sqlTypeAnnotation != null) {
-			final int annoType = sqlTypeAnnotation.value();
-
-			if (annoType != Types.NULL) {
-				sqlType = typeManager.getType(annoType);
-			}
+		StringLength lengthAnno = annotations.getAnnotation(StringLength.class);
+		if (lengthAnno != null) {
+		    final int length = lengthAnno.value();
+		    try {
+		        sqlType = sqlType.withStringLength(length);
+		    }
+		    catch (ActiveObjectsConfigurationException e) {
+		        throw e.forMethod(method);
+		    }
 		}
 
 		return sqlType;
 	}
 
-	private static int getPrecisionFromMethod(TypeManager typeManager, Class<?> type, Method method, FieldNameConverter converter) {
-		int precision = -1;
-
-		precision = typeManager.getType(type).getDefaultPrecision();
-
-		SQLType sqlTypeAnnotation = Common.getAnnotationDelegate(converter, method).getAnnotation(SQLType.class);
-		if (sqlTypeAnnotation != null) {
-			precision = sqlTypeAnnotation.precision();
-		}
-
-		return precision;
-	}
-
-	private static int getScaleFromMethod(Class<?> type, Method method, FieldNameConverter converter) {
-		int scale = -1;
-
-		SQLType sqlTypeAnnotation = Common.getAnnotationDelegate(converter, method).getAnnotation(SQLType.class);
-		if (sqlTypeAnnotation != null) {
-			scale = sqlTypeAnnotation.scale();
-		}
-
-		return scale;
-	}
-
-	private static DDLForeignKey[] parseForeignKeys(TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+    private static DDLForeignKey[] parseForeignKeys(TableNameConverter nameConverter, FieldNameConverter fieldConverter,
 			Class<? extends RawEntity<?>> clazz) {
 		Set<DDLForeignKey> back = new LinkedHashSet<DDLForeignKey>();
 
@@ -398,7 +365,7 @@ public final class SchemaGenerator
 					DDLIndex index = new DDLIndex();
 					index.setField(attributeName);
 					index.setTable(tableName);
-					index.setType(getSQLTypeFromMethod(provider.getTypeManager(), type, annotations));
+					index.setType(getSQLTypeFromMethod(provider.getTypeManager(), type, method, annotations));
 
 					back.add(index);
 				}
@@ -419,12 +386,6 @@ public final class SchemaGenerator
         if (value == null)
         {
             return null;
-        }
-
-        final DatabaseFunction func = DatabaseFunction.get(value.trim());
-        if (func != null)
-        {
-            return func;
         }
 
         return type.defaultParseValue(value);

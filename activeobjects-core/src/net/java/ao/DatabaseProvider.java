@@ -23,7 +23,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
@@ -110,14 +109,19 @@ public abstract class DatabaseProvider
 
     private String quote;
 
-    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager)
     {
         this.dataSource = checkNotNull(dataSource);
-        this.typeManager = new TypeManager();
+        this.typeManager = typeManager;
         this.schema = isBlank(schema) ? null : schema; // can be null
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
         loadQuoteString();
+    }
+
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
+    {
+        this(dataSource, schema, new TypeManager.Builder().build());
     }
 
     public final TypeManager getTypeManager()
@@ -349,19 +353,6 @@ public abstract class DatabaseProvider
         if (value == null || value.equals("NULL"))
         {
             return null;
-        }
-
-        List<DatabaseFunction> posFuncs = new ArrayList<DatabaseFunction>();
-        for (DatabaseFunction func : DatabaseFunction.values())
-        {
-            if (renderFunction(func).equalsIgnoreCase(value))
-            {
-                posFuncs.add(func);
-            }
-        }
-        if (posFuncs.size() > 0)
-        {
-            return posFuncs.toArray(new DatabaseFunction[posFuncs.size()]);
         }
         try
         {
@@ -917,11 +908,10 @@ public abstract class DatabaseProvider
      *
      * @param type The type instance to convert to a DDL string.
      * @return The database-specific DDL representation of the type (e.g. "VARCHAR").
-     * @see net.java.ao.types.DatabaseType#getDefaultName()
      */
     protected String convertTypeToString(DatabaseType<?> type)
     {
-        return type.getDefaultName();
+        return type.getSqlTypeIdentifier();
     }
 
     /**
@@ -1045,16 +1035,7 @@ public abstract class DatabaseProvider
     /**
      * Generates the database-specific DDL statements required to drop all
      * associated triggers for the given table representation.  The default
-     * implementation is to return an empty array.  Most databases require
-     * the <code>@OnUpdate</code> function to be implemented using triggers
-     * explicitly (rather than the implicit MySQL syntax).  For such
-     * databases, some tables will thus have triggers which are associated
-     * directly with the table.  It is these triggers which must be
-     * dropped prior to the dropping of the table itself.  For databases
-     * which associate functions with triggers (such as PostgreSQL), these
-     * functions will be dropped using another delegate method and need
-     * not be dealt with in this method's implementation.
-     *
+     * implementation is to return an empty array.
      *
      *
      * @param triggerNameConverter
@@ -1127,13 +1108,7 @@ public abstract class DatabaseProvider
     /**
      * <p>Generates the database-specific DDL statements required to create
      * all of the triggers necessary for the given table.  For MySQL, this
-     * will likely return an empty array.  The functionality is required
-     * for databases which do not provide an implicit syntax for the
-     * <code>@OnUpdate</code> functionality.  In MySQL, it is possible to
-     * provide this functionality with the
-     * <code>field TIMESTAMP ON UPDATE CURRENT_DATE</code> style syntax.
-     * This syntax is not common to all databases, hence triggers must be
-     * used to provide the functionality.</p>
+     * will likely return an empty array.
      * <p/>
      * <p>Most of the work for this functionality is delegated to the
      * {@link #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
@@ -1508,7 +1483,6 @@ public abstract class DatabaseProvider
         back.append(processID(field.getName()));
         back.append(" ");
         back.append(renderFieldType(field));
-        back.append(renderFieldPrecision(field));
 
         if (field.isAutoIncrement())
         {
@@ -1538,58 +1512,12 @@ public abstract class DatabaseProvider
             back.append(" NOT NULL");
         }
 
-        if (field.getOnUpdate() != null)
-        {
-            back.append(renderOnUpdate(field));
-        }
-
         return back.toString();
     }
 
     protected String renderFieldDefault(DDLTable table, DDLField field)
     {
         return new StringBuilder().append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
-    }
-
-    /**
-     * <p>Renders the statement fragment for the given field representative of
-     * its precision only.  Consider the following statement:</p>
-     * <p/>
-     * <code>ALTER TABLE ADD COLUMN name VARCHAR(255)</code>
-     * <p/>
-     * <p>In this statement, the bit which is rendered by this method is the
-     * "<code>(255)</code>" (without quotes).  This is intended to allow
-     * maximum flexibility in field type rendering (as required by PostgreSQL
-     * and others which sometimes render types separately from the rest of
-     * the field info).  The default implementation should suffice for every
-     * conceivable database.  Any sort of odd functionality relating to
-     * type precision rendering should be handled in the {@link #considerPrecision(DDLField)}
-     * method if possible.</p>
-     *
-     * @param field The field for which the precision must be rendered.
-     * @return A DDL fragment which will be concatenated into a statement later.
-     */
-    protected String renderFieldPrecision(DDLField field)
-    {
-        StringBuilder back = new StringBuilder();
-
-        if (considerPrecision(field) && field.getPrecision() > 0)
-        {
-            back.append('(');
-            if (field.getScale() > 0)
-            {
-                back.append(field.getPrecision());
-                back.append(',');
-                back.append(field.getScale());
-            }
-            else
-            {
-                back.append(field.getPrecision());
-            }
-            back.append(')');
-        }
-
-        return back.toString();
     }
 
     /**
@@ -1605,7 +1533,6 @@ public abstract class DatabaseProvider
      * @return The database-specific String rendering of the instance in
      *         question.
      * @see #renderCalendar(Calendar)
-     * @see #renderFunction(DatabaseFunction)
      */
     protected String renderValue(Object value)
     {
@@ -1620,10 +1547,6 @@ public abstract class DatabaseProvider
         else if (value instanceof Boolean)
         {
             return ((Boolean) value ? "1" : "0");
-        }
-        else if (value instanceof DatabaseFunction)
-        {
-            return renderFunction((DatabaseFunction) value);
         }
         else if (value instanceof Number)
         {
@@ -1696,63 +1619,6 @@ public abstract class DatabaseProvider
         return convertTypeToString(field.getType());
     }
 
-    /**
-     * <p>Renders the specified {@link DatabaseFunction} in its
-     * database-specific form.  For example, for MySQL the
-     * <code>CURRENT_DATE</code> enum value would be rendered as
-     * "<code>CURRENT_DATE</code>" (without the quotes).  For functions
-     * which do not have a database equivalent, a default literal value
-     * of the appropriate type should be returned.  For example, if MySQL
-     * did <i>not</i> define either a CURRENT_DATE or a CURRENT_TIMESTAMP
-     * function, the appropriate return value for both functions would
-     * be <code>'0000-00-00 00:00:00'</code> (including the quotes).
-     * This is to prevent migrations from failing even in cases where
-     * non-standard functions are used.</p>
-     * <p/>
-     * <p>As of 1.0, no unconventional functions are allowed by the
-     * {@link DatabaseFunction} enum, thus no database should have any
-     * problems with any allowed functions.</p>
-     *
-     * @param func The abstract function to be rendered.
-     * @return The database-specific DDL representation of the function
-     *         in question.
-     */
-    protected String renderFunction(DatabaseFunction func)
-    {
-        switch (func)
-        {
-            case CURRENT_DATE:
-                return "CURRENT_DATE";
-
-            case CURRENT_TIMESTAMP:
-                return "CURRENT_TIMESTAMP";
-        }
-
-        return null;
-    }
-
-    /**
-     * <p>Renders the appropriate field suffix to allow for the
-     * {@link OnUpdate} functionality.  For most databases (read:
-     * all but MySQL) this will return an empty String.  This is
-     * because few databases provide an implicit ON UPDATE syntax for
-     * fields.  As such, most databases will be compelled to return
-     * an empty String and implement the functionality using triggers.
-     *
-     * @param field The field for which the ON UPDATE clause should
-     * be rendered.
-     * @return The database-specific ON UPDATE field clause.
-     */
-    protected String renderOnUpdate(DDLField field)
-    {
-        StringBuilder back = new StringBuilder();
-
-        back.append(" ON UPDATE ");
-        back.append(renderValue(field.getOnUpdate()));
-
-        return back.toString();
-    }
-
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
     {
         final Blob blob = res.getBlob(field);
@@ -1768,30 +1634,6 @@ public abstract class DatabaseProvider
         {
             return null;
         }
-    }
-
-    /**
-     * <p>Determines whether or not the database allows explicit precisions
-     * for the field in question.  This is to support databases such as
-     * Derby which do not support precisions for certain types.  By
-     * default, this method returns <code>true</code>.</p>
-     * <p/>
-     * <p>More often than not, all that is required for this determination
-     * is the type.  As such, the method signature may change in a future
-     * release.</p>
-     *
-     * @param field The field for which precision should/shouldn't be rendered.
-     * @return <code>true</code> if precision should be rendered, otherwise
-     *         <code>false</code>.
-     */
-    protected boolean considerPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.TIMESTAMP:
-                return false;
-        }
-        return true;
     }
 
     /**
@@ -1922,6 +1764,7 @@ public abstract class DatabaseProvider
      * the INSERT in question.
      * @param conn The connection to be used in the eventual execution of the
      * generated SQL statement.
+     * @param entityType The Java class of the entity.
      * @param pkType The Java type of the primary key value.  Can be used to
      * perform a linear search for a specified primary key value in the
      * <code>params</code> list.  The return value of the method must be of
@@ -1940,7 +1783,8 @@ public abstract class DatabaseProvider
      * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)
      */
     @SuppressWarnings("unused")
-    public <T> T insertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
+    public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+                                    Class<T> entityType, Class<K> pkType,
                                     String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
     {
         final StringBuilder sql = new StringBuilder("INSERT INTO " + withSchema(table) + " (");
@@ -1976,7 +1820,7 @@ public abstract class DatabaseProvider
 
         sql.append(")");
 
-        return executeInsertReturningKey(manager, conn, pkType, pkField, sql.toString(), params);
+        return executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
     }
 
     /**
@@ -2023,6 +1867,7 @@ public abstract class DatabaseProvider
      * @param manager The <code>EntityManager</code> which was used to dispatch
      * the INSERT in question.
      * @param conn The database connection to use in executing the INSERT statement.
+     * @param entityType The Java class of the entity.
      * @param pkType The Java class type of the primary key field (for use both in
      * searching the <code>params</code> as well as performing value conversion
      * of auto-generated DB values into proper Java instances).
@@ -2035,10 +1880,11 @@ public abstract class DatabaseProvider
      * if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
-    protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType,
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                              Class<T> entityType, Class<K> pkType,
                                               String pkField, String sql, DBParam... params) throws SQLException
     {
-        T back = null;
+        K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -2053,7 +1899,7 @@ public abstract class DatabaseProvider
 
             if (params[i].getField().equalsIgnoreCase(pkField))
             {
-                back = (T) value;
+                back = (K) value;
             }
 
             if (value == null)

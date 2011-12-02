@@ -38,7 +38,6 @@ public class DDLField {
 	private boolean unique;
 	
 	private Object defaultValue;
-	private Object onUpdate;
 
 	public String getName() {
 		return name;
@@ -54,28 +53,6 @@ public class DDLField {
 
 	public void setType(DatabaseType<?> type) {
 		this.type = type;
-	}
-
-	public int getPrecision() {
-		if (precision <= 0) {
-			if (type != null && type.getDefaultPrecision() > 0) {
-				return type.getDefaultPrecision();
-			}
-		}
-		
-		return precision;
-	}
-
-	public void setPrecision(int precision) {
-		this.precision = precision;
-	}
-
-	public int getScale() {
-		return scale;
-	}
-
-	public void setScale(int scale) {
-		this.scale = scale;
 	}
 
 	public boolean isPrimaryKey() {
@@ -118,17 +95,9 @@ public class DDLField {
 		this.defaultValue = defaultValue;
 	}
 
-	public Object getOnUpdate() {
-		return onUpdate;
-	}
-
-	public void setOnUpdate(Object onUpdate) {
-		this.onUpdate = onUpdate;
-	}
-	
 	@Override
 	public String toString() {
-		return getName() + "(" + getPrecision() + "," + getScale() + ")";
+		return getName();
 	}
 	
 	@Override

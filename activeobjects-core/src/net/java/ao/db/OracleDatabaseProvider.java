@@ -15,14 +15,39 @@
  */
 package net.java.ao.db;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import net.java.ao.DisposableDataSource;
+
+import net.java.ao.types.VarcharType;
+
+import static net.java.ao.types.StringTypeProperties.stringType;
+
+import net.java.ao.types.StringTypeProperties;
+
+import static net.java.ao.types.NumericTypeProperties.numericType;
+
+import net.java.ao.types.NumericTypeProperties;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
@@ -35,16 +60,14 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.BigIntType;
+import net.java.ao.types.BooleanType;
+import net.java.ao.types.ClobType;
 import net.java.ao.types.DatabaseType;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import net.java.ao.types.DoubleType;
+import net.java.ao.types.FloatType;
+import net.java.ao.types.IntegerType;
+import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -137,7 +160,16 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
     public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema);
+        super(dataSource, schema,
+              new TypeManager.Builder()
+                .addMapping(new BigIntType(numericType("NUMBER").withPrecision(20)))
+                .addMapping(new BooleanType(numericType("NUMBER").withPrecision(1)))
+                .addMapping(new IntegerType(numericType("NUMBER").withPrecision(11)))
+                .addMapping(new FloatType(numericType("NUMBER").withPrecision(32).withScale(16)))
+                .addMapping(new DoubleType(numericType("NUMBER").withPrecision(32).withScale(16)))
+                .addMapping(new VarcharType(stringType("VARCHAR", "CLOB")))
+                .addMapping(new ClobType("CLOB"))
+                .build());
     }
 
     @Override
@@ -196,60 +228,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected String convertTypeToString(DatabaseType<?> type)
-    {
-        switch (type.getType())
-        {
-            case Types.BIGINT:
-            case Types.BOOLEAN:
-            case Types.INTEGER:
-            case Types.NUMERIC:
-            case Types.SMALLINT:
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                return "NUMBER";
-            case Types.LONGVARCHAR:
-                return "CLOB";
-        }
-        return super.convertTypeToString(type);
-    }
-
-    @Override
-    protected String renderFieldPrecision(DDLField field)
-    {
-        switch (field.getType().getType())
-        {
-            case Types.BIGINT:
-                field.setPrecision(20);
-                field.setScale(-1);
-                break;
-            case Types.INTEGER:
-            case Types.NUMERIC:
-            case Types.SMALLINT:
-                field.setPrecision(11);
-                field.setScale(-1);
-                break;
-            case Types.DECIMAL:
-            case Types.FLOAT:
-            case Types.DOUBLE:
-            case Types.REAL:
-                if (field.getPrecision() <= 0)
-                {
-                    field.setPrecision(32);
-                }
-                if (field.getScale() <= 0)
-                {
-                    field.setScale(16);
-                }
-                break;
-
-        }
-        return super.renderFieldPrecision(field);
-    }
-
-    @Override
 	protected String renderQueryLimit(Query query) {
 		return "";
 	}
@@ -279,24 +257,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected String renderOnUpdate(DDLField field) {
-		return "";
-	}
-
-	@Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_TIMESTAMP:
-				return "SYSDATE";
-
-			case CURRENT_DATE:
-				return "SYSDATE";
-		}
-
-		return super.renderFunction(func);
-	}
-
-    @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
@@ -311,17 +271,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 	protected String renderTriggerForField(TriggerNameConverter triggerNameConverter,
                                            SequenceNameConverter sequenceNameConverter,
                                            DDLTable table, DDLField field) {
-		if (field.getOnUpdate() != null) {
-			StringBuilder back = new StringBuilder();
-			String value = renderValue(field.getOnUpdate());
-
-			back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.onUpdateName(table.getName(), field.getName())) + '\n');
-			back.append("BEFORE UPDATE\n").append("    ON ").append(withSchema(table.getName())).append("\n    FOR EACH ROW\n");
-			back.append("BEGIN\n");
-			back.append("    :NEW.").append(processID(field.getName())).append(" := ").append(value).append(";\nEND;");
-
-			return back.toString();
-		} else if (field.isAutoIncrement()) {
+		if (field.isAutoIncrement()) {
 			StringBuilder back = new StringBuilder();
 
 	        back.append("CREATE TRIGGER ").append(withSchema(triggerNameConverter.autoIncrementName(table.getName(), field.getName())) +  '\n');
@@ -463,7 +413,9 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-	protected <T> T executeInsertReturningKey(EntityManager manager, Connection conn, Class<T> pkType, String pkField, String sql, DBParam... params) throws SQLException
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+                                                                      Class<T> entityType, Class<K> pkType,
+                                                                      String pkField, String sql, DBParam... params) throws SQLException
     {
         PreparedStatement stmt = null;
         ResultSet res = null;
@@ -471,7 +423,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
         {
             onSql(sql);
             stmt = conn.prepareStatement(sql, new String[]{pkField});
-            T back = (T) setParameters(manager, stmt, params, pkField);
+            K back = (K) setParameters(manager, stmt, params, pkField);
 
             stmt.executeUpdate();
 

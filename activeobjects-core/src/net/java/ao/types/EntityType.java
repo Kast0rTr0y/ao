@@ -29,12 +29,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * @author Daniel Spiewak
  */
-class EntityType<T> extends DatabaseType<RawEntity<T>> {
+public class EntityType<T> extends DatabaseType<RawEntity<T>> {
 	private final DatabaseType<T> primaryKeyType;
     private final TypeManager typeManager;
 
-    public EntityType(TypeManager typeManager, Class<? extends RawEntity<T>> type) {
-		super(Types.INTEGER, -1, RawEntity.class);
+    public EntityType(TypeManager typeManager, Class<? extends RawEntity<T>> type)
+    {
+		super(Types.INTEGER, null, RawEntity.class);
         this.typeManager = checkNotNull(typeManager);
         this.primaryKeyType = Common.getPrimaryKeyType(typeManager, type);
 	}
@@ -60,8 +61,8 @@ class EntityType<T> extends DatabaseType<RawEntity<T>> {
 	}
 
 	@Override
-	public String getDefaultName() {
-		return primaryKeyType.getDefaultName();
+	public String getSqlTypeIdentifier() {
+		return primaryKeyType.getSqlTypeIdentifier();
 	}
 
 	@Override
