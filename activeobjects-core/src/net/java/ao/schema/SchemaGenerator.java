@@ -62,6 +62,7 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public final class SchemaGenerator
 {
+    private static final Set<Integer> PRIMARY_KEY_ILLEGAL_TYPES = ImmutableSet.of(Types.DOUBLE, Types.FLOAT, Types.ARRAY, Types.BINARY, Types.BLOB, Types.CLOB, Types.DATALINK, Types.DECIMAL, Types.JAVA_OBJECT, Types.LONGVARBINARY, Types.REAL, Types.VARBINARY);
     private static final Set<Integer> AUTO_INCREMENT_LEGAL_TYPES = ImmutableSet.of(Types.INTEGER, Types.BIGINT);
 
     public static void migrate(DatabaseProvider provider,
@@ -237,7 +238,8 @@ public final class SchemaGenerator
                 final DatabaseType<?> sqlType = getSQLTypeFromMethod(typeManager, type, method, annotations);
                 field.setType(sqlType);
 
-                field.setPrimaryKey(annotations.isAnnotationPresent(PrimaryKey.class));
+                field.setPrimaryKey(isPrimaryKey(annotations, field));
+
                 field.setNotNull(annotations.isAnnotationPresent(NotNull.class) || annotations.isAnnotationPresent(Unique.class) || annotations.isAnnotationPresent(PrimaryKey.class));
                 field.setUnique(annotations.isAnnotationPresent(Unique.class));
 
@@ -294,6 +296,16 @@ public final class SchemaGenerator
 
 		return fields.toArray(new DDLField[fields.size()]);
 	}
+
+    private static boolean isPrimaryKey(AnnotationDelegate annotations, DDLField field)
+    {
+        final boolean isPrimaryKey = annotations.isAnnotationPresent(PrimaryKey.class);
+        if (isPrimaryKey && PRIMARY_KEY_ILLEGAL_TYPES.contains(field.getType().getType()))
+        {
+            throw new ActiveObjectsConfigurationException(PrimaryKey.class.getName() + " is not supported for type: " + field.getType() + " corresponding to SQL type: " + field.getType().getType());
+        }
+        return isPrimaryKey;
+    }
 
     private static boolean isAutoIncrement(Class<?> type, AnnotationDelegate annotations, DatabaseType<?> dbType)
     {
