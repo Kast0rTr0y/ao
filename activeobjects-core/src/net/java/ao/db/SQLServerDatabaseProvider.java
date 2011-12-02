@@ -159,7 +159,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         super(dataSource, schema,
               new TypeManager.Builder()
                 .addMapping(new BooleanType(numericType("BIT").ignorePrecision(true)))
-                .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
+                .addMapping(new DoubleType(numericType("FLOAT").ignorePrecision(true)))
                 .addMapping(new FloatType(numericType("REAL").ignorePrecision(true)))
                 .addMapping(new VarcharType(stringType("VARCHAR", "NTEXT")))
                 .addMapping(new ClobType("NTEXT"))
