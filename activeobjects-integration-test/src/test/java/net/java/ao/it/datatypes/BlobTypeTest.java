@@ -1,0 +1,264 @@
+package net.java.ao.it.datatypes;
+
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.DBParam;
+import net.java.ao.Entity;
+import net.java.ao.schema.Default;
+import net.java.ao.schema.NotNull;
+import net.java.ao.test.ActiveObjectsIntegrationTest;
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import static org.junit.Assert.*;
+
+/**
+ * Tests for Blob data type
+ */
+public final class BlobTypeTest extends ActiveObjectsIntegrationTest
+{
+    private static byte[] SMALL_BLOB = "Some small sample".getBytes();
+
+    // over 4000 bytes, as Oracle has issues with that.
+    private static byte[] LARGE_BLOB;
+
+    static
+    {
+        String s = "123456789#"; // 10 chars
+        StringBuilder sb = new StringBuilder(s.length() * 600);
+        for (int i = 0; i < 600; i++)
+        {
+            sb.append(s);
+        }
+        sb.append(sb.length() + 4);
+        LARGE_BLOB = sb.toString().getBytes();
+    }
+
+    /**
+     * Test ByteArray representation of a blob
+     */
+    @Test
+    public void testByteArrayStore() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn e = entityManager.create(ByteArrayBlobColumn.class);
+        assertNull(e.getData());
+
+        // set data
+        e.setData(SMALL_BLOB);
+        e.save();
+
+        entityManager.flushAll();
+        assertByteArraysEquals(SMALL_BLOB, e.getData());
+        // TODO: check how this looks in the db!
+
+        // clear data
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test InputStream representation of a blob
+     */
+    @Test
+    public void testInputStreamStore() throws Exception
+    {
+        entityManager.migrate(InputStreamBlobColumn.class);
+
+        // create
+        InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class);
+        assertNull(e.getData());
+
+        // set data
+        e.setData(new ByteArrayInputStream(SMALL_BLOB));
+        e.save();
+
+        entityManager.flushAll();
+        byte[] data = IOUtils.toByteArray(e.getData());
+        assertByteArraysEquals(SMALL_BLOB, data);
+        // TODO: check how this looks in the db!
+
+        // clear data
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test ByteArray representation of a blob
+     */
+    @Test
+    public void testNotNullByteArrayStore() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn e = entityManager.create(ByteArrayBlobColumn.class, new DBParam(getFieldName(ByteArrayBlobColumn.class, "getData"), LARGE_BLOB));
+
+        entityManager.flushAll();
+        assertByteArraysEquals(LARGE_BLOB, e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test InputStream representation of a blob
+     */
+    @Test
+    public void testNotNullInputStreamStore() throws Exception
+    {
+        entityManager.migrate(InputStreamBlobColumn.class);
+
+        // create
+        InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), new ByteArrayInputStream(LARGE_BLOB)));
+
+        entityManager.flushAll();
+        assertByteArraysEquals(LARGE_BLOB, IOUtils.toByteArray(e.getData()));
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test NotNull blob column
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testNotNullColumnCreatingWithoutValue() throws Exception
+    {
+        entityManager.migrate(NotNullByteArrayBlobColumn.class);
+
+        // create
+        entityManager.create(NotNullByteArrayBlobColumn.class);
+    }
+
+    /**
+     * Test NotNull blob column
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testNotNullColumnSetNull() throws Exception
+    {
+        entityManager.migrate(NotNullByteArrayBlobColumn.class);
+
+        // create
+        NotNullByteArrayBlobColumn e = entityManager.create(NotNullByteArrayBlobColumn.class, new DBParam(getFieldName(NotNullByteArrayBlobColumn.class, "getData"), SMALL_BLOB));
+
+        // set value to null should fail
+        e.setData(null);
+    }
+
+    /**
+     * Default value not supported
+     */
+    @Test(expected = ActiveObjectsConfigurationException.class)
+    public void testDefaultColumn() throws Exception
+    {
+        entityManager.migrate(DefaultColumn.class);
+    }
+
+    /**
+     * Empty String default value not supported
+     */
+    @Test(expected = ActiveObjectsConfigurationException.class)
+    public void testEmptyDefaultColumn() throws Exception
+    {
+        entityManager.migrate(EmptyDefaultColumn.class);
+    }
+
+    /**
+     * Test deletion
+     */
+    @Test
+    public void testDeletion() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn e = entityManager.create(ByteArrayBlobColumn.class);
+        assertNull(e.getData());
+
+        // set data
+        e.setData(LARGE_BLOB);
+        e.save();
+
+        entityManager.delete(e);
+
+        // TODO: check that blob got deleted
+    }
+
+    private void assertByteArraysEquals(byte[] a, byte[] b)
+    {
+        assertEquals(new String(a), new String(b));
+    }
+
+    /**
+     * Accessing the blob by getting the string
+     */
+    public static interface ByteArrayBlobColumn extends Entity
+    {
+        public byte[] getData();
+
+        public void setData(byte[] data);
+    }
+
+    /**
+     * Accessing the blob by an input stream
+     */
+    public static interface InputStreamBlobColumn extends Entity
+    {
+        public InputStream getData();
+
+        public void setData(InputStream data);
+    }
+
+    /**
+     * Blob with not null constraint
+     */
+    public static interface NotNullByteArrayBlobColumn extends Entity
+    {
+        @NotNull
+        public byte[] getData();
+
+        public void setData(byte[] data);
+    }
+
+    /**
+     * Accessing the blob by an input stream
+     */
+    public static interface NotNullInputStreamBlobColumn extends Entity
+    {
+        @NotNull
+        public InputStream getData();
+
+        public void setData(InputStream data);
+    }
+
+    /**
+     * Default value - not supported
+     */
+    public static interface DefaultColumn extends Entity
+    {
+        @Default("This is a blob!")
+        public InputStream getData();
+
+        public void setData(InputStream data);
+    }
+
+    /**
+     * Empty default column - not supported
+     */
+    public static interface EmptyDefaultColumn extends Entity
+    {
+        @Default("")
+        public InputStream getData();
+
+        public void setData(InputStream data);
+    }
+}

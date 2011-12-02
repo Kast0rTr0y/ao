@@ -1942,7 +1942,7 @@ public abstract class DatabaseProvider
      */
     public void putNull(PreparedStatement stmt, int index) throws SQLException
     {
-        stmt.setString(index, null);
+        stmt.setNull(index, stmt.getParameterMetaData().getParameterType(index));
     }
 
     /**

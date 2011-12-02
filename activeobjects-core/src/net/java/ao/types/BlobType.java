@@ -15,96 +15,85 @@
  */
 package net.java.ao.types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.Common;
+import net.java.ao.EntityManager;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import net.java.ao.Common;
-import net.java.ao.EntityManager;
-
-/**
- * @author Daniel Spiewak
- */
-public class BlobType extends DatabaseType<Object> {
-	
+public final class BlobType extends DatabaseType<Object>
+{
     public BlobType(String sqlTypeIdentifier)
     {
-		super(Types.BLOB, sqlTypeIdentifier, byte[].class, InputStream.class);
-	}
-    
+        super(Types.BLOB, sqlTypeIdentifier, byte[].class, InputStream.class);
+    }
+
     public BlobType()
     {
         this("BLOB");
     }
-	
-	@Override
-	public boolean shouldCache(Class<?> type) {
-		if (Common.typeInstanceOf(type, InputStream.class)) {
-			return false;
-		}
-		
-		return super.shouldCache(type);
-	}
+
+    @Override
+    public boolean shouldCache(Class<?> type)
+    {
+        return !Common.typeInstanceOf(type, InputStream.class) && super.shouldCache(type);
+    }
 
     @Override
     public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<?> type, String field) throws SQLException
     {
         return manager.getProvider().handleBlob(res, type, field);
     }
-	
-	@Override
-	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Object value) throws SQLException {
-		InputStream is = null;
-		
-		if (value instanceof byte[]) {
-			is = new ByteArrayInputStream((byte[]) value);
-		} else if (value instanceof InputStream) {
-			is = (InputStream) value;
-		} else {
-			throw new IllegalArgumentException("BLOB value must be of type byte[] or InputStream");
-		}
-		
-		boolean handled = false;
-		try {		// for Java 6
-			Method m = stmt.getClass().getMethod("setBinaryStream", int.class, InputStream.class);
-			m.invoke(stmt, index, is);
-			
-			handled = true;
-		} catch (Throwable t) {
-		}
-		
-		if (!handled) {
-			try {
-				stmt.setBinaryStream(index, is, is.available());
-			} catch (IOException e) {
-				SQLException e2 = new SQLException(e.getMessage());
-				e2.initCause(e);
-				
-				throw e2;
-			}
-		}
-	}
 
-	@Override
-	public Object defaultParseValue(String value) {
-		if (value.equalsIgnoreCase("null")) {
-			return null;
-		}
-		
-		throw new IllegalArgumentException("Cannot assign a String representation to a BLOB");
-	}
-	
-	@Override
-	public String valueToString(Object value) {
-		if (value == null) {
-			return null;
-		}
-		
-		throw new IllegalArgumentException("Cannot assign a String representation to a BLOB");
-	}
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Object value) throws SQLException
+    {
+        final InputStream is;
+        if (value instanceof byte[])
+        {
+            is = new ByteArrayInputStream((byte[]) value);
+        }
+        else if (value instanceof InputStream)
+        {
+            is = (InputStream) value;
+        }
+        else
+        {
+            throw new IllegalArgumentException("BLOB value must be of type byte[] or InputStream");
+        }
+
+        try
+        {
+            stmt.setBinaryStream(index, is, is.available());
+        }
+        catch (IOException e)
+        {
+            SQLException e2 = new SQLException(e.getMessage());
+            e2.initCause(e);
+            throw e2;
+        }
+    }
+
+    @Override
+    public Object defaultParseValue(String value)
+    {
+        throw new ActiveObjectsConfigurationException("Default value is not supported for BLOB types");
+    }
+
+    @Override
+    public String valueToString(Object value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        throw new IllegalArgumentException("Cannot assign a String representation to a BLOB");
+    }
 }

@@ -464,11 +464,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 	}
 
 	@Override
-	public void putNull(PreparedStatement stmt, int index) throws SQLException {
-		stmt.setNull(index, stmt.getParameterMetaData().getParameterType(index));
-	}
-
-	@Override
 	protected Set<String> getReservedWords() {
 		return RESERVED_WORDS;
 	}

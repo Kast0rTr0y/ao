@@ -15,6 +15,8 @@
  */
 package net.java.ao.db;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -210,6 +212,11 @@ public final class MySQLDatabaseProvider extends DatabaseProvider {
 		
 		return back.toString();
 	}
+
+    public void putNull(PreparedStatement stmt, int index) throws SQLException
+    {
+        stmt.setString(index, null);
+    }
 
 	@Override
 	protected Set<String> getReservedWords() {

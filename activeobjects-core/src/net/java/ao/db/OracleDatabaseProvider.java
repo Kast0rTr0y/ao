@@ -560,10 +560,17 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		return RESERVED_WORDS;
 	}
 
-	@Override
-	public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException {
-		stmt.setInt(index, value ? 1 : 0);
-	}
+    @Override
+    public void putNull(PreparedStatement stmt, int index) throws SQLException
+    {
+        stmt.setString(index, null);
+    }
+
+    @Override
+    public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException
+    {
+        stmt.setInt(index, value ? 1 : 0);
+    }
 
     private static class IsAutoIncrementFieldPredicate implements Predicate<DDLField>
     {
