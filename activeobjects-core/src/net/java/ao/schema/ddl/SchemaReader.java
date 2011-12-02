@@ -18,7 +18,6 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import net.java.ao.Common;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.NameConverters;
@@ -342,10 +341,7 @@ public final class SchemaReader
 
                 if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null)
                 {
-                    if (!isMySqlTimeStampAndDefaultValueIsCurrentTimeStampOr0(ontoField))
-                    {
-                        actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                    }
+                    actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
                 else if (fromField.getDefaultValue() != null
                         && !Common.fuzzyCompare(typeManager, fromField.getDefaultValue(), ontoField.getDefaultValue()))
@@ -471,27 +467,6 @@ public final class SchemaReader
         }
 
         return actions.toArray(new DDLAction[actions.size()]);
-    }
-
-    private static boolean isMySqlTimeStampAndDefaultValueIsCurrentTimeStampOr0(DDLField ontoField)
-    {
-        if (ontoField.getType().getType() != Types.TIMESTAMP)
-        {
-            return false;
-        }
-
-        if (ontoField.getDefaultValue() instanceof DatabaseFunction[])
-        {
-            final DatabaseFunction[] dbFunctions = (DatabaseFunction[]) ontoField.getDefaultValue();
-            return dbFunctions.length > 0 && DatabaseFunction.CURRENT_TIMESTAMP.equals(dbFunctions[0]);
-        }
-
-        if (ontoField.getDefaultValue() instanceof Calendar)
-        {
-            return ((Calendar) ontoField.getDefaultValue()).getTimeInMillis() == DEFAULT_MYSQL_TIME;
-        }
-
-        return false;
     }
 
     private static boolean equals(String s, String s1, boolean caseSensitive)

@@ -7,7 +7,7 @@ CREATE TABLE person (
     height NUMBER(32,6) DEFAULT 62.3,
     companyID NUMBER(20),
     cool NUMBER(1) DEFAULT 1,
-    modified TIMESTAMP DEFAULT SYSDATE,
+    modified DATETIME,
     weight NUMBER(32,16),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)

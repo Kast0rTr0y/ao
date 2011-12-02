@@ -15,7 +15,6 @@
  */
 package net.java.ao.db;
 
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
@@ -239,20 +238,19 @@ public final class DatabaseProviderTest
         return fk;
     }
 
-    private DDLField newWeightField(DatabaseProvider db)
-    {
-        DDLField f =  new DDLField();
-        f.setName("weight");
-        f.setType(db.getTypeManager().getType(double.class));
-        return f;
-    }
-
     private DDLField newModifiedField(DatabaseProvider db)
     {
         DDLField f =  new DDLField();
         f.setName("modified");
         f.setType(db.getTypeManager().getType(Date.class));
-        f.setDefaultValue(DatabaseFunction.CURRENT_TIMESTAMP);
+        return f;
+    }
+
+    private DDLField newWeightField(DatabaseProvider db)
+    {
+        DDLField f =  new DDLField();
+        f.setName("weight");
+        f.setType(db.getTypeManager().getType(double.class));
         return f;
     }
 

@@ -21,7 +21,6 @@ import com.google.common.collect.Iterables;
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Polymorphic;
 import net.java.ao.RawEntity;
@@ -413,12 +412,6 @@ public final class SchemaGenerator
         if (value == null)
         {
             return null;
-        }
-
-        final DatabaseFunction func = DatabaseFunction.get(value.trim());
-        if (func != null)
-        {
-            return func;
         }
 
         return type.defaultParseValue(value);

@@ -7,7 +7,7 @@ CREATE TABLE public."person" (
     "height" DOUBLE PRECISION DEFAULT 62.3,
     "companyID" BIGINT,
     "cool" BOOLEAN DEFAULT TRUE,
-    "modified" TIMESTAMP DEFAULT now(),
+    "modified" DATETIME,
     "weight" DOUBLE PRECISION,
     CONSTRAINT "fk_person_companyid" FOREIGN KEY ("companyID") REFERENCES public."company"("id"),
     PRIMARY KEY("id")

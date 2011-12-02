@@ -41,7 +41,6 @@ import net.java.ao.types.BooleanType;
 
 import net.java.ao.DisposableDataSource;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
@@ -149,7 +148,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
               new TypeManager.Builder()
                 .addMapping(new BooleanType("BIT"))
                 .addMapping(new DoubleType("DECIMAL"))
-                .addMapping(new TimestampDateType("DATETIME"))
                 .addMapping(new ClobType("NTEXT"))
                 .addMapping(new BlobType("IMAGE"))
                 .build());
@@ -418,19 +416,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         }
         return super.renderFieldPrecision(field);
     }
-
-    @Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_DATE:
-				return "GetDate()";
-
-			case CURRENT_TIMESTAMP:
-				return "GetDate()";
-		}
-
-		return super.renderFunction(func);
-	}
 
     @Override
     protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)

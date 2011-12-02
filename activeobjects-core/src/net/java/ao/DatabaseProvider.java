@@ -354,19 +354,6 @@ public abstract class DatabaseProvider
         {
             return null;
         }
-
-        List<DatabaseFunction> posFuncs = new ArrayList<DatabaseFunction>();
-        for (DatabaseFunction func : DatabaseFunction.values())
-        {
-            if (renderFunction(func).equalsIgnoreCase(value))
-            {
-                posFuncs.add(func);
-            }
-        }
-        if (posFuncs.size() > 0)
-        {
-            return posFuncs.toArray(new DatabaseFunction[posFuncs.size()]);
-        }
         try
         {
             switch (type)
@@ -1588,7 +1575,6 @@ public abstract class DatabaseProvider
      * @return The database-specific String rendering of the instance in
      *         question.
      * @see #renderCalendar(Calendar)
-     * @see #renderFunction(DatabaseFunction)
      */
     protected String renderValue(Object value)
     {
@@ -1603,10 +1589,6 @@ public abstract class DatabaseProvider
         else if (value instanceof Boolean)
         {
             return ((Boolean) value ? "1" : "0");
-        }
-        else if (value instanceof DatabaseFunction)
-        {
-            return renderFunction((DatabaseFunction) value);
         }
         else if (value instanceof Number)
         {
@@ -1677,41 +1659,6 @@ public abstract class DatabaseProvider
     protected String renderFieldType(DDLField field)
     {
         return convertTypeToString(field.getType());
-    }
-
-    /**
-     * <p>Renders the specified {@link DatabaseFunction} in its
-     * database-specific form.  For example, for MySQL the
-     * <code>CURRENT_DATE</code> enum value would be rendered as
-     * "<code>CURRENT_DATE</code>" (without the quotes).  For functions
-     * which do not have a database equivalent, a default literal value
-     * of the appropriate type should be returned.  For example, if MySQL
-     * did <i>not</i> define either a CURRENT_DATE or a CURRENT_TIMESTAMP
-     * function, the appropriate return value for both functions would
-     * be <code>'0000-00-00 00:00:00'</code> (including the quotes).
-     * This is to prevent migrations from failing even in cases where
-     * non-standard functions are used.</p>
-     * <p/>
-     * <p>As of 1.0, no unconventional functions are allowed by the
-     * {@link DatabaseFunction} enum, thus no database should have any
-     * problems with any allowed functions.</p>
-     *
-     * @param func The abstract function to be rendered.
-     * @return The database-specific DDL representation of the function
-     *         in question.
-     */
-    protected String renderFunction(DatabaseFunction func)
-    {
-        switch (func)
-        {
-            case CURRENT_DATE:
-                return "CURRENT_DATE";
-
-            case CURRENT_TIMESTAMP:
-                return "CURRENT_TIMESTAMP";
-        }
-
-        return null;
     }
 
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException

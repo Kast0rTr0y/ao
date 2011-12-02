@@ -36,7 +36,6 @@ import com.google.common.base.Predicate;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
@@ -277,19 +276,6 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 
         return super.parseValue(type, value);
     }
-
-	@Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_TIMESTAMP:
-				return "SYSDATE";
-
-			case CURRENT_DATE:
-				return "SYSDATE";
-		}
-
-		return super.renderFunction(func);
-	}
 
     @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)

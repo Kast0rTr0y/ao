@@ -17,7 +17,6 @@ package net.java.ao.db;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
-import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
@@ -220,19 +219,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		return super.renderValue(value);
-	}
-
-	@Override
-	protected String renderFunction(DatabaseFunction func) {
-		switch (func) {
-			case CURRENT_DATE:
-				return "now()";
-
-			case CURRENT_TIMESTAMP:
-				return "now()";
-		}
-
-		return super.renderFunction(func);
 	}
 
     @Override
