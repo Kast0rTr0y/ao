@@ -15,6 +15,20 @@
  */
 package net.java.ao.db;
 
+import com.google.common.collect.ImmutableSet;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
+import net.java.ao.Query;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.BooleanType;
+import net.java.ao.types.DoubleType;
+import net.java.ao.types.TypeManager;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.sql.Blob;
@@ -23,72 +37,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.java.ao.types.DoubleType;
-
-import net.java.ao.types.BigIntType;
-
-import net.java.ao.types.IntegerType;
-
-import net.java.ao.DatabaseProvider;
-import net.java.ao.DisposableDataSource;
-import net.java.ao.Query;
-import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.SequenceNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BooleanType;
-import net.java.ao.types.TypeManager;
-
-import static net.java.ao.types.NumericTypeProperties.numericType;
+import static net.java.ao.types.NumericTypeProperties.*;
 
 /**
  * @author Daniel Spiewak
  */
-abstract class DerbyDatabaseProvider extends DatabaseProvider {
-	private static final Set<String> RESERVED_WORDS = new HashSet<String>() {
-		{
-			addAll(Arrays.asList("ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", 
-					"ASC", "ASSERTION", "AT", "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIT", 
-					"BOOLEAN", "BOTH", "BY", "CALL", "CASCADE", "CASCADED", "CASE", "CAST", 
-					"CHAR", "CHARACTER", "CHECK", "CLOSE", "COLLATE", "COLLATION", "COLUMN", 
-					"COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONSTRAINTS", "CONTINUE", 
-					"CONVERT", "CORRESPONDING", "COUNT", "CREATE", "CURRENT", "CURRENT_DATE", 
-					"CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DEALLOCATE", 
-					"DEC", "DECIMAL", "DECLARE", "DEFERRABLE", "DEFERRED", "DELETE", "DESC", 
-					"DESCRIBE", "DIAGNOSTICS", "DISCONNECT", "DISTINCT", "DOUBLE", "DROP", "ELSE", 
-					"END", "ENDEXEC", "ESCAPE", "EXCEPT", "EXCEPTION", "EXEC", "EXECUTE", "EXISTS", 
-					"EXPLAIN", "EXTERNAL", "FALSE", "FETCH", "FIRST", "FLOAT", "FOR", "FOREIGN", 
-					"FOUND", "FROM", "FULL", "FUNCTION", "GET", "GET_CURRENT_CONNECTION", "GLOBAL", 
-					"GO", "GOTO", "GRANT", "GROUP", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", 
-					"IN", "INDICATOR", "INITIALLY", "INNER", "INOUT", "INPUT", "INSENSITIVE", 
-					"INSERT", "INT", "INTEGER", "INTERSECT", "INTO", "IS", "ISOLATION", "JOIN", 
-					"KEY", "LAST", "LEFT", "LIKE", "LONGINT", "LOWER", "LTRIM", "MATCH", "MAX", 
-					"MIN", "MINUTE", "NATIONAL", "NATURAL", "NCHAR", "NVARCHAR", "NEXT", "NO", 
-					"NOT", "NULL", "NULLIF", "NUMERIC", "OF", "ON", "ONLY", "OPEN", "OPTION", "OR", 
-					"ORDER", "OUT", "OUTER", "OUTPUT", "OVERLAPS", "PAD", "PARTIAL", "PREPARE", 
-					"PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURE", "PUBLIC", "READ", 
-					"REAL", "REFERENCES", "RELATIVE", "RESTRICT", "REVOKE", "RIGHT", "ROLLBACK", 
-					"ROWS", "RTRIM", "SCHEMA", "SCROLL", "SECOND", "SELECT", "SESSION_USER", "SET", 
-					"SMALLINT", "SOME", "SPACE", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "SUBSTR", 
-					"SUBSTRING", "SUM", "SYSTEM_USER", "TABLE", "TEMPORARY", "TIMEZONE_HOUR", 
-					"TIMEZONE_MINUTE", "TO", "TRAILING", "TRANSACTION", "TRANSLATE", "TRANSLATION", 
-					"TRUE", "UNION", "UNIQUE", "UNKNOWN", "UPDATE", "UPPER", "USER", "USING", 
-					"VALUES", "VARCHAR", "VARYING", "VIEW", "WHENEVER", "WHERE", "WITH", "WORK", 
-					"WRITE", "XML", "XMLEXISTS", "XMLPARSE", "XMLSERIALIZE", "YEAR"));
-		}
-	};
-
+abstract class DerbyDatabaseProvider extends DatabaseProvider
+{
     DerbyDatabaseProvider(DisposableDataSource dataSource)
     {
         super(dataSource, null,
@@ -103,10 +64,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 		int limit = query.getLimit();
 		
 		if (limit >= 0) {
-//			if (query.getOffset() > 0) {
-//				limit += query.getOffset();
-//			}
-			
 			stmt.setFetchSize(limit);
 			stmt.setMaxRows(limit);
 		}
@@ -217,4 +174,34 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider {
 	public boolean isCaseSensetive() {
 		return false;
 	}
+
+    private static final Set<String> RESERVED_WORDS = ImmutableSet.of(
+            "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS",
+            "ASC", "ASSERTION", "AT", "AUTHORIZATION", "AVG", "BEGIN", "BETWEEN", "BIT",
+            "BOOLEAN", "BOTH", "BY", "CALL", "CASCADE", "CASCADED", "CASE", "CAST",
+            "CHAR", "CHARACTER", "CHECK", "CLOSE", "COLLATE", "COLLATION", "COLUMN",
+            "COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONSTRAINTS", "CONTINUE",
+            "CONVERT", "CORRESPONDING", "COUNT", "CREATE", "CURRENT", "CURRENT_DATE",
+            "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DEALLOCATE",
+            "DEC", "DECIMAL", "DECLARE", "DEFERRABLE", "DEFERRED", "DELETE", "DESC",
+            "DESCRIBE", "DIAGNOSTICS", "DISCONNECT", "DISTINCT", "DOUBLE", "DROP", "ELSE",
+            "END", "ENDEXEC", "ESCAPE", "EXCEPT", "EXCEPTION", "EXEC", "EXECUTE", "EXISTS",
+            "EXPLAIN", "EXTERNAL", "FALSE", "FETCH", "FIRST", "FLOAT", "FOR", "FOREIGN",
+            "FOUND", "FROM", "FULL", "FUNCTION", "GET", "GET_CURRENT_CONNECTION", "GLOBAL",
+            "GO", "GOTO", "GRANT", "GROUP", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE",
+            "IN", "INDICATOR", "INITIALLY", "INNER", "INOUT", "INPUT", "INSENSITIVE",
+            "INSERT", "INT", "INTEGER", "INTERSECT", "INTO", "IS", "ISOLATION", "JOIN",
+            "KEY", "LAST", "LEFT", "LIKE", "LONGINT", "LOWER", "LTRIM", "MATCH", "MAX",
+            "MIN", "MINUTE", "NATIONAL", "NATURAL", "NCHAR", "NVARCHAR", "NEXT", "NO",
+            "NOT", "NULL", "NULLIF", "NUMERIC", "OF", "ON", "ONLY", "OPEN", "OPTION", "OR",
+            "ORDER", "OUT", "OUTER", "OUTPUT", "OVERLAPS", "PAD", "PARTIAL", "PREPARE",
+            "PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURE", "PUBLIC", "READ",
+            "REAL", "REFERENCES", "RELATIVE", "RESTRICT", "REVOKE", "RIGHT", "ROLLBACK",
+            "ROWS", "RTRIM", "SCHEMA", "SCROLL", "SECOND", "SELECT", "SESSION_USER", "SET",
+            "SMALLINT", "SOME", "SPACE", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "SUBSTR",
+            "SUBSTRING", "SUM", "SYSTEM_USER", "TABLE", "TEMPORARY", "TIMEZONE_HOUR",
+            "TIMEZONE_MINUTE", "TO", "TRAILING", "TRANSACTION", "TRANSLATE", "TRANSLATION",
+            "TRUE", "UNION", "UNIQUE", "UNKNOWN", "UPDATE", "UPPER", "USER", "USING",
+            "VALUES", "VARCHAR", "VARYING", "VIEW", "WHENEVER", "WHERE", "WITH", "WORK",
+            "WRITE", "XML", "XMLEXISTS", "XMLPARSE", "XMLSERIALIZE", "YEAR");
 }
