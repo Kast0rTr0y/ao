@@ -19,32 +19,50 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
+import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 
+import static java.lang.Double.parseDouble;
 import static net.java.ao.types.NumericTypeProperties.numericType;
 
-/**
- * @author Daniel Spiewak
- */
-public class DoubleType extends AbstractNumericType<Double>
+public final class DoubleType extends AbstractNumericType<Double>
 {
     public DoubleType(NumericTypeProperties properties)
     {
         super(Types.DOUBLE, properties, double.class, Double.class);
     }
-	
-	public DoubleType()
-	{
-	    this(numericType("DOUBLE"));
-	}
-	
-	@Override
-	public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Double> type, String field) throws SQLException {
-		return res.getDouble(field);
-	}
 
-	@Override
-	public Double defaultParseValue(String value) {
-		return Double.parseDouble(value);
-	}
+    public DoubleType()
+    {
+        this(numericType("DOUBLE"));
+    }
+
+    @Override
+    public Object validate(Object o)
+    {
+        if (!(o instanceof Double))
+        {
+            throw new IllegalArgumentException(o + " is not of type " + Double.class.getName());
+        }
+        return o;
+    }
+
+    @Override
+    public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Double> type, String field) throws SQLException
+    {
+        return res.getDouble(field);
+    }
+
+    @Override
+    public Double defaultParseValue(String value)
+    {
+        try
+        {
+            return parseDouble(value);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new ActiveObjectsConfigurationException("Could not parse default value '" + value + "' to Double", e);
+        }
+    }
 }
