@@ -161,7 +161,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
                 .addMapping(new BooleanType(numericType("BIT").ignorePrecision(true)))
                 .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
                 .addMapping(new FloatType(numericType("REAL").ignorePrecision(true)))
-                .addMapping(new TimestampDateType("DATETIME"))
                 .addMapping(new VarcharType(stringType("VARCHAR", "NTEXT")))
                 .addMapping(new ClobType("NTEXT"))
                 .addMapping(new BlobType("IMAGE"))

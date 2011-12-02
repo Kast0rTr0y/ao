@@ -48,6 +48,7 @@ import net.java.ao.types.BlobType;
 import net.java.ao.types.ClobType;
 import net.java.ao.types.DatabaseType;
 import net.java.ao.types.DoubleType;
+import net.java.ao.types.TimestampDateType;
 import net.java.ao.types.TypeManager;
 import net.java.ao.types.VarcharType;
 import net.java.ao.util.StringUtils;
@@ -134,6 +135,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
                 .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
                 .addMapping(new ClobType("TEXT"))
                 .addMapping(new BlobType("BYTEA"))
+                .addMapping(new TimestampDateType("TIMESTAMP"))
                 .addMapping(new DoubleType(numericType("DOUBLE PRECISION").ignorePrecision(true)))
                 .build());
     }
