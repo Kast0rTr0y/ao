@@ -21,6 +21,7 @@ import java.sql.Types;
 
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
+import net.java.ao.util.DoubleUtils;
 
 import static java.lang.Double.parseDouble;
 import static net.java.ao.types.NumericTypeProperties.numericType;
@@ -44,6 +45,9 @@ public final class DoubleType extends AbstractNumericType<Double>
         {
             throw new IllegalArgumentException(o + " is not of type " + Double.class.getName());
         }
+
+        DoubleUtils.checkDouble((Double)o);
+
         return o;
     }
 

@@ -213,7 +213,7 @@ public abstract class DatabaseProviderTest
     {
         DDLField f = new DDLField();
         f.setName("height");
-        f.setType(db.getTypeManager().getType(double.class).withPrecision(32).withScale(6));
+        f.setType(db.getTypeManager().getType(double.class));
         f.setDefaultValue(62.3);
         return f;
     }
@@ -231,7 +231,7 @@ public abstract class DatabaseProviderTest
     {
         DDLField f = new DDLField();
         f.setName("age");
-        f.setType(db.getTypeManager().getType(int.class).withPrecision(12));
+        f.setType(db.getTypeManager().getType(int.class));
         return f;
     }
 

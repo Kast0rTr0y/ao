@@ -1,16 +1,14 @@
 package net.java.ao.it.datatypes;
 
-import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.DBParam;
-import net.java.ao.Entity;
-import net.java.ao.RawEntity;
+import net.java.ao.*;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
-import org.junit.Ignore;
+import net.java.ao.util.DoubleUtils;
+
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -33,25 +31,30 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test simple creation
+     * Test PK throws
      */
-    @Test(expected = ActiveObjectsConfigurationException.class)
+    @Test(expected = ActiveObjectsException.class)
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
+
+        Double id = new Double(1d);
+        SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", id));
+
+        entityManager.flushAll();
+        assertEquals(id, e.getId());
+        checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", id);
     }
 
     /**
      * Test different values for an Double column (ID column in this case)
      */
     @Test
-    @Ignore("Need to deal with special values!")
     public void testSpecialValues() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
-
         // create a row with normal id
-        for (Double value : new Double[]{Double.MIN_VALUE, -1.5d, 0d, 1.5d, Double.MAX_VALUE})
+        for (Double value : new Double[]{DoubleUtils.MIN_VALUE, -1.5d, 0d, 1.5d, DoubleUtils.MAX_VALUE})
         {
             SimpleColumn e = entityManager.create(SimpleColumn.class);
             e.setAge(value);
