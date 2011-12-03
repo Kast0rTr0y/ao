@@ -32,6 +32,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+
+import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
+
+import net.java.ao.types.TypeQualifiers;
+
 import test.schema.Company;
 
 import java.io.BufferedReader;
@@ -239,7 +246,7 @@ public abstract class DatabaseProviderTest
     {
         DDLField f = new DDLField();
         f.setName("lastName");
-        f.setType(db.getTypeManager().getType(Types.CLOB));
+        f.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(UNLIMITED_LENGTH)));
         return f;
     }
 
@@ -386,7 +393,7 @@ public abstract class DatabaseProviderTest
             DDLIndex index = new DDLIndex();
             index.setField("companyID");
             index.setTable("person");
-            index.setType(db.getTypeManager().getType(Types.VARCHAR));
+            index.setType(db.getTypeManager().getType(String.class));
             back.setIndex(index);
 
             return back;
@@ -402,7 +409,7 @@ public abstract class DatabaseProviderTest
             DDLIndex index = new DDLIndex();
             index.setField("companyID");
             index.setTable("person");
-            index.setType(db.getTypeManager().getType(Types.VARCHAR));
+            index.setType(db.getTypeManager().getType(String.class));
             back.setIndex(index);
 
             return back;

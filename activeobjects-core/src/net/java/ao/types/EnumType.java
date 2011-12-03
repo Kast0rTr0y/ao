@@ -1,55 +1,26 @@
-/*
- * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *          http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.java.ao.types;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.NoSuchElementException;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 
-import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 
-import static net.java.ao.types.NumericTypeProperties.numericType;
+import static java.sql.Types.INTEGER;
 import static net.java.ao.util.EnumUtils.values;
 
-/**
- * @author Daniel Spiewak
- */
-public class EnumType extends AbstractNumericType<Enum<?>>
+final class EnumType extends AbstractLogicalType<Enum<?>>
 {
-    public EnumType(NumericTypeProperties properties)
-    {
-        super(Types.INTEGER, properties, Enum.class);
-    }
-    
     public EnumType()
     {
-        this(numericType("INTEGER"));
-    }
-    
-    @Override
-    public boolean isDefaultForSqlType()
-    {
-        return false;
+        super("Enum",
+              new Class<?>[] { Enum.class },
+              INTEGER, new Integer[] { });
     }
 
     @Override
@@ -57,11 +28,12 @@ public class EnumType extends AbstractNumericType<Enum<?>>
     {
         return true;
     }
-
+    
     @Override
-    public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Enum<?>> type, String field) throws SQLException
+    public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<Enum<?>> type, String columnName)
+        throws SQLException
     {
-        final int dbValue = res.getInt(field);
+        final int dbValue = res.getInt(columnName);
         try
         {
             return findEnum(type, dbValue);
@@ -72,7 +44,28 @@ public class EnumType extends AbstractNumericType<Enum<?>>
         }
     }
 
-    private Enum findEnum(Class<? extends Enum<?>> type, final int dbValue)
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value, int jdbcType) throws SQLException
+    {
+        stmt.setInt(index, value.ordinal());
+    }
+
+    // Parsing won't be possible until we know the desired enum type at the time we're parsing the value.
+    // Java won't let us cast an integer to an enum.
+    //@Override
+    //public Enum<?> parse(String input)
+    //{
+    //    try
+    //    {
+    //        return Integer.parseInt(value);
+    //    }
+    //    catch (NumberFormatException e)
+    //    {
+    //        throw new ActiveObjectsConfigurationException("Could not parse '" + value + "' as an integer to match enum ordinal");
+    //    }
+    // }
+    
+    private Enum<?> findEnum(Class<? extends Enum<?>> type, final int dbValue)
     {
         return Iterables.find(values(type), new Predicate<Enum>()
         {
@@ -82,24 +75,5 @@ public class EnumType extends AbstractNumericType<Enum<?>>
                 return e.ordinal() == dbValue;
             }
         });
-    }
-
-    @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value) throws SQLException
-    {
-        stmt.setInt(index, value.ordinal());
-    }
-
-    @Override
-    public Object defaultParseValue(String value)
-    {
-        try
-        {
-            return Integer.parseInt(value);
-        }
-        catch (NumberFormatException e)
-        {
-            throw new ActiveObjectsConfigurationException("Could not parse '" + value + "' as an integer to match enum ordinal");
-        }
     }
 }

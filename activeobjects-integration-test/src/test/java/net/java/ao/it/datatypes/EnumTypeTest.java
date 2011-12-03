@@ -11,6 +11,8 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.EntityUtils;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -130,6 +132,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test default value
      */
     @Test
+    @Ignore("Parsing of enum values from strings is not yet supported")
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);

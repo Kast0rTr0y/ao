@@ -6,7 +6,7 @@ import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.sql.AbstractCloseableResultSetMetaData;
 import net.java.ao.sql.CloseableResultSetMetaData;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import java.sql.DatabaseMetaData;
@@ -18,6 +18,10 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+
+import net.java.ao.types.TypeQualifiers;
 
 import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.newHashMap;
@@ -80,14 +84,24 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             for (int i = 1; i < rsmd.getColumnCount() + 1; i++)
             {
                 final String fieldName = rsmd.getColumnName(i);
-                final DatabaseType<?> databaseType = manager.getType(rsmd.getColumnType(i));
-                final int precision = getFieldPrecision(rsmd, i);
-                final int scale = getScale(rsmd, i);
+                final TypeQualifiers qualifiers = getTypeQualifiers(rsmd, i);
+                final int jdbcType = rsmd.getColumnType(i);
+                final TypeInfo<?> databaseType = manager.getTypeFromSchema(jdbcType, qualifiers);
+                if (databaseType == null)
+                {
+                    StringBuilder buf = new StringBuilder();
+                    buf.append("TABLE: " + tableName + ": ");
+                    for (int j = 1; j <= rsmd.getColumnCount(); j++) {
+                        buf.append(rsmd.getColumnName(j)).append(" - ");
+                    }
+                    buf.append("can't find type " + jdbcType + " " + qualifiers + " in field " + fieldName);
+                    throw new IllegalStateException(buf.toString());
+                }
                 final boolean autoIncrement = isAutoIncrement(rsmd, i, sequenceNames, tableName, fieldName);
                 final boolean notNull = isNotNull(rsmd, i);
                 final boolean isUnique = isUnique(uniqueFields, fieldName);
 
-                fields.put(fieldName, newField(fieldName, databaseType, precision, scale, autoIncrement, notNull, isUnique));
+                fields.put(fieldName, newField(fieldName, databaseType, jdbcType, autoIncrement, notNull, isUnique));
             }
 
             ResultSet rs = null;
@@ -102,7 +116,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                     {
                         throw new IllegalStateException("Could not find column '" + columnName + "' in previously parsed query!");
                     }
-                    current.setDefaultValue(databaseProvider.parseValue(current.getDatabaseType().getType(), rs.getString("COLUMN_DEF")));
+                    current.setDefaultValue(databaseProvider.parseValue(current.getJdbcType(), rs.getString("COLUMN_DEF")));
                     current.setNotNull(current.isNotNull() || rs.getString("IS_NULLABLE").equals("NO"));
                 }
             }
@@ -241,9 +255,9 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return uniqueFields.contains(fieldName);
     }
 
-    private FieldImpl newField(String fieldName, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull, boolean isUnique)
+    private FieldImpl newField(String fieldName, TypeInfo<?> databaseType, int jdbcType, boolean autoIncrement, boolean notNull, boolean isUnique)
     {
-        return new FieldImpl(fieldName, databaseType, precision, scale, autoIncrement, notNull, isUnique);
+        return new FieldImpl(fieldName, databaseType, jdbcType, autoIncrement, notNull, isUnique);
     }
 
     private boolean isNotNull(ResultSetMetaData resultSetMetaData, int fieldIndex) throws SQLException
@@ -251,23 +265,26 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return resultSetMetaData.isNullable(fieldIndex) == ResultSetMetaData.columnNoNulls;
     }
 
-    private int getScale(ResultSetMetaData rsmd, int fieldIndex) throws SQLException
+    private TypeQualifiers getTypeQualifiers(ResultSetMetaData rsmd, int fieldIndex) throws SQLException
     {
-        final int scale = rsmd.getScale(fieldIndex);
-        return scale <= 0 ? -1 : scale;
-    }
-
-    private int getFieldPrecision(ResultSetMetaData resultSetMetaData, int fieldIndex) throws SQLException
-    {
-        int precision = resultSetMetaData.getPrecision(fieldIndex);
-
-        // HSQL reports this for VARCHAR
-        if (precision == Integer.MAX_VALUE && Types.VARCHAR == resultSetMetaData.getColumnType(fieldIndex))
-        {
-            precision = resultSetMetaData.getColumnDisplaySize(fieldIndex);
+        TypeQualifiers ret = qualifiers();
+        if (rsmd.getColumnType(fieldIndex) == Types.VARCHAR) {
+            int length = rsmd.getColumnDisplaySize(fieldIndex);
+            if (length > 0) {
+                ret = ret.stringLength(length);
+            }
         }
-
-        return precision <= 0 ? -1 : precision;
+        else {
+            int precision = rsmd.getPrecision(fieldIndex);
+            int scale = rsmd.getScale(fieldIndex);
+            if (precision > 0) {
+                ret = ret.precision(precision);
+            }
+            if (scale > 0) {
+                ret = ret.scale(scale);
+            }
+        }
+        return ret;
     }
 
     private CloseableResultSetMetaData getResultSetMetaData(DatabaseMetaData metaData, String tableName) throws SQLException
@@ -334,20 +351,19 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
     private static final class FieldImpl implements Field
     {
         private final String name;
-        private final DatabaseType<?> databaseType;
-        private final int precision, scale;
+        private final TypeInfo<?> databaseType;
+        private final int jdbcType;
         private final boolean autoIncrement;
         private boolean notNull;
         private Object defaultValue;
         private boolean primaryKey;
         private boolean isUnique;
 
-        public FieldImpl(String name, DatabaseType<?> databaseType, int precision, int scale, boolean autoIncrement, boolean notNull, boolean isUnique)
+        public FieldImpl(String name, TypeInfo<?> databaseType, int jdbcType, boolean autoIncrement, boolean notNull, boolean isUnique)
         {
             this.name = name;
             this.databaseType = databaseType;
-            this.precision = precision;
-            this.scale = scale;
+            this.jdbcType = jdbcType;
             this.autoIncrement = autoIncrement;
             this.notNull = notNull;
             this.isUnique = isUnique;
@@ -360,21 +376,15 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         }
 
         @Override
-        public DatabaseType<?> getDatabaseType()
+        public TypeInfo<?> getDatabaseType()
         {
             return databaseType;
         }
 
         @Override
-        public int getPrecision()
+        public int getJdbcType()
         {
-            return precision;
-        }
-
-        @Override
-        public int getScale()
-        {
-            return scale;
+            return jdbcType;
         }
 
         @Override

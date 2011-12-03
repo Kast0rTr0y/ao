@@ -10,6 +10,9 @@ import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLTable;
+
 import java.util.concurrent.Callable;
 
 /**
@@ -92,5 +95,22 @@ public abstract class ActiveObjectsIntegrationTest
     protected final String escapeKeyword(String keyword)
     {
         return EntityUtils.escapeKeyword(entityManager, keyword);
+    }
+
+    protected final DDLField findField(DDLTable table, String name)
+    {
+        for (DDLField field : table.getFields())
+        {
+            if (field.getName().equalsIgnoreCase(name))
+            {
+                return field;
+            }
+        }
+        throw new IllegalStateException("Couldn't find field '" + name + "' in table '" + table.getName() + "'");
+    }
+    
+    protected final DDLField findField(DDLTable table, Class<? extends RawEntity<?>> entityClass, String methodName)
+    {
+        return findField(table, getFieldName(entityClass, methodName));
     }
 }

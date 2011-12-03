@@ -15,7 +15,19 @@
  */
 package net.java.ao.db;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.collect.ImmutableSet;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -31,25 +43,19 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BlobType;
-import net.java.ao.types.ClobType;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.VarcharType;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static net.java.ao.sql.SqlUtils.*;
-import static net.java.ao.types.StringTypeProperties.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
 
 /**
  * @author Daniel Spiewak
@@ -65,9 +71,15 @@ public class HSQLDatabaseProvider extends DatabaseProvider
     {
         super(dataSource, schema,
               new TypeManager.Builder()
-                .addMapping(new VarcharType(stringType("VARCHAR", "LONGVARCHAR")))
-                .addMapping(new ClobType("LONGVARCHAR"))
-                .addMapping(new BlobType("BINARY"))
+                .addMapping(blobType(), schemaType("BINARY"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "LONGVARCHAR")
                 .build());
     }
 
@@ -128,8 +140,8 @@ public class HSQLDatabaseProvider extends DatabaseProvider
 			if (value == null) {
 				putNull(stmt, i + 1);
 			} else {
-				DatabaseType<Object> type = (DatabaseType<Object>) typeManager.getType(value.getClass());
-				type.putToDatabase(manager, stmt, i + 1, value);
+				TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
+				type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
 			}
 		}
 
@@ -141,7 +153,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider
 
 			ResultSet res = stmt.executeQuery();
 			if (res.next()) {
-				 back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
+				 back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
 			}
 			res.close();
 			stmt.close();
@@ -250,16 +262,6 @@ public class HSQLDatabaseProvider extends DatabaseProvider
 	protected String renderQueryLimit(Query query) {
 		return "";
 	}
-
-	@Override
-    protected String renderFieldType(DDLField field)
-    {
-        if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
-        {
-            field.setType(typeManager.getType(Types.INTEGER));
-        }
-        return super.renderFieldType(field);
-    }
 
     @Override
 	protected String renderAutoIncrement() {

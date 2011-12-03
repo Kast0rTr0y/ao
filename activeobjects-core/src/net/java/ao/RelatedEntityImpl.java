@@ -66,7 +66,8 @@ class RelatedEntityImpl {
 			String primaryKeyField = Common.getPrimaryKeyField(entity.getEntityType(), entity.getEntityManager().getNameConverters().getFieldNameConverter());
 			Object primaryKeyValue = Common.getPrimaryKeyValue(entity);
 			
-			TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField, Common.getPrimaryKeyType(getTypeManager(), type).valueToString(primaryKeyValue)));
+			TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField,
+			                                         Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().valueToString(primaryKeyValue)));
 			if (docs.next()) {
 				docID = docs.doc();
 			}
@@ -85,7 +86,8 @@ class RelatedEntityImpl {
 					continue;
 				}
 				
-				back.add((RelatedEntity<?>) entity.getEntityManager().peer(type, Common.getPrimaryKeyType(getTypeManager(), type).defaultParseValue(entityKey)));
+				back.add((RelatedEntity<?>) entity.getEntityManager().peer(type, 
+				                                                           Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().parseDefault(entityKey)));
 			}
 
 			return back.toArray((RelatedEntity<?>[]) Array.newInstance(type, back.size()));

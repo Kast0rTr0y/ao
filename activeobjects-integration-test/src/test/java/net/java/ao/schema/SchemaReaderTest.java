@@ -92,47 +92,23 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
             }
         }
 
-        DDLField urlField = null;
-        for (DDLField field : personDDL.getFields())
-        {
-            if (field.getName().equalsIgnoreCase("url"))
-            {
-                urlField = field;
-                break;
-            }
-        }
+        DDLField urlField = findField(personDDL, "url");
 
-        assertTrue(Common.fuzzyTypeCompare(Types.VARCHAR, urlField.getType().getType()));
+        assertTypesEquivalent(Types.VARCHAR, urlField.getJdbcType());
 
         assertFalse(urlField.isAutoIncrement());
         assertNotNull(urlField.getDefaultValue());
 
-        DDLField idField = null;
-        for (DDLField field : personDDL.getFields())
-        {
-            if (field.getName().equalsIgnoreCase(getFieldName(Person.class, "getID")))
-            {
-                idField = field;
-                break;
-            }
-        }
+        DDLField idField = findField(personDDL, Person.class, "getID");
 
-        assertTrue(Common.fuzzyTypeCompare(Types.INTEGER, idField.getType().getType()));
+        assertTypesEquivalent(Types.INTEGER, idField.getJdbcType());
 
         assertTrue(idField.isAutoIncrement());
         assertNull(idField.getDefaultValue());
 
-        DDLField cidField = null;
-        for (DDLField field : personDDL.getFields())
-        {
-            if (field.getName().equalsIgnoreCase(getFieldName(Person.class, "getCompany")))
-            {
-                cidField = field;
-                break;
-            }
-        }
+        DDLField cidField = findField(personDDL, Person.class, "getCompany");
 
-        assertTrue(Common.fuzzyTypeCompare(Types.BIGINT, cidField.getType().getType()));
+        assertTypesEquivalent(Types.BIGINT, cidField.getJdbcType());
 
         assertFalse(cidField.isAutoIncrement());
         assertNull(cidField.getDefaultValue());
@@ -155,6 +131,14 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertTrue(getTableName(Company.class, false).equalsIgnoreCase(cidKey.getTable()));
     }
 
+    private void assertTypesEquivalent(int typeShouldBe, int typeIs)
+    {
+        if (!Common.fuzzyTypeCompare(typeShouldBe, typeIs))
+        {
+            fail("Expected JDBC type " + typeShouldBe + ", got " + typeIs);
+        }
+    }
+    
     @Test
     public void testDiffSchema()
     {

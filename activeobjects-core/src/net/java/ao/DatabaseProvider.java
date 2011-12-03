@@ -36,7 +36,7 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.DDLValue;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.sql.SqlUtils;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +47,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
@@ -909,7 +910,7 @@ public abstract class DatabaseProvider
      * @param type The type instance to convert to a DDL string.
      * @return The database-specific DDL representation of the type (e.g. "VARCHAR").
      */
-    protected String convertTypeToString(DatabaseType<?> type)
+    protected String convertTypeToString(TypeInfo<?> type)
     {
         return type.getSqlTypeIdentifier();
     }
@@ -1606,7 +1607,7 @@ public abstract class DatabaseProvider
 
     /**
      * Renders the database-specific DDL type for the field in question.
-     * This method merely delegates to the {@link #convertTypeToString(DatabaseType)}
+     * This method merely delegates to the {@link #convertTypeToString(TypeInfo)}
      * method, passing the field type.  Thus, it is rarely necessary
      * (if ever) to override this method.  It may be deprecated in a
      * future release.
@@ -1887,7 +1888,7 @@ public abstract class DatabaseProvider
         K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
-
+        
         for (int i = 0; i < params.length; i++)
         {
             Object value = params[i].getValue();
@@ -1908,8 +1909,8 @@ public abstract class DatabaseProvider
             }
             else
             {
-                DatabaseType<Object> type = (DatabaseType<Object>) typeManager.getType(value.getClass());
-                type.putToDatabase(manager, stmt, i + 1, value);
+                TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
+                type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
             }
         }
 
@@ -1920,7 +1921,7 @@ public abstract class DatabaseProvider
             ResultSet res = stmt.getGeneratedKeys();
             if (res.next())
             {
-                back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
+                back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
             }
             res.close();
         }

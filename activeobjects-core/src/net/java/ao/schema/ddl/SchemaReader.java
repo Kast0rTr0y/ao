@@ -133,6 +133,7 @@ public final class SchemaReader
                 field.setNotNull(from.isNotNull());
                 field.setPrimaryKey(from.isPrimaryKey());
                 field.setType(from.getDatabaseType());
+                field.setJdbcType(from.getJdbcType());
                 field.setUnique(from.isUnique());
                 return field;
             }
@@ -346,7 +347,7 @@ public final class SchemaReader
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
-                else if (!Common.fuzzyTypeCompare(fromField.getType().getType(), ontoField.getType().getType()))
+                else if (!Common.fuzzyTypeCompare(fromField.getJdbcType(), ontoField.getJdbcType()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }

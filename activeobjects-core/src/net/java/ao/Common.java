@@ -45,7 +45,7 @@ import net.java.ao.schema.Ignore;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.sql.SqlUtils;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
@@ -329,7 +329,7 @@ public final class Common {
         return methods.iterator().next();
     }
 
-    public static <K> DatabaseType<K> getPrimaryKeyType(TypeManager typeManager, Class<? extends RawEntity<K>> type) {
+    public static <K> TypeInfo<K> getPrimaryKeyType(TypeManager typeManager, Class<? extends RawEntity<K>> type) {
 		return typeManager.getType(getPrimaryKeyClassType(type));
 	}
 
@@ -370,15 +370,15 @@ public final class Common {
             throw new IllegalArgumentException("Cannot set primary key to NULL");
         }
 
-        DatabaseType<K> dbType = getPrimaryKeyType(typeManager,type);
+        TypeInfo<K> typeInfo = getPrimaryKeyType(typeManager,type);
         Class<K> javaTypeClass = getPrimaryKeyClassType(type);
 
-        if(!dbType.isAllowedAsPrimaryKey())
+        if(!typeInfo.isAllowedAsPrimaryKey())
         {
             throw new ActiveObjectsException(javaTypeClass.getName() + " cannot be used as a primary key!");
         }
 
-        dbType.validate(value);
+        typeInfo.getLogicalType().validate(value);
 
         if((value instanceof String) && StringUtils.isBlank((String)value))
         {
@@ -412,8 +412,8 @@ public final class Common {
 			}
 		}
 
-		return typeManager.getType(a.getClass()).valueEquals(a, b)
-			|| typeManager.getType(b.getClass()).valueEquals(b, a);
+		return typeManager.getType(a.getClass()).getLogicalType().valueEquals(a, b)
+			|| typeManager.getType(b.getClass()).getLogicalType().valueEquals(b, a);
 	}
 
 	public static boolean fuzzyTypeCompare(int typeA, int typeB) {
@@ -477,10 +477,10 @@ public final class Common {
         });
     }
 
-    public static Map<String, DatabaseType> getValueFields(TypeManager typeManager, final FieldNameConverter converter, final Class<? extends RawEntity<?>> entity)
+    public static Map<String, TypeInfo> getValueFields(TypeManager typeManager, final FieldNameConverter converter, final Class<? extends RawEntity<?>> entity)
     {
         final Set<Method> methods = getValueFieldsMethods(entity, converter);
-        final Map<String, DatabaseType> map = Maps.newHashMap();
+        final Map<String, TypeInfo> map = Maps.newHashMap();
         for (Method m : methods)
         {
             map.put(converter.getName(m), typeManager.getType(getAttributeTypeFromMethod(m)));

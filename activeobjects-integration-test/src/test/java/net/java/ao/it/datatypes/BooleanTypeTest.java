@@ -29,29 +29,12 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test that a normal PK throws.
+     * Boolean is not allowed as a primary key.
      */
-    @Test(expected = ActiveObjectsException.class)
+    @Test(expected = ActiveObjectsConfigurationException.class)
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
-
-        SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", Boolean.TRUE));
-        entityManager.flushAll();
-
-        assertEquals(Boolean.TRUE, e.getId());
-        checkFieldData(SimpleId.class, "getId", e.getId(), "getId", Boolean.TRUE);
-    }
-
-    /**
-     * Inserting null into a PK field has to fail. Database level is fine here
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullId() throws Exception
-    {
-        entityManager.migrate(SimpleId.class);
-
-        entityManager.create(SimpleId.class, new DBParam("ID", null));
     }
 
     /**

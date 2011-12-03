@@ -15,7 +15,18 @@
  */
 package net.java.ao.db;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.collect.ImmutableSet;
+
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -32,26 +43,17 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BlobType;
-import net.java.ao.types.BooleanType;
-import net.java.ao.types.ClobType;
-import net.java.ao.types.DoubleType;
-import net.java.ao.types.FloatType;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.VarcharType;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static net.java.ao.types.NumericTypeProperties.*;
-import static net.java.ao.types.StringTypeProperties.*;
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
 
 /**
  * @author Daniel Spiewak
@@ -69,12 +71,15 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     {
         super(dataSource, schema,
               new TypeManager.Builder()
-                .addMapping(new BooleanType(numericType("BIT").ignorePrecision(true)))
-                .addMapping(new DoubleType(numericType("FLOAT").ignorePrecision(true)))
-                .addMapping(new FloatType(numericType("REAL").ignorePrecision(true)))
-                .addMapping(new VarcharType(stringType("VARCHAR", "NTEXT")))
-                .addMapping(new ClobType("NTEXT"))
-                .addMapping(new BlobType("IMAGE"))
+                .addMapping(blobType(), schemaType("IMAGE"))
+                .addMapping(booleanType(), schemaType("BIT"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("REAL"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "NTEXT")
                 .build());
     }
 

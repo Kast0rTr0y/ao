@@ -1,30 +1,22 @@
-/*
- * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.java.ao.types;
 
-import java.sql.Types;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.SetMultimap;
 
-import com.google.common.collect.ImmutableMap;
-
+import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
-import static net.java.ao.types.NumericTypeProperties.numericType;
-import static net.java.ao.types.StringTypeProperties.stringType;
+import static java.sql.Types.CLOB;
+import static java.sql.Types.LONGNVARCHAR;
+import static java.sql.Types.LONGVARCHAR;
+import static net.java.ao.types.LogicalTypes.stringType;
+import static net.java.ao.types.LogicalTypes.uriType;
+import static net.java.ao.types.LogicalTypes.urlType;
+import static net.java.ao.types.SchemaProperties.schemaType;
+import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * <p>Central managing class for the ActiveObjects type system.  The type
@@ -36,114 +28,138 @@ import static net.java.ao.types.StringTypeProperties.stringType;
  * 
  * <p>This container is thread safe and so may be used from within multiple
  * contexts.</p>
- * 
- * @author Daniel Spiewak
- * @see net.java.ao.types.DatabaseType
  */
 public class TypeManager
 {
-    private final ImmutableMap<Class<?>, DatabaseType<?>> classIndex;
-    private final ImmutableMap<Integer, DatabaseType<?>> intIndex;
-
+    private static final ImmutableSet<Integer> UNLIMITED_TEXT_TYPES =
+            ImmutableSet.<Integer>of(CLOB, LONGNVARCHAR, LONGVARCHAR);
+    
+    private final ImmutableMultimap<Class<?>, TypeInfo<?>> classIndex;
+    private final ImmutableMultimap<Integer, TypeInfo<?>> jdbcTypeIndex;
+    
     private TypeManager(Builder builder)
     {
-        this.classIndex = ImmutableMap.copyOf(builder.classIndex);
-        this.intIndex = ImmutableMap.copyOf(builder.intIndex);
+        this.classIndex = ImmutableMultimap.copyOf(builder.classIndex);
+        this.jdbcTypeIndex = ImmutableMultimap.copyOf(builder.jdbcTypeIndex);
+    }
+
+    public <T> TypeInfo<T> getType(Class<T> javaType)
+    {
+        return getType(javaType, qualifiers());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> TypeInfo<T> getType(Class<T> javaType, TypeQualifiers qualifiers)
+    {
+        if (RawEntity.class.isAssignableFrom(javaType))
+        {
+            final Class<RawEntity<Object>> entityType = (Class<RawEntity<Object>>) javaType;
+            final Class<Object> primaryKeyClass = Common.getPrimaryKeyClassType(entityType);
+            final TypeInfo<Object> primaryKeyTypeInfo = getType(primaryKeyClass);
+            final LogicalType<RawEntity<Object>> logicalType =
+                LogicalTypes.entityType(entityType, primaryKeyTypeInfo, primaryKeyClass);
+            return (TypeInfo<T>) new TypeInfo<RawEntity<Object>>(logicalType,
+                primaryKeyTypeInfo.getSchemaProperties(),
+                primaryKeyTypeInfo.getQualifiers());
+        }
+        for (Class<?> clazz = javaType; clazz != null; clazz = clazz.getSuperclass())
+        {
+            if (classIndex.containsKey(clazz))
+            {
+                return (TypeInfo<T>) findTypeWithQualifiers(classIndex.get(clazz), qualifiers);
+            }
+        }
+        throw new RuntimeException("Unrecognized type: " + javaType.getName());
+    }
+    
+    public TypeInfo<?> getTypeFromSchema(int jdbcType, TypeQualifiers qualifiers)
+    {
+        if (jdbcTypeIndex.containsKey(jdbcType))
+        {
+            // If it is an unlimited text type, add unlimited string length to the qualifiers
+            if (UNLIMITED_TEXT_TYPES.contains(jdbcType))
+            {
+                qualifiers = qualifiers.stringLength(TypeQualifiers.UNLIMITED_LENGTH);
+            }
+            return findTypeWithQualifiers(jdbcTypeIndex.get(jdbcType), qualifiers);
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private TypeInfo<?> findTypeWithQualifiers(Iterable<TypeInfo<?>> types, TypeQualifiers qualifiers)
+    {
+        TypeInfo<?> acceptableType = null;
+        for (TypeInfo<?> type : types)
+        {
+            // The preferred type mapping is one that exactly matches the requested type qualifiers
+            // (e.g. the mapping for unlimited-length strings is always used if string length == UNLIMITED).
+            // Otherwise we use TypeQualifiers.isCompatibleWith to find the next best match.
+            TypeQualifiers typeQualifiers = type.getQualifiers();
+            if (typeQualifiers.equals(qualifiers))
+            {
+                return type;
+            }
+            else
+            {
+                if (typeQualifiers.isCompatibleWith(qualifiers))
+                {
+                    acceptableType = type;
+                }
+            }
+        }
+        return acceptableType.withQualifiers(qualifiers);
     }
     
     public static class Builder
     {
-        private final Map<Class<?>, DatabaseType<?>> classIndex = new HashMap<Class<?>, DatabaseType<?>>();
-        private final Map<Integer, DatabaseType<?>> intIndex = new HashMap<Integer, DatabaseType<?>>();
-        
-        public Builder()
-        {
-            addMapping(new BigIntType(numericType("BIGINT").ignorePrecision(true)));
-            addMapping(new BooleanType(numericType("BOOLEAN").ignorePrecision(true)));
-            addMapping(new BlobType());
-            addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)));
-            addMapping(new FloatType(numericType("FLOAT").ignorePrecision(true)));
-            addMapping(new IntegerType(numericType("INTEGER").ignorePrecision(true)));
-            addMapping(new TimestampDateType());
-            addMapping(new VarcharType(stringType("VARCHAR", "CLOB")));
-            addMapping(new ClobType("CLOB"));
-            addMapping(new EnumType(numericType("INTEGER").ignorePrecision(true)));
-            addMapping(new URLType());
-            addMapping(new URIType());
-        }
+        private final SetMultimap<Class<?>, TypeInfo<?>> classIndex = HashMultimap.create();
+        private final SetMultimap<Integer, TypeInfo<?>> jdbcTypeIndex = HashMultimap.create();
         
         public TypeManager build()
         {
             return new TypeManager(this);
         }
         
-        public Builder addMapping(DatabaseType<?> typeInfo)
+        public <T> Builder addMapping(LogicalType<T> logicalType, SchemaProperties schemaProperties)
         {
-            if (typeInfo.isDefaultForJavaType())
+            return addMapping(logicalType, schemaProperties, qualifiers());
+        }
+
+        public <T> Builder addMapping(LogicalType<T> logicalType, SchemaProperties schemaProperties, TypeQualifiers qualifiers)
+        {
+            TypeInfo<T> typeInfo = new TypeInfo<T>(logicalType, schemaProperties, qualifiers);
+            for (Class<?> clazz : logicalType.getTypes())
             {
-                for (Class<?> clazz : typeInfo.getHandledTypes())
-                {
-                    classIndex.put(clazz, typeInfo);
-                }
+                classIndex.put(clazz, typeInfo);
             }
-            if (typeInfo.isDefaultForSqlType())
+            for (Integer jdbcType : logicalType.getJdbcReadTypes())
             {
-                intIndex.put(typeInfo.getType(), typeInfo);
+                jdbcTypeIndex.put(jdbcType, typeInfo);
             }
             return this;
         }
+        
+        public Builder addStringTypes(String limitedStringSqlType, String unlimitedStringSqlType)
+        {
+            addMapping(stringType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
+                       qualifiers().stringLength(StringType.DEFAULT_LENGTH));
+            addMapping(stringType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
+                       qualifiers().stringLength(UNLIMITED_LENGTH));
+            
+            addMapping(uriType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
+                       qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
+            addMapping(uriType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
+                       qualifiers().stringLength(UNLIMITED_LENGTH));
+            
+            addMapping(urlType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
+                       qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
+            addMapping(urlType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
+                       qualifiers().stringLength(UNLIMITED_LENGTH));
+            
+            return this;
+        }
     }
-	
-	/**
-	 * <p>Returns the corresponding {@link DatabaseType} for a given Java
-	 * class.  This is the primary mechanism used by ActiveObjects
-	 * internally to obtain type instances.  Code external to the
-	 * framework may also make use of this method to obtain the relevant
-	 * type information or to just test if a type is in fact
-	 * available.
-	 * 
-	 * @param javaType	The {@link Class} type for which a type instance
-	 * 		should be returned.
-	 * @return	The type instance which corresponds to the specified class.
-	 * @throws	RuntimeException	If no type was found correspondant to the
-	 * 		given class.
-	 * @see #getType(int)
-	 */
-	@SuppressWarnings("unchecked")
-	public <T> DatabaseType<T> getType(Class<T> javaType)
-	{
-	    if (RawEntity.class.isAssignableFrom(javaType))
-	    {
-	        return (DatabaseType<T>) new EntityType<Object>(this, (Class<? extends RawEntity<Object>>) javaType);
-	    }
-	    for (Class<?> clazz = javaType; clazz != null; clazz = clazz.getSuperclass())
-	    {
-	        DatabaseType<?> typeInfo = classIndex.get(clazz);
-	        if (typeInfo != null)
-	        {
-	            return (DatabaseType<T>) typeInfo;
-	        }
-	    }
-	    throw new RuntimeException("Unrecognized type: " + javaType.getName());
-	}
-	
-	/**
-	 * <p>Returns the corresponding {@link DatabaseType} for a given JDBC
-	 * integer type.  Code external to the framework may also make use of 
-	 * this method to obtain the relevant type information or to just test 
-	 * if a type is in fact available.  Types are internally prioritized by 
-	 * entry order.
-	 * 
-	 * @param sqlType	The JDBC {@link Types} constant for which a type
-	 * 		instance should be retrieved.
-	 * @return	The type instance which corresponds to the specified type constant.
-	 * @throws	RuntimeException	If no type was found correspondant to the
-	 * 		given type constant.
-	 * @see #getType(Class)
-	 */
-	public DatabaseType<?> getType(int sqlType)
-	{
-	    DatabaseType<?> typeInfo = intIndex.get(sqlType);
-	    return (typeInfo != null) ? typeInfo : new GenericType(sqlType);
-	}
 }

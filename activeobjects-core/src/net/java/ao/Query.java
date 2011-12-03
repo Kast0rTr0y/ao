@@ -30,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.java.ao.types.TypeInfo;
+
 /**
  * @author Daniel Spiewak
  */
@@ -301,7 +303,8 @@ public class Query implements Serializable {
 						javaType = ((RawEntity) whereParams[i]).getEntityType();
 					}
 					
-					typeManager.getType(javaType).putToDatabase(manager, stmt, i + 1, whereParams[i]);
+					TypeInfo<Object> typeInfo = typeManager.getType(javaType);
+					typeInfo.getLogicalType().putToDatabase(manager, stmt, i + 1, whereParams[i], typeInfo.getJdbcWriteType());
 				}
 			}
 		}

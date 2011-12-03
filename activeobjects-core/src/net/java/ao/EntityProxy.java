@@ -20,7 +20,7 @@ import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.sql.SqlUtils;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import java.beans.PropertyChangeEvent;
@@ -44,6 +44,8 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
+
+import net.java.ao.types.LogicalType;
 
 import static net.java.ao.Common.*;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -269,16 +271,17 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 						javaType = ((RawEntity) value).getEntityType();
 					}
 
-					DatabaseType dbType = typeManager.getType(javaType);
-                    dbType.validate(value);
-                    dbType.putToDatabase(this.manager, stmt, index++, value);
+					TypeInfo dbType = typeManager.getType(javaType);
+                    dbType.getLogicalType().validate(value);
+                    dbType.getLogicalType().putToDatabase(this.manager, stmt, index++, value, dbType.getJdbcWriteType());
 					
-					if (!dbType.shouldCache(javaType)) {
+					if (!dbType.getLogicalType().shouldCache(javaType)) {
 						cacheLayer.remove(field);
 					}
 				}
 			}
-            Common.getPrimaryKeyType(provider.getTypeManager(), type).putToDatabase(this.manager, stmt, index++, key);
+			TypeInfo pkType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
+            pkType.getLogicalType().putToDatabase(this.manager, stmt, index++, key, pkType.getJdbcWriteType());
 
             this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
@@ -394,7 +397,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		V back = null;
 		CacheLayer cacheLayer = getCacheLayer(entity);
 		
-		shouldCache = shouldCache && getTypeManager().getType(type).shouldCache(type);
+		shouldCache = shouldCache && getTypeManager().getType(type).getLogicalType().shouldCache(type);
 		
 		getLock(name).writeLock().lock();
 		try {
@@ -435,7 +438,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.append(provider.processID(pkFieldName)).append(" = ?");
 
 				stmt = provider.preparedStatement(conn, sql);
-                Common.getPrimaryKeyType(provider.getTypeManager(), this.type).putToDatabase(manager, stmt, 1, key);
+				TypeInfo<K> pkType = Common.getPrimaryKeyType(provider.getTypeManager(), this.type);
+                pkType.getLogicalType().putToDatabase(manager, stmt, 1, key, pkType.getJdbcWriteType());
 	
 				res = stmt.executeQuery();
 				if (res.next()) {
@@ -774,10 +778,10 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 			stmt = provider.preparedStatement(conn, sql);
 
-            DatabaseType<K> dbType =  getTypeManager().getType(getClass(key));
+            TypeInfo<K> dbType =  getTypeManager().getType(getClass(key));
 			int index = 0;
 			for (; index < numParams; index++) {
-                dbType.putToDatabase(manager, stmt, index + 1, key);
+                dbType.getLogicalType().putToDatabase(manager, stmt, index + 1, key, dbType.getJdbcWriteType());
 			}
 			
 			int newLength = numParams + (thisPolyNames == null ? 0 : thisPolyNames.length);
@@ -787,11 +791,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 
 			dbType = Common.getPrimaryKeyType(provider.getTypeManager(), finalType);
-			final DatabaseType<Object> throughDBType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<Object>>) type);
+			final TypeInfo<Object> throughDBType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<Object>>) type);
 			
 			res = stmt.executeQuery();
 			while (res.next()) {
-                K returnValue = dbType.pullFromDatabase(manager, res, (Class<? extends K>) type, returnField);
+                K returnValue = dbType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) type, returnField);
 				Class<V> backType = finalType;
 				
 				for (String polyName : resPolyNames) {
@@ -806,8 +810,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 				
 				if (throughField != null) {
+				    LogicalType logicalType = throughDBType.getLogicalType();
                     throughValues.add(manager.peer((Class<? extends RawEntity<Object>>) type,
-                            throughDBType.pullFromDatabase(manager, res, type, throughField)));
+                            logicalType.pullFromDatabase(manager, res, type, throughField)));
 				}
 
                 V returnValueEntity = manager.peer(backType, returnValue);
@@ -887,13 +892,13 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			type = (Class<V>) entityType;		// avoiding Java cast oddities with generics
 		}
 
-        final DatabaseType<V> databaseType = getTypeManager().getType(type);
+        final TypeInfo<V> databaseType = getTypeManager().getType(type);
 		
 		if (databaseType == null) {
 			throw new RuntimeException("UnrecognizedType: " + type.toString());
 		}
 
-        return databaseType.pullFromDatabase(this.manager, res, type, field);
+        return databaseType.getLogicalType().pullFromDatabase(this.manager, res, type, field);
 	}
 
     private boolean isNull(ResultSet res, String field) throws SQLException

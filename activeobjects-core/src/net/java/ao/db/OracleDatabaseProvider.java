@@ -15,10 +15,24 @@
  */
 package net.java.ao.db;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -35,33 +49,20 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BigIntType;
-import net.java.ao.types.BooleanType;
-import net.java.ao.types.ClobType;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.DoubleType;
-import net.java.ao.types.FloatType;
-import net.java.ao.types.IntegerType;
-import net.java.ao.types.TimestampDateType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.VarcharType;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static net.java.ao.sql.SqlUtils.*;
-import static net.java.ao.types.NumericTypeProperties.*;
-import static net.java.ao.types.StringTypeProperties.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * @author Daniel Spiewak
@@ -78,16 +79,23 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
     public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
+        super(dataSource, null,
               new TypeManager.Builder()
-                .addMapping(new BigIntType(numericType("NUMBER").withPrecision(20)))
-                .addMapping(new BooleanType(numericType("NUMBER").withPrecision(1)))
-                .addMapping(new IntegerType(numericType("NUMBER").withPrecision(11)))
-                .addMapping(new FloatType(numericType("NUMBER").withPrecision(32).withScale(16)))
-                .addMapping(new DoubleType(numericType("NUMBER").withPrecision(32).withScale(16)))
-                .addMapping(new TimestampDateType("TIMESTAMP"))
-                .addMapping(new VarcharType(stringType("VARCHAR", "CLOB")))
-                .addMapping(new ClobType("CLOB"))
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true),
+                            qualifiers().precision(1))
+                .addMapping(dateType(), schemaType("TIMESTAMP"))
+                .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true),
+                            qualifiers().precision(32).scale(16))
+                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true),
+                            qualifiers().precision(11))
+                .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true),
+                            qualifiers().precision(32).scale(16))
+                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true),
+                            qualifiers().precision(11))
+                .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true),
+                            qualifiers().precision(20))
+                .addStringTypes("VARCHAR", "CLOB")
                 .build());
     }
 
@@ -351,7 +359,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                 res = stmt.getGeneratedKeys();
                 if (res.next())
                 {
-                    back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
+                    back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
                 }
             }
             return back;
@@ -384,8 +392,8 @@ public final class OracleDatabaseProvider extends DatabaseProvider
             }
             else
             {
-                DatabaseType<Object> type = (DatabaseType<Object>) getTypeManager().getType(value.getClass());
-                type.putToDatabase(manager, stmt, i + 1, value);
+                TypeInfo<Object> type = (TypeInfo<Object>) getTypeManager().getType(value.getClass());
+                type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
             }
         }
         return back;

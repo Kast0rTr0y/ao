@@ -125,7 +125,7 @@ public final class FloatTypeTest extends ActiveObjectsIntegrationTest
         entityManager.migrate(NotNullColumn.class);
 
         // create
-        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getAge"), 20.2));
+        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getAge"), 20.2f));
 
         entityManager.flushAll();
         assertEquals(new Float(20.2f), e.getAge());

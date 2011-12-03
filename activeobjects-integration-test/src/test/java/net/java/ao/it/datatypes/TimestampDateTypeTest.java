@@ -35,30 +35,12 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Test PK throws
+     * Date is not allowed as a primary key.
      */
-    @Test(expected = ActiveObjectsException.class)
+    @Test(expected = ActiveObjectsConfigurationException.class)
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
-
-        Date date = new Date();
-        SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", date));
-
-        entityManager.flushAll();
-        assertEquals(date, e.getId());
-        checkFieldValue(SimpleId.class, e.getId(), "getId", date);
-    }
-
-    /**
-     * Null not a valid id value
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullId() throws Exception
-    {
-        entityManager.migrate(SimpleId.class);
-
-        entityManager.create(SimpleId.class, new DBParam("ID", null));
     }
 
     @Test(expected = ActiveObjectsException.class)

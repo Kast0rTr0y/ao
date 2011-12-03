@@ -59,17 +59,6 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Empty String is treated as null on some databases, thus we expect an exception here
-     */
-    @Test(expected = ActiveObjectsException.class)
-    public void testEmptyId() throws Exception
-    {
-        entityManager.migrate(SimpleId.class);
-
-        entityManager.create(SimpleId.class, new DBParam("ID", ""));
-    }
-
-    /**
      * Null can't be used as id
      */
     @Test(expected = IllegalArgumentException.class)
@@ -201,7 +190,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     /**
      * create with a string instead of a URI object
      */
-    @Test(expected = ActiveObjectsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testWrongDatatype() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -213,7 +202,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
      * create with a string instead of a URI object, yet the string represents a valid URI
      * this should not be allowed, since it'd potentially allow writing of data that can't be read
      */
-    @Test(expected = ActiveObjectsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testWrongDatatypeCorrectData() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -225,7 +214,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
      * create with a string instead of a URI object, yet the string represents an invalid URI
      * this should not be allowed, since it'd allow writing of data that can't be read
      */
-    @Test(expected = ActiveObjectsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testWrongDatatypeWrongData() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);

@@ -1,23 +1,4 @@
-/*
- * Copyright 2008 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.java.ao.types;
-
-import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.Common;
-import net.java.ao.EntityManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,35 +6,29 @@ import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
-public final class BlobType extends DatabaseType<Object>
+import static java.sql.Types.LONGVARBINARY;
+
+import static java.sql.Types.VARBINARY;
+
+import net.java.ao.ActiveObjectsException;
+import net.java.ao.EntityManager;
+
+import static java.sql.Types.BINARY;
+import static java.sql.Types.BLOB;
+
+final class BlobType extends AbstractLogicalType<Object>
 {
-    public BlobType(String sqlTypeIdentifier)
-    {
-        super(Types.BLOB, sqlTypeIdentifier, byte[].class, InputStream.class);
-    }
-
     public BlobType()
     {
-        this("BLOB");
+        super("Blob",
+              new Class<?>[] { byte[].class, InputStream.class },
+              BLOB, new Integer[] { BLOB, BINARY, VARBINARY, LONGVARBINARY });
     }
-
+    
     @Override
-    public boolean shouldCache(Class<?> type)
-    {
-        return !Common.typeInstanceOf(type, InputStream.class) && super.shouldCache(type);
-    }
-
-    @Override
-    public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<?> type, String field) throws SQLException
-    {
-        return manager.getProvider().handleBlob(res, type, field);
-    }
-
-    @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Object value) throws SQLException
-    {
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Object value, int jdbcType) throws SQLException
+    {        
         final InputStream is;
         if (value instanceof byte[])
         {
@@ -74,26 +49,26 @@ public final class BlobType extends DatabaseType<Object>
         }
         catch (IOException e)
         {
-            SQLException e2 = new SQLException(e.getMessage());
-            e2.initCause(e);
-            throw e2;
+            throw new SQLException(e.getMessage(), e);
         }
     }
 
     @Override
-    public Object defaultParseValue(String value)
+    public Object pullFromDatabase(EntityManager manager, ResultSet res, Class<Object> type, String columnName)
+        throws SQLException
     {
-        throw new ActiveObjectsConfigurationException("Default value is not supported for BLOB types");
+        return manager.getProvider().handleBlob(res, type, columnName);
+    }
+    
+    @Override
+    public boolean shouldCache(Class<?> type)
+    {
+        return !InputStream.class.isAssignableFrom(type) && super.shouldCache(type);
     }
 
     @Override
     public String valueToString(Object value)
     {
-        if (value == null)
-        {
-            return null;
-        }
-
-        throw new IllegalArgumentException("Cannot assign a String representation to a BLOB");
+        throw new ActiveObjectsException("Cannot convert BLOB value to string");
     }
 }

@@ -17,14 +17,12 @@ package net.java.ao.db;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
+
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.schema.IndexNameConverter;
@@ -33,11 +31,17 @@ import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.ClobType;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.VarcharType;
 
-import static net.java.ao.types.StringTypeProperties.stringType;
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
 
 /**
  * @author Daniel Spiewak
@@ -48,8 +52,15 @@ public final class MySQLDatabaseProvider extends DatabaseProvider
     {
         super(dataSource, null,
               new TypeManager.Builder()
-                .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
-                .addMapping(new ClobType("TEXT"))
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "TEXT")
                 .build());
     }
     
@@ -153,16 +164,6 @@ public final class MySQLDatabaseProvider extends DatabaseProvider
         }
 
         return back;
-    }
-
-    @Override
-    protected String renderFieldType(DDLField field)
-    {
-        if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
-        {
-            field.setType(typeManager.getType(Types.INTEGER));
-        }
-        return super.renderFieldType(field);
     }
 
     @Override

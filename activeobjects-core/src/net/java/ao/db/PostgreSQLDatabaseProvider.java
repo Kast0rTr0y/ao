@@ -15,7 +15,21 @@
  */
 package net.java.ao.db;
 
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.collect.ImmutableSet;
+
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -31,30 +45,19 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BlobType;
-import net.java.ao.types.ClobType;
-import net.java.ao.types.DatabaseType;
-import net.java.ao.types.DoubleType;
-import net.java.ao.types.TimestampDateType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.VarcharType;
 import net.java.ao.util.StringUtils;
 
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static net.java.ao.types.NumericTypeProperties.*;
-import static net.java.ao.types.StringTypeProperties.*;
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
 
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
@@ -70,11 +73,15 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
     {
         super(dataSource, schema,
               new TypeManager.Builder()
-                .addMapping(new VarcharType(stringType("VARCHAR", "TEXT")))
-                .addMapping(new ClobType("TEXT"))
-                .addMapping(new BlobType("BYTEA"))
-                .addMapping(new TimestampDateType("TIMESTAMP"))
-                .addMapping(new DoubleType(numericType("DOUBLE PRECISION").ignorePrecision(true)))
+                .addMapping(blobType(), schemaType("BYTEA"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("TIMESTAMP"))
+                .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "TEXT")
                 .build());
     }
 
@@ -123,13 +130,13 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
     @Override
     protected String renderFieldType(DDLField field)
     {
-        if (field.getType().getType() == Types.NUMERIC) // numeric is used by Oracle
+        if (field.getJdbcType() == Types.NUMERIC) // numeric is used by Oracle
         {
-            field.setType(typeManager.getType(Types.INTEGER));
+            field.setType(typeManager.getType(Integer.class));
         }
         if (field.isAutoIncrement())
         {
-            if (field.getType().getType() == Types.BIGINT)
+            if (field.getJdbcType() == Types.BIGINT)
             {
                 return "BIGSERIAL";
             }
@@ -340,7 +347,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 
 			ResultSet res = stmt.executeQuery();
 			if (res.next()) {
-				 back = typeManager.getType(pkType).pullFromDatabase(null, res, pkType, 1);
+				 back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
 			}
 			res.close();
 			stmt.close();
@@ -390,8 +397,8 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 			if (value == null) {
 				putNull(stmt, i + 1);
 			} else {
-				DatabaseType<Object> type = (DatabaseType<Object>) typeManager.getType(value.getClass());
-				type.putToDatabase(manager, stmt, i + 1, value);
+				TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
+				type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
 			}
 		}
 

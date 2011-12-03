@@ -18,6 +18,11 @@ package net.java.ao.schema;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+
+import net.java.ao.types.TypeQualifiers;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
@@ -31,7 +36,7 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.util.EnumUtils;
 
@@ -235,8 +240,9 @@ public final class SchemaGenerator
                 field.setName(attributeName);
 
                 final TypeManager typeManager = provider.getTypeManager();
-                final DatabaseType<?> sqlType = getSQLTypeFromMethod(typeManager, type, method, annotations);
+                final TypeInfo<?> sqlType = getSQLTypeFromMethod(typeManager, type, method, annotations);
                 field.setType(sqlType);
+                field.setJdbcType(sqlType.getJdbcWriteType());
 
                 field.setPrimaryKey(isPrimaryKey(annotations, field));
 
@@ -250,7 +256,7 @@ public final class SchemaGenerator
                 {
                     if (annotations.isAnnotationPresent(Default.class))
                     {
-                        final Object defaultValue = convertStringValue(annotations.getAnnotation(Default.class).value(), sqlType);
+                        final Object defaultValue = convertStringDefaultValue(annotations.getAnnotation(Default.class).value(), sqlType, method);
                         if (type.isEnum() && ((Integer) defaultValue) > EnumUtils.size((Class<? extends Enum>) type) - 1)
                         {
                             throw new ActiveObjectsConfigurationException("There is no enum value of '" + type + "'for which the ordinal is " + defaultValue);
@@ -260,11 +266,7 @@ public final class SchemaGenerator
                     else if (ImmutableSet.<Class<?>>of(short.class, float.class, int.class, long.class, double.class).contains(type))
                     {
                         // set the default value for primitive types (float, short, int, long, char)
-                        field.setDefaultValue(convertStringValue("0", sqlType));
-                    }
-                    else if (char.class.equals(type))
-                    {
-                        throw new ActiveObjectsConfigurationException("Setting a default value is mandatory when using the primitive 'char'");
+                        field.setDefaultValue(convertStringDefaultValue("0", sqlType, method));
                     }
                 }
 
@@ -283,7 +285,8 @@ public final class SchemaGenerator
 					field = new DDLField();
 
 					field.setName(attributeName);
-					field.setType(typeManager.getType(String.class).withStringLength(127));
+					field.setType(typeManager.getType(String.class, qualifiers().stringLength(127)));
+                    field.setJdbcType(java.sql.Types.VARCHAR);
 
 					if (annotations.getAnnotation(NotNull.class) != null) {
 						field.setNotNull(true);
@@ -300,40 +303,39 @@ public final class SchemaGenerator
     private static boolean isPrimaryKey(AnnotationDelegate annotations, DDLField field)
     {
         final boolean isPrimaryKey = annotations.isAnnotationPresent(PrimaryKey.class);
-        if (isPrimaryKey && PRIMARY_KEY_ILLEGAL_TYPES.contains(field.getType().getType()))
+        if (isPrimaryKey && !field.getType().isAllowedAsPrimaryKey())
         {
-            throw new ActiveObjectsConfigurationException(PrimaryKey.class.getName() + " is not supported for type: " + field.getType() + " corresponding to SQL type: " + field.getType().getType());
+            throw new ActiveObjectsConfigurationException(PrimaryKey.class.getName() + " is not supported for type: " + field.getType());
         }
         return isPrimaryKey;
     }
 
-    private static boolean isAutoIncrement(Class<?> type, AnnotationDelegate annotations, DatabaseType<?> dbType)
+    private static boolean isAutoIncrement(Class<?> type, AnnotationDelegate annotations, TypeInfo<?> dbType)
     {
-        final int sqlType1 = dbType.getType();
+        final int sqlType1 = dbType.getJdbcWriteType();
         final boolean isAutoIncrement = annotations.isAnnotationPresent(AutoIncrement.class);
         if (isAutoIncrement && (!AUTO_INCREMENT_LEGAL_TYPES.contains(sqlType1) || type.isEnum()))
         {
-            throw new ActiveObjectsConfigurationException(AutoIncrement.class.getName() + " is not supported for type: " + dbType + " corresponding to SQL type: " + sqlType1);
+            throw new ActiveObjectsConfigurationException(AutoIncrement.class.getName() + " is not supported for type: " + dbType);
         }
         return isAutoIncrement;
     }
 
-    private static DatabaseType<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, Method method, AnnotationDelegate annotations) {
-		DatabaseType<?> sqlType = null;
-		sqlType = typeManager.getType(type);
+    private static TypeInfo<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, Method method, AnnotationDelegate annotations) {
+		TypeQualifiers qualifiers = qualifiers();
 
 		StringLength lengthAnno = annotations.getAnnotation(StringLength.class);
 		if (lengthAnno != null) {
 		    final int length = lengthAnno.value();
 		    try {
-		        sqlType = sqlType.withStringLength(length);
+		        qualifiers = qualifiers.stringLength(length);
 		    }
 		    catch (ActiveObjectsConfigurationException e) {
-		        throw e.forMethod(method);
+		        throw new ActiveObjectsConfigurationException(e.getMessage()).forMethod(method);
 		    }
 		}
 
-		return sqlType;
+		return typeManager.getType(type, qualifiers);
 	}
 
     private static DDLForeignKey[] parseForeignKeys(TableNameConverter nameConverter, FieldNameConverter fieldConverter,
@@ -393,13 +395,29 @@ public final class SchemaGenerator
 		return back.toArray(new DDLIndex[back.size()]);
 	}
 
-    private static Object convertStringValue(String value, DatabaseType<?> type)
+    private static Object convertStringDefaultValue(String value, TypeInfo<?> type, Method method)
     {
         if (value == null)
         {
             return null;
         }
-
-        return type.defaultParseValue(value);
+        if (!type.getSchemaProperties().isDefaultValueAllowed())
+        {
+            throw new ActiveObjectsConfigurationException("Default value is not allowed for database type " +
+                type.getSchemaProperties().getSqlTypeName());
+        }
+        try
+        {
+            Object ret = type.getLogicalType().parseDefault(value);
+            if (ret == null)
+            {
+                throw new ActiveObjectsConfigurationException("Default value cannot be empty").forMethod(method);
+            }
+            return ret;
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ActiveObjectsConfigurationException(e.getMessage());
+        }
     }
 }

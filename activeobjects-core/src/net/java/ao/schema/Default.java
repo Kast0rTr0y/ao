@@ -41,7 +41,7 @@ public @interface Default {
 	 * Contains the database-agnostic representation of the default value
 	 * for the corresponding field.  The conversion between this
 	 * <code>String</code> and the appropriate value is handled by the
-	 * {@link net.java.ao.types.DatabaseType#defaultParseValue(String)}
+	 * {@link net.java.ao.types.TypeInfo#defaultParseValue(String)}
 	 * method.  Thus, even default values for custom types are supported.
 	 */
 	String value();

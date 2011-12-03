@@ -15,8 +15,7 @@
  */
 package net.java.ao.types;
 
-import static org.junit.Assert.assertEquals;
-
+import java.net.URI;
 import java.net.URL;
 import java.sql.Types;
 import java.util.Date;
@@ -24,39 +23,95 @@ import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 
+import static net.java.ao.types.LogicalTypes.booleanType;
+
+import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
+
+import static net.java.ao.types.LogicalTypes.dateType;
+
+import static net.java.ao.types.LogicalTypes.floatType;
+
+import static net.java.ao.types.LogicalTypes.doubleType;
+
+import static net.java.ao.types.SchemaProperties.schemaType;
+
+import static net.java.ao.types.LogicalTypes.longType;
+
+import static net.java.ao.types.LogicalTypes.integerType;
+
+import static net.java.ao.types.LogicalTypes.stringType;
+
 import test.schema.Person;
+
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Daniel Spiewak
  */
 public final class TypeManagerTest
 {
+    private static final TypeQualifiers PLAIN = qualifiers();
+    private static final TypeQualifiers PRECISION_100 = qualifiers().precision(100);
+    private static final TypeQualifiers LENGTH_127 = qualifiers().stringLength(127);
+    private static final TypeQualifiers LENGTH_STRING_DEFAULT = qualifiers().stringLength(StringType.DEFAULT_LENGTH);
+    private static final TypeQualifiers LENGTH_URL_DEFAULT = qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH);
+    private static final TypeQualifiers UNLIMITED = qualifiers().stringLength(UNLIMITED_LENGTH);
+    
     private TypeManager typeManager;
-
+    
     @Before
     public final void setUp()
     {
-        typeManager = new TypeManager.Builder().build();
+        typeManager = new TypeManager.Builder()
+            .addMapping(booleanType(), schemaType("BOOLEAN"))
+            .addMapping(integerType(), schemaType("INTEGER"))
+            .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
+            .addMapping(doubleType(), schemaType("DOUBLE"))
+            .addMapping(floatType(), schemaType("FLOAT"))
+            .addMapping(dateType(), schemaType("DATETIME"))
+            .addStringTypes("VARCHAR", "TEXT")
+            .build();
     }
 
     @Test
 	public void testGetTypeClass()
     {
-		assertEquals(new VarcharType(), typeManager.getType(String.class));
-		assertEquals(new IntegerType(), typeManager.getType(int.class));
-		assertEquals(new IntegerType(), typeManager.getType(Integer.class));
-		assertEquals(new DoubleType(), typeManager.getType(double.class));
-		assertEquals(new TimestampDateType(), typeManager.getType(Date.class));
-		assertEquals(new EntityType<Integer>(typeManager, Person.class), typeManager.getType(Person.class));
-		assertEquals(new URLType(), typeManager.getType(URL.class));
+        verifyType(typeManager.getType(boolean.class), BooleanType.class, "BOOLEAN", PLAIN);
+        verifyType(typeManager.getType(Boolean.class), BooleanType.class, "BOOLEAN", PLAIN);
+        verifyType(typeManager.getType(int.class), IntegerType.class, "INTEGER", PLAIN);
+        verifyType(typeManager.getType(Integer.class), IntegerType.class, "INTEGER", PLAIN);
+        verifyType(typeManager.getType(long.class), LongType.class, "BIGINT", PRECISION_100);
+        verifyType(typeManager.getType(Long.class), LongType.class, "BIGINT", PRECISION_100);
+        verifyType(typeManager.getType(double.class), DoubleType.class, "DOUBLE", PLAIN);
+        verifyType(typeManager.getType(Double.class), DoubleType.class, "DOUBLE", PLAIN);
+        verifyType(typeManager.getType(float.class), FloatType.class, "FLOAT", PLAIN);
+        verifyType(typeManager.getType(Float.class), FloatType.class, "FLOAT", PLAIN);
+        verifyType(typeManager.getType(String.class), StringType.class, "VARCHAR", LENGTH_STRING_DEFAULT);
+        verifyType(typeManager.getType(String.class, LENGTH_127), StringType.class, "VARCHAR", LENGTH_127);
+        verifyType(typeManager.getType(String.class, UNLIMITED), StringType.class, "TEXT", UNLIMITED);
+        verifyType(typeManager.getType(URI.class), URIType.class, "VARCHAR", LENGTH_URL_DEFAULT);
+        verifyType(typeManager.getType(URI.class, LENGTH_127), URIType.class, "VARCHAR", LENGTH_127);
+        verifyType(typeManager.getType(URI.class, UNLIMITED), URIType.class, "TEXT", UNLIMITED);
+        verifyType(typeManager.getType(URL.class), URLType.class, "VARCHAR", LENGTH_URL_DEFAULT);
+        verifyType(typeManager.getType(URL.class, LENGTH_127), URLType.class, "VARCHAR", LENGTH_127);
+        verifyType(typeManager.getType(URL.class, UNLIMITED), URLType.class, "TEXT", UNLIMITED);
+        verifyType(typeManager.getType(Person.class), EntityType.class, "INTEGER", PLAIN);
 	}
 
-	@Test
-	public void testGetTypeInt()
+    @Test
+    public void testGetTypeInt()
     {
-		assertEquals(new VarcharType(), typeManager.getType(Types.VARCHAR));
-		assertEquals(new IntegerType(), typeManager.getType(Types.INTEGER));
-		assertEquals(new GenericType(Types.JAVA_OBJECT), typeManager.getType(Types.JAVA_OBJECT));
+        verifyType(typeManager.getTypeFromSchema(Types.VARCHAR, LENGTH_127), StringType.class, "VARCHAR", LENGTH_127);
+        verifyType(typeManager.getTypeFromSchema(Types.CLOB, PLAIN), StringType.class, "TEXT", UNLIMITED);
+        verifyType(typeManager.getTypeFromSchema(Types.INTEGER, PLAIN), IntegerType.class, "INTEGER", PLAIN);
+        verifyType(typeManager.getTypeFromSchema(Types.NUMERIC, PRECISION_100), LongType.class, "BIGINT", PRECISION_100);
+    }
 
-	}
+    private void verifyType(TypeInfo<?> typeInfo, Class<?> logicalTypeShouldBe, String sqlTypeShouldBe, TypeQualifiers qualsShouldBe)
+    {
+        assertEquals(logicalTypeShouldBe, typeInfo.getLogicalType().getClass());
+        assertEquals(sqlTypeShouldBe, typeInfo.getSchemaProperties().getSqlTypeName());
+        assertEquals(qualsShouldBe, typeInfo.getQualifiers());
+    }
 }

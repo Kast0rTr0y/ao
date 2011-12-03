@@ -15,7 +15,7 @@
  */
 package net.java.ao.schema.ddl;
 
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 
 /**
  * Database-agnostic reprensentation of a general field index 
@@ -32,7 +32,7 @@ import net.java.ao.types.DatabaseType;
 public class DDLIndex {
 	private String table;
 	private String field;
-	private DatabaseType<?> type;
+	private TypeInfo<?> type;
 
 	public String getTable() {
 		return table;
@@ -50,11 +50,11 @@ public class DDLIndex {
 		this.field = field;
 	}
 
-	public DatabaseType<?> getType() {
+	public TypeInfo<?> getType() {
 		return type;
 	}
 
-	public void setType(DatabaseType<?> type) {
+	public void setType(TypeInfo<?> type) {
 		this.type = type;
 	}
 

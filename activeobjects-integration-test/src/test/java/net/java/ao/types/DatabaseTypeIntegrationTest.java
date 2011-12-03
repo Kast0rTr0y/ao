@@ -7,6 +7,10 @@ import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import org.junit.Test;
 
+import static java.sql.Types.INTEGER;
+
+import static java.sql.Types.VARCHAR;
+
 import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,9 +43,9 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
             {
                 int index = 1;
 
-                new VarcharType().putToDatabase(entityManager, stmt, index++, "JoeJoe");
-                new IntegerType().putToDatabase(entityManager, stmt, index++, 123);
-                new URLType().putToDatabase(entityManager, stmt, index++, new URL("http://www.google.com"));
+                new StringType().putToDatabase(entityManager, stmt, index++, "JoeJoe", VARCHAR);
+                new IntegerType().putToDatabase(entityManager, stmt, index++, 123, INTEGER);
+                new URLType().putToDatabase(entityManager, stmt, index++, new URL("http://www.google.com"), VARCHAR);
                 stmt.setInt(index++, PersonData.getId());
             }
         });
@@ -113,7 +117,7 @@ public class DatabaseTypeIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (res.next())
                         {
-                            assertEquals("JoeJoe", new VarcharType().pullFromDatabase(entityManager, res, String.class, getFieldName(Person.class, "getFirstName")));
+                            assertEquals("JoeJoe", new StringType().pullFromDatabase(entityManager, res, String.class, getFieldName(Person.class, "getFirstName")));
                             assertEquals(123, new IntegerType().pullFromDatabase(entityManager, res, int.class, getFieldName(Person.class, "getAge")).intValue());
                             assertEquals(new URL("http://www.google.com"), new URLType().pullFromDatabase(entityManager, res, URL.class, getFieldName(Person.class, "getURL")));
                         }

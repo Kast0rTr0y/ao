@@ -15,20 +15,6 @@
  */
 package net.java.ao.db;
 
-import com.google.common.collect.ImmutableSet;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.DisposableDataSource;
-import net.java.ao.Query;
-import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.TriggerNameConverter;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.BooleanType;
-import net.java.ao.types.DoubleType;
-import net.java.ao.types.TypeManager;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.sql.Blob;
@@ -43,7 +29,31 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.java.ao.types.NumericTypeProperties.*;
+import com.google.common.collect.ImmutableSet;
+
+import static java.sql.Types.TINYINT;
+
+import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
+import net.java.ao.Query;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.types.TypeManager;
+
+import static net.java.ao.types.LogicalTypes.blobType;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.enumType;
+import static net.java.ao.types.LogicalTypes.floatType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * @author Daniel Spiewak
@@ -54,8 +64,16 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
     {
         super(dataSource, null,
               new TypeManager.Builder()
-                .addMapping(new DoubleType(numericType("DOUBLE").ignorePrecision(true)))
-                .addMapping(new BooleanType(numericType("SMALLINT").withPrecision(1).ignorePrecision(false)))
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("SMALLINT").jdbcWriteType(TINYINT).precisionAllowed(true),
+                            qualifiers().precision(1))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "CLOB")
                 .build());
     }
 

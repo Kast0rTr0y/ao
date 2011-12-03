@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.List;
 
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
@@ -115,7 +115,7 @@ public class SearchableEntityManager extends EntityManager {
 		List<String> indexFields = Common.getSearchableFields(this, type);
 		String[] searchFields = new String[indexFields.size()];
 		String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
-		DatabaseType dbType = Common.getPrimaryKeyType(getProvider().getTypeManager(), type);
+		TypeInfo dbType = Common.getPrimaryKeyType(getProvider().getTypeManager(), type);
 
 		for (int i = 0; i < searchFields.length; i++) {
 			searchFields[i] = table + '.' + indexFields.get(i);
@@ -129,7 +129,7 @@ public class SearchableEntityManager extends EntityManager {
 		K[] keys = (K[]) new Object[hits.length()];
 
 		for (int i = 0; i < hits.length(); i++) {
-			keys[i] = (K) dbType.defaultParseValue(hits.doc(i).get(table + "." + primaryKeyField));
+			keys[i] = (K) dbType.getLogicalType().parseDefault(hits.doc(i).get(table + "." + primaryKeyField));
 		}
 		searcher.close();
 
@@ -167,7 +167,8 @@ public class SearchableEntityManager extends EntityManager {
 	 * @param entity	The entity to add to the index.
 	 * @throws IOException		If Lucene was unable to open the index.
 	 */
-	public void addToIndex(RawEntity<?> entity) throws IOException {
+	@SuppressWarnings("unchecked")
+    public void addToIndex(RawEntity<?> entity) throws IOException {
 		String table = getTableNameConverter().getName(entity.getEntityType());
 
 		IndexWriter writer = null;
@@ -177,7 +178,7 @@ public class SearchableEntityManager extends EntityManager {
 			Document doc = new Document();
 			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
 					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
+					primaryKeyToString(entity),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 
 			boolean shouldAdd = false;
@@ -237,7 +238,7 @@ public class SearchableEntityManager extends EntityManager {
 	private void removeFromIndexImpl(RawEntity<?> entity, IndexReader reader) throws IOException {
 		reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
 				+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-				Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))));
+				primaryKeyToString(entity)));
 	}
 
 	/**
@@ -292,9 +293,9 @@ public class SearchableEntityManager extends EntityManager {
 			indexFields = Common.getSearchableFields(SearchableEntityManager.this, entity.getEntityType());
 
 			doc = new Document();
-			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
+            doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
 					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity)),
+					primaryKeyToString(entity),
 					Field.Store.YES, Field.Index.UN_TOKENIZED));
 		}
 
@@ -310,7 +311,7 @@ public class SearchableEntityManager extends EntityManager {
 					writer = new IndexWriter(getIndexDir(), getAnalyzer(), false);
 					writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
 							+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-							Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType()).valueToString(Common.getPrimaryKeyValue(entity))), doc);
+							primaryKeyToString(entity)), doc);
 				} catch (IOException e) {
 				} finally {
 					if (writer != null) {
@@ -325,5 +326,12 @@ public class SearchableEntityManager extends EntityManager {
 				}
 			}
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+    private final String primaryKeyToString(RawEntity<?> entity)
+	{
+	    TypeInfo pkType = Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType());
+	    return pkType.getLogicalType().valueToString(Common.getPrimaryKeyValue(entity));
 	}
 }

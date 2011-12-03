@@ -11,7 +11,7 @@ import java.util.Set;
 
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 /**
@@ -223,13 +223,13 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         }
         
         final TypeManager manager = getTypeManager();
-        final DatabaseType<V> databaseType = manager.getType(type);
+        final TypeInfo<V> databaseType = manager.getType(type);
         
         if (databaseType == null) {
             throw new RuntimeException("UnrecognizedType: " + type.toString());
         }
         
-        return databaseType.pullFromDatabase(getManager(), res, type, field);
+        return databaseType.getLogicalType().pullFromDatabase(getManager(), res, type, field);
     }
 
     private TypeManager getTypeManager()

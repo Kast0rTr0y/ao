@@ -1,66 +1,36 @@
-/*
- * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.java.ao.types;
 
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
-import static net.java.ao.types.NumericTypeProperties.numericType;
+import static java.sql.Types.BIT;
 
-import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
 
-/**
- * @author Daniel Spiewak
- */
-public class BooleanType extends AbstractNumericType<Boolean>
-{
-    public BooleanType(NumericTypeProperties properties)
-    {
-        super(Types.BOOLEAN, properties, boolean.class, Boolean.class);
-    }
+import static java.sql.Types.BOOLEAN;
+import static java.sql.Types.NUMERIC;
 
+final class BooleanType extends AbstractLogicalType<Boolean>
+{
     public BooleanType()
     {
-        this(numericType("BOOLEAN"));
+        super("Boolean",
+              new Class<?>[] { Boolean.class, boolean.class },
+              BOOLEAN, new Integer[] { BOOLEAN, BIT, NUMERIC });
+    }
+
+    @Override
+    public Boolean pullFromDatabase(EntityManager manager, ResultSet res, Class<Boolean> type, String columnName)
+        throws SQLException
+    {
+        return res.getBoolean(columnName);
     }
     
     @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Boolean value) throws SQLException
+    public Boolean parse(String input)
     {
-        manager.getProvider().putBoolean(stmt, index, value);
-    }
-
-    @Override
-    public Boolean pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends Boolean> type, String field) throws SQLException
-    {
-        return res.getBoolean(field);
-    }
-
-    @Override
-    public Boolean defaultParseValue(String value)
-    {
-        if (StringUtils.isBlank(value))
-        {
-            throw new ActiveObjectsConfigurationException("Unable to parse '' as default value for Boolean");
-        }
-        return Boolean.parseBoolean(value.trim());
+        return StringUtils.isBlank(input) ? null : Boolean.parseBoolean(input);
     }
 
     @Override

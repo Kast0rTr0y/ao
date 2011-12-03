@@ -147,7 +147,7 @@ public final class BigIntTypeTest extends ActiveObjectsIntegrationTest
         entityManager.migrate(NotNullColumn.class);
 
         // create
-        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getAge"), 20));
+        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getAge"), 20l));
 
         entityManager.flushAll();
         assertEquals(new Long(20), e.getAge());

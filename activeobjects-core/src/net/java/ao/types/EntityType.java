@@ -1,92 +1,70 @@
-/*
- * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
- * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package net.java.ao.types;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
+
+import static java.sql.Types.INTEGER;
 
 import net.java.ao.Common;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * @author Daniel Spiewak
- */
-public class EntityType<T> extends DatabaseType<RawEntity<T>> {
-	private final DatabaseType<T> primaryKeyType;
-    private final TypeManager typeManager;
-
-    public EntityType(TypeManager typeManager, Class<? extends RawEntity<T>> type)
+final class EntityType<K, T extends RawEntity<K>> extends AbstractLogicalType<T>
+{
+    private final TypeInfo<K> primaryKeyTypeInfo;
+    private final Class<K> primaryKeyClass;
+    
+    public EntityType(Class<T> entityClass,
+                      TypeInfo<K> primaryKeyTypeInfo,
+                      Class<K> primaryKeyClass)
     {
-		super(Types.INTEGER, null, RawEntity.class);
-        this.typeManager = checkNotNull(typeManager);
-        this.primaryKeyType = Common.getPrimaryKeyType(typeManager, type);
-	}
-	
-	@Override
-	public int getType() {
-		return primaryKeyType.getType();
-	}
-	
-	@Override
-	@SuppressWarnings("unchecked")
-	public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, RawEntity value) throws SQLException {
-		DatabaseType dbType = Common.getPrimaryKeyType(typeManager, value.getEntityType());
-		dbType.putToDatabase(manager, stmt, index, Common.getPrimaryKeyValue(value));
-	}
-	
-	@Override
-	public RawEntity<T> pullFromDatabase(EntityManager manager, ResultSet res, Class<? extends RawEntity<T>> type, String field) throws SQLException {
-		DatabaseType<T> dbType = Common.getPrimaryKeyType(typeManager, type);
-		Class<T> pkType = Common.getPrimaryKeyClassType(type);
-		
-		return Common.createPeer(manager, type, dbType.pullFromDatabase(manager, res, pkType, field));
-	}
+        super("Entity(" + entityClass.getName() + ")",
+              new Class<?>[] { RawEntity.class },
+              INTEGER, new Integer[] { });
+        this.primaryKeyTypeInfo = primaryKeyTypeInfo;
+        this.primaryKeyClass = primaryKeyClass;
+    }
+    
+    @Override
+    public int getDefaultJdbcWriteType()
+    {
+        return primaryKeyTypeInfo.getJdbcWriteType();
+    }
+    
+    @Override
+    public Object validate(Object value)
+    {
+        // We currently support passing the primary key type as a database parameter in place of the
+        // entity, so we need to bypass the regular type validation here.
+        return value;
+    }
+    
+    @Override
+    public T pullFromDatabase(EntityManager manager, ResultSet res, Class<T> type, String columnName)
+        throws SQLException
+    {
+        return Common.createPeer(manager, type,
+                                 primaryKeyTypeInfo.getLogicalType().pullFromDatabase(manager, res, primaryKeyClass, columnName));
+    }
 
-	@Override
-	public String getSqlTypeIdentifier() {
-		return primaryKeyType.getSqlTypeIdentifier();
-	}
-
-	@Override
-	public Object defaultParseValue(String value) {
-		return Integer.parseInt(value);
-	}
-	
-	@Override
-	public int hashCode() {
-		return (super.hashCode() + primaryKeyType.hashCode()) % (2 << 10);
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (super.equals(obj)) {
-			if (obj instanceof EntityType<?>) {
-				if (((EntityType<?>) obj).primaryKeyType.equals(primaryKeyType)) {
-					return true;
-				}
-			} else {
-				return true;
-			}
-		}
-		
-		return false;
-	}
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, T value, int jdbcType)
+        throws SQLException
+    {
+        primaryKeyTypeInfo.getLogicalType().putToDatabase(manager, stmt, index, Common.getPrimaryKeyValue(value),
+                                                          primaryKeyTypeInfo.getJdbcWriteType());
+    }
+    
+    @Override
+    public boolean equals(Object other)
+    {
+        if (other instanceof EntityType)
+        {
+            EntityType<?, ?> et = (EntityType<?, ?>) other;
+            return et.primaryKeyTypeInfo.equals(primaryKeyTypeInfo)
+                && et.primaryKeyClass.equals(primaryKeyClass);
+        }
+        return false;
+    }
 }

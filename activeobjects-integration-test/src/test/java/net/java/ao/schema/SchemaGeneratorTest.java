@@ -15,6 +15,14 @@
  */
 package net.java.ao.schema;
 
+import java.sql.Types;
+
+import org.junit.Test;
+
+import static net.java.ao.types.LogicalTypes.longType;
+
+import net.java.ao.types.LogicalTypes;
+
 import net.java.ao.it.DatabaseProcessor;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Pen;
@@ -27,12 +35,15 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.sql.Types;
-
-import static org.junit.Assert.*;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.stringType;
+import static net.java.ao.types.LogicalTypes.urlType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Daniel Spiewak
@@ -40,7 +51,6 @@ import static org.junit.Assert.*;
 @Data(DatabaseProcessor.class)
 public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 {
-//    @Ignore("currently failing in mysql; Eli will fix after merge")
     @SuppressWarnings("null")
     @Test
     public void testParseDDL()
@@ -96,37 +106,14 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
             }
         }
 
-        DDLField urlField = null;
-        DDLField ageField = null;
-        DDLField lastNameField = null;
-        DDLField idField = null;
-        DDLField cidField = null;
+        DDLField urlField = findField(personDDL, Person.class, "getURL");
+        DDLField ageField = findField(personDDL, Person.class, "getAge");
+        DDLField lastNameField = findField(personDDL, Person.class, "getLastName");
+        DDLField idField = findField(personDDL, Person.class, "getID");
+        DDLField cidField = findField(personDDL, Person.class, "getCompany");
 
-        for (DDLField field : personDDL.getFields())
-        {
-            if (field.getName().equals(getFieldName(Person.class, "getURL")))
-            {
-                urlField = field;
-            }
-            else if (field.getName().equals(getFieldName(Person.class, "getAge")))
-            {
-                ageField = field;
-            }
-            else if (field.getName().equals(getFieldName(Person.class, "getLastName")))
-            {
-                lastNameField = field;
-            }
-            else if (field.getName().equals(getFieldName(Person.class, "getID")))
-            {
-                idField = field;
-            }
-            else if (field.getName().equals(getFieldName(Person.class, "getCompany")))
-            {
-                cidField = field;
-            }
-        }
-
-        assertEquals(Types.VARCHAR, urlField.getType().getType());
+        assertEquals(Types.VARCHAR, urlField.getJdbcType());
+        assertEquals(urlType(), urlField.getType().getLogicalType());
 
         assertFalse(urlField.isAutoIncrement());
         assertTrue(urlField.isNotNull());
@@ -135,21 +122,25 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 
         assertNotNull(urlField.getDefaultValue());
 
-        assertEquals(Types.INTEGER, ageField.getType().getType());
+        assertEquals(Types.INTEGER, ageField.getJdbcType());
+        assertEquals(integerType(), ageField.getType().getLogicalType());
 
         assertFalse(ageField.isAutoIncrement());
         assertFalse(ageField.isNotNull());
         assertFalse(ageField.isPrimaryKey());
         assertFalse(ageField.isUnique());
 
-        assertEquals("VARCHAR(127)", lastNameField.getType().getSqlTypeIdentifier());
+        assertEquals(Types.VARCHAR, lastNameField.getJdbcType());
+        assertEquals(stringType(), lastNameField.getType().getLogicalType());
+        assertEquals(new Integer(127), lastNameField.getType().getQualifiers().getStringLength());
 
         assertFalse(lastNameField.isAutoIncrement());
         assertFalse(lastNameField.isNotNull());
         assertFalse(lastNameField.isPrimaryKey());
         assertFalse(lastNameField.isUnique());
 
-        assertEquals(Types.INTEGER, idField.getType().getType());
+        assertEquals(Types.INTEGER, idField.getJdbcType());
+        assertEquals(integerType(), idField.getType().getLogicalType());
 
         assertTrue(idField.isAutoIncrement());
         assertTrue(idField.isNotNull());
@@ -158,7 +149,9 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 
         assertNull(idField.getDefaultValue());
 
-        assertEquals(Types.BIGINT, cidField.getType().getType());
+        assertEquals(LogicalTypes.entityType(Company.class, entityManager.getProvider().getTypeManager().getType(long.class), long.class),
+                     cidField.getType().getLogicalType());
+        assertEquals(Types.BIGINT, cidField.getJdbcType());
 
         assertFalse(cidField.isAutoIncrement());
         assertFalse(cidField.isNotNull());

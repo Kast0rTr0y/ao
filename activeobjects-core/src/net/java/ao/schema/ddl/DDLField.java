@@ -15,7 +15,7 @@
  */
 package net.java.ao.schema.ddl;
 
-import net.java.ao.types.DatabaseType;
+import net.java.ao.types.TypeInfo;
 
 /**
  * Database-agnostic representation of a field within a table containing
@@ -28,9 +28,8 @@ import net.java.ao.types.DatabaseType;
 public class DDLField {
 	private String name;
 	
-	private DatabaseType<?> type;
-	private int precision;
-	private int scale;
+	private TypeInfo<?> type;
+	private int jdbcType;
 	
 	private boolean primaryKey;
 	private boolean autoIncrement;
@@ -47,14 +46,22 @@ public class DDLField {
 		this.name = name;
 	}
 
-	public DatabaseType<?> getType() {
+	public TypeInfo<?> getType() {
 		return type;
 	}
 
-	public void setType(DatabaseType<?> type) {
+	public void setType(TypeInfo<?> type) {
 		this.type = type;
 	}
 
+    public int getJdbcType() {
+        return jdbcType;
+    }
+    
+    public void setJdbcType(int jdbcType) {
+        this.jdbcType = jdbcType;
+    }
+    
 	public boolean isPrimaryKey() {
 		return primaryKey;
 	}
