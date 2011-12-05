@@ -29,7 +29,6 @@ import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 
 import static net.java.ao.types.LogicalTypes.dateType;
 
-import static net.java.ao.types.LogicalTypes.floatType;
 
 import static net.java.ao.types.LogicalTypes.doubleType;
 
@@ -68,7 +67,6 @@ public final class TypeManagerTest
             .addMapping(integerType(), schemaType("INTEGER"))
             .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
             .addMapping(doubleType(), schemaType("DOUBLE"))
-            .addMapping(floatType(), schemaType("FLOAT"))
             .addMapping(dateType(), schemaType("DATETIME"))
             .addStringTypes("VARCHAR", "TEXT")
             .build();
@@ -85,8 +83,6 @@ public final class TypeManagerTest
         verifyType(typeManager.getType(Long.class), LongType.class, "BIGINT", PRECISION_100);
         verifyType(typeManager.getType(double.class), DoubleType.class, "DOUBLE", PLAIN);
         verifyType(typeManager.getType(Double.class), DoubleType.class, "DOUBLE", PLAIN);
-        verifyType(typeManager.getType(float.class), FloatType.class, "FLOAT", PLAIN);
-        verifyType(typeManager.getType(Float.class), FloatType.class, "FLOAT", PLAIN);
         verifyType(typeManager.getType(String.class), StringType.class, "VARCHAR", LENGTH_STRING_DEFAULT);
         verifyType(typeManager.getType(String.class, LENGTH_127), StringType.class, "VARCHAR", LENGTH_127);
         verifyType(typeManager.getType(String.class, UNLIMITED), StringType.class, "TEXT", UNLIMITED);
