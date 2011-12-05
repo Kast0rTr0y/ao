@@ -23,7 +23,7 @@ import static net.java.ao.types.TypeQualifiers.qualifiers;
  * system in AO is designed to allow extensibility and control over
  * how specific data types are handled internally.  All database-agnostic,
  * type-specific tasks are delegated to the actual type instances.  This
- * class acts as a singleton container for every available type, indexing
+ * class acts as a container for every available type, indexing
  * them based on corresponding Java type and JDBC integer type.</p>
  * 
  * <p>This container is thread safe and so may be used from within multiple

@@ -74,7 +74,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
                 .addMapping(blobType(), schemaType("IMAGE"))
                 .addMapping(booleanType(), schemaType("BIT"))
                 .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(enumType(), schemaType("INTEGER"))
                 .addMapping(floatType(), schemaType("REAL"))
                 .addMapping(integerType(), schemaType("INTEGER"))
