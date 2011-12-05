@@ -1,5 +1,6 @@
 package net.java.ao.types;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -22,6 +23,12 @@ final class IntegerType extends AbstractLogicalType<Integer>
     public boolean isAllowedAsPrimaryKey()
     {
         return true;
+    }
+
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Integer value, int jdbcType) throws SQLException
+    {
+        stmt.setInt(index, value);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package net.java.ao.types;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -18,6 +19,12 @@ final class BooleanType extends AbstractLogicalType<Boolean>
         super("Boolean",
               new Class<?>[] { Boolean.class, boolean.class },
               BOOLEAN, new Integer[] { BOOLEAN, BIT, NUMERIC });
+    }
+
+    @Override
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Boolean value, int jdbcType) throws SQLException
+    {
+        manager.getProvider().putBoolean(stmt, index, value);
     }
 
     @Override

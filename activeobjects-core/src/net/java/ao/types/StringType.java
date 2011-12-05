@@ -1,5 +1,6 @@
 package net.java.ao.types;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -31,8 +32,13 @@ final class StringType extends AbstractLogicalType<String>
     }
 
     @Override
-    public String pullFromDatabase(EntityManager manager, ResultSet res, Class<String> type, String columnName)
-        throws SQLException
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, String value, int jdbcType) throws SQLException
+    {
+        stmt.setString(index, value);
+    }
+
+    @Override
+    public String pullFromDatabase(EntityManager manager, ResultSet res, Class<String> type, String columnName) throws SQLException
     {
         return res.getString(columnName);
     }

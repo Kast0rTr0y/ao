@@ -53,13 +53,7 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.floatType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.LogicalTypes.*;
 import static net.java.ao.types.SchemaProperties.schemaType;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
@@ -84,8 +78,8 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                 .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(1))
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
                 .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
-                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
                 .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
+                .addMapping(enumType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
                 .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
                 .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
                 .addStringTypes("VARCHAR", "CLOB")
