@@ -50,7 +50,6 @@ import static net.java.ao.types.LogicalTypes.booleanType;
 import static net.java.ao.types.LogicalTypes.dateType;
 import static net.java.ao.types.LogicalTypes.doubleType;
 import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.floatType;
 import static net.java.ao.types.LogicalTypes.integerType;
 import static net.java.ao.types.LogicalTypes.longType;
 import static net.java.ao.types.SchemaProperties.schemaType;
@@ -76,7 +75,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("REAL"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "NTEXT")

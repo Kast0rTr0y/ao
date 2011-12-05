@@ -22,12 +22,7 @@ public abstract class LogicalTypes
     {
         return new DoubleType();
     }
-    
-    public static LogicalType<Float> floatType()
-    {
-        return new FloatType();
-    }
-    
+
     public static LogicalType<Boolean> booleanType()
     {
         return new BooleanType();

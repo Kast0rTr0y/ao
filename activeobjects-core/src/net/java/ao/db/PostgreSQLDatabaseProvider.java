@@ -54,7 +54,6 @@ import static net.java.ao.types.LogicalTypes.booleanType;
 import static net.java.ao.types.LogicalTypes.dateType;
 import static net.java.ao.types.LogicalTypes.doubleType;
 import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.floatType;
 import static net.java.ao.types.LogicalTypes.integerType;
 import static net.java.ao.types.LogicalTypes.longType;
 import static net.java.ao.types.SchemaProperties.schemaType;
@@ -78,7 +77,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
                 .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
                 .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "TEXT")
