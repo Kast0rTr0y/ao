@@ -70,6 +70,12 @@ public class TypeQualifiers
             }
             else if (stringLength > MAX_STRING_LENGTH)
             {
+                // There is a separate check in SchemaGenerator.getSQLTypeFromMethod to raise an
+                // error if someone explicitly tries to specify a length greater than this limit with
+                // the @StringLength annotation.  But we can't put that check here, because we also
+                // use TypeQualifiers for metadata that is read directly from a database schema, and
+                // some databases like to report very large numbers for the length of what is really
+                // an unlimited-length (CLOB) column.
                 stringLength = UNLIMITED_LENGTH;
             }
         }
