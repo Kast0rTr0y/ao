@@ -14,8 +14,8 @@ final class IntegerType extends AbstractLogicalType<Integer>
     public IntegerType()
     {
         super("Integer",
-              new Class<?>[] { Integer.class, int.class },
-              INTEGER, new Integer[] { INTEGER, NUMERIC });
+                new Class<?>[]{Integer.class, int.class},
+                INTEGER, new Integer[]{INTEGER, NUMERIC});
     }
 
     @Override
@@ -25,12 +25,18 @@ final class IntegerType extends AbstractLogicalType<Integer>
     }
 
     @Override
+    public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<Integer> type, int columnIndex) throws SQLException
+    {
+        return res.getInt(columnIndex);
+    }
+
+    @Override
     public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<Integer> type, String columnName)
-        throws SQLException
+            throws SQLException
     {
         return res.getInt(columnName);
     }
-    
+
     @Override
     public Integer parse(String input)
     {

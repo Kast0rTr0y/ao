@@ -67,7 +67,6 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public final class SchemaGenerator
 {
-    private static final Set<Integer> PRIMARY_KEY_ILLEGAL_TYPES = ImmutableSet.of(Types.DOUBLE, Types.FLOAT, Types.ARRAY, Types.BINARY, Types.BLOB, Types.CLOB, Types.DATALINK, Types.DECIMAL, Types.JAVA_OBJECT, Types.LONGVARBINARY, Types.REAL, Types.VARBINARY);
     private static final Set<Integer> AUTO_INCREMENT_LEGAL_TYPES = ImmutableSet.of(Types.INTEGER, Types.BIGINT);
 
     public static void migrate(DatabaseProvider provider,
@@ -312,9 +311,8 @@ public final class SchemaGenerator
 
     private static boolean isAutoIncrement(Class<?> type, AnnotationDelegate annotations, TypeInfo<?> dbType)
     {
-        final int sqlType1 = dbType.getJdbcWriteType();
         final boolean isAutoIncrement = annotations.isAnnotationPresent(AutoIncrement.class);
-        if (isAutoIncrement && (!AUTO_INCREMENT_LEGAL_TYPES.contains(sqlType1) || type.isEnum()))
+        if (isAutoIncrement && (!AUTO_INCREMENT_LEGAL_TYPES.contains(dbType.getJdbcWriteType()) || type.isEnum()))
         {
             throw new ActiveObjectsConfigurationException(AutoIncrement.class.getName() + " is not supported for type: " + dbType);
         }

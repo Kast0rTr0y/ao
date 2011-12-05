@@ -57,7 +57,6 @@ import static net.java.ao.types.LogicalTypes.blobType;
 import static net.java.ao.types.LogicalTypes.booleanType;
 import static net.java.ao.types.LogicalTypes.dateType;
 import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
 import static net.java.ao.types.LogicalTypes.floatType;
 import static net.java.ao.types.LogicalTypes.integerType;
 import static net.java.ao.types.LogicalTypes.longType;
@@ -79,22 +78,16 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
     public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, null,
+        super(dataSource, schema,
               new TypeManager.Builder()
                 .addMapping(blobType(), schemaType("BLOB"))
-                .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true),
-                            qualifiers().precision(1))
+                .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(1))
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
-                .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true),
-                            qualifiers().precision(32).scale(16))
-                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true),
-                            qualifiers().precision(11))
-                .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true),
-                            qualifiers().precision(32).scale(16))
-                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true),
-                            qualifiers().precision(11))
-                .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true),
-                            qualifiers().precision(20))
+                .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
+                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
+                .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
+                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
+                .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
                 .addStringTypes("VARCHAR", "CLOB")
                 .build());
     }
