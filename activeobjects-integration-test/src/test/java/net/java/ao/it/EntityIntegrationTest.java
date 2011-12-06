@@ -256,7 +256,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(musician.ordinal(), resultSet.getInt(getFieldName(Person.class, "getProfession")));
+                            assertEquals(musician.name(), resultSet.getString(getFieldName(Person.class, "getProfession")));
                         }
                         else
                         {
