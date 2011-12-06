@@ -24,7 +24,14 @@ public class DatabaseProviders
 
     public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
     {
-        return new PostgreSQLDatabaseProvider(newDataSource("\""));
+        return new PostgreSQLDatabaseProvider(newDataSource("\""))
+        {
+            @Override
+            protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+        };
     }
 
     public static OracleDatabaseProvider getOracleDatabaseProvider()

@@ -49,7 +49,7 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
-public final class PostgreSQLDatabaseProvider extends DatabaseProvider
+public class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
     private static final int MAX_SEQUENCE_LENGTH = 64;
     private static final String SQL_STATE_UNDEFINED_FUNCTION = "42883";
@@ -278,9 +278,16 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
     @Override
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        return new StringBuilder("DROP INDEX ")
-                .append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
-                .toString();
+        if (hasIndex(indexNameConverter, index))
+        {
+            return new StringBuilder("DROP INDEX ")
+                    .append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                    .toString();
+        }
+        else
+        {
+            return "";
+        }
     }
 
     protected String[] renderDropFunctions(TriggerNameConverter triggerNameConverter, DDLTable table)
