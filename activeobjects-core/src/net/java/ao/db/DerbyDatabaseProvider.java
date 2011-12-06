@@ -31,8 +31,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableSet;
 
-import static java.sql.Types.TINYINT;
-
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Query;
@@ -43,17 +41,6 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeManager;
-
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.floatType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
-import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * @author Daniel Spiewak

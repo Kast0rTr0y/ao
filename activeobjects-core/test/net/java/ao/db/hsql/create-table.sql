@@ -9,6 +9,7 @@ CREATE TABLE PUBLIC.person (
     cool BOOLEAN DEFAULT TRUE,
     modified DATETIME,
     weight DOUBLE,
+    typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES PUBLIC.company(id),
  CONSTRAINT U_person_url UNIQUE(url),
     PRIMARY KEY(id)

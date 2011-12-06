@@ -47,15 +47,6 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.floatType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
 
 /**
  * @author Daniel Spiewak

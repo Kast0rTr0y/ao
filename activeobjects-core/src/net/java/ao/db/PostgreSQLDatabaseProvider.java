@@ -49,16 +49,6 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.floatType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
-
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
     private static final int MAX_SEQUENCE_LENGTH = 64;
@@ -74,7 +64,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
         super(dataSource, schema, TypeManager.postgres());
     }
 
-	@Override
+    @Override
 	public Object parseValue(int type, String value) {
 		if (value == null || value.equals("") || value.equals("NULL")) {
 			return null;

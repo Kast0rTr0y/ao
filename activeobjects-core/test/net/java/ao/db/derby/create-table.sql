@@ -9,6 +9,7 @@ CREATE TABLE person (
     cool SMALLINT(1) DEFAULT 1,
     modified DATETIME,
     weight DOUBLE,
+    typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )

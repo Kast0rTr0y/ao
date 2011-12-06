@@ -1,7 +1,5 @@
 package net.java.ao.test.converters;
 
-import net.java.ao.schema.CamelCaseFieldNameConverter;
-import net.java.ao.schema.CamelCaseTableNameConverter;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
 import net.java.ao.schema.DefaultTriggerNameConverter;
@@ -16,8 +14,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.*;
 
 @Documented
 @Retention(RUNTIME)
@@ -25,9 +23,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface NameConverters
 {
-    Class<? extends TableNameConverter> table() default CamelCaseTableNameConverter.class;
+    Class<? extends TableNameConverter> table() default DynamicTableNameConverter.class;
 
-    Class<? extends FieldNameConverter> field() default CamelCaseFieldNameConverter.class;
+    Class<? extends FieldNameConverter> field() default DynamicFieldNameConverter.class;
 
     Class<? extends SequenceNameConverter> sequence() default DefaultSequenceNameConverter.class;
 

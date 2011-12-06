@@ -33,7 +33,6 @@ public class DatabaseTypeTest
 	public void testDefaultParseValue() throws MalformedURLException {
 		assertEquals(123, new IntegerType().parseDefault("123").intValue());
 		assertEquals(123.456d, new DoubleType().parseDefault("123.456"), Double.MIN_VALUE);
-		assertEquals(123.456f, new FloatType().parseDefault("123.456"), Float.MIN_VALUE);
 		assertEquals("My test value", new StringType().parseDefault("My test value"));
 		assertEquals(new URL("http://www.google.com"), new URLType().parseDefault("http://www.google.com"));
 		assertEquals(false, new BooleanType().parseDefault("false"));
@@ -49,7 +48,6 @@ public class DatabaseTypeTest
 	public void testValueToString() throws MalformedURLException {
 		assertEquals("123", new IntegerType().valueToString(123));
 		assertEquals("123.456", new DoubleType().valueToString(123.456));
-		assertEquals("123.456", new FloatType().valueToString(123.456F));
 		assertEquals("My test value", new StringType().valueToString("My test value"));
 		assertEquals("http://www.google.com", new URLType().valueToString(new URL("http://www.google.com")));
 		assertEquals("false", new BooleanType().valueToString(false));

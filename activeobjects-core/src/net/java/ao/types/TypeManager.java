@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 
+import static net.java.ao.types.LogicalTypes.enumType;
+
 import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
@@ -115,8 +117,6 @@ public final class TypeManager
                 .addMapping(booleanType(), schemaType("SMALLINT").jdbcWriteType(TINYINT).precisionAllowed(true), qualifiers().precision(1))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "CLOB")
@@ -130,8 +130,6 @@ public final class TypeManager
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "LONGVARCHAR")
@@ -145,8 +143,6 @@ public final class TypeManager
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "TEXT")
@@ -155,14 +151,11 @@ public final class TypeManager
 
     public static TypeManager postgres()
     {
-
         return new TypeManager.Builder()
                 .addMapping(blobType(), schemaType("BYTEA"))
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
                 .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "TEXT")
@@ -176,8 +169,6 @@ public final class TypeManager
                 .addMapping(booleanType(), schemaType("BIT"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("FLOAT"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("REAL"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "NTEXT")
@@ -191,9 +182,7 @@ public final class TypeManager
                 .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(1))
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
                 .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
-                .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(16).scale(16))
                 .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
-                .addMapping(enumType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
                 .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
                 .addStringTypes("VARCHAR", "CLOB")
                 .build();
@@ -235,6 +224,9 @@ public final class TypeManager
             addMapping(stringType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
                        qualifiers().stringLength(UNLIMITED_LENGTH));
             
+            addMapping(enumType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
+                       qualifiers().stringLength(StringType.DEFAULT_LENGTH));
+
             addMapping(uriType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(uriType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),

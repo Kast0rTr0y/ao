@@ -15,5 +15,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface Jdbc
 {
-    Class<? extends JdbcConfiguration> value() default Hsql.class;
+    Class<? extends JdbcConfiguration> value() default DynamicJdbcConfiguration.class;
 }

@@ -15,6 +15,21 @@
  */
 package net.java.ao.db;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Date;
+import java.util.List;
+
+import com.google.common.base.Function;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
@@ -27,34 +42,14 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-
-import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
-
-import net.java.ao.types.TypeQualifiers;
-
 import test.schema.Company;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Types;
-import java.util.Date;
-import java.util.List;
-
-import com.google.common.base.Function;
-
 import static com.google.common.collect.Lists.newArrayList;
-import static net.java.ao.DatabaseProviders.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public abstract class DatabaseProviderTest
@@ -158,7 +153,8 @@ public abstract class DatabaseProviderTest
                     newCompanyField(db),
                     newCoolField(db),
                     newModifiedField(db),
-                    newWeightField(db));
+                    newWeightField(db),
+                    newTypeOfPersonField(db));
             DDLField[] fieldsArray = new DDLField[fields.size()];
             table.setFields(fieldsArray);
             fields.toArray(fieldsArray);
@@ -267,6 +263,14 @@ public abstract class DatabaseProviderTest
         f.setAutoIncrement(true);
         f.setPrimaryKey(true);
         f.setNotNull(true);
+        return f;
+    }
+
+    private DDLField newTypeOfPersonField(DatabaseProvider db)
+    {
+        DDLField f = new DDLField();
+        f.setName("typeOfPerson");
+        f.setType(db.getTypeManager().getType(TypeOfPerson.class, qualifiers().stringLength(30)));
         return f;
     }
 
@@ -447,5 +451,11 @@ public abstract class DatabaseProviderTest
         }
 
         return arr;
+    }
+    
+    static enum TypeOfPerson
+    {
+        ME,
+        EVERYONE_ELSE
     }
 }

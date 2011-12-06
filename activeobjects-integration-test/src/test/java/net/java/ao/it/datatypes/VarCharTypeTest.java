@@ -9,12 +9,15 @@ import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
+import net.java.ao.schema.StringLength;
+import net.java.ao.types.TypeQualifiers;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
-import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 
@@ -197,6 +200,32 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), ""));
     }
 
+    /**
+     * String length can be specified as long as it is within the maximum value for varchars in all databases
+     */
+    @Test
+    public void testColumnWithAllowableLength() throws Exception
+    {
+        entityManager.migrate(ColumnWithAllowableLength.class);
+        
+        StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < TypeQualifiers.MAX_STRING_LENGTH; i++)
+        {
+            buf.append("*");
+        }
+        
+        entityManager.create(ColumnWithAllowableLength.class, new DBParam(getFieldName(ColumnWithAllowableLength.class, "getName"), buf.toString()));
+    }
+
+    /**
+     * StringLength annotation that is above the maximum value for varchars in any database causes an error
+     */
+    @Test(expected=ActiveObjectsConfigurationException.class)
+    public void testColumnWithExcessiveLength() throws Exception
+    {
+        entityManager.migrate(ColumnWithExcessiveLength.class);
+    }
+
     private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final String fieldValue) throws Exception
     {
         executeStatement("SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
@@ -315,6 +344,28 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         public void setName(String name);
     }
 
+    /**
+     * Column with fixed string length annotation that is within the allowable limit
+     */
+    public static interface ColumnWithAllowableLength extends Entity
+    {
+        @StringLength(TypeQualifiers.MAX_STRING_LENGTH)
+        public String getName();
+        
+        public void setName(String name);
+    }
+    
+    /**
+     * Column with fixed string length annotation that is above the allowable limit
+     */
+    public static interface ColumnWithExcessiveLength extends Entity
+    {
+        @StringLength(TypeQualifiers.MAX_STRING_LENGTH + 1)
+        public String getName();
+        
+        public void setName(String name);
+    }
+    
     /**
      * Indexed column - not supported
      */

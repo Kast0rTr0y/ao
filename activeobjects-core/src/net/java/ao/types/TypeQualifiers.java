@@ -27,19 +27,17 @@ public class TypeQualifiers
     private final Integer precision;
     private final Integer scale;
     private final Integer stringLength;
-    private final Class<?> propertyType;
     
-    private TypeQualifiers(Integer precision, Integer scale, Integer stringLength, Class<?> propertyType)
+    private TypeQualifiers(Integer precision, Integer scale, Integer stringLength)
     {
         this.precision = precision;
         this.scale = scale;
         this.stringLength = stringLength;
-        this.propertyType = propertyType;
     }
 
     public static TypeQualifiers qualifiers()
     {
-        return new TypeQualifiers(null, null, null, null);
+        return new TypeQualifiers(null, null, null);
     }
 
     public TypeQualifiers precision(int precision)
@@ -48,7 +46,7 @@ public class TypeQualifiers
         {
             throw new ActiveObjectsConfigurationException("Numeric precision must be greater than zero");
         }
-        return new TypeQualifiers(precision, this.scale, this.stringLength, this.propertyType);
+        return new TypeQualifiers(precision, this.scale, this.stringLength);
     }
     
     public TypeQualifiers scale(int scale)
@@ -57,7 +55,7 @@ public class TypeQualifiers
         {
             throw new ActiveObjectsConfigurationException("Numeric scale must be greater than or equal to zero");
         }
-        return new TypeQualifiers(this.precision, scale, this.stringLength, this.propertyType);
+        return new TypeQualifiers(this.precision, scale, this.stringLength);
     }
     
     public TypeQualifiers stringLength(int stringLength)
@@ -70,25 +68,25 @@ public class TypeQualifiers
             }
             else if (stringLength > MAX_STRING_LENGTH)
             {
+                // There is a separate check in SchemaGenerator.getSQLTypeFromMethod to raise an
+                // error if someone explicitly tries to specify a length greater than this limit with
+                // the @StringLength annotation.  But we can't put that check here, because we also
+                // use TypeQualifiers for metadata that is read directly from a database schema, and
+                // some databases like to report very large numbers for the length of what is really
+                // an unlimited-length (CLOB) column.
                 stringLength = UNLIMITED_LENGTH;
             }
         }
-        return new TypeQualifiers(this.precision, this.scale, stringLength, this.propertyType);
+        return new TypeQualifiers(this.precision, this.scale, stringLength);
     }
-    
-    public TypeQualifiers propertyType(Class<?> propertyType)
-    {
-        return new TypeQualifiers(this.precision, this.scale, this.stringLength, propertyType);
-    }
-    
+
     public TypeQualifiers withQualifiers(TypeQualifiers overrides)
     {
         if (overrides.isDefined())
         {
             return new TypeQualifiers(overrides.hasPrecision() ? overrides.precision : this.precision,
                                       overrides.hasScale() ? overrides.scale : this.scale,
-                                      overrides.hasStringLength() ? overrides.stringLength : this.stringLength,
-                                      overrides.hasPropertyType() ? overrides.propertyType : this.propertyType);
+                                      overrides.hasStringLength() ? overrides.stringLength : this.stringLength);
         }
         return this;
     }
@@ -108,14 +106,9 @@ public class TypeQualifiers
         return stringLength;
     }
     
-    public Class<?> getPropertyType()
-    {
-        return propertyType;
-    }
-    
     public boolean isDefined()
     {
-        return hasPrecision() || hasScale() || hasStringLength() || hasPropertyType();
+        return hasPrecision() || hasScale() || hasStringLength();
     }
     
     public boolean hasPrecision()
@@ -136,11 +129,6 @@ public class TypeQualifiers
     public boolean isUnlimitedLength()
     {
         return ((stringLength != null) && (stringLength == UNLIMITED_LENGTH));
-    }
-    
-    public boolean hasPropertyType()
-    {
-        return (propertyType != null);
     }
     
     public boolean isCompatibleWith(TypeQualifiers other)

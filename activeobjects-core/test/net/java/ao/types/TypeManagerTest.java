@@ -15,36 +15,18 @@
  */
 package net.java.ao.types;
 
+import org.junit.Before;
+import org.junit.Test;
+import test.schema.Person;
+
 import java.net.URI;
 import java.net.URL;
 import java.sql.Types;
-import java.util.Date;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import static net.java.ao.types.LogicalTypes.booleanType;
-
-import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
-
-import static net.java.ao.types.LogicalTypes.dateType;
-
-import static net.java.ao.types.LogicalTypes.floatType;
-
-import static net.java.ao.types.LogicalTypes.doubleType;
-
-import static net.java.ao.types.SchemaProperties.schemaType;
-
-import static net.java.ao.types.LogicalTypes.longType;
-
-import static net.java.ao.types.LogicalTypes.integerType;
-
-import static net.java.ao.types.LogicalTypes.stringType;
-
-import test.schema.Person;
-
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-import static org.junit.Assert.assertEquals;
+import static net.java.ao.types.LogicalTypes.*;
+import static net.java.ao.types.SchemaProperties.*;
+import static net.java.ao.types.TypeQualifiers.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Daniel Spiewak
@@ -68,7 +50,6 @@ public final class TypeManagerTest
             .addMapping(integerType(), schemaType("INTEGER"))
             .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
             .addMapping(doubleType(), schemaType("DOUBLE"))
-            .addMapping(floatType(), schemaType("FLOAT"))
             .addMapping(dateType(), schemaType("DATETIME"))
             .addStringTypes("VARCHAR", "TEXT")
             .build();
@@ -85,8 +66,6 @@ public final class TypeManagerTest
         verifyType(typeManager.getType(Long.class), LongType.class, "BIGINT", PRECISION_100);
         verifyType(typeManager.getType(double.class), DoubleType.class, "DOUBLE", PLAIN);
         verifyType(typeManager.getType(Double.class), DoubleType.class, "DOUBLE", PLAIN);
-        verifyType(typeManager.getType(float.class), FloatType.class, "FLOAT", PLAIN);
-        verifyType(typeManager.getType(Float.class), FloatType.class, "FLOAT", PLAIN);
         verifyType(typeManager.getType(String.class), StringType.class, "VARCHAR", LENGTH_STRING_DEFAULT);
         verifyType(typeManager.getType(String.class, LENGTH_127), StringType.class, "VARCHAR", LENGTH_127);
         verifyType(typeManager.getType(String.class, UNLIMITED), StringType.class, "TEXT", UNLIMITED);

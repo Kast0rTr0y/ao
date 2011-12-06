@@ -46,12 +46,20 @@ public class DatabaseProviders
 
     public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()
     {
-        return new SQLServerDatabaseProvider(newDataSource(""));
+        return new SQLServerDatabaseProvider(newDataSource(""))
+        {
+            @Override
+            protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+        };
     }
 
     public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider()
     {
-        return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "") {
+        return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "")
+        {
             @Override
             protected void setPostConnectionProperties(Connection conn) throws SQLException
             {

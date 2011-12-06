@@ -19,10 +19,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-
-import net.java.ao.types.TypeQualifiers;
-
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
@@ -38,6 +34,7 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 import net.java.ao.util.EnumUtils;
 
 import java.lang.reflect.Method;
@@ -58,6 +55,8 @@ import java.util.Set;
 
 import static com.google.common.collect.Sets.*;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static net.java.ao.types.TypeQualifiers.MAX_STRING_LENGTH;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * WARNING: <i>Not</i> part of the public API.  This class is public only
@@ -325,6 +324,10 @@ public final class SchemaGenerator
 		StringLength lengthAnno = annotations.getAnnotation(StringLength.class);
 		if (lengthAnno != null) {
 		    final int length = lengthAnno.value();
+		    if (length > MAX_STRING_LENGTH)
+		    {
+		        throw new ActiveObjectsConfigurationException("@StringLength must be <= " + MAX_STRING_LENGTH + " or UNLIMITED").forMethod(method);
+		    }
 		    try {
 		        qualifiers = qualifiers.stringLength(length);
 		    }
