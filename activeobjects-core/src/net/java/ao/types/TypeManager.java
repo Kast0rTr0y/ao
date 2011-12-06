@@ -8,12 +8,8 @@ import com.google.common.collect.SetMultimap;
 import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
-import static java.sql.Types.CLOB;
-import static java.sql.Types.LONGNVARCHAR;
-import static java.sql.Types.LONGVARCHAR;
-import static net.java.ao.types.LogicalTypes.stringType;
-import static net.java.ao.types.LogicalTypes.uriType;
-import static net.java.ao.types.LogicalTypes.urlType;
+import static java.sql.Types.*;
+import static net.java.ao.types.LogicalTypes.*;
 import static net.java.ao.types.SchemaProperties.schemaType;
 import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
@@ -29,10 +25,9 @@ import static net.java.ao.types.TypeQualifiers.qualifiers;
  * <p>This container is thread safe and so may be used from within multiple
  * contexts.</p>
  */
-public class TypeManager
+public final class TypeManager
 {
-    private static final ImmutableSet<Integer> UNLIMITED_TEXT_TYPES =
-            ImmutableSet.<Integer>of(CLOB, LONGNVARCHAR, LONGVARCHAR);
+    private static final ImmutableSet<Integer> UNLIMITED_TEXT_TYPES = ImmutableSet.of(CLOB, LONGNVARCHAR, LONGVARCHAR);
     
     private final ImmutableMultimap<Class<?>, TypeInfo<?>> classIndex;
     private final ImmutableMultimap<Integer, TypeInfo<?>> jdbcTypeIndex;
@@ -112,7 +107,98 @@ public class TypeManager
         }
         return acceptableType.withQualifiers(qualifiers);
     }
-    
+
+    public static TypeManager derby()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("SMALLINT").jdbcWriteType(TINYINT).precisionAllowed(true), qualifiers().precision(1))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "CLOB")
+                .build();
+    }
+
+    public static TypeManager hsql()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BINARY"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "LONGVARCHAR")
+                .build();
+    }
+
+    public static TypeManager mysql()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "TEXT")
+                .build();
+    }
+
+    public static TypeManager postgres()
+    {
+
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BYTEA"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("TIMESTAMP"))
+                .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("FLOAT"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "TEXT")
+                .build();
+    }
+
+    public static TypeManager sqlServer()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("IMAGE"))
+                .addMapping(booleanType(), schemaType("BIT"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addMapping(doubleType(), schemaType("FLOAT"))
+                .addMapping(enumType(), schemaType("INTEGER"))
+                .addMapping(floatType(), schemaType("REAL"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "NTEXT")
+                .build();
+    }
+
+    public static TypeManager oracle()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(1))
+                .addMapping(dateType(), schemaType("TIMESTAMP"))
+                .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
+                .addMapping(floatType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(16).scale(16))
+                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
+                .addMapping(enumType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
+                .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
+                .addStringTypes("VARCHAR", "CLOB")
+                .build();
+    }
+
     public static class Builder
     {
         private final SetMultimap<Class<?>, TypeInfo<?>> classIndex = HashMultimap.create();

@@ -69,18 +69,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
     public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("IMAGE"))
-                .addMapping(booleanType(), schemaType("BIT"))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("FLOAT"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("REAL"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "NTEXT")
-                .build());
+        super(dataSource, schema, TypeManager.sqlServer());
     }
 
 	@Override

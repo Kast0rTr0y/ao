@@ -10,6 +10,7 @@ import net.java.ao.util.StringUtils;
 
 import static java.sql.Types.DOUBLE;
 import static java.sql.Types.NUMERIC;
+import static java.sql.Types.DECIMAL;
 
 final class DoubleType extends AbstractLogicalType<Double>
 {
@@ -17,7 +18,7 @@ final class DoubleType extends AbstractLogicalType<Double>
     {
         super("Double",
               new Class<?>[] { Double.class, double.class },
-              DOUBLE, new Integer[] { DOUBLE, NUMERIC });
+              DOUBLE, new Integer[] { DOUBLE, NUMERIC, DECIMAL });
     }
 
     @Override

@@ -46,22 +46,11 @@ import static net.java.ao.types.SchemaProperties.schemaType;
 /**
  * @author Daniel Spiewak
  */
-public final class MySQLDatabaseProvider extends DatabaseProvider
+public class MySQLDatabaseProvider extends DatabaseProvider
 {
     public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BLOB"))
-                .addMapping(booleanType(), schemaType("BOOLEAN"))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "TEXT")
-                .build());
+        super(dataSource, null, TypeManager.mysql());
     }
     
 	@Override

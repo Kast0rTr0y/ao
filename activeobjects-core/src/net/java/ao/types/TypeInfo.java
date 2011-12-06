@@ -185,6 +185,7 @@ public final class TypeInfo<T>
             {
                 ret.append(qualifiers.getStringLength());
             }
+            ret.append(")");
         }
         ret.append(":");
         ret.append(schemaProperties.getSqlTypeName());

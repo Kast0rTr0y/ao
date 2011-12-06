@@ -6,6 +6,8 @@ import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.ddl.DDLIndex;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -32,7 +34,14 @@ public class DatabaseProviders
 
     public static MySQLDatabaseProvider getMySqlDatabaseProvider()
     {
-        return new MySQLDatabaseProvider(newDataSource(""));
+        return new MySQLDatabaseProvider(newDataSource(""))
+        {
+            @Override
+            protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+        };
     }
 
     public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()

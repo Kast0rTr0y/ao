@@ -7,7 +7,7 @@ public class Oracle extends AbstractJdbcConfiguration
 {
     public String getUrl()
     {
-        return "jdbc:oracle:thin:@localhost:1521:orcl";
+        return "jdbc:oracle:thin:@192.168.0.113:1521:xe";
     }
 
     @Override

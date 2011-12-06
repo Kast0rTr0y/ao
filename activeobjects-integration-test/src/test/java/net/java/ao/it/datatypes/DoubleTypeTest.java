@@ -38,7 +38,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(SimpleId.class);
 
-        Double id = new Double(1d);
+        final Double id = 1d;
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", id));
 
         entityManager.flushAll();

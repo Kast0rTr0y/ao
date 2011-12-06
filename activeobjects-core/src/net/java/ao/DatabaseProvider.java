@@ -220,9 +220,7 @@ public abstract class DatabaseProvider
             case DROP:
                 for (DDLIndex index : action.getTable().getIndexes())
                 {
-                    DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
-                    newAction.setIndex(index);
-                    back.addAll(Arrays.asList(renderAction(nameConverters, newAction)));
+                    back.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
                 }
 
                 back.addAll(renderDropTriggers(nameConverters.getTriggerNameConverter(), action.getTable()));
@@ -1420,12 +1418,42 @@ public abstract class DatabaseProvider
      */
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        StringBuilder back = new StringBuilder();
+        final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        if (hasIndex(indexNameConverter, index))
+        {
+            return new StringBuilder().append("DROP INDEX ").append(withSchema(indexName)).append(" ON ").append(withSchema(index.getTable())).toString();
+        }
+        else
+        {
+            return "";
+        }
+    }
 
-        back.append("DROP INDEX ").append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
-        back.append(" ON ").append(withSchema(index.getTable()));
-
-        return back.toString();
+    protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        Connection connection = null;
+        try
+        {
+            connection = getConnection();
+            ResultSet indexes = getIndexes(connection, index.getTable());
+            while (indexes.next())
+            {
+                if (indexName.equalsIgnoreCase(indexes.getString("INDEX_NAME")))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        catch (SQLException e)
+        {
+            throw new ActiveObjectsException(e);
+        }
+        finally
+        {
+            closeQuietly(connection);
+        }
     }
 
     /**

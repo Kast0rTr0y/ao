@@ -62,19 +62,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
 {
     DerbyDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BLOB"))
-                .addMapping(booleanType(), schemaType("SMALLINT").jdbcWriteType(TINYINT).precisionAllowed(true),
-                            qualifiers().precision(1))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "CLOB")
-                .build());
+        super(dataSource, null, TypeManager.derby());
     }
 
     @Override

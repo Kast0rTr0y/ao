@@ -71,18 +71,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BYTEA"))
-                .addMapping(booleanType(), schemaType("BOOLEAN"))
-                .addMapping(dateType(), schemaType("TIMESTAMP"))
-                .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
-                .addMapping(enumType(), schemaType("INTEGER"))
-                .addMapping(floatType(), schemaType("FLOAT"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "TEXT")
-                .build());
+        super(dataSource, schema, TypeManager.postgres());
     }
 
 	@Override
