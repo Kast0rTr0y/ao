@@ -79,12 +79,7 @@ public class TypeQualifiers
         }
         return new TypeQualifiers(this.precision, this.scale, stringLength);
     }
-    
-    public TypeQualifiers propertyType(Class<?> propertyType)
-    {
-        return new TypeQualifiers(this.precision, this.scale, this.stringLength);
-    }
-    
+
     public TypeQualifiers withQualifiers(TypeQualifiers overrides)
     {
         if (overrides.isDefined())

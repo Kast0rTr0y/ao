@@ -45,15 +45,6 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeManager;
 
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
-
 /**
  * @author Daniel Spiewak
  */
@@ -68,16 +59,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
     public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("IMAGE"))
-                .addMapping(booleanType(), schemaType("BIT"))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("FLOAT"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "NTEXT")
-                .build());
+        super(dataSource, schema, TypeManager.sqlServer());
     }
 
 	@Override
@@ -202,12 +184,18 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     @Override
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        StringBuilder back = new StringBuilder();
-
-        back.append("DROP INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
-        back.append(" ON ").append(withSchema(index.getTable()));
-
-        return back.toString();
+        if (hasIndex(indexNameConverter, index))
+        {
+            return new StringBuilder().append("DROP INDEX ")
+                    .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                    .append(" ON ")
+                    .append(withSchema(index.getTable()))
+                    .toString();
+        }
+        else
+        {
+            return "";
+        }
     }
     
     @Override

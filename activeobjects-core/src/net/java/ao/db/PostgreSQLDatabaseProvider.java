@@ -49,15 +49,6 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
-
 public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
     private static final int MAX_SEQUENCE_LENGTH = 64;
@@ -70,19 +61,10 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BYTEA"))
-                .addMapping(booleanType(), schemaType("BOOLEAN"))
-                .addMapping(dateType(), schemaType("TIMESTAMP"))
-                .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "TEXT")
-                .build());
+        super(dataSource, schema, TypeManager.postgres());
     }
 
-	@Override
+    @Override
 	public Object parseValue(int type, String value) {
 		if (value == null || value.equals("") || value.equals("NULL")) {
 			return null;

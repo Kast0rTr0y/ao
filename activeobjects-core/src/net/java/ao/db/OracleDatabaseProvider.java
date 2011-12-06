@@ -72,16 +72,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
     public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BLOB"))
-                .addMapping(booleanType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(1))
-                .addMapping(dateType(), schemaType("TIMESTAMP"))
-                .addMapping(doubleType(), schemaType("NUMBER").precisionAllowed(true).scaleAllowed(true), qualifiers().precision(32).scale(16))
-                .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
-                .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
-                .addStringTypes("VARCHAR", "CLOB")
-                .build());
+        super(dataSource, schema, TypeManager.oracle());
     }
 
     @Override

@@ -15,35 +15,18 @@
  */
 package net.java.ao.types;
 
+import org.junit.Before;
+import org.junit.Test;
+import test.schema.Person;
+
 import java.net.URI;
 import java.net.URL;
 import java.sql.Types;
-import java.util.Date;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import static net.java.ao.types.LogicalTypes.booleanType;
-
-import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
-
-import static net.java.ao.types.LogicalTypes.dateType;
-
-
-import static net.java.ao.types.LogicalTypes.doubleType;
-
-import static net.java.ao.types.SchemaProperties.schemaType;
-
-import static net.java.ao.types.LogicalTypes.longType;
-
-import static net.java.ao.types.LogicalTypes.integerType;
-
-import static net.java.ao.types.LogicalTypes.stringType;
-
-import test.schema.Person;
-
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-import static org.junit.Assert.assertEquals;
+import static net.java.ao.types.LogicalTypes.*;
+import static net.java.ao.types.SchemaProperties.*;
+import static net.java.ao.types.TypeQualifiers.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Daniel Spiewak

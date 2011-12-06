@@ -1,7 +1,6 @@
 package net.java.ao.test.jdbc;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -15,5 +14,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface Jdbc
 {
-    Class<? extends JdbcConfiguration> value() default Hsql.class;
+    Class<? extends JdbcConfiguration> value() default DynamicJdbcConfiguration.class;
 }

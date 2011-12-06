@@ -47,19 +47,11 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
 
 /**
  * @author Daniel Spiewak
  */
-public class HSQLDatabaseProvider extends DatabaseProvider
+public final class HSQLDatabaseProvider extends DatabaseProvider
 {
     public HSQLDatabaseProvider(DisposableDataSource dataSource)
     {
@@ -68,16 +60,7 @@ public class HSQLDatabaseProvider extends DatabaseProvider
 
     public HSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
-        super(dataSource, schema,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BINARY"))
-                .addMapping(booleanType(), schemaType("BOOLEAN"))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "LONGVARCHAR")
-                .build());
+        super(dataSource, schema, TypeManager.hsql());
     }
 
     @Override
@@ -364,16 +347,17 @@ public class HSQLDatabaseProvider extends DatabaseProvider
 		return back.toString();
 	}
 
-	@Override
-	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-		StringBuilder back = new StringBuilder("DROP INDEX ");
+    @Override
+    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        return new StringBuilder("DROP INDEX ")
+                .append(withSchema(indexName))
+                .append(" IF EXISTS")
+                .toString();
+    }
 
-		back.append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
-
-		return back.toString();
-	}
-
-	@Override
+    @Override
 	protected Set<String> getReservedWords() {
 		return RESERVED_WORDS;
 	}

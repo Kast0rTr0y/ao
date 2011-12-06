@@ -33,35 +33,17 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeManager;
 
-import static net.java.ao.types.LogicalTypes.blobType;
-import static net.java.ao.types.LogicalTypes.booleanType;
-import static net.java.ao.types.LogicalTypes.dateType;
-import static net.java.ao.types.LogicalTypes.doubleType;
-import static net.java.ao.types.LogicalTypes.enumType;
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.longType;
-import static net.java.ao.types.SchemaProperties.schemaType;
-
 /**
  * @author Daniel Spiewak
  */
-public final class MySQLDatabaseProvider extends DatabaseProvider
+public class MySQLDatabaseProvider extends DatabaseProvider
 {
     public MySQLDatabaseProvider(DisposableDataSource dataSource)
     {
-        super(dataSource, null,
-              new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BLOB"))
-                .addMapping(booleanType(), schemaType("BOOLEAN"))
-                .addMapping(dateType(), schemaType("DATETIME"))
-                .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(integerType(), schemaType("INTEGER"))
-                .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "TEXT")
-                .build());
+        super(dataSource, null, TypeManager.mysql());
     }
-    
-	@Override
+
+    @Override
 	protected String renderAutoIncrement() {
 		return "AUTO_INCREMENT";
 	}
