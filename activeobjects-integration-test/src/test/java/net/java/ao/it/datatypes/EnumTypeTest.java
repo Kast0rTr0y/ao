@@ -44,7 +44,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(SimpleId.class);
 
-        SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", Data.FIRST));
+        SimpleId e = entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), Data.FIRST));
         entityManager.flushAll();
         assertEquals(Data.FIRST, e.getId());
         checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", Data.FIRST);
@@ -58,7 +58,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(SimpleId.class);
 
-        entityManager.create(SimpleId.class, new DBParam("ID", null));
+        entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), null));
     }
 
     /**
@@ -71,7 +71,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
 
         for (Data data : Data.values())
         {
-            SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", data));
+            SimpleId e = entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), data));
             assertEquals(data, e.getId());
             checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", data);
         }
@@ -216,8 +216,16 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
                 new DbUtils.StatementCallback() {
-                    public void setParameters(PreparedStatement statement) throws Exception {
-                        statement.setObject(1, id);
+                    public void setParameters(PreparedStatement statement) throws Exception
+                    {
+                        if (id instanceof Enum<?>)
+                        {
+                            statement.setString(1, ((Enum<?>) id).name());
+                        }
+                        else
+                        {
+                            statement.setObject(1, id);
+                        }
                     }
 
                     public void processResult(ResultSet resultSet) throws Exception {
