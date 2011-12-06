@@ -9,6 +9,7 @@ CREATE TABLE person (
     cool NUMBER(1) DEFAULT 1,
     modified TIMESTAMP,
     weight NUMBER(32,16),
+    typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
 )

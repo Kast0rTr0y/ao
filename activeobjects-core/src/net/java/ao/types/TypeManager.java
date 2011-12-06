@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 
+import static net.java.ao.types.LogicalTypes.enumType;
+
 import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
@@ -149,6 +151,9 @@ public class TypeManager
             addMapping(stringType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
                        qualifiers().stringLength(UNLIMITED_LENGTH));
             
+            addMapping(enumType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
+                       qualifiers().stringLength(StringType.DEFAULT_LENGTH));
+
             addMapping(uriType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(uriType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),

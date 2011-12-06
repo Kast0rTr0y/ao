@@ -47,7 +47,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", Data.FIRST));
         entityManager.flushAll();
         assertEquals(Data.FIRST, e.getId());
-        checkFieldValue(SimpleId.class, "getId", e.getId().ordinal(), "getId", Data.FIRST.ordinal());
+        checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", Data.FIRST);
     }
 
     /**
@@ -73,7 +73,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
         {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", data));
             assertEquals(data, e.getId());
-            checkFieldValue(SimpleId.class, "getId", e.getId().ordinal(), "getId", data.ordinal());
+            checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", data);
         }
     }
 
@@ -95,7 +95,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
         entityManager.flushAll();
 
         assertEquals(Data.FIRST, e.getData());
-        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getData", Data.FIRST.ordinal());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getData", Data.FIRST);
     }
 
     /**
@@ -142,7 +142,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
 
         entityManager.flushAll();
         assertEquals(Data.SECOND, e.getData());
-        checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getData", Data.SECOND.ordinal());
+        checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getData", Data.SECOND);
     }
 
     /**
@@ -158,7 +158,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
         entityManager.flushAll();
 
         assertEquals(Data.THIRD, e.getData());
-        checkFieldValue(NotNullColumn.class, "getID", e.getID(), "getData", Data.THIRD.ordinal());
+        checkFieldValue(NotNullColumn.class, "getID", e.getID(), "getData", Data.THIRD);
     }
 
     /**
@@ -212,7 +212,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
 
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Integer fieldValue) throws Exception
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Data fieldValue) throws Exception
     {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
                 new DbUtils.StatementCallback() {
@@ -222,7 +222,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
 
                     public void processResult(ResultSet resultSet) throws Exception {
                         if (resultSet.next()) {
-                            assertEquals(fieldValue,(Integer) resultSet.getInt(getFieldName(entityType, getterName)));
+                            assertEquals(fieldValue.name(), resultSet.getString(getFieldName(entityType, getterName)));
                         } else {
                             fail("No entry found in database with ID " + id);
                         }

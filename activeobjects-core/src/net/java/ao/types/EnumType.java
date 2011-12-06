@@ -3,16 +3,12 @@ package net.java.ao.types;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.NoSuchElementException;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
+import net.java.ao.util.StringUtils;
 
-import static java.sql.Types.INTEGER;
-import static net.java.ao.util.EnumUtils.values;
+import static java.sql.Types.VARCHAR;
 
 final class EnumType extends AbstractLogicalType<Enum<?>>
 {
@@ -20,7 +16,7 @@ final class EnumType extends AbstractLogicalType<Enum<?>>
     {
         super("Enum",
               new Class<?>[] { Enum.class },
-              INTEGER, new Integer[] { });
+              VARCHAR, new Integer[] { });
     }
 
     @Override
@@ -29,16 +25,21 @@ final class EnumType extends AbstractLogicalType<Enum<?>>
         return true;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<Enum<?>> type, String columnName)
         throws SQLException
     {
-        final int dbValue = res.getInt(columnName);
+        final String dbValue = res.getString(columnName);
+        if (StringUtils.isBlank(dbValue))
+        {
+            return null;
+        }
         try
         {
-            return findEnum(type, dbValue);
+            return Enum.valueOf((Class<? extends Enum>) type, dbValue);
         }
-        catch (NoSuchElementException e)
+        catch (IllegalArgumentException e)
         {
             throw new ActiveObjectsException("Could not find enum value for '" + type + "' corresponding to database value '" + dbValue + "'");
         }
@@ -47,11 +48,9 @@ final class EnumType extends AbstractLogicalType<Enum<?>>
     @Override
     public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value, int jdbcType) throws SQLException
     {
-        stmt.setInt(index, value.ordinal());
+        stmt.setString(index, value.name());
     }
 
-    // Parsing won't be possible until we know the desired enum type at the time we're parsing the value.
-    // Java won't let us cast an integer to an enum.
     //@Override
     //public Enum<?> parse(String input)
     //{
@@ -64,16 +63,4 @@ final class EnumType extends AbstractLogicalType<Enum<?>>
     //        throw new ActiveObjectsConfigurationException("Could not parse '" + value + "' as an integer to match enum ordinal");
     //    }
     // }
-    
-    private Enum<?> findEnum(Class<? extends Enum<?>> type, final int dbValue)
-    {
-        return Iterables.find(values(type), new Predicate<Enum>()
-        {
-            @Override
-            public boolean apply(Enum e)
-            {
-                return e.ordinal() == dbValue;
-            }
-        });
-    }
 }

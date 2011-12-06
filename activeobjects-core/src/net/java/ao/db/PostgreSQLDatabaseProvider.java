@@ -76,7 +76,6 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("TIMESTAMP"))
                 .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
-                .addMapping(enumType(), schemaType("INTEGER"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "TEXT")

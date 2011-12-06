@@ -55,7 +55,6 @@ public final class MySQLDatabaseProvider extends DatabaseProvider
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "TEXT")

@@ -9,6 +9,7 @@ CREATE TABLE public."person" (
     "cool" BOOLEAN DEFAULT TRUE,
     "modified" TIMESTAMP,
     "weight" DOUBLE PRECISION,
+    "typeOfPerson" VARCHAR(30),
     CONSTRAINT "fk_person_companyid" FOREIGN KEY ("companyID") REFERENCES public."company"("id"),
     PRIMARY KEY("id")
 )

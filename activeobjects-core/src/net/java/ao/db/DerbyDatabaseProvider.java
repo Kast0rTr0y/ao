@@ -68,7 +68,6 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
                             qualifiers().precision(1))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
-                .addMapping(enumType(), schemaType("INTEGER"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "CLOB")

@@ -9,6 +9,7 @@ CREATE TABLE dbo.person (
     cool BIT CONSTRAINT df_person_cool DEFAULT 1,
     modified DATETIME,
     weight FLOAT,
+    typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id),
     PRIMARY KEY(id)
 )
