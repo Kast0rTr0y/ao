@@ -74,7 +74,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
                 .addMapping(booleanType(), schemaType("BIT"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("FLOAT"))
-                .addMapping(enumType(), schemaType("INTEGER"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
                 .addStringTypes("VARCHAR", "NTEXT")
