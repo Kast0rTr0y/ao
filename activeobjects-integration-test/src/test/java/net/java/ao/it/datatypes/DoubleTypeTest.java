@@ -1,6 +1,10 @@
 package net.java.ao.it.datatypes;
 
-import net.java.ao.*;
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
+import net.java.ao.DBParam;
+import net.java.ao.Entity;
+import net.java.ao.RawEntity;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
@@ -8,13 +12,11 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.util.DoubleUtils;
-
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import static org.junit.Assert.*;
 
@@ -81,7 +83,6 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         assertEquals(new Double(DoubleUtils.MAX_VALUE), e.getAge());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", DoubleUtils.MAX_VALUE);
     }
-
 
     /**
      * Test invalid minimum double value
@@ -190,6 +191,42 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         assertEquals(new Double(100.2d), e.getAge());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getAge", 100.2d);
     }
+    
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
+    }
+    
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), 23d));
+        e.setAge(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
+    }
+    
+    
 
     /**
      * Test a not null column
@@ -310,7 +347,8 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(fieldValue, (Double) resultSet.getDouble(getFieldName(entityType, getterName)));
+                            double dbValue = resultSet.getDouble(getFieldName(entityType, getterName));
+                            assertEquals(fieldValue, resultSet.wasNull() ? null : dbValue);
                         }
                         else
                         {

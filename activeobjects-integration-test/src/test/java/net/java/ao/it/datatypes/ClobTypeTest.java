@@ -62,7 +62,40 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 
         entityManager.flushAll();
         assertNull(e.getText());
+        // TODO: check database value
+    }
 
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getText"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getText());
+        // TODO: check database value
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getText"), SMALL_CLOB));
+        e.setText(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getText());
         // TODO: check database value
     }
 

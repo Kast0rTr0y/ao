@@ -1,7 +1,6 @@
 package net.java.ao.it.datatypes;
 
 import net.java.ao.ActiveObjectsConfigurationException;
-import net.java.ao.ActiveObjectsException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
@@ -144,6 +143,40 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
         entityManager.flushAll();
         assertEquals(new URI("http://www.google.com?q=active%20objects"), e.getUri());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getUri", "http://www.google.com?q=active%20objects");
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getUri"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getUri());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getUri", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getUri"), new URI("http://localhost:2990/jira#anchor")));
+        e.setUri(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getUri());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getUri", null);
     }
 
     /**

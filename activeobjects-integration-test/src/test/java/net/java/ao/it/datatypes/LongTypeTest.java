@@ -18,9 +18,9 @@ import java.sql.ResultSet;
 import static org.junit.Assert.*;
 
 /**
- * Tests for BigInt data type
+ * Tests for Long data type
  */
-public final class BigIntTypeTest extends ActiveObjectsIntegrationTest
+public final class LongTypeTest extends ActiveObjectsIntegrationTest
 {
     /**
      * Test AutoIncrement
@@ -136,6 +136,40 @@ public final class BigIntTypeTest extends ActiveObjectsIntegrationTest
         entityManager.flushAll();
         assertEquals(new Long(100), e.getAge());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getAge", 100l);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), 23l));
+        e.setAge(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
     }
 
     /**
@@ -255,7 +289,8 @@ public final class BigIntTypeTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(fieldValue, (Long) resultSet.getLong(getFieldName(entityType, getterName)));
+                            long dbValue = resultSet.getLong(getFieldName(entityType, getterName));
+                            assertEquals(fieldValue, resultSet.wasNull() ? null : dbValue);
                         }
                         else
                         {

@@ -71,7 +71,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
         entityManager.migrate(SimpleId.class);
 
         // create a row with normal id
-        for (Integer value : new Integer[] {Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE })
+        for (Integer value : new Integer[]{Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE})
         {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", value));
             assertEquals(value, e.getId());
@@ -103,7 +103,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Empty String default value should not pass
      * Expected: A ConfigurationException telling that the provided value is invalid for the given field, not a
-     *           NumberFormatException
+     * NumberFormatException
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     public void testEmptyDefaultColumn() throws Exception
@@ -114,7 +114,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Non-integer default value should not pass
      * Expected: A ConfigurationException telling that the provided value is invalid for the given field, not a
-     *           NumberFormatException
+     * NumberFormatException
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     public void testInvalidDefaultColumn() throws Exception
@@ -136,6 +136,40 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
         entityManager.flushAll();
         assertEquals(new Integer(100), e.getAge());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getAge", 100);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), 23));
+        e.setAge(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getAge());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
     }
 
     /**
@@ -269,7 +303,8 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            assertEquals(fieldValue, (Integer) resultSet.getInt(getFieldName(entityType, getterName)));
+                            int dbValue = resultSet.getInt(getFieldName(entityType, getterName));
+                            assertEquals(fieldValue, resultSet.wasNull() ? null : dbValue);
                         }
                         else
                         {

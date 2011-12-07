@@ -2,6 +2,7 @@ package net.java.ao.it.datatypes;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,6 +26,8 @@ import static org.junit.Assert.*;
  */
 public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 {
+    private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     /**
      * Test AutoIncrement - not supported
      */
@@ -79,7 +82,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 
             assertEquals(expected.getTime(),actual.getTime());
 
-            checkFieldValue(SimpleId.class, e.getID(), "getCreated", value);
+            checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", value);
         }
     }
 
@@ -112,7 +115,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         actual.set(Calendar.MILLISECOND, 0);
 
         assertEquals(expected.getTime(),actual.getTime());
-        checkFieldValue(SimpleColumn.class, e.getID(), "getCreated", date);
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", date);
     }
 
     /**
@@ -146,7 +149,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 
         entityManager.flushAll();
 
-        Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2011-11-11 12:34:56");
+        Date date = new SimpleDateFormat(DATE_FORMAT).parse("2011-11-11 12:34:56");
 
         Calendar expected = Calendar.getInstance();
         expected.setTime(date);
@@ -159,7 +162,42 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 
         assertEquals(expected.getTime(),actual.getTime());
 
-        checkFieldValue(DefaultColumn.class, e.getID(), "getCreated", date);
+        checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getCreated", date);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getCreated"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getCreated());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        Date date = new SimpleDateFormat(DATE_FORMAT).parse("2011-11-11 12:34:56");
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getCreated"), date));
+        e.setCreated(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getCreated());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", null);
     }
 
     /**
@@ -187,7 +225,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
 
         assertEquals(expected.getTime(),actual.getTime());
         
-        checkFieldValue(NotNullColumn.class, e.getID(), "getCreated", date);
+        checkFieldValue(NotNullColumn.class, "getID", e.getID(), "getCreated", date);
     }
 
     /**
@@ -247,7 +285,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         e.save();
 
         entityManager.flushAll();
-        checkFieldValue(SimpleColumn.class, e.getID(), "getCreated", date);
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", date);
 
         entityManager.delete(e);
         entityManager.flushAll();
@@ -268,10 +306,9 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         });
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, final Object id, final String getterName, final Date fieldValue) throws Exception
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Date fieldValue) throws Exception
     {
-        if (true) return;
-        DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE ID = ?",
+        DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
                 new DbUtils.StatementCallback()
                 {
                     public void setParameters(PreparedStatement statement) throws Exception
@@ -290,9 +327,16 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
                     {
                         if (resultSet.next())
                         {
-                            //assertEquals(0, fieldValue.compareTo(resultSet.getDate(getFieldName(entityType, getterName))));
-                            assertEquals(new java.sql.Timestamp(fieldValue.getTime()), resultSet
-                                    .getTimestamp(getFieldName(entityType, getterName)));
+                            if (fieldValue == null)
+                            {
+                                resultSet.getTimestamp(getFieldName(entityType, getterName));
+                                assertTrue(resultSet.wasNull());
+                            }
+                            else
+                            {
+                                final DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT); // this date format doesn't include millis.
+                                assertEquals(dateFormat.format(new Date(fieldValue.getTime())), dateFormat.format(resultSet.getTimestamp(getFieldName(entityType, getterName))));
+                            }
                         }
                         else
                         {

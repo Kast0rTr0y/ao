@@ -151,6 +151,40 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        checkFieldData(SimpleColumn.class, "getID", e.getID(), "getData", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), false));
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        checkFieldData(SimpleColumn.class, "getID", e.getID(), "getData", null);
+    }
+
+    /**
      * Column is set to NOT NULL, positive test
      */
     @Test
@@ -281,7 +315,8 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
                 {
                     if (resultSet.next())
                     {
-                        assertEquals(fieldData, resultSet.getBoolean(getFieldName(entityType, getterName)));
+                        boolean dbValue = resultSet.getBoolean(getFieldName(entityType, getterName));
+                        assertEquals(fieldData, resultSet.wasNull() ? null : dbValue);
                     }
                     else
                     {

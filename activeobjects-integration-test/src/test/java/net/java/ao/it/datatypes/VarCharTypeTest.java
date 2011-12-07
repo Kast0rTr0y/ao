@@ -148,6 +148,40 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getName"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getName());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getName"), "Test"));
+        e.setName(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getName());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", null);
+    }
+
+    /**
      * Test a not null column constraint column
      */
     @Test

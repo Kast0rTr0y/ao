@@ -66,6 +66,75 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
+     * Test null value
+     */
+    @Test
+    public void testByteArrayNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn e = entityManager.create(ByteArrayBlobColumn.class, new DBParam(getFieldName(ByteArrayBlobColumn.class, "getData"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testByteArrayNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn e = entityManager.create(ByteArrayBlobColumn.class, new DBParam(getFieldName(ByteArrayBlobColumn.class, "getData"), LARGE_BLOB));
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testInputStreamNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(InputStreamBlobColumn.class);
+
+        // create
+        InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testInputStreamNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(InputStreamBlobColumn.class);
+
+        // create
+        InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), LARGE_BLOB));
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        // TODO: check how this looks in the db!
+    }
+
+
+    /**
      * Test InputStream representation of a blob
      */
     @Test

@@ -146,6 +146,40 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithCreate() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), null));
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getData", null);
+    }
+
+    /**
+     * Test null value
+     */
+    @Test
+    public void testNullColumnWithSet() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), Data.SECOND));
+        e.setData(null);
+        e.save();
+
+        entityManager.flushAll();
+        assertNull(e.getData());
+        checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getData", null);
+    }
+
+    /**
      * Test a not null column
      */
     @Test
@@ -230,7 +264,8 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
 
                     public void processResult(ResultSet resultSet) throws Exception {
                         if (resultSet.next()) {
-                            assertEquals(fieldValue.name(), resultSet.getString(getFieldName(entityType, getterName)));
+                            String dbValue = resultSet.getString(getFieldName(entityType, getterName));
+                            assertEquals(fieldValue == null ? null : fieldValue.name(), resultSet.wasNull() ? null : dbValue);
                         } else {
                             fail("No entry found in database with ID " + id);
                         }

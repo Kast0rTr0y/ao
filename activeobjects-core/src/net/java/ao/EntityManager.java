@@ -441,7 +441,7 @@ public class EntityManager
             fieldsThatShouldBeSet.remove(param.getField());
 
             final TypeInfo dbType = valueFields.get(param.getField());
-            if (dbType != null)
+            if (dbType != null && param.getValue() != null)
             {
                 dbType.getLogicalType().validate(param.getValue());
             }
