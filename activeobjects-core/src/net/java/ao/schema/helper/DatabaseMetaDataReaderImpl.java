@@ -126,7 +126,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             }
             try
             {
-                rs = databaseMetaData.getPrimaryKeys(null, null, tableName);
+                rs = databaseMetaData.getPrimaryKeys(null, databaseProvider.getSchema(), tableName);
                 while (rs.next())
                 {
                     final String fieldName = rs.getString("COLUMN_NAME");
