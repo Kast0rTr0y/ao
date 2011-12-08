@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 public final class SqlUtilsTest
 {
     private static final TestIdProcessor TEST_ID_PROCESSOR = new TestIdProcessor();
-    private static final String[] SEPARATORS = new String[]{"=", "!=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
+    private static final String[] SEPARATORS = new String[]{"=", "!=", "<=", ">=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
 
     @Test
     public void testWhereClause()
@@ -49,6 +49,14 @@ public final class SqlUtilsTest
 
         testWhereClause(format("field1 = value1 AND NOT (field2 %s value2 OR field3 NOT IN (1,2,3))", s), "field1", "field2", "field3");
         testWhereClause(format("field1 = ? AND NOT (field2 %s ? OR field3 NOT IN (?,?,?))", s), "field1", "field2", "field3");
+
+        testWhereClause(
+                "((TO_DATE >= ? AND TO_DATE <= ?) OR (FROM_DATE >= ? AND FROM_DATE <= ?) OR (FROM_DATE <= ? AND TO_DATE >= ?)) AND COLLABORATOR = ?",
+                "TO_DATE", "TO_DATE", "FROM_DATE", "FROM_DATE", "FROM_DATE", "TO_DATE", "COLLABORATOR");
+
+        testWhereClause(
+                "(TO_DATE >= ? AND TO_DATE <= ?)OR (FROM_DATE >= ? AND FROM_DATE <= ?) OR (FROM_DATE <= ? AND TO_DATE >= ?) AND COLLABORATOR IN ('adtest','benediktb','bjarnit','fiddi','hannesj','jonegill','kristin','magnuse','petur','sverrir','vs')",
+                "TO_DATE", "TO_DATE", "FROM_DATE", "FROM_DATE", "FROM_DATE", "TO_DATE", "COLLABORATOR");
     }
 
     private void testWhereClause(String clause, String... fields)
@@ -121,13 +129,21 @@ public final class SqlUtilsTest
         testProcessWhereClause(
                 format("field1 = ? AND NOT (field2 %s ? OR field3 NOT IN (?,?,?))", s),
                 format("*field1* = ? AND NOT (*field2* %s ? OR *field3* NOT IN (?,?,?))", s));
+
+        testProcessWhereClause(
+                "((TO_DATE >= ? AND TO_DATE <= ?) OR (FROM_DATE >= ? AND FROM_DATE <= ?) OR (FROM_DATE <= ? AND TO_DATE >= ?)) AND COLLABORATOR = ?",
+                "((*TO_DATE* >= ? AND *TO_DATE* <= ?) OR (*FROM_DATE* >= ? AND *FROM_DATE* <= ?) OR (*FROM_DATE* <= ? AND *TO_DATE* >= ?)) AND *COLLABORATOR* = ?");
+
+        testProcessWhereClause(
+                "(TO_DATE >= ? AND TO_DATE <= ?)OR (FROM_DATE >= ? AND FROM_DATE <= ?) OR (FROM_DATE <= ? AND TO_DATE >= ?) AND COLLABORATOR IN ('adtest','benediktb','bjarnit','fiddi','hannesj','jonegill','kristin','magnuse','petur','sverrir','vs')",
+                "(*TO_DATE* >= ? AND *TO_DATE* <= ?)OR (*FROM_DATE* >= ? AND *FROM_DATE* <= ?) OR (*FROM_DATE* <= ? AND *TO_DATE* >= ?) AND *COLLABORATOR* IN ('adtest','benediktb','bjarnit','fiddi','hannesj','jonegill','kristin','magnuse','petur','sverrir','vs')"
+        );
     }
 
     private void testProcessWhereClause(String where, String expected)
     {
         assertEquals(expected, SqlUtils.processWhereClause(where, TEST_ID_PROCESSOR));
     }
-
 
     @Test
     public void testOnClausePattern()
