@@ -46,6 +46,7 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -299,7 +300,16 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     @Override
     protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-       final List<String> sql = super.renderAlterTableChangeColumn(nameConverters, table, oldField, field);
+        final List<String> sql = newArrayList();
+
+        // dropping foreign keys that affect the given column, as they HSQL doesn't like updating columns used in foreign keys!
+        final Iterable<DDLForeignKey> foreignKeysForField = findForeignKeysForField(table, oldField);
+        for (DDLForeignKey fk : foreignKeysForField)
+        {
+                sql.add(renderAlterTableDropKey(fk));
+        }
+
+        sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
         if (!field.isPrimaryKey())
         {
@@ -315,6 +325,12 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                         .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
                         .toString());
             }
+        }
+
+        // re-enabling the foreign keys!
+        for (DDLForeignKey fk : foreignKeysForField)
+        {
+            sql.add(renderAlterTableAddKey(fk));
         }
         return sql;
     }

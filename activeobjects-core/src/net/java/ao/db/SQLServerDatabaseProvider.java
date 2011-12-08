@@ -25,8 +25,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 
+import com.google.common.collect.Iterables;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -44,6 +46,8 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeManager;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * @author Daniel Spiewak
@@ -124,7 +128,16 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     @Override
     protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = super.renderAlterTableChangeColumn(nameConverters, table, oldField, field);
+        final List<String> sql = newArrayList();
+
+        // Removing index before applying changes to columns, SQL Server doesn't like to touch columns with indexes!
+        final Iterable<DDLIndex> indexes = findIndexesForField(table, field);
+        for (DDLIndex index : indexes)
+        {
+            sql.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
+        }
+
+        sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
@@ -162,7 +175,25 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
                     .toString());
         }
 
+        // re-adding indexes!
+        for (DDLIndex index : indexes)
+        {
+            sql.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
+        }
+
         return sql;
+    }
+    
+    private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field)
+    {
+        return Iterables.filter(newArrayList(table.getIndexes()), new Predicate<DDLIndex>()
+        {
+            @Override
+            public boolean apply(DDLIndex index)
+            {
+                return index.getField().equals(field.getName());
+            }
+        });
     }
 
     private String defaultConstraintName(DDLTable table, DDLField field)
@@ -301,9 +332,14 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
         List<String> back = new ArrayList<String>();
 
-		back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
 
-		String function = renderFunctionForField(triggerNameConverter, table, field);
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
+        {
+            back.add(renderAlterTableAddKey(foreignKey));
+        }
+
+        String function = renderFunctionForField(triggerNameConverter, table, field);
 		if (function != null) {
 			back.add(function);
 		}

@@ -64,6 +64,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.Common.*;
 
 /**
@@ -1173,6 +1174,11 @@ public abstract class DatabaseProvider
 
         back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
 
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
+        {
+            back.add(renderAlterTableAddKey(foreignKey));
+        }
+
         String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
         if (function != null)
         {
@@ -1308,6 +1314,11 @@ public abstract class DatabaseProvider
     {
         List<String> back = new ArrayList<String>();
         StringBuilder current = new StringBuilder();
+
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
+        {
+            back.add(renderAlterTableDropKey(foreignKey));
+        }
 
         String trigger = getTriggerNameForField(triggerNameConverter, table, field);
         if (trigger != null)
@@ -2261,6 +2272,18 @@ public abstract class DatabaseProvider
             }
         }
         return true;
+    }
+
+    protected Iterable<DDLForeignKey> findForeignKeysForField(DDLTable table, final DDLField field)
+    {
+        return Iterables.filter(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
+        {
+            @Override
+            public boolean apply(DDLForeignKey fk)
+            {
+                return fk.getField().equals(field.getName());
+            }
+        });
     }
 
     protected static class RenderFieldOptions

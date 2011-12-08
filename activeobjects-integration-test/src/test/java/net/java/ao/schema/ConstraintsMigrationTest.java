@@ -1,15 +1,21 @@
 package net.java.ao.schema;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.sun.istack.internal.Nullable;
 import net.java.ao.Entity;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import org.junit.*;
 
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.*;
 
 /**
@@ -223,18 +229,31 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertUniqueConstraint(false);
     }
 
+    @Test
+    public void testUpdateConstraintWithForeignKey() throws Exception
+    {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(WithForeignKey.T.class);
+        assertNullConstraint(false);
+        assertHasForeignKey(true);
+        assertIndex(true);
+
+        entityManager.migrate(WithForeignKeyAndNotNull.T.class);
+        assertNullConstraint(true);
+        assertHasForeignKey(true);
+        assertIndex(true);
+    }
+
     private void assertEmpty() throws Exception
     {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
-        DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
-        assertEquals(1, tables[0].getFields().length);
+        assertEquals(1, getDdlTable().getFields().length);
     }
 
     private void assertNullConstraint(boolean set) throws Exception
     {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
-        DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
-        for (DDLField field : tables[0].getFields())
+        for (DDLField field : getDdlTable().getFields())
         {
             if (field.getName().equalsIgnoreCase("name"))
             {
@@ -245,9 +264,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
     private void assertDefaultConstraint(boolean set) throws Exception
     {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
-        DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
-        for (DDLField field : tables[0].getFields())
+        for (DDLField field : getDdlTable().getFields())
         {
             if (field.getName().equalsIgnoreCase("name"))
             {
@@ -258,23 +275,50 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
     private void assertIndex(boolean set) throws Exception
     {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
-        DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
-
-        assertEquals(set, tables[0].getIndexes().length > 0);
+        assertEquals(set, getDdlTable().getIndexes().length > 0);
     }
 
     private void assertUniqueConstraint(boolean set) throws Exception
     {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
-        DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
-        for (DDLField field : tables[0].getFields())
+        for (DDLField field : getDdlTable().getFields())
         {
             if (field.getName().equalsIgnoreCase("name"))
             {
                 assertTrue("Unique constraint should " + (set ? "" : "not ") + "be set.", set == field.isUnique());
             }
         }
+    }
+
+    private void assertHasForeignKey(boolean set) throws Exception
+    {
+        final DDLTable table = getDdlTable();
+        assertEquals("Foreign key constraint should " + (set ? "" : "NOT ") + "exist.", set, Iterables.any(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
+        {
+            @Override
+            public boolean apply(@Nullable DDLForeignKey fk)
+            {
+                return fk.getField().equalsIgnoreCase("name_id");
+            }
+        }));
+    }
+
+    private DDLTable getDdlTable() throws SQLException
+    {
+        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
+        final DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
+        return findTable(tables, entityManager.getNameConverters().getTableNameConverter().getName(Clean.T.class));
+    }
+
+    private DDLTable findTable(DDLTable[] tables, final String name)
+    {
+        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>()
+        {
+            @Override
+            public boolean apply(@Nullable DDLTable t)
+            {
+                return t.getName().equalsIgnoreCase(name);
+            }
+        });
     }
 
     // Reflection tools
@@ -321,7 +365,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * Not Null Constraint Column
          */
-        @Table("clean")
         public static interface T extends Entity
         {
         }
@@ -332,7 +375,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * Not Null Constraint Column
          */
-        @Table("nulloholic")
         public static interface T extends Entity
         {
             @NotNull
@@ -347,7 +389,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * Without null constraint
          */
-        @Table("nulloholic")
         public static interface T extends Entity
         {
             public String getName();
@@ -361,7 +402,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With default constraint
          */
-        @Table("defaultoholic")
         public static interface T extends Entity
         {
             @Default("Test")
@@ -376,7 +416,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With default constraint
          */
-        @Table("defaultoholic")
         public static interface T extends Entity
         {
             @Default("")
@@ -391,7 +430,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With default constraint
          */
-        @Table("defaultoholic")
         public static interface T extends Entity
         {
             public String getName();
@@ -405,7 +443,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * Not null and default constraint
          */
-        @Table("defaultoholic")
         public static interface T extends Entity
         {
             @NotNull
@@ -421,7 +458,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * Not null without default constraint
          */
-        @Table("defaultoholic")
         public static interface T extends Entity
         {
             @NotNull
@@ -436,7 +472,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With default constraint
          */
-        @Table("indexoholic")
         public static interface T extends Entity
         {
             @Indexed
@@ -451,7 +486,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With default constraint
          */
-        @Table("indexoholic")
         public static interface T extends Entity
         {
             public String getName();
@@ -465,7 +499,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         /**
          * With unique constraint constraint
          */
-        @Table("uniqueoholic")
         public static interface T extends Entity
         {
             @Unique
@@ -477,15 +510,41 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
     static class NoUniqueConstraintColumn
     {
-        /**
-         * With default constraint
-         */
-        @Table("uniqueoholic")
         public static interface T extends Entity
         {
             public String getName();
 
             public void setName(String name);
+        }
+    }
+
+    static class WithForeignKey
+    {
+        public static interface T extends Entity
+        {
+            public U getName();
+
+            public void setName(U u);
+        }
+
+        public static interface U extends Entity
+        {
+        }
+    }
+
+    static class WithForeignKeyAndNotNull
+    {
+        public static interface T extends Entity
+        {
+            @NotNull
+            public U getName();
+
+            @NotNull
+            public void setName(U u);
+        }
+
+        public static interface U extends Entity
+        {
         }
     }
 }

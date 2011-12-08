@@ -196,6 +196,11 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
         back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)) + ")");
 
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
+        {
+            back.add(renderAlterTableAddKey(foreignKey));
+        }
+
         String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
         if (function != null)
         {
