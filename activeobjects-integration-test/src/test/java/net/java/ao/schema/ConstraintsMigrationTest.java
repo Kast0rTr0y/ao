@@ -2,7 +2,6 @@ package net.java.ao.schema;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.sun.istack.internal.Nullable;
 import net.java.ao.Entity;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.ddl.DDLField;
@@ -295,7 +294,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertEquals("Foreign key constraint should " + (set ? "" : "NOT ") + "exist.", set, Iterables.any(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
         {
             @Override
-            public boolean apply(@Nullable DDLForeignKey fk)
+            public boolean apply(DDLForeignKey fk)
             {
                 return fk.getField().equalsIgnoreCase("name_id");
             }
@@ -314,7 +313,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         return Iterables.find(newArrayList(tables), new Predicate<DDLTable>()
         {
             @Override
-            public boolean apply(@Nullable DDLTable t)
+            public boolean apply(DDLTable t)
             {
                 return t.getName().equalsIgnoreCase(name);
             }
