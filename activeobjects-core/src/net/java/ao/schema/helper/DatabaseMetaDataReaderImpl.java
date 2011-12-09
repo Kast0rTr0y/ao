@@ -18,10 +18,13 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 import net.java.ao.types.TypeQualifiers;
+import net.java.ao.util.StringUtils;
 
 import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.newHashMap;
@@ -30,6 +33,8 @@ import static net.java.ao.sql.SqlUtils.*;
 
 public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 {
+    private static final Pattern STRING_VALUE = Pattern.compile("\"(.*)\"");
+
     private final DatabaseProvider databaseProvider;
     private final NameConverters nameConverters;
     private final SchemaConfiguration schemaConfiguration;
@@ -51,7 +56,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             final List<String> tableNames = newLinkedList();
             while (rs.next())
             {
-                final String tableName = rs.getString("TABLE_NAME");
+                final String tableName = parseStringValue(rs, "TABLE_NAME");
                 if (schemaConfiguration.shouldManageTable(tableName, databaseProvider.isCaseSensetive()))
                 {
                     tableNames.add(tableName);
@@ -110,14 +115,14 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 rs = databaseMetaData.getColumns(null, null, tableName, null);
                 while (rs.next())
                 {
-                    final String columnName = rs.getString("COLUMN_NAME");
+                    final String columnName = parseStringValue(rs, "COLUMN_NAME");
                     final FieldImpl current = fields.get(columnName);
                     if (current == null)
                     {
                         throw new IllegalStateException("Could not find column '" + columnName + "' in previously parsed query!");
                     }
-                    current.setDefaultValue(databaseProvider.parseValue(current.getJdbcType(), rs.getString("COLUMN_DEF")));
-                    current.setNotNull(current.isNotNull() || rs.getString("IS_NULLABLE").equals("NO"));
+                    current.setDefaultValue(databaseProvider.parseValue(current.getJdbcType(), parseStringValue(rs, "COLUMN_DEF")));
+                    current.setNotNull(current.isNotNull() || parseStringValue(rs, "IS_NULLABLE").equals("NO"));
                 }
             }
             finally
@@ -129,7 +134,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 rs = databaseMetaData.getPrimaryKeys(null, databaseProvider.getSchema(), tableName);
                 while (rs.next())
                 {
-                    final String fieldName = rs.getString("COLUMN_NAME");
+                    final String fieldName = parseStringValue(rs, "COLUMN_NAME");
                     final FieldImpl field = fields.get(fieldName);
                     field.setPrimaryKey(true);
                     field.setUnique(false); // MSSQL server 2005 tells us that the primary key is a unique key, this isn't what we want, we want real 'added' by hand unique keys.
@@ -196,7 +201,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                 boolean nonUnique = rs.getBoolean("NON_UNIQUE");
                 if (!nonUnique)
                 {
-                    fields.add(rs.getString("COLUMN_NAME"));
+                    fields.add(parseStringValue(rs, "COLUMN_NAME"));
                 }
             }
             return fields;
@@ -221,7 +226,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             final List<String> sequenceNames = newLinkedList();
             while (rs.next())
             {
-                sequenceNames.add(databaseProvider.processID(rs.getString("TABLE_NAME")));
+                sequenceNames.add(databaseProvider.processID(parseStringValue(rs, "TABLE_NAME")));
             }
             return sequenceNames;
         }
@@ -335,17 +340,27 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private ForeignKey newForeignKey(ResultSet rs, String localTableName) throws SQLException
     {
-        final String localFieldName = rs.getString("FKCOLUMN_NAME");
-        final String foreignFieldName = rs.getString("PKCOLUMN_NAME");
-        final String foreignTableName = rs.getString("PKTABLE_NAME");
+        final String localFieldName = parseStringValue(rs, "FKCOLUMN_NAME");
+        final String foreignFieldName = parseStringValue(rs, "PKCOLUMN_NAME");
+        final String foreignTableName = parseStringValue(rs, "PKTABLE_NAME");
 
         return new ForeignKeyImpl(localTableName, localFieldName, foreignTableName, foreignFieldName);
     }
 
     private Index newIndex(ResultSet rs, String tableName) throws SQLException
     {
-        final String fieldName = rs.getString("COLUMN_NAME");
-        return new IndexImpl(tableName, fieldName);
+        return new IndexImpl(tableName, parseStringValue(rs, "COLUMN_NAME"));
+    }
+
+    private String parseStringValue(ResultSet rs, String columnName) throws SQLException
+    {
+        final String value = rs.getString(columnName);
+        if (StringUtils.isBlank(value))
+        {
+            return value;
+        }
+        final Matcher m = STRING_VALUE.matcher(value);
+        return m.find() ? m.group(1) : value;
     }
 
     private static final class FieldImpl implements Field
