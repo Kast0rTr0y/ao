@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -44,7 +45,7 @@
             <properties>
                 <ao.test.database>mysql</ao.test.database>
                 <db.username>root</db.username>
-                <db.password />
+                <db.password/>
             </properties>
             <dependencies>
                 <dependency>
@@ -96,6 +97,38 @@
                                 <groupId>postgresql</groupId>
                                 <artifactId>postgresql</artifactId>
                                 <version>${postgres.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>postgres-jdbc4</id>
+            <properties>
+                <ao.test.database>postgres</ao.test.database>
+                <db.username>postgres</db.username>
+                <db.password>postgres</db.password>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>9.0-801.jdbc4</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                                <version>9.0-801.jdbc4</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
@@ -258,11 +291,11 @@
             <id>c3p0</id>
             <dependencies>
                 <dependency>
-                   <groupId>c3p0</groupId>
-                   <artifactId>c3p0</artifactId>
-                   <version>${c3p0.version}</version>
-                   <scope>runtime</scope>
-               </dependency>
+                    <groupId>c3p0</groupId>
+                    <artifactId>c3p0</artifactId>
+                    <version>${c3p0.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
