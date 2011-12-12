@@ -13,12 +13,29 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 
+import net.java.ao.test.jdbc.NonTransactional;
+
+import net.java.ao.test.jdbc.Data;
+
+import net.java.ao.EntityManager;
+
 import java.lang.annotation.Annotation;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- *
+ * A JUnit test runner that provides helpful behavior for tests that rely on ActiveObjects.
+ * <p>
+ * Before each test method is executed, the test runner creates an {@link EntityManager} instance and injects
+ * it into the test class; the test class (or a superclass) must have a member field of type EntityManager
+ * for this purpose.  The EntityManager configuration is based on the test class annotations {@link Jdbc @Jdbc},
+ * {@link Data @Data} and {@link NameConverters @NameConverters}; in the absence of these annotations,
+ * the default configuration uses an in-memory HSQL database.
+ * <p>
+ * By default, each test method is executed within a separate transaction, which is then rolled back so the
+ * next test is executed with a fresh database state.  If you annotate a test method with
+ * {@link NonTransactional @NonTransactional}, then it is not executed inside a transaction; instead, the
+ * database is completely reinitialized after executing the test.
  */
 public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
 {
