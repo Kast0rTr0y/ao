@@ -99,7 +99,7 @@
     </dependencies>
 
     <properties>
-        <ao.test.tablenameconverter>prefix</ao.test.tablenameconverter>
-        <ao.test.fieldnameconverter>test</ao.test.fieldnameconverter>
+        <ao.test.tablenameconverter>atlassian</ao.test.tablenameconverter>
+        <ao.test.fieldnameconverter>atlassian</ao.test.fieldnameconverter>
     </properties>
 </project>

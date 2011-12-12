@@ -13,6 +13,12 @@ import java.util.concurrent.Callable;
 @RunWith(ActiveObjectsJUnitRunner.class)
 public abstract class ActiveObjectsIntegrationTest
 {
+    static
+    {
+        // disabling length check for AO lib
+        System.setProperty("ao.atlassian.enforce.length", String.valueOf(false));
+    }
+    
     protected EntityManager entityManager;
 
     protected final <T> T checkSqlExecuted(Callable<T> callable) throws Exception

@@ -1,4 +1,4 @@
-package net.java.ao.test.converters;
+package net.java.ao.atlassian;
 
 import net.java.ao.schema.AbstractFieldNameConverter;
 import net.java.ao.schema.AccessorFieldNameResolver;
@@ -7,6 +7,7 @@ import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.FieldNameResolver;
 import net.java.ao.schema.GetterFieldNameResolver;
+import net.java.ao.schema.IgnoredFieldNameResolver;
 import net.java.ao.schema.IsAFieldNameResolver;
 import net.java.ao.schema.MutatorFieldNameResolver;
 import net.java.ao.schema.NullFieldNameResolver;
@@ -17,16 +18,18 @@ import net.java.ao.schema.UnderscoreFieldNameConverter;
 
 import java.lang.reflect.Method;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.Lists.newArrayList;
+import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Lists.*;
+import static net.java.ao.atlassian.ConverterUtils.*;
 
-public final class TestFieldNameConverter implements FieldNameConverter, FieldNameProcessor
+public final class AtlassianFieldNameConverter implements FieldNameConverter, FieldNameProcessor
 {
     private AbstractFieldNameConverter fieldNameConverter;
 
-    public TestFieldNameConverter()
+    public AtlassianFieldNameConverter()
     {
         fieldNameConverter = new UnderscoreFieldNameConverter(Case.UPPER, newArrayList(
+                new IgnoredFieldNameResolver(),
                 new RelationalFieldNameResolver(),
                 new TransformingFieldNameResolver(new MutatorFieldNameResolver()),
                 new TransformingFieldNameResolver(new AccessorFieldNameResolver()),
@@ -41,13 +44,21 @@ public final class TestFieldNameConverter implements FieldNameConverter, FieldNa
     @Override
     public String getName(Method method)
     {
-        return fieldNameConverter.getName(method);
+        final String name = fieldNameConverter.getName(method);
+        return checkLength(name,
+                "Invalid entity, generated field name (" + name + ") for method '" +
+                        method.getDeclaringClass().getClass() + "#" + method.getName() + "' is too long! " +
+                        "It should be no longer than " + MAX_LENGTH + " chars.");
     }
 
     @Override
     public String getPolyTypeName(Method method)
     {
-        return fieldNameConverter.getPolyTypeName(method);
+        final String name = fieldNameConverter.getPolyTypeName(method);
+        return checkLength(name,
+                "Invalid entity, generated field polymorphic type name (" + name + ") for method '" +
+                        method.getDeclaringClass().getClass() + "#" + method.getName() + "' is too long! " +
+                        "It should be no longer than " + MAX_LENGTH + " chars.");
     }
 
     @Override

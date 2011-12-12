@@ -1,4 +1,5 @@
-package net.java.ao.test.converters;
+package net.java.ao.atlassian;
+
 
 import net.java.ao.RawEntity;
 import net.java.ao.schema.TableNameConverter;
@@ -11,12 +12,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 final class PrefixedTableNameConverter implements TableNameConverter
 {
-    private final Prefix prefix;
+    private final TablePrefix prefix;
 
-    /** The table name converter we delegate the real conversion to */
+    /**
+     * The table name converter we delegate the real conversion to
+     */
     private final TableNameConverter delegate;
 
-    public PrefixedTableNameConverter(Prefix prefix, TableNameConverter delegate)
+    public PrefixedTableNameConverter(TablePrefix prefix, TableNameConverter delegate)
     {
         this.prefix = checkNotNull(prefix);
         this.delegate = checkNotNull(delegate);

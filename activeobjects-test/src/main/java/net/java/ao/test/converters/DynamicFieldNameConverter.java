@@ -3,6 +3,7 @@ package net.java.ao.test.converters;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
+import net.java.ao.atlassian.AtlassianFieldNameConverter;
 import net.java.ao.schema.CamelCaseFieldNameConverter;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.FieldNameProcessor;
@@ -50,10 +51,10 @@ public final class DynamicFieldNameConverter implements FieldNameConverter, Fiel
 
     private static final class SystemPropertyFieldNameConverterSupplier implements Supplier<FieldNameConverter>
     {
-        private static final String DEFAULT = "test";
+        private static final String DEFAULT = "atlassian";
 
         private final ImmutableMap<String, FieldNameConverter> converters = ImmutableMap.<String, FieldNameConverter>of(
-                "test", new TestFieldNameConverter(),
+                DEFAULT, new AtlassianFieldNameConverter(),
                 "camelcase", new CamelCaseFieldNameConverter(),
                 "uppercase", new UpperCaseFieldNameConverter()
         );
