@@ -11,6 +11,8 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.Jdbc;
+import net.java.ao.test.jdbc.Oracle;
 import net.java.ao.util.DoubleUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -54,7 +56,6 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      * Test valid minimum double value
      */
     @Test
-    @Ignore("Need to fix for Oracle, AO-249")
     public void testValidMinValue() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -71,7 +72,6 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      * Test valid maximum double value
      */
     @Test
-    @Ignore("Need to fix for Oracle, AO-249")
     public void testValidMaxValue() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);

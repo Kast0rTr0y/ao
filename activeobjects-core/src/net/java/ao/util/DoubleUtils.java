@@ -7,8 +7,7 @@ import net.java.ao.ActiveObjectsException;
  */
 public class DoubleUtils
 {
-    public static final double MAX_VALUE = 1.79769313486231e+308;
-
+    public static final double MAX_VALUE =   3.40282347e+38;
     //the smallest possible ACTUAL number
     public static final double MIN_VALUE = -MAX_VALUE;
 
