@@ -135,19 +135,19 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithAliasedJoin()
     {
-        return format("SELECT p.'%s' FROM %s AS p JOIN %s AS c JOIN %s AS ca WHERE ca.'%s' IS NULL", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
+        return format("SELECT p.'%s' FROM %s p JOIN %s c JOIN %s ca WHERE ca.'%s' IS NULL", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithAliasedJoinAndSomeFields()
     {
-        return format("SELECT p.'%s',p.'%s',p.'%s' FROM %s AS p JOIN %s AS c JOIN %s AS ca WHERE ca.'%s' IS NULL", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
+        return format("SELECT p.'%s',p.'%s',p.'%s' FROM %s p JOIN %s c JOIN %s ca WHERE ca.'%s' IS NULL", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithAliasedExplicitJoin()
     {
-        return format("SELECT p.'%s' FROM %s AS p JOIN %s AS c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY p.'%s'",
+        return format("SELECT p.'%s' FROM %s p JOIN %s c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY p.'%s'",
                 getPersonId(), getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
                 getPersonCompany(), getCompanyId(),

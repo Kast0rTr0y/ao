@@ -39,7 +39,6 @@ import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -565,7 +564,7 @@ public abstract class DatabaseProvider
         final StringBuilder queryTableName = new StringBuilder().append(withSchema(tableName));
         if (query.getAlias(query.getTableType()) != null)
         {
-            queryTableName.append(" AS ").append(query.getAlias(query.getTableType()));
+            queryTableName.append(" ").append(query.getAlias(query.getTableType()));
         }
         return queryTableName.toString();
     }
@@ -616,7 +615,7 @@ public abstract class DatabaseProvider
             sql.append(" JOIN ").append(withSchema(converter.getName(joinEntry.getKey())));
             if (query.getAlias(joinEntry.getKey()) != null)
             {
-                sql.append(" AS ").append(query.getAlias(joinEntry.getKey()));
+                sql.append(" ").append(query.getAlias(joinEntry.getKey()));
             }
             if (joinEntry.getValue() != null)
             {
