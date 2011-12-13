@@ -4,11 +4,11 @@ CREATE TABLE person (
     lastName CLOB,
     age NUMBER(11),
     url VARCHAR(767) CONSTRAINT U_person_url UNIQUE NOT NULL,
-    height NUMBER(32,16) DEFAULT 62.3,
+    height DOUBLE PRECISION DEFAULT 62.3,
     companyID NUMBER(20),
     cool NUMBER(1) DEFAULT 1,
     modified TIMESTAMP,
-    weight NUMBER(32,16),
+    weight DOUBLE PRECISION,
     typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES company(id),
     PRIMARY KEY(id)
