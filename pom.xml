@@ -11,7 +11,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>0.10-SNAPSHOT</version>
+    <version>0.9.6</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
