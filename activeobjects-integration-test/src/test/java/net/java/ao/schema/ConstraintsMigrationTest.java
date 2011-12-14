@@ -9,6 +9,7 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.*;
 
 import java.lang.reflect.Field;
@@ -26,6 +27,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Remove not null constraint
      */
     @Test
+    @NonTransactional
     public void testRemoveNotNullConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -42,6 +44,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Add not null constraint
      */
     @Test
+    @NonTransactional
     public void testAddNotNullConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -58,6 +61,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Add a default constraint
      */
     @Test
+    @NonTransactional
     public void testAddDefaultConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -74,6 +78,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Remove a default constraint
      */
     @Test
+    @NonTransactional
     public void testRemoveDefaultConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -90,6 +95,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * From not null and default constraint to not null constraint
      */
     @Test
+    @NonTransactional
     public void testNotNullAndDefaultToNotNullConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -108,6 +114,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * From not null constraint to not null and default constraint
      */
     @Test
+    @NonTransactional
     public void testNotNullToNotNullAndDefaultConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -126,6 +133,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * From no constraint to not null and default constraint
      */
     @Test
+    @NonTransactional
     public void testNoneToNotNullAndDefaultConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -144,6 +152,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * From not null and default constraint to no constraint
      */
     @Test
+    @NonTransactional
     public void testNotNullAndDefaultToNoConstraint() throws Exception
     {
         entityManager.migrate(Clean.T.class);
@@ -163,6 +172,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Note: Currently broken because schema migration does not check for indexes
      */
     @Test
+    @NonTransactional
     public void testAddIndex() throws Exception
     {
         // first create with constraint
@@ -181,6 +191,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Note: Currently broken because schema migration does not check for indexes
      */
     @Test
+    @NonTransactional
     public void testRemoveIndex() throws Exception
     {
         // first create with constraint
@@ -198,6 +209,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Add a unique constraint to a column
      */
     @Test
+    @NonTransactional
     public void testAddUniqueConstraint() throws Exception
     {
         // first create with constraint
@@ -215,6 +227,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      * Remove a unique constraint from a column
      */
     @Test
+    @NonTransactional
     public void testRemoveUniqueConstraint() throws Exception
     {
         // first create with constraint
@@ -229,6 +242,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    @NonTransactional
     public void testUpdateConstraintWithForeignKey() throws Exception
     {
         entityManager.migrate(Clean.T.class);
