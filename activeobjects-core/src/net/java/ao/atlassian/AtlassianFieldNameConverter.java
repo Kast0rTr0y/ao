@@ -46,8 +46,7 @@ public final class AtlassianFieldNameConverter implements FieldNameConverter, Fi
     {
         final String name = fieldNameConverter.getName(method);
         return checkLength(name,
-                "Invalid entity, generated field name (" + name + ") for method '" +
-                        method.getDeclaringClass().getClass() + "#" + method.getName() + "' is too long! " +
+                "Invalid entity, generated field name (" + name + ") for method '" + method + "' is too long! " +
                         "It should be no longer than " + MAX_LENGTH + " chars.");
     }
 
@@ -56,8 +55,7 @@ public final class AtlassianFieldNameConverter implements FieldNameConverter, Fi
     {
         final String name = fieldNameConverter.getPolyTypeName(method);
         return checkLength(name,
-                "Invalid entity, generated field polymorphic type name (" + name + ") for method '" +
-                        method.getDeclaringClass().getClass() + "#" + method.getName() + "' is too long! " +
+                "Invalid entity, generated field polymorphic type name (" + name + ") for method '" + method + "' is too long! " +
                         "It should be no longer than " + MAX_LENGTH + " chars.");
     }
 
