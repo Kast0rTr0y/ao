@@ -254,7 +254,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * StringLength annotation that is above the maximum value for varchars in any database causes an error
      */
-    @Test(expected=ActiveObjectsConfigurationException.class)
+    @Test(expected = ActiveObjectsConfigurationException.class)
     public void testColumnWithExcessiveLength() throws Exception
     {
         entityManager.migrate(ColumnWithExcessiveLength.class);

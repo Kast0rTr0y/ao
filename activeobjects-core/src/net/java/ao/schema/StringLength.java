@@ -22,6 +22,8 @@ public @interface StringLength {
 	 * This can be a positive integer or {@link #UNLIMITED}.
 	 */
 	int value();
-	
+
+    public static final int MAX_LENGTH = 767;
+
 	public static final int UNLIMITED = -1;
 }

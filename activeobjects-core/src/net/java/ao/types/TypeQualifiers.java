@@ -3,6 +3,7 @@ package net.java.ao.types;
 import com.google.common.base.Objects;
 
 import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.schema.StringLength;
 
 /**
  * Describes optional modifiers to a type:  string length for string types, precision and scale
@@ -16,13 +17,13 @@ public class TypeQualifiers
      * value.  This is the lowest common denominator for maximum string length in all supported
      * databases.
      */
-    public static final int MAX_STRING_LENGTH = 767;
+    public static final int MAX_STRING_LENGTH = StringLength.MAX_LENGTH;
     
     /**
      * If {@code stringLength} is set to this constant, the field is an unlimited-length string
      * (TEXT, CLOB, or LONG VARCHAR).
      */
-    public static final int UNLIMITED_LENGTH = -1;
+    public static final int UNLIMITED_LENGTH = StringLength.UNLIMITED;
     
     private final Integer precision;
     private final Integer scale;
