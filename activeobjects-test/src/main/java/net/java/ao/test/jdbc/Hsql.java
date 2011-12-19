@@ -16,4 +16,10 @@ public class Hsql extends AbstractJdbcConfiguration
     {
         return "";
     }
+
+    @Override
+    public String getSchema()
+    {
+        return "PUBLIC";
+    }
 }

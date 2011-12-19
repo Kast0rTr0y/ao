@@ -593,9 +593,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				
 				numParams++;
 				returnField = outMapFields[0];
-			} else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1
-					&& preloadAnnotation != null && !ignorePreload) {
-                String finalTable = getTableNameConverter().getName(finalType);		// many-to-many preload
+			}
+            else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1 && preloadAnnotation != null && !ignorePreload) // many-to-many preload
+            {
+                final String finalTable = getTableNameConverter().getName(finalType);
+                final String finalTableAlias = "f";
+                final String tableAlias = "t";
 
                 returnField = manager.getProvider().shorten(finalTable + "__aointernal__id");
                 throughField = manager.getProvider().shorten(table + "__aointernal__id");
@@ -613,16 +616,16 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                     selectFields.addAll(Common.getValueFieldsNames(finalType, getFieldNameConverter()));
                 }
 
-                sql.append(provider.withSchema(finalTable)).append('.').append(provider.processID(finalPKField));
+                sql.append(finalTableAlias).append('.').append(provider.processID(finalPKField));
                 sql.append(" AS ").append(provider.quote(returnField)).append(',');
 
                 selectFields.remove(finalPKField);
 
-                sql.append(provider.withSchema(table)).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getFieldNameConverter())));
+                sql.append(tableAlias).append('.').append(provider.processID(Common.getPrimaryKeyField(type, getFieldNameConverter())));
 				sql.append(" AS ").append(provider.quote(throughField)).append(',');
 
 				for (String field : selectFields) {
-					sql.append(provider.withSchema(finalTable)).append('.').append(provider.processID(field)).append(',');
+					sql.append(finalTableAlias).append('.').append(provider.processID(field)).append(',');
 				}
 				sql.setLength(sql.length() - 1);
 
@@ -635,12 +638,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 
-				sql.append(" FROM ").append(provider.withSchema(table)).append(" INNER JOIN ");
-				sql.append(provider.withSchema(finalTable)).append(" ON ");
-				sql.append(provider.withSchema(table)).append('.').append(provider.processID(outMapFields[0]));
-				sql.append(" = ").append(provider.withSchema(finalTable)).append('.').append(provider.processID(finalPKField));
+				sql.append(" FROM ").append(provider.withSchema(table)).append(" ").append(tableAlias).append(" INNER JOIN ");
+				sql.append(provider.withSchema(finalTable)).append(" ").append(finalTableAlias).append(" ON ");
+				sql.append(tableAlias).append('.').append(provider.processID(outMapFields[0]));
+				sql.append(" = ").append(finalTableAlias).append('.').append(provider.processID(finalPKField));
 
-				sql.append(" WHERE ").append(provider.withSchema(table)).append('.').append(
+				sql.append(" WHERE ").append(tableAlias).append('.').append(
 						provider.processID(inMapFields[0])).append(" = ?");
 
 				if (!where.trim().equals("")) {
