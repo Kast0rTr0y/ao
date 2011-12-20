@@ -984,9 +984,7 @@ public abstract class DatabaseProvider
 
         if (primaryKeys.size() > 0)
         {
-            back.append("    PRIMARY KEY(");
-            back.append(processID(primaryKeys.get(0)));
-            back.append(")\n");
+            back.append(renderPrimaryKey(table.getName(), primaryKeys.get(0)));
         }
 
         back.append(")");
@@ -999,6 +997,15 @@ public abstract class DatabaseProvider
         }
 
         return back.toString();
+    }
+
+    protected String renderPrimaryKey(String tableName, String pkFieldName)
+    {
+        StringBuilder b = new StringBuilder();
+        b.append("    PRIMARY KEY(");
+        b.append(processID(pkFieldName));
+        b.append(")\n");
+        return b.toString();
     }
 
     protected String renderInsert(DDLTable ddlTable, DDLValue[] ddlValues)

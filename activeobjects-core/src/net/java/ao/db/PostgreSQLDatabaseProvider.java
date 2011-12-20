@@ -207,8 +207,14 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" TYPE ");
+            
+            final boolean autoIncrement = field.isAutoIncrement();
+            field.setAutoIncrement(false); // we don't want the auto increment property to be changed or even affect the change
+            
 			str.append(renderFieldType(field));
 			back.add(str.toString());
+
+            field.setAutoIncrement(autoIncrement); // setting back to normal
 		}
 
 		if (field.getDefaultValue() == null && oldField.getDefaultValue() == null) {

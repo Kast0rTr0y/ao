@@ -11,5 +11,5 @@ CREATE TABLE dbo.person (
     weight FLOAT,
     typeOfPerson VARCHAR(30),
     CONSTRAINT fk_person_companyid FOREIGN KEY (companyID) REFERENCES dbo.company(id),
-    PRIMARY KEY(id)
+CONSTRAINT pk_person_id PRIMARY KEY(id)
 )

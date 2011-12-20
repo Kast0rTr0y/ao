@@ -137,7 +137,21 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             sql.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
         }
 
+        if (field.isPrimaryKey())
+        {
+            sql.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
+                    .append(" DROP CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName())).toString());
+        }
+        
         sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
+
+        if (field.isPrimaryKey())
+        {
+            sql.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
+                    .append(" ADD CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))
+                    .append(" PRIMARY KEY (").append(field.getName()).append(")")
+                    .toString());
+        }
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
@@ -284,7 +298,23 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 		return "";
 	}
 
-	@Override
+    protected String renderPrimaryKey(String tableName, String pkFieldName)
+    {
+        StringBuilder b = new StringBuilder();
+        b.append("CONSTRAINT ");
+        b.append(primaryKeyName(tableName, pkFieldName));
+        b.append(" PRIMARY KEY(");
+        b.append(processID(pkFieldName));
+        b.append(")\n");
+        return b.toString();
+    }
+
+    private String primaryKeyName(String tableName, String pkFieldName)
+    {
+        return "pk_" + tableName + "_" + pkFieldName;
+    }
+
+    @Override
 	protected String renderAutoIncrement() {
 		return "IDENTITY(1,1)";
 	}

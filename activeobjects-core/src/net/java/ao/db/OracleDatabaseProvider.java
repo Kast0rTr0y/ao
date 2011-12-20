@@ -53,9 +53,6 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
-import static net.java.ao.types.LogicalTypes.*;
-import static net.java.ao.types.SchemaProperties.schemaType;
-import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * @author Daniel Spiewak
@@ -220,34 +217,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
-        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
-        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
-
         final List<String> back = new ArrayList<String>();
-
-        final String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
-        if (trigger != null)
-        {
-            back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
-        }
-
-        final String function = getFunctionNameForField(triggerNameConverter, table, oldField);
-        if (function != null)
-        {
-            back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
-        }
-
-        final String toRenderFunction = renderFunctionForField(triggerNameConverter, table, field);
-        if (toRenderFunction != null)
-        {
-            back.add(toRenderFunction);
-        }
-
-        final String toRenderTrigger = this.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-        if (toRenderTrigger != null)
-        {
-            back.add(toRenderTrigger);
-        }
 
         if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
         {

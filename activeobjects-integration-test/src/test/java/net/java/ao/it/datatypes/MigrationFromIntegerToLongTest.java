@@ -1,6 +1,9 @@
 package net.java.ao.it.datatypes;
 
 import net.java.ao.Entity;
+import net.java.ao.RawEntity;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.PrimaryKey;
 import net.java.ao.schema.Table;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
@@ -30,18 +33,55 @@ public final class MigrationFromIntegerToLongTest extends ActiveObjectsIntegrati
         retrieved.save();
     }
 
+    @Test
+    @NonTransactional
+    public void testAutoIncrementId() throws Exception
+    {
+        final int age = 123;
+
+        entityManager.migrate(SimpleIntegerColumn.class);
+
+        final SimpleIntegerColumn e = entityManager.create(SimpleIntegerColumn.class);
+        e.setAge(age);
+        e.save();
+
+        entityManager.migrate(AutoIncrementLong.class);
+        entityManager.flushAll();
+
+        AutoIncrementLong retrieved = entityManager.get(AutoIncrementLong.class, (long) e.getID());
+        assertEquals(new Integer(age), retrieved.getAge());
+
+        AutoIncrementLong newEntity = entityManager.create(AutoIncrementLong.class);
+        assertTrue(newEntity.getID() != e.getID());
+        assertEquals(2, entityManager.find(AutoIncrementLong.class).length);
+    }
+
 
     @Table("ENTITY")
     public static interface SimpleIntegerColumn extends Entity
     {
-        public Integer getAge();
-        public void setAge(Integer age);
+        Integer getAge();
+
+        void setAge(Integer age);
     }
 
     @Table("ENTITY")
     public static interface SimpleLongColumn extends Entity
     {
-        public Long getAge();
-        public void setAge(Long age);
+        Long getAge();
+
+        void setAge(Long age);
+    }
+
+    @Table("ENTITY")
+    public static interface AutoIncrementLong extends RawEntity<Long>
+    {
+        @PrimaryKey
+        @AutoIncrement
+        Long getID();
+
+        Integer getAge();
+
+        void setAge(Integer age);
     }
 }
