@@ -347,7 +347,7 @@ public final class SchemaReader
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
-                else if (!Common.fuzzyTypeCompare(fromField.getJdbcType(), ontoField.getJdbcType()))
+                else if (!fromField.getType().getLogicalType().equals(ontoField.getType().getLogicalType()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }

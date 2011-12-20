@@ -249,6 +249,11 @@ public final class OracleDatabaseProvider extends DatabaseProvider
             back.add(toRenderTrigger);
         }
 
+        if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
+        {
+            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")").toString());
+        }
+
         if (oldField.isNotNull() && !field.isNotNull())
         {
             back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NULL)").toString());
