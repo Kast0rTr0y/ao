@@ -15,13 +15,26 @@
  */
 package net.java.ao.schema;
 
-import com.google.common.base.Predicate;
+import java.lang.reflect.Method;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-
-import static com.google.common.collect.Iterables.addAll;
-
-import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
@@ -35,29 +48,14 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.util.EnumUtils;
 
-import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.google.common.collect.Sets.*;
+import static com.google.common.collect.Iterables.addAll;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static net.java.ao.types.TypeQualifiers.MAX_STRING_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
@@ -77,17 +75,18 @@ public final class SchemaGenerator
                                NameConverters nameConverters,
                                Class<? extends RawEntity<?>>... classes) throws SQLException
     {
-        final Iterable<String> statements = generateImpl(provider, schemaConfiguration, nameConverters, classes);
+        final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, classes);
 
         Connection conn = null;
         Statement stmt = null;
+        Set<String> completedStatements = new HashSet<String>();
         try
         {
             conn = provider.getConnection();
             stmt = conn.createStatement();
-            for (String statement : statements)
+            for (Iterable<SQLAction> actionGroup : actionGroups)
             {
-                provider.executeUpdate(stmt, statement);
+                addAll(completedStatements, provider.executeUpdatesForActions(stmt, actionGroup, completedStatements));
             }
         }
         finally
@@ -95,38 +94,24 @@ public final class SchemaGenerator
             closeQuietly(stmt, conn);
         }
     }
-
-    private static Iterable<String> generateImpl(DatabaseProvider provider,
-                                                 SchemaConfiguration schemaConfiguration,
-                                                 NameConverters nameConverters,
+    
+    private static Iterable<Iterable<SQLAction>> generateImpl(final DatabaseProvider provider,
+                                                 final SchemaConfiguration schemaConfiguration,
+                                                 final NameConverters nameConverters,
                                                  Class<? extends RawEntity<?>>... classes) throws SQLException
     {
-        final Collection<String> statements = newLinkedHashSet(); // preserve the order of the elements
-
         final DDLTable[] parsedTables = parseDDL(provider, nameConverters, classes);
         final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensetive()));
-        for (DDLAction action : actions)
-        {
-            for (SQLAction sqlAction : provider.renderAction(nameConverters, action))
+        return Iterables.transform(ImmutableList.of(actions),
+            new Function<DDLAction, Iterable<SQLAction>>()
             {
-                addAll(statements, sqlAction.getStatements());
-            }
-        }
-        return filterEmpty(statements);
-    }
-
-    private static Iterable<String> filterEmpty(Iterable<String> iterable)
-    {
-        return Iterables.filter(iterable, new Predicate<String>()
-        {
-            @Override
-            public boolean apply(String input)
-            {
-                return !input.trim().isEmpty();
-            }
-        });
+                public Iterable<SQLAction> apply(DDLAction from)
+                {
+                    return provider.renderAction(nameConverters, from);
+                }
+            });
     }
 
     static DDLTable[] parseDDL(DatabaseProvider provider, NameConverters nameConverters, Class<? extends RawEntity<?>>... classes) {

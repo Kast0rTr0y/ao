@@ -434,7 +434,7 @@ public abstract class DatabaseProviderTest
         ImmutableList.Builder<String> statements = ImmutableList.builder();
         for (SQLAction sql : databaseProvider.renderAction(nameConverters, action.apply(databaseProvider)))
         {
-            statements.addAll(sql.getStatements());
+            statements.add(sql.getStatement());
         }
         if (expectedSql.length == 0)
         {

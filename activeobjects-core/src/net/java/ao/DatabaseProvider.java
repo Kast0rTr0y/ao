@@ -20,8 +20,11 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
@@ -41,6 +44,10 @@ import net.java.ao.types.TypeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.collect.Iterables.addAll;
+
+import static com.google.common.collect.Sets.union;
+
 import net.java.ao.schema.ddl.SQLAction;
 
 import java.io.InputStream;
@@ -55,11 +62,15 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.google.common.base.Preconditions.*;
@@ -2426,6 +2437,72 @@ public abstract class DatabaseProvider
         {
             handleUpdateError(sqlString, e);
         }
+    }
+
+    /**
+     * Attempt to execute a list of actions that make up a logical unit (e.g. adding an entire
+     * table, or adding a new column to an existing table).  If any action fails, throw an
+     * SQLException, but first go backward through all successfully completed actions in this
+     * list and execute their corresponding undo action, if any.  For instance, if we successfully
+     * executed a CREATE TABLE and a CREATE SEQUENCE, but the next statement fails, we will
+     * execute DROP SEQUENCE and then DROP TABLE before rethrowing the exception.
+     * 
+     * @param provider
+     * @param stmt  A JDBC Statement that will be reused for all updates
+     * @param actions  A list of {@link SQLAction}s to execute
+     * @param completedStatements  A set of SQL statements that should not be executed if we encounter the same one again.
+     *   This is necessary because our schema diff logic is not as smart as it could be, so it may
+     *   tell us, for instance, to create an index for a new column even though the statements for
+     *   creating the column also included creation of the index.
+     * @return all SQL statements that were executed
+     */
+    public final Iterable<String> executeUpdatesForActions(Statement stmt, Iterable<SQLAction> actions, Set<String> completedStatements) throws SQLException
+    {
+        Stack<SQLAction> completedActions = new Stack<SQLAction>();
+        Set<String> newStatements = new LinkedHashSet<String>();
+        for (SQLAction action : actions)
+        {
+            try
+            {
+                addAll(newStatements, executeUpdateForAction(stmt, action, union(completedStatements, newStatements)));
+            }
+            catch (SQLException e)
+            {
+                logger.warn("Error in schema creation: " + e.getMessage() + "; attempting to roll back last partially generated table");
+                while (!completedActions.isEmpty())
+                {
+                    SQLAction undoAction = completedActions.pop().getUndoAction();
+                    if (undoAction != null)
+                    {
+                        try
+                        {
+                            executeUpdateForAction(stmt, undoAction, completedStatements);
+                        }
+                        catch (SQLException e2)
+                        {
+                            logger.warn("Unable to finish rolling back partial table creation due to error: " + e2.getMessage());
+                            // swallow this exception because we're going to rethrow the original exception
+                            break;
+                        }
+                    }
+                }
+                // rethrow the original exception
+                throw e;
+            }
+            completedActions.push(action);
+        }
+        return newStatements;
+    }
+    
+    public final Iterable<String> executeUpdateForAction(Statement stmt, SQLAction action, Set<String> completedStatements) throws SQLException
+    {
+        String sql = action.getStatement().trim();
+        if (sql.isEmpty() || completedStatements.contains(sql))
+        {
+            return ImmutableList.of();
+        }
+        executeUpdate(stmt, sql);
+        return ImmutableList.of(sql);
     }
 
     public final void addSqlListener(SqlListener l)

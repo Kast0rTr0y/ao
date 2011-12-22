@@ -1,43 +1,37 @@
 package net.java.ao.schema.ddl;
 
-import com.google.common.collect.ImmutableList;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * An ordered list of SQL statements representing some stage of schema modification.
+ * An SQL statement representing some stage of schema modification.
  * This may optionally have a corresponding "undo" action which can be executed to roll
  * back this modification; this will only be done if the modification succeeded but then
- * some later action failed.  Actions should normally consist only of a single statement;
- * use multiple statements only if they are guaranteed to all succeed or all fail together.
+ * some later action failed.
  */
 public final class SQLAction
 {
-    private final ImmutableList<String> statements;
+    private final String statement;
     private final SQLAction undoAction;
     
-    private SQLAction(Iterable<String> statements, SQLAction undoAction)
+    private SQLAction(String statement, SQLAction undoAction)
     {
-        this.statements = ImmutableList.copyOf(statements);
+        this.statement = checkNotNull(statement);
         this.undoAction = undoAction;
     }
     
     public static SQLAction of(CharSequence statement)
     {
-        return new SQLAction(ImmutableList.of(statement.toString()), null);
-    }
-    
-    public static SQLAction of(Iterable<String> statements)
-    {
-        return new SQLAction(statements, null);
+        return new SQLAction(statement.toString(), null);
     }
     
     public SQLAction withUndoAction(SQLAction undoAction)
     {
-        return new SQLAction(this.statements, undoAction);
+        return new SQLAction(this.statement, undoAction);
     }
     
-    public Iterable<String> getStatements()
+    public String getStatement()
     {
-        return statements;
+        return statement;
     }
     
     public SQLAction getUndoAction()
