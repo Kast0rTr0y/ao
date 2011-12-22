@@ -17,11 +17,14 @@ package net.java.ao.db;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import static com.google.common.collect.Iterables.concat;
+
+import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -72,86 +75,74 @@ public class MySQLDatabaseProvider extends DatabaseProvider
         return back.toString();
     }
 
-    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
+    @Override
+    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        List<String> back = new ArrayList<String>();
-        back.addAll(super.renderAlterTableAddColumn(nameConverters, table, field));
+        final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
         if (field.isUnique())
         {
-            back.add(alterAddUniqueConstraint(nameConverters, table, field));
+            return concat(back, ImmutableList.of(alterAddUniqueConstraint(nameConverters, table, field)));
         }
-
-        String function = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
-        if (function != null)
-        {
-            back.add(function);
-        }
-
-        final String trigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
-        if (trigger != null)
-        {
-            back.add(trigger);
-        }
-
         return back;
     }
 
-    private String alterAddUniqueConstraint(NameConverters nameConverters, DDLTable table, DDLField field)
+    private SQLAction alterAddUniqueConstraint(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        return new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString();
+        return SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")"));
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> back = new ArrayList<String>();
+        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        final String trigger = getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
-        if (trigger != null)
+        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, oldField);
+        if (dropTrigger != null)
         {
-            back.add(new StringBuilder().append("DROP TRIGGER ").append(processID(trigger)).toString());
+            back.add(dropTrigger);
         }
 
-        final String function = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, oldField);
-        if (function != null)
+        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, oldField);
+        if (dropFunction != null)
         {
-            back.add(new StringBuilder().append("DROP FUNCTION ").append(processID(function)).toString());
+            back.add(dropFunction);
         }
 
         back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
 
         if (oldField.isUnique() && !field.isUnique())
         {
-            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP INDEX ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).toString());
+            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP INDEX ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()))));
         }
 
         if (!oldField.isUnique() && field.isUnique())
         {
             back.add(alterAddUniqueConstraint(nameConverters, table, field));
         }
-
-        final String toRenderFunction = renderFunctionForField(nameConverters.getTriggerNameConverter(), table, field);
+        
+        SQLAction toRenderFunction = renderFunctionForField(nameConverters, table, field);
         if (toRenderFunction != null)
         {
             back.add(toRenderFunction);
         }
 
-        final String toRenderTrigger = renderTriggerForField(nameConverters.getTriggerNameConverter(), nameConverters.getSequenceNameConverter(), table, field);
+        SQLAction toRenderTrigger = renderTriggerForField(nameConverters, table, field);
         if (toRenderTrigger != null)
         {
             back.add(toRenderTrigger);
         }
 
-        return back;
+        return back.build();
     }
 
     @Override
-	protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
+	protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
 		StringBuilder back = new StringBuilder("CREATE INDEX ");
 		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))).append(" ON ");
 		back.append(processID(index.getTable())).append('(').append(processID(index.getField())).append(')');
 		
-		return back.toString();
+		return SQLAction.of(back);
 	}
 
     public void putNull(PreparedStatement stmt, int index) throws SQLException

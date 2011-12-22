@@ -19,16 +19,18 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import com.google.common.collect.Iterables;
+
+import net.java.ao.schema.ddl.SQLAction;
+
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -37,9 +39,7 @@ import net.java.ao.Query;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -126,9 +126,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = newArrayList();
+        final ImmutableList.Builder<SQLAction> sql = ImmutableList.builder();
 
         // Removing index before applying changes to columns, SQL Server doesn't like to touch columns with indexes!
         final Iterable<DDLIndex> indexes = findIndexesForField(table, field);
@@ -139,54 +139,49 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
         if (field.isPrimaryKey())
         {
-            sql.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" DROP CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName())).toString());
+            sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
+                    .append(" DROP CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))));
         }
         
         sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
         if (field.isPrimaryKey())
         {
-            sql.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
+            sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" ADD CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))
-                    .append(" PRIMARY KEY (").append(field.getName()).append(")")
-                    .toString());
+                    .append(" PRIMARY KEY (").append(field.getName()).append(")")));
         }
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
-            sql.add(new StringBuilder()
+            sql.add(SQLAction.of(new StringBuilder()
                     .append("IF EXISTS (SELECT 1 FROM SYS.OBJECTS WHERE NAME = ").append(renderValue(defaultConstraintName(table, field))).append(") ")
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" DROP CONSTRAINT ").append(defaultConstraintName(table, field))
-                    .toString());
+                    .append(" DROP CONSTRAINT ").append(defaultConstraintName(table, field))));
 
             if (field.getDefaultValue() != null)
             {
-                sql.add(new StringBuilder()
+                sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ADD CONSTRAINT ").append(defaultConstraintName(table, field))
                         .append(" DEFAULT ").append(renderValue(field.getDefaultValue()))
-                        .append(" FOR ").append(processID(field.getName()))
-                        .toString());
+                        .append(" FOR ").append(processID(field.getName()))));
             }
         }
 
         if (!oldField.isUnique() && field.isUnique())
         {
-            sql.add(new StringBuilder()
+            sql.add(SQLAction.of(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()))
-                    .append(" UNIQUE(").append(processID(field.getName())).append(")")
-                    .toString());
+                    .append(" UNIQUE(").append(processID(field.getName())).append(")")));
         }
 
         if (oldField.isUnique() && !field.isUnique())
         {
-            sql.add(new StringBuilder()
+            sql.add(SQLAction.of(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
-                    .append(" DROP CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()))
-                    .toString());
+                    .append(" DROP CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()))));
         }
 
         // re-adding indexes!
@@ -195,7 +190,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             sql.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
         }
 
-        return sql;
+        return sql.build();
     }
     
     private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field)
@@ -216,30 +211,29 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         StringBuilder back = new StringBuilder();
 
         back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
         back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
 
-        return back.toString();
+        return SQLAction.of(back);
     }
 
     @Override
-    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         if (hasIndex(indexNameConverter, index))
         {
-            return new StringBuilder().append("DROP INDEX ")
+            return SQLAction.of(new StringBuilder().append("DROP INDEX ")
                     .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
                     .append(" ON ")
-                    .append(withSchema(index.getTable()))
-                    .toString();
+                    .append(withSchema(index.getTable())));
         }
         else
         {
-            return "";
+            return null;
         }
     }
     
@@ -326,7 +320,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
+    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
     {
         final boolean autoIncrement = field.isAutoIncrement();
         try
@@ -337,7 +331,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
             current.append(renderField(nameConverters, table, field, options));
 
-            return current.toString();
+            return SQLAction.of(current);
         }
         finally
         {
@@ -346,39 +340,19 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
-        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
-        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
-
-        List<String> back = new ArrayList<String>();
-
-        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
-
-        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
-        {
-            back.add(renderAlterTableAddKey(foreignKey));
-        }
-
-        String function = renderFunctionForField(triggerNameConverter, table, field);
-		if (function != null) {
-			back.add(function);
-		}
-
-		String trigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-		if (trigger != null) {
-			back.add(trigger);
-		}
-
-		return back;
+	protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        return SQLAction.of("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
 	}
 
 	@Override
-	protected String renderAlterTableDropKey(DDLForeignKey key) {
+	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
+	{
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
 		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
-		return back.toString();
+		return SQLAction.of(back);
 	}
 
 	@Override

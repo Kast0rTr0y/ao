@@ -28,7 +28,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
@@ -47,7 +50,6 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.util.StringUtils;
 
 public class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
@@ -160,35 +162,32 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
-        final TriggerNameConverter triggerNameConverter = nameConverters.getTriggerNameConverter();
-        final SequenceNameConverter sequenceNameConverter = nameConverters.getSequenceNameConverter();
+	protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+	{
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
 
-        final List<String> back = new ArrayList<String>();
+        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+        
+        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, oldField);
+        if (dropTrigger != null)
+        {
+            back.add(dropTrigger);
+        }
 
-        String trigger = getTriggerNameForField(triggerNameConverter, table, oldField);
-		if (trigger != null) {
-			StringBuilder str = new StringBuilder();
-			str.append("DROP TRIGGER ").append(processID(trigger));
-			back.add(str.toString());
-		}
-
-		String function = getFunctionNameForField(triggerNameConverter, table, oldField);
-		if (function != null) {
-			StringBuilder str = new StringBuilder();
-			str.append("DROP FUNCTION IF EXISTS ").append(withSchema(function));
-			back.add(str.toString());
-		}
+        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, oldField);
+        if (dropFunction != null)
+        {
+            back.add(dropFunction);
+        }
 
         if (!field.isUnique() && oldField.isUnique())
         {
-            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).toString());
+            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
         }
 
         if (field.isUnique() && !oldField.isUnique())
         {
-            back.add(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")").toString());
+            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")")));
         }
 
 		boolean foundChange = false;
@@ -198,7 +197,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ");
 			str.append(processID(oldField.getName())).append(" TO ").append(processID(field.getName()));
-			back.add(str.toString());
+			back.add(SQLAction.of(str));
 		}
 
 		if (!field.getType().equals(oldField.getType())) {
@@ -212,7 +211,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
             field.setAutoIncrement(false); // we don't want the auto increment property to be changed or even affect the change
             
 			str.append(renderFieldType(field));
-			back.add(str.toString());
+            back.add(SQLAction.of(str));
 
             field.setAutoIncrement(autoIncrement); // setting back to normal
 		}
@@ -225,14 +224,14 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" DROP DEFAULT");
-			back.add(str.toString());
+            back.add(SQLAction.of(str));
 		} else if (!field.getDefaultValue().equals(oldField.getDefaultValue())) {
 			foundChange = true;
 
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" SET DEFAULT ").append(renderValue(field.getDefaultValue()));
-			back.add(str.toString());
+            back.add(SQLAction.of(str));
 		}
 
 		if (field.isNotNull() != oldField.isNotNull()) {
@@ -242,12 +241,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 				StringBuilder str = new StringBuilder();
 				str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 				str.append(processID(field.getName())).append(" SET NOT NULL");
-				back.add(str.toString());
+	            back.add(SQLAction.of(str));
 			} else {
 				StringBuilder str = new StringBuilder();
 				str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 				str.append(processID(field.getName())).append(" DROP NOT NULL");
-				back.add(str.toString());
+	            back.add(SQLAction.of(str));
 			}
 		}
 
@@ -255,76 +254,65 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			System.err.println("WARNING: PostgreSQL doesn't fully support CHANGE TABLE statements");
 			System.err.println("WARNING: Data contained in column '" + table.getName() + "." + oldField.getName() + "' will be lost");
 
-			back.addAll(Arrays.asList(renderAlterTableDropColumn(triggerNameConverter, table, oldField)));
+			back.addAll(renderAlterTableDropColumn(nameConverters, table, oldField));
 			back.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 		}
+        
+        SQLAction toRenderFunction = renderFunctionForField(nameConverters, table, field);
+        if (toRenderFunction != null)
+        {
+            back.add(toRenderFunction);
+        }
 
-		String toRender = renderFunctionForField(triggerNameConverter, table, field);
-		if (toRender != null) {
-			back.add(toRender);
-		}
+        SQLAction toRenderTrigger = renderTriggerForField(nameConverters, table, field);
+        if (toRenderTrigger != null)
+        {
+            back.add(toRenderTrigger);
+        }
 
-		toRender = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
-		if (toRender != null) {
-			back.add(toRender);
-		}
-
-        return back;
+        return back.build();
     }
 
 	@Override
-	protected String renderAlterTableDropKey(DDLForeignKey key) {
+	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
+	{
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
 		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
-		return back.toString();
+		return SQLAction.of(back);
 	}
 
     @Override
-    protected String renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        return new StringBuilder().append("CREATE INDEX ")
+        return SQLAction.of(new StringBuilder().append("CREATE INDEX ")
                 .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
                 .append(" ON ").append(withSchema(index.getTable()))
-                .append('(').append(processID(index.getField())).append(')')
-                .toString();
+                .append('(').append(processID(index.getField())).append(')'));
     }
 
     @Override
-    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         if (hasIndex(indexNameConverter, index))
         {
-            return new StringBuilder("DROP INDEX ")
-                    .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
-                    .toString();
+            return SQLAction.of(new StringBuilder("DROP INDEX ")
+                    .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))));
         }
         else
         {
-            return "";
+            return null;
         }
     }
 
-    protected String[] renderDropFunctions(TriggerNameConverter triggerNameConverter, DDLTable table)
+    @Override
+    protected SQLAction renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        final List<String> dropFunctions = new ArrayList<String>();
-        for (DDLField field : table.getFields())
+        final String functionName = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, field);
+        if (functionName != null)
         {
-            String function = renderDropFunction(getFunctionNameForField(triggerNameConverter, table, field));
-            if(!StringUtils.isBlank(function))
-            {
-                dropFunctions.add(function);
-            }
-        }
-        return dropFunctions.toArray(new String[dropFunctions.size()]);
-    }
-
-    private String renderDropFunction(String functionName)
-    {
-        if(!StringUtils.isBlank(functionName))
-        {
-            return "DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE";
+            return SQLAction.of("DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE");
         }
         return null;
     }

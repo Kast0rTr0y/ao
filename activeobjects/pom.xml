@@ -27,6 +27,10 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <junit.version>4.8.1</junit.version>
+    </properties>
+    
     <build>
         <plugins>
             <plugin>

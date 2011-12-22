@@ -23,20 +23,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
@@ -135,27 +135,26 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
     }
 
 	@Override
-	protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
+	protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+	{
 		logger.warn("Derby doesn't support CHANGE TABLE statements!");
 		logger.warn("Migration may not be entirely in sync as a result!");
 		
-		return Collections.<String>emptyList();
+		return ImmutableList.of();
 	}
 	
 	@Override
-	protected String[] renderAlterTableDropColumn(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
+	protected Iterable<SQLAction> renderAlterTableDropColumn(NameConverters nameConverters, DDLTable table, DDLField field)
+	{
 		System.err.println("WARNING: Derby doesn't support ALTER TABLE DROP COLUMN statements");
 		
-		return new String[0];
+        return ImmutableList.of();
 	}
 	
 	@Override
-	protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-		StringBuilder back = new StringBuilder("DROP INDEX ");
-		
-		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
-		
-		return back.toString();
+	protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+	{
+	    return SQLAction.of("DROP INDEX " + processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
 	}
 
 	@Override

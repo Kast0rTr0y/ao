@@ -21,12 +21,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import static com.google.common.collect.Iterables.concat;
+
+import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.Common;
 import net.java.ao.DBParam;
@@ -46,7 +50,6 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -279,21 +282,20 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 	}
 
     @Override
-    protected List<String> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        final List<String> back = super.renderAlterTableAddColumn(nameConverters, table, field);
-
+        final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
         if (field.isUnique())
         {
-            back.add(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
+            return concat(back, ImmutableList.of(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field)));
         }
         return back;
     }
 
     @Override
-    protected List<String> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
     {
-        final List<String> sql = newArrayList();
+        ImmutableList.Builder<SQLAction> sql = ImmutableList.builder();
 
         // dropping foreign keys that affect the given column, as they HSQL doesn't like updating columns used in foreign keys!
         final Iterable<DDLForeignKey> foreignKeysForField = findForeignKeysForField(table, oldField);
@@ -313,10 +315,9 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
             }
             if (oldField.isUnique() && !field.isUnique())
             {
-                sql.add(new StringBuilder().append("ALTER TABLE ")
+                sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ")
                         .append(withSchema(table.getName()))
-                        .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
-                        .toString());
+                        .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
             }
         }
 
@@ -325,45 +326,45 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
         {
             sql.add(renderAlterTableAddKey(fk));
         }
-        return sql;
+        return sql.build();
     }
 
-    private String renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
-        return new StringBuilder()
+        return SQLAction.of(new StringBuilder()
                 .append("ALTER TABLE ").append(withSchema(table.getName()))
                 .append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
-                .append(" UNIQUE (").append(processID(field.getName())).append(")")
-                .toString();
+                .append(" UNIQUE (").append(processID(field.getName())).append(")"));
     }
 
 	@Override
-	protected String renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+	protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
+	{
 		StringBuilder current = new StringBuilder();
 
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 		current.append(renderField(nameConverters, table, field, options));
 
-		return current.toString();
+		return SQLAction.of(current);
 	}
 
 	@Override
-	protected String renderAlterTableDropKey(DDLForeignKey key) {
+	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
+	{
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
 
 		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
-		return back.toString();
+		return SQLAction.of(back);
 	}
 
     @Override
-    protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        return new StringBuilder("DROP INDEX ")
+        return SQLAction.of(new StringBuilder("DROP INDEX ")
                 .append(withSchema(indexName))
-                .append(" IF EXISTS")
-                .toString();
+                .append(" IF EXISTS"));
     }
 
     @Override

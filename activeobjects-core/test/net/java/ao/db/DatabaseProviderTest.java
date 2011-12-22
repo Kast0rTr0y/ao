@@ -23,7 +23,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,12 +44,14 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import test.schema.Company;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
-import static org.junit.Assert.assertArrayEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -427,7 +431,19 @@ public abstract class DatabaseProviderTest
 
     protected final void testRenderAction(String[] expectedSql, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider)
     {
-        assertArrayEquals(expectedSql, databaseProvider.renderAction(nameConverters, action.apply(databaseProvider)));
+        ImmutableList.Builder<String> statements = ImmutableList.builder();
+        for (SQLAction sql : databaseProvider.renderAction(nameConverters, action.apply(databaseProvider)))
+        {
+            statements.addAll(sql.getStatements());
+        }
+        if (expectedSql.length == 0)
+        {
+            assertThat(statements.build(), Matchers.<String>iterableWithSize(0));
+        }
+        else
+        {
+            assertThat(statements.build(), contains(expectedSql));
+        }
     }
 
     private String[] readStatements(String resource) throws IOException

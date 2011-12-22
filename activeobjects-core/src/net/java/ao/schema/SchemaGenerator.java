@@ -19,6 +19,10 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
+import static com.google.common.collect.Iterables.addAll;
+
+import net.java.ao.schema.ddl.SQLAction;
+
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
@@ -105,7 +109,10 @@ public final class SchemaGenerator
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensetive()));
         for (DDLAction action : actions)
         {
-            statements.addAll(Arrays.asList(provider.renderAction(nameConverters, action)));
+            for (SQLAction sqlAction : provider.renderAction(nameConverters, action))
+            {
+                addAll(statements, sqlAction.getStatements());
+            }
         }
         return filterEmpty(statements);
     }
