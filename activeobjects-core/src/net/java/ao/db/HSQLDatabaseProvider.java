@@ -373,7 +373,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 	}
 
 	@Override
-	public boolean isCaseSensetive() {
+	public boolean isCaseSensitive() {
 		return false;
 	}
 

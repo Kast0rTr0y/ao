@@ -163,7 +163,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
 	}
 	
 	@Override
-	public boolean isCaseSensetive() {
+	public boolean isCaseSensitive() {
 		return false;
 	}
 

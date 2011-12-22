@@ -2376,7 +2376,7 @@ public abstract class DatabaseProvider
     protected abstract Set<String> getReservedWords();
 
     /**
-     * Flag indicating whether or not the underlying database uses case-sensetive
+     * Flag indicating whether or not the underlying database uses case-sensitive
      * identifiers.  This specifically affects comparisons in the {@link SchemaReader}
      * utility.  The default value is <code>true</code>.  Note that databases which
      * support both case-sensetive and case-insensetive identifiers (like MySQL) should
@@ -2385,7 +2385,7 @@ public abstract class DatabaseProvider
      * @return boolean <code>true</code> if identifiers are case-sensetive,
      *         <code>false</code> otherwise.
      */
-    public boolean isCaseSensetive()
+    public boolean isCaseSensitive()
     {
         return true;
     }

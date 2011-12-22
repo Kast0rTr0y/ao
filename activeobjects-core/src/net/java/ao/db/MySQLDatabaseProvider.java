@@ -156,7 +156,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider
 	}
 
     @Override
-    public boolean isCaseSensetive()
+    public boolean isCaseSensitive()
     {
         return FileSystemUtils.isCaseSensitive();
     }

@@ -103,7 +103,7 @@ public final class SchemaGenerator
         final DDLTable[] parsedTables = parseDDL(provider, nameConverters, classes);
         final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
-        final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensetive()));
+        final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensitive()));
         return Iterables.transform(ImmutableList.of(actions),
             new Function<DDLAction, Iterable<SQLAction>>()
             {

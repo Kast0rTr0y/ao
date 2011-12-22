@@ -177,7 +177,7 @@ public final class SchemaReader
      * <code>onto</code>, a <code>CREATE TABLE</code>
      * statement will be generated.
      */
-    public static DDLAction[] diffSchema(TypeManager typeManager, DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensetive)
+    public static DDLAction[] diffSchema(TypeManager typeManager, DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensitive)
     {
         Set<DDLAction> actions = new HashSet<DDLAction>();
 
@@ -191,7 +191,7 @@ public final class SchemaReader
         for (DDLTable table : fromArray)
         {
             String tableName = table.getName();
-            if (!caseSensetive)
+            if (!caseSensitive)
             {
                 tableName = tableName.toLowerCase();
             }
@@ -201,7 +201,7 @@ public final class SchemaReader
         for (DDLTable table : ontoArray)
         {
             String tableName = table.getName();
-            if (!caseSensetive)
+            if (!caseSensitive)
             {
                 tableName = tableName.toLowerCase();
             }
@@ -211,7 +211,7 @@ public final class SchemaReader
 
         for (DDLTable table : fromArray)
         {
-            String tableName = transform(table.getName(), caseSensetive);
+            String tableName = transform(table.getName(), caseSensitive);
 
             if (onto.containsKey(tableName))
             {
@@ -225,7 +225,7 @@ public final class SchemaReader
 
         for (DDLTable table : ontoArray)
         {
-            String tableName = transform(table.getName(), caseSensetive);
+            String tableName = transform(table.getName(), caseSensitive);
 
             if (!from.containsKey(tableName))
             {
@@ -257,7 +257,7 @@ public final class SchemaReader
             {
                 for (DDLForeignKey fKey : alterTable.getForeignKeys())
                 {
-                    if (equals(fKey.getTable(), table.getName(), caseSensetive))
+                    if (equals(fKey.getTable(), table.getName(), caseSensitive))
                     {
                         dropKeys.add(fKey);
                     }
@@ -268,7 +268,7 @@ public final class SchemaReader
         for (DDLTable fromTable : alterTables)
         {
             final String s = fromTable.getName();
-            String tableName = transform(s, caseSensetive);
+            String tableName = transform(s, caseSensitive);
 
             DDLTable ontoTable = onto.get(tableName);
 
@@ -281,20 +281,20 @@ public final class SchemaReader
 
             for (DDLField field : fromTable.getFields())
             {
-                String fieldName = transform(field.getName(), caseSensetive);
+                String fieldName = transform(field.getName(), caseSensitive);
 
                 fromFields.put(fieldName, field);
             }
             for (DDLField field : ontoTable.getFields())
             {
-                String fieldName = transform(field.getName(), caseSensetive);
+                String fieldName = transform(field.getName(), caseSensitive);
 
                 ontoFields.put(fieldName, field);
             }
 
             for (DDLField field : fromTable.getFields())
             {
-                String fieldName = transform(field.getName(), caseSensetive);
+                String fieldName = transform(field.getName(), caseSensitive);
 
                 if (ontoFields.containsKey(fieldName))
                 {
@@ -308,7 +308,7 @@ public final class SchemaReader
 
             for (DDLField field : ontoTable.getFields())
             {
-                String fieldName = transform(field.getName(), caseSensetive);
+                String fieldName = transform(field.getName(), caseSensitive);
 
                 if (!fromFields.containsKey(fieldName))
                 {
@@ -334,7 +334,7 @@ public final class SchemaReader
 
             for (DDLField fromField : alterFields)
             {
-                final String fieldName = transform(fromField.getName(), caseSensetive);
+                final String fieldName = transform(fromField.getName(), caseSensitive);
 
                 final DDLField ontoField = ontoFields.get(fieldName);
 

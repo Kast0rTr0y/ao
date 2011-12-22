@@ -57,7 +57,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
             while (rs.next())
             {
                 final String tableName = parseStringValue(rs, "TABLE_NAME");
-                if (schemaConfiguration.shouldManageTable(tableName, databaseProvider.isCaseSensetive()))
+                if (schemaConfiguration.shouldManageTable(tableName, databaseProvider.isCaseSensitive()))
                 {
                     tableNames.add(tableName);
                 }
