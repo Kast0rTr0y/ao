@@ -274,7 +274,11 @@ public abstract class DatabaseProvider
         
         for (DDLIndex index : table.getIndexes())
         {
-            ret.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
+            final SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
+            if (sqlAction != null)
+            {
+                ret.add(sqlAction);
+            }
         }
 
         ret.addAll(renderDropTriggers(nameConverters, table));
