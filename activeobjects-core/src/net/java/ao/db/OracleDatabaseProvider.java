@@ -164,25 +164,6 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 		return "dd-MMM-yy hh:mm:ss.SSS a";
 	}
 
-	@Override
-	protected SQLAction renderTriggerForField(NameConverters nameConverters,
-                                              DDLTable table, DDLField field)
-	{
-		if (field.isAutoIncrement()) {
-			StringBuilder back = new StringBuilder();
-
-	        back.append("CREATE TRIGGER ").append(withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())) +  '\n');
-	        back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
-	        back.append("BEGIN\n");
-	        back.append("    SELECT ").append(withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) + ".NEXTVAL");
-	        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
-
-	        return SQLAction.of(back);
-		}
-
-		return super.renderTriggerForField(nameConverters, table, field);
-	}
-
     @Override
     protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
     {
@@ -335,41 +316,57 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderDropTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         if (field.isAutoIncrement())
         {
-            return SQLAction.of(new StringBuilder()
-                    .append("DROP TRIGGER ")
-                    .append(withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName()))));
+            return ImmutableList.of(renderSequence(nameConverters, table, field).withUndoAction(renderDropSequence(nameConverters, table, field)),
+                                    renderTrigger(nameConverters, table, field).withUndoAction(renderDropTrigger(nameConverters, table, field)));
         }
-        return null;
+        return ImmutableList.of();
     }
 
     @Override
-    protected SQLAction renderSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         if (field.isAutoIncrement())
         {
-            final String sequenceName = nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()));
-            return SQLAction.of(new StringBuilder()
-                    .append("CREATE SEQUENCE ")
-                    .append(withSchema(sequenceName))
-                    .append(" INCREMENT BY 1 START WITH 1 NOMAXVALUE MINVALUE 1"));
+            return ImmutableList.of(renderDropTrigger(nameConverters, table, field),
+                                    renderDropSequence(nameConverters, table, field));
         }
-        return null;
+        return ImmutableList.of();
     }
 
-    @Override
-    protected SQLAction renderDropSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    private SQLAction renderSequence(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        if (field.isAutoIncrement())
-        {
-            return SQLAction.of(new StringBuilder()
-                    .append("DROP SEQUENCE ")
-                    .append(withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName())))));
-        }
-        return null;
+        return SQLAction.of("CREATE SEQUENCE " +
+            withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) +
+            " INCREMENT BY 1 START WITH 1 NOMAXVALUE MINVALUE 1");
+    }
+    
+    private SQLAction renderTrigger(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        StringBuilder back = new StringBuilder();
+
+        back.append("CREATE TRIGGER ").append(withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())) +  '\n');
+        back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
+        back.append("BEGIN\n");
+        back.append("    SELECT ").append(withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) + ".NEXTVAL");
+        back.append(" INTO :NEW.").append(processID(field.getName())).append(" FROM DUAL;\nEND;");
+
+        return SQLAction.of(back);
+    }
+
+    private SQLAction renderDropSequence(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        return SQLAction.of("DROP SEQUENCE " +
+            withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))));
+    }
+    
+    private SQLAction renderDropTrigger(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        return SQLAction.of("DROP TRIGGER " +
+            withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())));
     }
 
     @Override

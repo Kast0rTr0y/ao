@@ -96,17 +96,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider
     {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, oldField);
-        if (dropTrigger != null)
-        {
-            back.add(dropTrigger);
-        }
-
-        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, oldField);
-        if (dropFunction != null)
-        {
-            back.add(dropFunction);
-        }
+        back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
 
         back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
 
@@ -120,17 +110,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider
             back.add(alterAddUniqueConstraint(nameConverters, table, field));
         }
         
-        SQLAction toRenderFunction = renderFunctionForField(nameConverters, table, field);
-        if (toRenderFunction != null)
-        {
-            back.add(toRenderFunction);
-        }
-
-        SQLAction toRenderTrigger = renderTriggerForField(nameConverters, table, field);
-        if (toRenderTrigger != null)
-        {
-            back.add(toRenderTrigger);
-        }
+        back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }

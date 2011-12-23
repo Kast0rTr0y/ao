@@ -44,6 +44,10 @@ import net.java.ao.types.TypeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.collect.Iterables.filter;
+
+import static com.google.common.collect.Iterables.concat;
+
 import static com.google.common.collect.Iterables.addAll;
 
 import static com.google.common.collect.Sets.union;
@@ -254,9 +258,7 @@ public abstract class DatabaseProvider
         
         ret.add(renderTable(nameConverters, table).withUndoAction(renderDropTableStatement(table)));
         
-        ret.addAll(renderFunctions(nameConverters, table));
-        ret.addAll(renderSequences(nameConverters, table));
-        ret.addAll(renderTriggers(nameConverters, table));
+        ret.addAll(renderAccessories(nameConverters, table));
 
         for (DDLIndex index : table.getIndexes())
         {
@@ -281,9 +283,7 @@ public abstract class DatabaseProvider
             }
         }
 
-        ret.addAll(renderDropTriggers(nameConverters, table));
-        ret.addAll(renderDropSequences(nameConverters, table));
-        ret.addAll(renderDropFunctions(nameConverters, table));
+        ret.addAll(renderDropAccessories(nameConverters, table));
         ret.add(renderDropTableStatement(table));
         
         return ret.build();
@@ -1084,190 +1084,91 @@ public abstract class DatabaseProvider
     }
 
     /**
-     * Generates the database-specific DDL statements required to drop all
-     * associated functions for the given table representation.  The default
-     * implementation is to return an empty array.  Some databases (such
-     * as PostgreSQL) require triggers to fire functions, unlike most
-     * databases which allow triggers to function almost like standalone
-     * functions themselves.  For such databases, dropping a table means
-     * not only dropping the table and the associated triggers, but also
-     * the functions associated with the triggers themselves.
-     *
-     *
-     * @param nameConverters
-     * @param table The table representation against which all functions which
-     * correspond (directly or indirectly) must be dropped.
-     * @return An array of database-specific DDL statement(s) which drop the
-     *         required functions.
-     */
-    protected final Iterable<SQLAction> renderDropFunctions(final NameConverters nameConverters, final DDLTable table)
-    {
-        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, SQLAction>()
-        {
-            @Override
-            public SQLAction apply(DDLField field)
-            {
-                return renderDropFunctionForField(nameConverters, table, field);
-            }
-        });
-    }
-
-    /**
-     * Generates the database-specific DDL statements required to drop all
-     * associated triggers for the given table representation.  The default
-     * implementation is to return an empty array.
-     *
-     *
-     * @param nameConverters
-     * @param table The table representation against which all triggers which
-     * correspond (directly or indirectly) must be dropped.
-     * @return An array of database-specific DDL statement(s) which drop the
-     *         required triggers.
-     */
-    protected final Iterable<SQLAction> renderDropTriggers(final NameConverters nameConverters, final DDLTable table)
-    {
-        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, SQLAction>()
-        {
-            @Override
-            public SQLAction apply(DDLField field)
-            {
-                return renderDropTriggerForField(nameConverters, table, field);
-            }
-        });
-    }
-
-    /**
-     * Generates the database-specific DDL statements required to drop all
-     * associated sequences for the given table representation.  The default
-     * implementation is to return an empty array.  This is an Oracle specific
-     * method used for primary key management
-     *
-     * @param nameConverters
-     * @param table The table representation against which all triggers which
-     * correspond (directly or indirectly) must be dropped.
-     * @return An array of database-specific DDL statement(s) which drop the
-     *         required triggers.
-     */
-    protected final Iterable<SQLAction> renderDropSequences(final NameConverters nameConverters, final DDLTable table)
-    {
-        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, SQLAction>()
-        {
-            @Override
-            public SQLAction apply(DDLField field)
-            {
-                return renderDropSequenceForField(nameConverters, table, field);
-            }
-        });
-    }
-
-    /**
      * <p>Generates the database-specific DDL statements required to create
-     * all of the functions necessary for the given table.  For most
-     * databases, this will simply return an empty array.  The
-     * functionality is required for databases such as PostgreSQL which
-     * require a function to be explicitly declared and associated when
-     * a trigger is created.</p>
-     * <p/>
-     * <p>Most of the work for this functionality is delegated to the
-     * {@link #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
+     * all of the functions, sequences, and triggers necessary for the given table,
+     * by calling {@link #renderAccessoriesForField(NameConverters, DDLTable, DDLField)}
+     * for each of the table's fields.  Each returned {@link SQLAction} has a
+     * corresponding{@link SQLAction#getUndoAction() undo action} that deletes
+     * the corresponding function, sequence, or trigger.
      *
-     *
-     *
-     * @param triggerNameConverter
-     * @param table The table for which the functions must be generated.
-     * @return A list of DDL statements to execute.
+     * @param nameConverters
+     * @param table The table for which the objects must be generated.
+     * @return An ordered list of {@link SQLAction}s.
      */
-    protected final Iterable<SQLAction> renderFunctions(final NameConverters nameConverters, final DDLTable table)
+    protected final Iterable<SQLAction> renderAccessories(final NameConverters nameConverters, final DDLTable table)
     {
-        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, SQLAction>()
-        {
-            @Override
-            public SQLAction apply(DDLField field)
-            {
-                SQLAction ret = renderFunctionForField(nameConverters, table, field);
-                return (ret == null) ? null : ret.withUndoAction(renderDropFunctionForField(nameConverters, table, field));
-            }
-        });
+        return renderFields(
+                table,
+                Predicates.<DDLField>alwaysTrue(),
+                new Function<DDLField, Iterable<SQLAction>>()
+                {
+                    @Override
+                    public Iterable<SQLAction> apply(DDLField field)
+                    {
+                        return renderAccessoriesForField(nameConverters, table, field);
+                    }
+                });
     }
 
     /**
      * <p>Generates the database-specific DDL statements required to drop
-     * all of the functions necessary for the given table.
-     *
-     * @param triggerNameConverter
-     * @param table The table for which the functions must be generated.
-     * @return A list of DDL statements to execute.
-     */
-    protected final Iterable<SQLAction> dropFunctions(final NameConverters nameConverters, final DDLTable table)
-    {
-        return renderFields(table, Predicates.<DDLField>alwaysTrue(), new Function<DDLField, SQLAction>()
-        {
-            @Override
-            public SQLAction apply(DDLField field)
-            {
-                return renderDropFunctionForField(nameConverters, table, field);
-            }
-        });
-    }
-
-    protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, SQLAction> render)
-    {
-        final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
-        return Iterables.filter(
-                        Iterables.transform(
-                                Iterables.filter(fields, filter), render),
-                        Predicates.<SQLAction>notNull());
-    }
-
-    /**
-     * <p>Generates the database-specific DDL statements required to create
-     * all of the triggers necessary for the given table.  For MySQL, this
-     * will likely return an empty array.
-     * <p/>
-     * <p>Most of the work for this functionality is delegated to the
-     * {@link #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)} method.</p>
-     *
-     *
+     * all of the functions, sequences, and triggers associated with the given table,
+     * by calling {@link #renderDropAccessoriesForField(NameConverters, DDLTable, DDLField)}
+     * for each of the table's fields.
      *
      * @param nameConverters
-     *@param table The table for which the triggers must be generated.  @return An array of DDL statements to execute.
+     * @param table The table for which the objects must be dropped.
+     * @return An ordered list of {@link SQLAction}s.
      */
-    protected final Iterable<SQLAction> renderTriggers(final NameConverters nameConverters, final DDLTable table)
+    protected final Iterable<SQLAction> renderDropAccessories(final NameConverters nameConverters, final DDLTable table)
     {
         return renderFields(
                 table,
                 Predicates.<DDLField>alwaysTrue(),
-                new Function<DDLField, SQLAction>()
+                new Function<DDLField, Iterable<SQLAction>>()
                 {
                     @Override
-                    public SQLAction apply(DDLField field)
+                    public Iterable<SQLAction> apply(DDLField field)
                     {
-                        return renderTriggerForField(nameConverters, table, field);
+                        return renderDropAccessoriesForField(nameConverters, table, field);
                     }
                 });
     }
 
     /**
-     * <p>Generates the database-specific DDL statements required to create
-     * all of the sequences necessary for the given table.</p>
-     *
-     * @param nameConverters the naming strategy for sequences
-     * @param table The table for which the triggers must be generated.
-     * @return DDL statements to execute.
+     * Generates database-specific DDL statements required to create any functions,
+     * sequences, or triggers required for the given field.  Each returned {@link SQLAction}
+     * should have a corresponding {@link SQLAction#getUndoAction() undo action} that deletes
+     * the corresponding function, sequence, or trigger.  The default implementation returns
+     * an empty list.
+     * @param nameConverters
+     * @param table
+     * @param field
+     * @return an ordered list of {@link SQLAction}s
      */
-    protected final Iterable<SQLAction> renderSequences(final NameConverters nameConverters, final DDLTable table)
+    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        return renderFields(
-                table,
-                Predicates.<DDLField>alwaysTrue(),
-                new Function<DDLField, SQLAction>()
-                {
-                    @Override
-                    public SQLAction apply(DDLField field)
-                    {
-                        return renderSequenceForField(nameConverters, table, field);
-                    }
-                });
+        return ImmutableList.of();
+    }
+
+    /**
+     * Generates database-specific DDL statements required to drop any functions,
+     * sequences, or triggers associated with the given field.  The default implementation
+     * returns an empty list.
+     * @param nameConverters
+     * @param table
+     * @param field
+     * @return an ordered list of {@link SQLAction}s
+     */
+    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    {
+        return ImmutableList.of();
+    }
+    
+    protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, Iterable<SQLAction>> render)
+    {
+        final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
+        return concat(transform(filter(fields, filter), render));
     }
 
     /**
@@ -1305,17 +1206,7 @@ public abstract class DatabaseProvider
             back.add(renderAlterTableAddKey(foreignKey).withUndoAction(renderAlterTableDropKey(foreignKey)));
         }
 
-        SQLAction function = renderFunctionForField(nameConverters, table, field);
-        if (function != null)
-        {
-            back.add(function.withUndoAction(renderDropFunctionForField(nameConverters, table, field)));
-        }
-
-        SQLAction trigger = renderTriggerForField(nameConverters, table, field);
-        if (trigger != null)
-        {
-            back.add(trigger.withUndoAction(renderDropTriggerForField(nameConverters, table, field)));
-        }
+        back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }
@@ -1373,31 +1264,11 @@ public abstract class DatabaseProvider
     {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, oldField);
-        if (dropTrigger != null)
-        {
-            back.add(dropTrigger);
-        }
-
-        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, oldField);
-        if (dropFunction != null)
-        {
-            back.add(dropFunction);
-        }
+        back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
 
         back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
 
-        SQLAction toRenderFunction = renderFunctionForField(nameConverters, table, field);
-        if (toRenderFunction != null)
-        {
-            back.add(toRenderFunction);
-        }
-
-        SQLAction toRenderTrigger = renderTriggerForField(nameConverters, table, field);
-        if (toRenderTrigger != null)
-        {
-            back.add(toRenderTrigger);
-        }
+        back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }
@@ -1460,17 +1331,7 @@ public abstract class DatabaseProvider
             back.add(renderAlterTableDropKey(foreignKey));
         }
 
-        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, field);
-        if (dropTrigger != null)
-        {
-            back.add(dropTrigger);
-        }
-
-        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, field);
-        if (dropFunction != null)
-        {
-            back.add(dropFunction);
-        }
+        back.addAll(renderDropAccessoriesForField(nameConverters, table, field));
 
         back.add(renderAlterTableDropColumnStatement(table, field));
 
@@ -1822,7 +1683,7 @@ public abstract class DatabaseProvider
      *         field, or <code>null</code> if none.
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
+    protected String _getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1843,7 +1704,7 @@ public abstract class DatabaseProvider
      *         the field in question, or <code>null</code>.
      * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected SQLAction renderTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1860,9 +1721,9 @@ public abstract class DatabaseProvider
      * if any.   @return A database-specific DDL statement to drop a trigger for
      *         the field in question, or <code>null</code>.
      */
-    protected SQLAction renderDropTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderDropTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        final String trigger = getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, field);
+        final String trigger = _getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, field);
         if (trigger != null)
         {
             return SQLAction.of("DROP TRIGGER " + processID(trigger));
@@ -1888,9 +1749,9 @@ public abstract class DatabaseProvider
      * @return The unique name of the function which was created for the
      *         field, or <code>null</code> if none.
      */
-    protected String getFunctionNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
+    protected String _getFunctionNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
     {
-        final String triggerName = getTriggerNameForField(triggerNameConverter, table, field);
+        final String triggerName = _getTriggerNameForField(triggerNameConverter, table, field);
         return triggerName != null ? triggerName + "()" : null;
     }
 
@@ -1912,7 +1773,7 @@ public abstract class DatabaseProvider
      *         the field in question, or <code>null</code>.
      * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected SQLAction renderFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1929,9 +1790,9 @@ public abstract class DatabaseProvider
      * @return A database-specific DDL statement to drop a function for
      *         the field in question, or <code>null</code>.
      */
-    protected SQLAction renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        final String functionName = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, field);
+        final String functionName = _getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, field);
         if (functionName != null)
         {
             return SQLAction.of("DROP FUNCTION " + processID(functionName));
@@ -1951,7 +1812,7 @@ public abstract class DatabaseProvider
      * @return A database-specific DDL statement creating a sequence for
      * the field in question, or <code>null</code>.
      */
-    protected SQLAction renderSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         return null;
     }
@@ -1960,7 +1821,7 @@ public abstract class DatabaseProvider
      * Renders SQL statement(s) to drop the sequence which corresponds to the
      * specified field, or <code>null</code> if none.
      */
-    protected SQLAction renderDropSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected SQLAction _renderDropSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         return null;
     }

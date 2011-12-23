@@ -41,8 +41,6 @@ import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.SequenceNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -168,17 +166,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
         
-        SQLAction dropTrigger = renderDropTriggerForField(nameConverters, table, oldField);
-        if (dropTrigger != null)
-        {
-            back.add(dropTrigger);
-        }
-
-        SQLAction dropFunction = renderDropFunctionForField(nameConverters, table, oldField);
-        if (dropFunction != null)
-        {
-            back.add(dropFunction);
-        }
+        back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
 
         if (!field.isUnique() && oldField.isUnique())
         {
@@ -258,17 +246,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			back.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 		}
         
-        SQLAction toRenderFunction = renderFunctionForField(nameConverters, table, field);
-        if (toRenderFunction != null)
-        {
-            back.add(toRenderFunction);
-        }
-
-        SQLAction toRenderTrigger = renderTriggerForField(nameConverters, table, field);
-        if (toRenderTrigger != null)
-        {
-            back.add(toRenderTrigger);
-        }
+		back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }
@@ -304,17 +282,6 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
         {
             return null;
         }
-    }
-
-    @Override
-    protected SQLAction renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
-        final String functionName = getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, field);
-        if (functionName != null)
-        {
-            return SQLAction.of("DROP FUNCTION IF EXISTS " + (isSchemaNotEmpty() ? getSchema() + "." + functionName : functionName)+ " CASCADE");
-        }
-        return null;
     }
 
     @Override
