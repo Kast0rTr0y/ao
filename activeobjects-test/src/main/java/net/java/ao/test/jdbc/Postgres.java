@@ -9,4 +9,10 @@ public class Postgres extends AbstractJdbcConfiguration
     {
         return "jdbc:postgresql://localhost:5432/ao_test";
     }
+
+    @Override
+    public String getSchema()
+    {
+        return "ao_schema";
+    }
 }
