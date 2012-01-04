@@ -276,7 +276,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
         if (hasIndex(indexNameConverter, index))
         {
             return SQLAction.of(new StringBuilder("DROP INDEX ")
-                    .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))));
+                    .append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))));
         }
         else
         {
@@ -298,7 +298,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 		}
 
 		if (back == null) {
-			final String sql = "SELECT NEXTVAL('" + processID(sequenceName(pkField, table)) + "')";
+			final String sql = "SELECT NEXTVAL('" + withSchema(sequenceName(pkField, table)) + "')";
 
 			final PreparedStatement stmt = preparedStatement(conn, sql);
 
