@@ -2,6 +2,7 @@ package net.java.ao.schema;
 
 import net.java.ao.Entity;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -11,6 +12,7 @@ import static org.junit.Assert.*;
 public final class AddColumnTest extends ActiveObjectsIntegrationTest
 {
     @Test
+    @NonTransactional
     public void testAddColumn() throws Exception
     {
         entityManager.migrate(Clean.T.class);
