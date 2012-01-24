@@ -320,7 +320,29 @@ public class OracleDatabaseProvider extends DatabaseProvider {
 		return super.renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
 	}
 
-	@Override
+    @Override
+    protected String[] renderAlterTableAddColumn(TriggerNameConverter triggerNameConverter, SequenceNameConverter sequenceNameConverter, DDLTable table, DDLField field)
+    {
+        List<String> back = new ArrayList<String>();
+
+        back.add("ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(table, field, new RenderFieldOptions(true, true)) + ")");
+
+        String function = renderFunctionForField(triggerNameConverter, table, field);
+        if (function != null)
+        {
+            back.add(function);
+        }
+
+        final String trigger = renderTriggerForField(triggerNameConverter, sequenceNameConverter, table, field);
+        if (trigger != null)
+        {
+            back.add(trigger);
+        }
+
+        return back.toArray(new String[back.size()]);
+    }
+
+    @Override
 	protected String renderAlterTableChangeColumnStatement(DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
 		StringBuilder current = new StringBuilder();
 		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (");
