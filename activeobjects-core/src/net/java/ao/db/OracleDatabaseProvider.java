@@ -143,6 +143,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
         switch (type) {
             case Types.VARCHAR:
+            case Types.TIMESTAMP:
                 Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
                 if (matcher.find()) {
                     value = matcher.group(1);

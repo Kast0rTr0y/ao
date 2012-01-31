@@ -406,18 +406,14 @@ public abstract class DatabaseProvider
                     return Byte.parseByte(value);
 
                 case Types.BOOLEAN:
-                    int intValue = -1;
                     try
                     {
-                        intValue = Integer.parseInt(value);
+                        return Integer.parseInt(value) != 0;
                     }
                     catch (Throwable t)
                     {
                         return Boolean.parseBoolean(value);
                     }
-
-                    return intValue == 0;
-
                 case Types.CHAR:
                     value.charAt(0);
                     break;
@@ -425,9 +421,7 @@ public abstract class DatabaseProvider
                 case Types.DATE:
                     try
                     {
-                        Calendar back = Calendar.getInstance();
-                        back.setTime(new SimpleDateFormat(getDateFormat()).parse(value));
-                        return back;
+                        return new SimpleDateFormat(getDateFormat()).parse(value);
                     }
                     catch (ParseException e)
                     {
@@ -458,9 +452,7 @@ public abstract class DatabaseProvider
                 case Types.TIMESTAMP:
                     try
                     {
-                        Calendar back = Calendar.getInstance();
-                        back.setTime(new SimpleDateFormat(getDateFormat()).parse(value));
-                        return back;
+                        return new SimpleDateFormat(getDateFormat()).parse(value);
                     }
                     catch (ParseException e)
                     {
