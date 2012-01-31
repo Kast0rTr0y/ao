@@ -403,8 +403,14 @@ public abstract class DatabaseProvider
                     return Long.parseLong(value);
 
                 case Types.BIT:
-                    return Byte.parseByte(value);
-
+                    try
+                    {
+                        return Byte.parseByte(value) != 0;
+                    }
+                    catch (Throwable t)
+                    {
+                        return Boolean.parseBoolean(value);
+                    }
                 case Types.BOOLEAN:
                     try
                     {
