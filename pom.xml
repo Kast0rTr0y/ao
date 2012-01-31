@@ -166,7 +166,7 @@
                 <plugin>
                     <groupId>org.leberrigaud.maven.plugins</groupId>
                     <artifactId>database-maven-plugin</artifactId>
-                    <version>0.7</version>
+                    <version>0.9</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

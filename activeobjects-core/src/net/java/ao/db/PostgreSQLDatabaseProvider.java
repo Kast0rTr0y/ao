@@ -400,7 +400,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
     protected String renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         return new StringBuilder("DROP INDEX ")
-                .append(processID(indexNameConverter.getName(index.getTable(), index.getField())))
+                .append(withSchema(indexNameConverter.getName(index.getTable(), index.getField())))
                 .toString();
     }
 
@@ -444,7 +444,7 @@ public final class PostgreSQLDatabaseProvider extends DatabaseProvider {
 		}
 
 		if (back == null) {
-			final String sql = "SELECT NEXTVAL('" + processID(table + "_" + pkField + "_seq") + "')";
+			final String sql = "SELECT NEXTVAL('" + withSchema(table + "_" + pkField + "_seq") + "')";
 
 			final PreparedStatement stmt = preparedStatement(conn, sql);
 
