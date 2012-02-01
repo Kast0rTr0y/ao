@@ -219,6 +219,8 @@ public final class SchemaGenerator
 
 			if (attributeName != null && type != null)
             {
+                checkIsSupportedType(method, type);
+
 				if (attributes.contains(attributeName)) {
 					continue;
 				}
@@ -289,6 +291,14 @@ public final class SchemaGenerator
 
 		return fields.toArray(new DDLField[fields.size()]);
 	}
+
+    private static void checkIsSupportedType(Method method, Class<?> type)
+    {
+        if (type.equals(java.sql.Date.class))
+        {
+            throw new ActiveObjectsConfigurationException(java.sql.Date.class.getName() + " is not supported! Please use " + java.util.Date.class.getName() + " instead.").forMethod(method);
+        }
+    }
 
     private static boolean isPrimaryKey(AnnotationDelegate annotations, DDLField field)
     {

@@ -104,22 +104,6 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
                     value = matcher.group(1);
                 }
                 break;
-            case Types.BIT:
-                try
-                {
-                    return Byte.parseByte(value);
-                }
-                catch (Throwable t)
-                {
-                    try
-                    {
-                        return Boolean.parseBoolean(value);
-                    }
-                    catch (Throwable t1)
-                    {
-                        return null;
-                    }
-                }
         }
 
         return super.parseValue(type, value);
