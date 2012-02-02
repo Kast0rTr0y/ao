@@ -17,6 +17,7 @@ package net.java.ao.schema;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
@@ -54,6 +55,8 @@ import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.util.EnumUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.addAll;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -68,6 +71,8 @@ import static net.java.ao.types.TypeQualifiers.qualifiers;
  */
 public final class SchemaGenerator
 {
+    private static final Logger logger = LoggerFactory.getLogger(SchemaGenerator.class);
+
     private static final Set<Integer> AUTO_INCREMENT_LEGAL_TYPES = ImmutableSet.of(Types.INTEGER, Types.BIGINT);
 
     public static void migrate(DatabaseProvider provider,
@@ -105,13 +110,13 @@ public final class SchemaGenerator
 
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensitive()));
         return Iterables.transform(ImmutableList.of(actions),
-            new Function<DDLAction, Iterable<SQLAction>>()
-            {
-                public Iterable<SQLAction> apply(DDLAction from)
+                new Function<DDLAction, Iterable<SQLAction>>()
                 {
-                    return provider.renderAction(nameConverters, from);
-                }
-            });
+                    public Iterable<SQLAction> apply(DDLAction from)
+                    {
+                        return provider.renderAction(nameConverters, from);
+                    }
+                });
     }
 
     static DDLTable[] parseDDL(DatabaseProvider provider, NameConverters nameConverters, Class<? extends RawEntity<?>>... classes) {
@@ -296,7 +301,9 @@ public final class SchemaGenerator
     {
         if (type.equals(java.sql.Date.class))
         {
-            throw new ActiveObjectsConfigurationException(java.sql.Date.class.getName() + " is not supported! Please use " + java.util.Date.class.getName() + " instead.").forMethod(method);
+            final String msg = Date.class.getName() + " is not supported! Please use " + java.util.Date.class.getName() + " instead.";
+            logger.warn("{}, on method {}" , msg, method);
+//            throw new ActiveObjectsConfigurationException(msg).forMethod(method);
         }
     }
 
