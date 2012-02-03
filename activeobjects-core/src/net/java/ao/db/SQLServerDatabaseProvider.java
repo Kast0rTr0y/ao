@@ -118,7 +118,11 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
         final Iterable<DDLIndex> indexes = findIndexesForField(table, field);
         for (DDLIndex index : indexes)
         {
-            sql.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
+            SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
+            if (sqlAction != null)
+            {
+                sql.add(sqlAction);
+            }
         }
 
         if (field.isPrimaryKey())
