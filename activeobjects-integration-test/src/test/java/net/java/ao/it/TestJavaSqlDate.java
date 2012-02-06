@@ -11,7 +11,6 @@ public final class TestJavaSqlDate extends ActiveObjectsIntegrationTest
 {
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    @Ignore("Until we decide to 'change the API' for AO-300")
     public void testJavaSqlDateIsNotSupported() throws Exception
     {
         entityManager.migrate(EntityWithJavaSqlDate.class);

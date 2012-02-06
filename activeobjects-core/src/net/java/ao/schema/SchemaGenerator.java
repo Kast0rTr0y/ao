@@ -301,9 +301,9 @@ public final class SchemaGenerator
     {
         if (type.equals(java.sql.Date.class))
         {
-            final String msg = Date.class.getName() + " is not supported! Please use " + java.util.Date.class.getName() + " instead.";
-            logger.warn("{}, on method {}" , msg, method);
-//            throw new ActiveObjectsConfigurationException(msg).forMethod(method);
+            throw new ActiveObjectsConfigurationException(Date.class.getName()
+                    + " is not supported! Please use " + java.util.Date.class.getName() + " instead.")
+                    .forMethod(method);
         }
     }
 
