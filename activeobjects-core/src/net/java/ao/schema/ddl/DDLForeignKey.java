@@ -15,6 +15,8 @@
  */
 package net.java.ao.schema.ddl;
 
+import net.java.ao.schema.Case;
+
 /**
  * <p>Database-agnostic representation of a foreign key constraint.  To
  * avoid unnecessary object creation (and to simplify schema parsing)
@@ -61,7 +63,12 @@ public class DDLForeignKey {
 	}
 	
 	public String getFKName() {
-		return "fk_" + getDomesticTable().toLowerCase() + '_' + getField().toLowerCase();
+		return new StringBuilder()
+                .append("fk_")
+                .append(Case.LOWER.apply(getDomesticTable()))
+                .append('_')
+                .append(Case.LOWER.apply(getField()))
+                .toString();
 	}
 
 	public String getDomesticTable() {
