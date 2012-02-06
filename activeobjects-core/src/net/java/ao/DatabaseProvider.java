@@ -25,6 +25,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import net.java.ao.schema.Case;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
@@ -2209,7 +2210,7 @@ public abstract class DatabaseProvider
      */
     protected boolean shouldQuoteID(String id)
     {
-        return getReservedWords().contains(id.toUpperCase());
+        return getReservedWords().contains(Case.UPPER.apply(id));
     }
 
     /**
