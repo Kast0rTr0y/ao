@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import net.java.ao.schema.Case;
 import net.java.ao.schema.OnUpdate;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
@@ -2178,7 +2179,7 @@ public abstract class DatabaseProvider
      */
     protected boolean shouldQuoteID(String id)
     {
-        return getReservedWords().contains(id.toUpperCase());
+        return getReservedWords().contains(Case.UPPER.apply(id));
     }
 
     /**

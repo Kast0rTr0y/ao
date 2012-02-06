@@ -6,7 +6,8 @@ public enum Case
 {
     UPPER
             {
-                String apply(String s)
+                @Override
+                public String apply(String s)
                 {
                     return nullSafe(s).toUpperCase(Locale.ENGLISH);
                 }
@@ -14,13 +15,13 @@ public enum Case
     LOWER
             {
                 @Override
-                String apply(String s)
+                public String apply(String s)
                 {
                     return nullSafe(s).toLowerCase(Locale.ENGLISH);
                 }
             };
 
-    abstract String apply(String tableName);
+    public abstract String apply(String tableName);
 
     private static String nullSafe(String s)
     {

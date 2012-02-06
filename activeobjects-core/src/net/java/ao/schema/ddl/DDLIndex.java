@@ -15,6 +15,7 @@
  */
 package net.java.ao.schema.ddl;
 
+import net.java.ao.schema.Case;
 import net.java.ao.types.DatabaseType;
 
 /**
@@ -51,7 +52,12 @@ public class DDLIndex {
 	}
 	
 	public String getName() {
-		return "index_" + table.toLowerCase() + "_" + field.toLowerCase();
+		return new StringBuilder()
+                .append("index_")
+                .append(Case.LOWER.apply(table))
+                .append("_")
+                .append(Case.LOWER.apply(field))
+                .toString();
 	}
 	
 	public DatabaseType<?> getType() {
