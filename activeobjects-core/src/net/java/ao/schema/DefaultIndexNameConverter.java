@@ -5,6 +5,11 @@ public final class DefaultIndexNameConverter implements IndexNameConverter
     @Override
     public String getName(String tableName, String fieldName)
     {
-        return "index_" + tableName.toLowerCase() + "_" + fieldName.toLowerCase();
+        return new StringBuilder()
+                .append("index_")
+                .append(Case.LOWER.apply(tableName))
+                .append("_")
+                .append(Case.LOWER.apply(fieldName))
+                .toString();
     }
 }

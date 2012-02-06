@@ -17,14 +17,15 @@ package net.java.ao.db;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import net.java.ao.DisposableDataSource;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.Case;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.ddl.DDLField;
@@ -34,7 +35,13 @@ import net.java.ao.types.DatabaseType;
 import net.java.ao.types.TypeManager;
 
 import java.net.URL;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -43,8 +50,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static net.java.ao.sql.SqlUtils.*;
 
 /**
  * @author Daniel Spiewak
@@ -141,7 +147,7 @@ public class OracleDatabaseProvider extends DatabaseProvider {
     @Override
     public String getSchema()
     {
-        return isSchemaNotEmpty() ? super.getSchema().toUpperCase() : null;
+        return isSchemaNotEmpty() ? Case.UPPER.apply(super.getSchema()) : null;
     }
 
     @Override

@@ -21,6 +21,7 @@ import net.java.ao.Common;
 import net.java.ao.DatabaseFunction;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.Case;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.helper.DatabaseMetaDataReader;
 import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
@@ -173,29 +174,18 @@ public final class SchemaReader
 
         for (DDLTable table : fromArray)
         {
-            String tableName = table.getName();
-            if (!caseSensetive)
-            {
-                tableName = tableName.toLowerCase();
-            }
-
+            final String tableName = transform(table.getName(), caseSensetive);
             from.put(tableName, table);
         }
         for (DDLTable table : ontoArray)
         {
-            String tableName = table.getName();
-            if (!caseSensetive)
-            {
-                tableName = tableName.toLowerCase();
-            }
-
+            final String tableName = transform(table.getName(), caseSensetive);
             onto.put(tableName, table);
         }
 
         for (DDLTable table : fromArray)
         {
-            String tableName = transform(table.getName(), caseSensetive);
-
+            final String tableName = transform(table.getName(), caseSensetive);
             if (onto.containsKey(tableName))
             {
                 alterTables.add(table);
@@ -478,12 +468,14 @@ public final class SchemaReader
 
     private static String transform(String s, boolean caseSensitive)
     {
-        String tableName = s;
         if (!caseSensitive)
         {
-            tableName = tableName.toLowerCase();
+            return Case.LOWER.apply(s);
         }
-        return tableName;
+        else
+        {
+            return s;
+        }
     }
 
     public static DDLAction[] sortTopologically(DDLAction[] actions)
