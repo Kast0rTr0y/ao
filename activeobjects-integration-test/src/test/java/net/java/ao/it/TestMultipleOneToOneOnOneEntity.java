@@ -51,13 +51,13 @@ public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrat
 
     interface X extends Entity
     {
-        @OneToOne(where = "WINDOW_TYPE='square'")
+        @OneToOne(where = "windowType = 'square'")
         WindowTypeXref getTheSquareWindow();
 
-        @OneToOne(where = "WINDOW_TYPE='round'")
+        @OneToOne(where = "windowType = 'round'")
         WindowTypeXref getTheRoundWindow();
 
-        @OneToOne(where = "WINDOW_TYPE='oval'")
+        @OneToOne(where = "windowType = 'oval'")
         WindowTypeXref getTheOvalWindow();
     }
 
