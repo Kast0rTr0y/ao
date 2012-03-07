@@ -4,7 +4,7 @@ import net.java.ao.RawEntity;
 
 import java.util.Arrays;
 
-final class RAMRelationsCacheKey
+final class MemoryRelationsCacheKey
 {
     private final RawEntity<?> from;
     private final Class<? extends RawEntity<?>> toType;
@@ -12,8 +12,8 @@ final class RAMRelationsCacheKey
     private final String[] fields;
     private final String where;
 
-    public RAMRelationsCacheKey(RawEntity<?> from, Class<? extends RawEntity<?>> toType,
-                                Class<? extends RawEntity<?>> throughType, String[] fields, String where)
+    public MemoryRelationsCacheKey(RawEntity<?> from, Class<? extends RawEntity<?>> toType,
+                                   Class<? extends RawEntity<?>> throughType, String[] fields, String where)
     {
         this.from = from;
         this.toType = toType;
@@ -60,7 +60,7 @@ final class RAMRelationsCacheKey
             return false;
         }
 
-        final RAMRelationsCacheKey cacheKey = (RAMRelationsCacheKey) o;
+        final MemoryRelationsCacheKey cacheKey = (MemoryRelationsCacheKey) o;
 
         if (!Arrays.equals(fields, cacheKey.fields))
         {
