@@ -34,15 +34,15 @@ public final class RAMRelationsCache implements RelationsCache {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	private final Map<CacheKey, RawEntity<?>[]> cache;
-	private final Map<Class<? extends RawEntity<?>>, Set<CacheKey>> typeMap;
-	private final Map<MetaCacheKey, Set<CacheKey>> fieldMap;
+	private final Map<RAMRelationsCacheKey, RawEntity<?>[]> cache;
+	private final Map<Class<? extends RawEntity<?>>, Set<RAMRelationsCacheKey>> typeMap;
+	private final Map<MetaCacheKey, Set<RAMRelationsCacheKey>> fieldMap;
 	private final ReadWriteLock lock;
 
 	public RAMRelationsCache() {
-		cache = new HashMap<CacheKey, RawEntity<?>[]>();
-		typeMap = new HashMap<Class<? extends RawEntity<?>>, Set<CacheKey>>();
-		fieldMap = new HashMap<MetaCacheKey, Set<CacheKey>>();
+		cache = new HashMap<RAMRelationsCacheKey, RawEntity<?>[]>();
+		typeMap = new HashMap<Class<? extends RawEntity<?>>, Set<RAMRelationsCacheKey>>();
+		fieldMap = new HashMap<MetaCacheKey, Set<RAMRelationsCacheKey>>();
 		
 		lock = new ReentrantReadWriteLock();
 	}
@@ -59,16 +59,16 @@ public final class RAMRelationsCache implements RelationsCache {
 		}
 	}
 
-	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields) {
+	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields, String where) {
 
-		final CacheKey key = new CacheKey(from, toType, throughType, fields);
+		final RAMRelationsCacheKey key = new RAMRelationsCacheKey(from, toType, throughType, fields, where);
 		lock.writeLock().lock();
 		try {
 			cache.put(key, to);
 			
-			Set<CacheKey> keys = typeMap.get(key.getThroughType());
+			Set<RAMRelationsCacheKey> keys = typeMap.get(key.getThroughType());
 			if (keys == null) {
-				keys = new HashSet<CacheKey>();
+				keys = new HashSet<RAMRelationsCacheKey>();
 				typeMap.put(key.getThroughType(), keys);
 			}
 			keys.add(key);
@@ -79,7 +79,7 @@ public final class RAMRelationsCache implements RelationsCache {
 					
 					keys = fieldMap.get(metaKey);
 					if (keys == null) {
-						keys = new HashSet<CacheKey>();
+						keys = new HashSet<RAMRelationsCacheKey>();
 						fieldMap.put(metaKey, keys);
 					}
 					keys.add(key);
@@ -94,10 +94,10 @@ public final class RAMRelationsCache implements RelationsCache {
 		}
 	}
 
-	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields) {
+	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where) {
 		lock.readLock().lock();
 		try {
-            final T[] ts = (T[]) cache.get(new CacheKey(from, toType, throughType, fields));
+            final T[] ts = (T[]) cache.get(new RAMRelationsCacheKey(from, toType, throughType, fields, where));
             if (logger.isDebugEnabled())
             {
                 logger.debug("get ( {}, {}, {}, {} ) : {}", new Object[]{from, toType, throughType, Arrays.toString(fields), Arrays.toString(ts)});
@@ -112,9 +112,9 @@ public final class RAMRelationsCache implements RelationsCache {
 		lock.writeLock().lock();
 		try {
 			for (Class<? extends RawEntity<?>> type : types) {
-				Set<CacheKey> keys = typeMap.get(type);
+				Set<RAMRelationsCacheKey> keys = typeMap.get(type);
 				if (keys != null) {
-					for (CacheKey key : keys) {
+					for (RAMRelationsCacheKey key : keys) {
 						cache.remove(key);
 					}
 		
@@ -134,9 +134,9 @@ public final class RAMRelationsCache implements RelationsCache {
 		lock.writeLock().lock();
 		try {
 			for (String field : fields) {
-				Set<CacheKey> keys = fieldMap.get(new MetaCacheKey(entity, field));
+				Set<RAMRelationsCacheKey> keys = fieldMap.get(new MetaCacheKey(entity, field));
 				if (keys != null) {
-					for (CacheKey key : keys) {
+					for (RAMRelationsCacheKey key : keys) {
 						cache.remove(key);
 					}
 				}
@@ -150,143 +150,23 @@ public final class RAMRelationsCache implements RelationsCache {
 		}
 	}
 
-	private static final class CacheKey {
-		private RawEntity<?> from;
-		private Class<? extends RawEntity<?>> toType;
-		private Class<? extends RawEntity<?>> throughType;
-		
-		private String[] fields;
-		
-		public CacheKey(RawEntity<?> from, Class<? extends RawEntity<?>> toType, 
-				Class<? extends RawEntity<?>> throughType, String[] fields) {
-			this.from = from;
-			this.toType = toType;
-			this.throughType = throughType;
-			
-			setFields(fields);
-		}
-
-		public RawEntity<?> getFrom() {
-			return from;
-		}
-
-		public void setFrom(RawEntity<?> from) {
-			this.from = from;
-		}
-
-		public Class<? extends RawEntity<?>> getToType() {
-			return toType;
-		}
-
-		public void setToType(Class<? extends RawEntity<?>> toType) {
-			this.toType = toType;
-		}
-
-		public String[] getFields() {
-			return fields;
-		}
-
-		public void setFields(String[] fields) {
-			Arrays.sort(fields);
-			
-			this.fields = fields;
-		}
-		
-		public Class<? extends RawEntity<?>> getThroughType() {
-			return throughType;
-		}
-		
-		public void setThroughType(Class<? extends RawEntity<?>> throughType) {
-			this.throughType = throughType;
-		}
-		
-		@Override
-		public String toString() {
-			return '(' + from.toString() + "; to=" + toType.getName() + "; through=" + throughType.getName() + "; " + Arrays.toString(fields) + ')';
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof CacheKey) {
-				CacheKey key = (CacheKey) obj;
-				
-				if (key.getFrom() != null) {
-					if (!key.getFrom().equals(from)) {
-						return false;
-					}
-				}
-				if (key.getToType() != null) {
-					if (!key.getToType().getName().equals(toType.getName())) {
-						return false;
-					}
-				}
-				if (key.getThroughType() != null) {
-					if (!key.getThroughType().getName().equals(throughType.getName())) {
-						return false;
-					}
-				}
-				if (key.getFields() != null) {
-					if (!Arrays.equals(key.getFields(), fields)) {
-						return false;
-					}
-				}
-				
-				return true;
-			}
-			
-			return super.equals(obj);
-		}
-		
-		@Override
-		public int hashCode() {
-			int hashCode = 0;
-			
-			if (from != null) {
-				hashCode += from.hashCode();
-			}
-			if (toType != null) {
-				hashCode += toType.getName().hashCode();
-			}
-			if (throughType != null) {
-				hashCode += throughType.getName().hashCode();
-			}
-			if (fields != null) {
-				for (String field : fields) {
-					hashCode += field.hashCode();
-				}
-			}
-			hashCode %= 2 << 10;
-			
-			return hashCode;
-		}
-	}
-	
-	private static final class MetaCacheKey {
-		private RawEntity<?> entity;
-		private String field;
+    private static final class MetaCacheKey {
+		private final RawEntity<?> entity;
+		private final String field;
 		
 		public MetaCacheKey(RawEntity<?> entity, String field) {
 			this.entity = entity;
-			
-			setField(field);
-		}
+            this.field = field;
+        }
 
 		public RawEntity<?> getEntity() {
 			return entity;
-		}
-
-		public void setEntity(RawEntity<?> entity) {
-			this.entity = entity;
 		}
 
 		public String getField() {
 			return field;
 		}
 
-		public void setField(String field) {
-			this.field = field;
-		}
-		
 		@Override
 		public String toString() {
 			return entity.toString() + "; " + field;

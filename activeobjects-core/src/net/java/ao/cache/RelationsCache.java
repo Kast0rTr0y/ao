@@ -24,9 +24,9 @@ public interface RelationsCache {
 
 	public void flush();
 
-	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields);
+	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields, String where);
 
-	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields);
+	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where);
 
 	public void remove(Class<? extends RawEntity<?>>... types);
 
