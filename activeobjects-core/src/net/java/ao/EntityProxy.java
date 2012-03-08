@@ -532,10 +532,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		if (inMapFields == null || inMapFields.length == 0) {
             inMapFields = Common.getMappingFields(getFieldNameConverter(), type, this.type);
 		}
-        final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getFieldNameConverter()),
-				inMapFields, outMapFields, where);
+        final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getFieldNameConverter()), inMapFields, outMapFields, where);
 
-        V[] cached = manager.getRelationsCache().get(entity, finalType, type, fields);
+        V[] cached = manager.getRelationsCache().get(entity, finalType, type, fields, where);
 		if (cached != null) {
 			return cached;
 		}
@@ -842,7 +841,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
         manager.getRelationsCache().put(entity, 
 				(throughValues.size() > 0 ? throughValues.toArray(new RawEntity[throughValues.size()]) : cached), 
-				type, cached, finalType, fields);
+				type, cached, finalType, fields, where);
 		
 		return cached;
 	}

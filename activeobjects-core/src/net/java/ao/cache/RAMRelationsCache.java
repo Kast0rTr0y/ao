@@ -15,318 +15,78 @@
  */
 package net.java.ao.cache;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import net.java.ao.RawEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+
 /**
  * @author Daniel Spiewak
  */
-public final class RAMRelationsCache implements RelationsCache {
-
+public final class RAMRelationsCache implements RelationsCache
+{
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final RelationsCache cache;
 
-	private final Map<CacheKey, RawEntity<?>[]> cache;
-	private final Map<Class<? extends RawEntity<?>>, Set<CacheKey>> typeMap;
-	private final Map<MetaCacheKey, Set<CacheKey>> fieldMap;
-	private final ReadWriteLock lock;
+    public RAMRelationsCache()
+    {
+        cache = new ConcurrentRelationsCache(new MemoryRelationsCache());
+    }
 
-	public RAMRelationsCache() {
-		cache = new HashMap<CacheKey, RawEntity<?>[]>();
-		typeMap = new HashMap<Class<? extends RawEntity<?>>, Set<CacheKey>>();
-		fieldMap = new HashMap<MetaCacheKey, Set<CacheKey>>();
-		
-		lock = new ReentrantReadWriteLock();
-	}
-	
-	public void flush() {
-		lock.writeLock().lock();
-		try {
-			cache.clear();
-			typeMap.clear();
-			fieldMap.clear();
-            logger.debug("flush");
-		} finally {
-			lock.writeLock().unlock();
-		}
-	}
+    @Override
+    public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where)
+    {
+        final T[] ts = cache.get(from, toType, throughType, fields, where);
 
-	public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields) {
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("get ( {}, {}, {}, {} ) : {}", new Object[]{from, toType, throughType, Arrays.toString(fields), Arrays.toString(ts)});
+        }
+        return ts;
+    }
 
-		final CacheKey key = new CacheKey(from, toType, throughType, fields);
-		lock.writeLock().lock();
-		try {
-			cache.put(key, to);
-			
-			Set<CacheKey> keys = typeMap.get(key.getThroughType());
-			if (keys == null) {
-				keys = new HashSet<CacheKey>();
-				typeMap.put(key.getThroughType(), keys);
-			}
-			keys.add(key);
-			
-			for (String field : fields) {
-				for (RawEntity<?> entity : through) {
-					MetaCacheKey metaKey = new MetaCacheKey(entity, field);
-					
-					keys = fieldMap.get(metaKey);
-					if (keys == null) {
-						keys = new HashSet<CacheKey>();
-						fieldMap.put(metaKey, keys);
-					}
-					keys.add(key);
-				}
-			}
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("put ( {}, {}, {}, {}, {}, {} )", new Object[]{from, through, throughType, to, toType, Arrays.toString(fields)});
-            }
-        } finally {
-			lock.writeLock().unlock();
-		}
-	}
+    @Override
+    public void put(RawEntity<?> from, RawEntity<?>[] through, Class<? extends RawEntity<?>> throughType, RawEntity<?>[] to, Class<? extends RawEntity<?>> toType, String[] fields, String where)
+    {
+        cache.put(from, through, throughType, to, toType, fields, where);
 
-	public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields) {
-		lock.readLock().lock();
-		try {
-            final T[] ts = (T[]) cache.get(new CacheKey(from, toType, throughType, fields));
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("get ( {}, {}, {}, {} ) : {}", new Object[]{from, toType, throughType, Arrays.toString(fields), Arrays.toString(ts)});
-            }
-            return ts;
-		} finally {
-			lock.readLock().unlock();
-		}
-	}
-	
-	public void remove(Class<? extends RawEntity<?>>... types) {
-		lock.writeLock().lock();
-		try {
-			for (Class<? extends RawEntity<?>> type : types) {
-				Set<CacheKey> keys = typeMap.get(type);
-				if (keys != null) {
-					for (CacheKey key : keys) {
-						cache.remove(key);
-					}
-		
-					typeMap.remove(type);
-				}
-			}
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("remove ( {} )", Arrays.toString(types));
-            }
-        } finally {
-			lock.writeLock().unlock();
-		}
-	}
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("put ( {}, {}, {}, {}, {}, {}, {} )", new Object[]{from, Arrays.toString(through), throughType, Arrays.toString(to), toType, Arrays.toString(fields), where});
+        }
+    }
 
-	public void remove(RawEntity<?> entity, String[] fields) {
-		lock.writeLock().lock();
-		try {
-			for (String field : fields) {
-				Set<CacheKey> keys = fieldMap.get(new MetaCacheKey(entity, field));
-				if (keys != null) {
-					for (CacheKey key : keys) {
-						cache.remove(key);
-					}
-				}
-			}
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("remove ( {}, {} )", entity, Arrays.toString(fields));
-            }
-        } finally {
-			lock.writeLock().unlock();
-		}
-	}
+    @Override
+    public void remove(Class<? extends RawEntity<?>>... types)
+    {
+        cache.remove(types);
 
-	private static final class CacheKey {
-		private RawEntity<?> from;
-		private Class<? extends RawEntity<?>> toType;
-		private Class<? extends RawEntity<?>> throughType;
-		
-		private String[] fields;
-		
-		public CacheKey(RawEntity<?> from, Class<? extends RawEntity<?>> toType, 
-				Class<? extends RawEntity<?>> throughType, String[] fields) {
-			this.from = from;
-			this.toType = toType;
-			this.throughType = throughType;
-			
-			setFields(fields);
-		}
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("remove ( {} )", Arrays.toString(types));
+        }
+    }
 
-		public RawEntity<?> getFrom() {
-			return from;
-		}
+    @Override
+    public void remove(RawEntity<?> entity, String[] fields)
+    {
+        cache.remove(entity, fields);
 
-		public void setFrom(RawEntity<?> from) {
-			this.from = from;
-		}
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("remove ( {}, {} )", entity, Arrays.toString(fields));
+        }
+    }
 
-		public Class<? extends RawEntity<?>> getToType() {
-			return toType;
-		}
+    @Override
+    public void flush()
+    {
+        cache.flush();
 
-		public void setToType(Class<? extends RawEntity<?>> toType) {
-			this.toType = toType;
-		}
-
-		public String[] getFields() {
-			return fields;
-		}
-
-		public void setFields(String[] fields) {
-			Arrays.sort(fields);
-			
-			this.fields = fields;
-		}
-		
-		public Class<? extends RawEntity<?>> getThroughType() {
-			return throughType;
-		}
-		
-		public void setThroughType(Class<? extends RawEntity<?>> throughType) {
-			this.throughType = throughType;
-		}
-		
-		@Override
-		public String toString() {
-			return '(' + from.toString() + "; to=" + toType.getName() + "; through=" + throughType.getName() + "; " + Arrays.toString(fields) + ')';
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof CacheKey) {
-				CacheKey key = (CacheKey) obj;
-				
-				if (key.getFrom() != null) {
-					if (!key.getFrom().equals(from)) {
-						return false;
-					}
-				}
-				if (key.getToType() != null) {
-					if (!key.getToType().getName().equals(toType.getName())) {
-						return false;
-					}
-				}
-				if (key.getThroughType() != null) {
-					if (!key.getThroughType().getName().equals(throughType.getName())) {
-						return false;
-					}
-				}
-				if (key.getFields() != null) {
-					if (!Arrays.equals(key.getFields(), fields)) {
-						return false;
-					}
-				}
-				
-				return true;
-			}
-			
-			return super.equals(obj);
-		}
-		
-		@Override
-		public int hashCode() {
-			int hashCode = 0;
-			
-			if (from != null) {
-				hashCode += from.hashCode();
-			}
-			if (toType != null) {
-				hashCode += toType.getName().hashCode();
-			}
-			if (throughType != null) {
-				hashCode += throughType.getName().hashCode();
-			}
-			if (fields != null) {
-				for (String field : fields) {
-					hashCode += field.hashCode();
-				}
-			}
-			hashCode %= 2 << 10;
-			
-			return hashCode;
-		}
-	}
-	
-	private static final class MetaCacheKey {
-		private RawEntity<?> entity;
-		private String field;
-		
-		public MetaCacheKey(RawEntity<?> entity, String field) {
-			this.entity = entity;
-			
-			setField(field);
-		}
-
-		public RawEntity<?> getEntity() {
-			return entity;
-		}
-
-		public void setEntity(RawEntity<?> entity) {
-			this.entity = entity;
-		}
-
-		public String getField() {
-			return field;
-		}
-
-		public void setField(String field) {
-			this.field = field;
-		}
-		
-		@Override
-		public String toString() {
-			return entity.toString() + "; " + field;
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof MetaCacheKey) {
-				MetaCacheKey key = (MetaCacheKey) obj;
-				
-				if (key.getEntity() != null) {
-					if (!key.getEntity().equals(entity)) {
-						return false;
-					}
-				}
-				if (key.getField() != null) {
-					if (!key.getField().equals(field)) {
-						return false;
-					}
-				}
-				
-				return true;
-			}
-			
-			return super.equals(obj);
-		}
-		
-		@Override
-		public int hashCode() {
-			int hashCode = 0;
-			
-			if (entity != null) {
-				hashCode += entity.hashCode();
-			}
-			if (field != null) {
-				hashCode += field.hashCode();
-			}
-			hashCode %= 2 << 15;
-			
-			return hashCode;
-		}
-	}
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("flush ()");
+        }
+    }
 }

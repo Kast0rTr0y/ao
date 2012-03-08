@@ -813,38 +813,40 @@ public class EntityManager
 
 		return back.toArray((T[]) Array.newInstance(type, back.size()));
 	}
-	
+
 	/**
 	 * <p>Opitimsed read for large datasets. This method will stream all rows for the given type to the given callback.</p>
-	 * 
+	 *
 	 * <p>Please see {@link #stream(Class, Query, EntityStreamCallback)} for details / limitations.
-	 * 
+	 *
 	 * @param type The type of the entities to retrieve.
-	 * @param streamCallback The receiver of the data, will be passed one entity per returned row 
+	 * @param streamCallback The receiver of the data, will be passed one entity per returned row
 	 */
 	public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException {
 	    stream(type, Query.select("*"), streamCallback);
 	}
-	
+
     /**
      * <p>Selects all entities of the given type and feeds them to the callback, one by one. The entities are slim, uncached, read-only
-     * representations of the data. They only supports getters or designated {@link Accessor} methods. Calling setters or <pre>save</pre> will 
+     * representations of the data. They only supports getters or designated {@link Accessor} methods. Calling setters or <pre>save</pre> will
      * result in an exception. Other method calls will be ignored. The proxies do not support lazy-loading of related entities.</p>
-     * 
+     *
      * <p>Only the fields specified in the Query are loaded. Since lazy loading is not supported, calls to unspecified getters will return null
      * (or AO's defaults in case of primitives)</p>
-     * 
+     *
      * <p>This call is optimised for efficient read operations on large datasets. For best memory usage, do not buffer the entities passed to the
      * callback but process and discard them directly.</p>
-     * 
+     *
      * <p>Unlike regular Entities, the read only implementations do not support flushing/refreshing. The data is a snapshot view at the time of
-     * query.</p> 
-     * 
+     * query.</p>
+     *
      * @param type The type of the entities to retrieve.
-     * @param query 
-     * @param streamCallback The receiver of the data, will be passed one entity per returned row 
-     */	
+     * @param query
+     * @param streamCallback The receiver of the data, will be passed one entity per returned row
+     */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, Query query, EntityStreamCallback<T, K> streamCallback) throws SQLException {
+
+        query.resolveFields(type, getFieldNameConverter());
 
         // fetch some information about the fields we're dealing with. These calls are expensive when
         // executed too often, and since we're always working on the same type of object, we only need them once.

@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -528,5 +529,28 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         assertEquals(PenData.getIds().length, entityManager.count(Pen.class));
         assertEquals(1, entityManager.count(Person.class));
         assertEquals(0, entityManager.count(Select.class));
+    }
+
+    @Test
+    public void emptySelectQueryStreamsPrimaryKeys() throws Exception
+    {
+        assertTrue(CompanyData.NAMES.length > 1);
+
+        final List<Long> allIds = new ArrayList<Long>();
+
+        EntityStreamCallback<Company, Long> streamCallback = new EntityStreamCallback<Company, Long>()
+        {
+            @Override
+            public void onRowRead(Company t)
+            {
+                allIds.add(t.getCompanyID());
+            }
+        };
+
+        Query query = Query.select();
+        entityManager.stream(Company.class, query, streamCallback);
+
+        assertEquals("All records should be streamed", CompanyData.NAMES.length, allIds.size());
+        assertEquals("IDs should be unique", CompanyData.NAMES.length, new HashSet<Long>(allIds).size());
     }
 }
