@@ -629,6 +629,40 @@ public class EntityManager
 		return find(type, Query.select().where(criteria, parameters));
 	}
 
+    /**
+	 * <p>Convenience method to select a single entity of the given type with the
+	 * specified, parameterized criteria.  The <code>criteria</code> String
+	 * specified is appended to the SQL prepared statement immediately
+	 * following the <code>WHERE</code>.</p>
+	 *
+	 * <p>Example:</p>
+	 *
+	 * <pre>manager.findSingleEntity(Person.class, "name LIKE ? OR age &gt; ?", "Joe", 9);</pre>
+	 *
+	 * <p>This actually delegates the call to the {@link #find(Class, String, Object...)}
+	 * method, properly parameterizing the {@link Object} object.</p>
+	 *
+	 * @param type		The type of the entities to retrieve.
+	 * @param criteria		A parameterized WHERE statement used to determine the results.
+	 * @param parameters	A varargs array of parameters to be passed to the executed
+	 * 	prepared statement.  The length of this array <i>must</i> match the number of
+	 * 	parameters (denoted by the '?' char) in the <code>criteria</code>.
+	 * @return	A single entity of the given type which match the specified criteria or null if none returned
+	 */
+    public <T extends RawEntity<K>, K> T findSingleEntity(Class<T> type, String criteria, Object... parameters) throws SQLException {
+        T[] entities = find(type, criteria, parameters);
+
+        if (entities.length < 1) {
+            return null;
+        } else if (entities.length > 1) {
+            throw new IllegalStateException("Found more than one entities of type '"
+                    + type.getSimpleName() + "' that matched the criteria '" + criteria
+                    + "' and parameters '" + parameters.toString() + "'.");
+        }
+
+        return entities[0];
+    }
+
 	/**
 	 * <p>Selects all entities matching the given type and {@link Query}.  By default, the
 	 * entities will be created based on the values within the primary key field for the
