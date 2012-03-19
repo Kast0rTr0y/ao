@@ -302,6 +302,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             closeQuietly(stmt);
             closeQuietly(conn);
         }
+
+        manager.removeFromDirty(entity);
 	}
 
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -513,6 +515,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		} finally {
 			getLock(name).writeLock().unlock();
 		}
+        manager.addToDirty(entity);
 	}
 
 	private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity, String[] inMapFields, 
