@@ -152,6 +152,7 @@ public abstract class Transaction<T>
             if (state == TransactionState.RUNNING && c != null)
             {
                 provider.rollbackTransaction(c);
+                manager.flushDirty();
             }
             provider.setCloseable(c, true);
             closeQuietly(c);

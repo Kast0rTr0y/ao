@@ -1,7 +1,19 @@
 package net.java.ao.it;
 
+import java.net.URL;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.Callable;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+
+import org.junit.Test;
+
 import net.java.ao.DBParam;
 import net.java.ao.EntityStreamCallback;
 import net.java.ao.Query;
@@ -17,17 +29,7 @@ import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
-import org.junit.Test;
-
-import java.net.URL;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -287,6 +289,17 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         assertEquals(1, people.length);
         assertEquals(PersonData.getId(), people[0].getID());
     }
+
+    @Test
+    public void testFindSingleEntity() throws SQLException
+    {
+        final Company company = entityManager.findSingleEntity(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true);
+
+        assertNotNull(company);
+        assertEquals(CompanyData.getIds()[1], company.getCompanyID());
+    }
+
+
 
     @Test
     public void testFindCheckPreload() throws Exception

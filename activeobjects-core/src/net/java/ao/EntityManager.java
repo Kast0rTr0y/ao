@@ -96,6 +96,8 @@ public class EntityManager
 	private final ReadWriteLock valGenCacheLock = new ReentrantReadWriteLock(true);
 
 	private final RelationsCache relationsCache = new RAMRelationsCache();
+    
+    private final Set<RawEntity<?>> dirty = new HashSet<RawEntity<?>>();
 
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified
@@ -181,6 +183,10 @@ public class EntityManager
         {
             entityCacheLock.writeLock().unlock();
         }
+        
+        synchronized (dirty) {
+            dirty.clear();
+        }
     }
 
 	/**
@@ -211,7 +217,60 @@ public class EntityManager
 		}
 
 		relationsCache.remove(types.toArray(new Class[types.size()]));
+        synchronized (dirty) {
+            dirty.removeAll(Arrays.asList(entities));
+        }
 	}
+
+    void addToDirty(final RawEntity<?> entity)
+    {
+        synchronized (dirty) {
+            dirty.add(entity);
+        }
+    }
+
+    void removeFromDirty(final RawEntity<?> entity)
+    {
+        synchronized (dirty) {
+            dirty.remove(entity);
+        }
+    }
+
+    /**
+     * Flushes the value caches of the specified entities along with all of the relevant
+     * relations cache entries for all dirty entries. This should be called after a transaction is rolled back.  This
+     * does not actually remove the entity instances themselves from the instance cache.  Rather, it just flushes all of
+     * their internally cached values (with the exception of the primary key).
+     */
+    public void flushDirty()
+    {
+        synchronized (dirty) {
+            final RawEntity<?>[] entities = dirty.toArray(new RawEntity<?>[dirty.size()]);
+            List<Class<? extends RawEntity<?>>> types = new ArrayList<Class<? extends RawEntity<?>>>(entities.length);
+            Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
+
+            proxyLock.readLock().lock();
+            try {
+                for (RawEntity<?> entity : entities) {
+                    verify(entity);
+
+                    types.add(entity.getEntityType());
+                    toFlush.put(entity, proxies.get(entity));
+                }
+            } finally {
+                proxyLock.readLock().unlock();
+            }
+
+            for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
+                final CacheLayer cacheLayer = entry.getValue().getCacheLayer(entry.getKey());
+                cacheLayer.clearDirty();
+                cacheLayer.clear();
+            }
+
+            relationsCache.remove(types.toArray(new Class[types.size()]));
+            dirty.clear();
+        }
+    }
 
 	/**
 	 * <p>Returns an array of entities of the specified type corresponding to the
@@ -628,6 +687,40 @@ public class EntityManager
 	public final <T extends RawEntity<K>, K> T[] find(Class<T> type, String criteria, Object... parameters) throws SQLException {
 		return find(type, Query.select().where(criteria, parameters));
 	}
+
+    /**
+	 * <p>Convenience method to select a single entity of the given type with the
+	 * specified, parameterized criteria.  The <code>criteria</code> String
+	 * specified is appended to the SQL prepared statement immediately
+	 * following the <code>WHERE</code>.</p>
+	 *
+	 * <p>Example:</p>
+	 *
+	 * <pre>manager.findSingleEntity(Person.class, "name LIKE ? OR age &gt; ?", "Joe", 9);</pre>
+	 *
+	 * <p>This actually delegates the call to the {@link #find(Class, String, Object...)}
+	 * method, properly parameterizing the {@link Object} object.</p>
+	 *
+	 * @param type		The type of the entities to retrieve.
+	 * @param criteria		A parameterized WHERE statement used to determine the results.
+	 * @param parameters	A varargs array of parameters to be passed to the executed
+	 * 	prepared statement.  The length of this array <i>must</i> match the number of
+	 * 	parameters (denoted by the '?' char) in the <code>criteria</code>.
+	 * @return	A single entity of the given type which match the specified criteria or null if none returned
+	 */
+    public <T extends RawEntity<K>, K> T findSingleEntity(Class<T> type, String criteria, Object... parameters) throws SQLException {
+        T[] entities = find(type, criteria, parameters);
+
+        if (entities.length < 1) {
+            return null;
+        } else if (entities.length > 1) {
+            throw new IllegalStateException("Found more than one entities of type '"
+                    + type.getSimpleName() + "' that matched the criteria '" + criteria
+                    + "' and parameters '" + parameters.toString() + "'.");
+        }
+
+        return entities[0];
+    }
 
 	/**
 	 * <p>Selects all entities matching the given type and {@link Query}.  By default, the
