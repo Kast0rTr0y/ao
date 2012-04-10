@@ -5,6 +5,7 @@ import net.java.ao.RawEntity;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.converters.NameConverters;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.Callable;
 public abstract class AbstractTestCreateTable extends ActiveObjectsIntegrationTest
 {
     @Test
+    @NonTransactional
     public final void testCreateTable() throws Exception
     {
         for (Class<? extends Entity> entity : getEntities())
