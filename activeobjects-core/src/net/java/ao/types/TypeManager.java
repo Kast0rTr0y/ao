@@ -126,7 +126,7 @@ public final class TypeManager
     public static TypeManager hsql()
     {
         return new TypeManager.Builder()
-                .addMapping(blobType(), schemaType("BINARY"))
+                .addMapping(blobType(), schemaType("LONGVARBINARY"))
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
