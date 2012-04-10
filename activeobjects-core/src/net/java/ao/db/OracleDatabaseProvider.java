@@ -169,7 +169,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)) + ")";
+        String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true)) + ")";
         return SQLAction.of(addStmt);
     }
 
