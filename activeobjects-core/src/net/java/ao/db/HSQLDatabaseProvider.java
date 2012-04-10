@@ -320,7 +320,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                         .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
             }
 
-            if (oldField.isNotNull() && !field.isNotNull())
+            if (!field.isNotNull())
             {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
@@ -328,7 +328,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                         .append(" SET NULL")));
             }
 
-            if (!oldField.isNotNull() && field.isNotNull())
+            if (field.isNotNull())
             {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
