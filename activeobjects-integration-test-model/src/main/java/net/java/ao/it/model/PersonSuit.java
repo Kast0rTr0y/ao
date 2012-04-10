@@ -29,8 +29,8 @@ public interface PersonSuit extends Entity {
 	public PersonLegalDefence getPersonLegalDefence();
 	public void setPersonLegalDefence(PersonLegalDefence defence);
 	
-	@Default("false")
-	public boolean isDeleted();
-	@Default("false")
-	public void setDeleted(boolean deleted);
+	@Default("N")
+	public String isDeleted();
+	@Default("N")
+	public void setDeleted(String deleted);
 }

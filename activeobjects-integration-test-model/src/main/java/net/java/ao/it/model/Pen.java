@@ -30,8 +30,8 @@ public interface Pen extends Entity {
 	public Person getPerson();
 	public void setPerson(Person person);
 	
-	@Default("false")
-	public boolean isDeleted();
-	@Default("false")
-	public void setDeleted(boolean deleted);
+	@Default("N")
+	public String isDeleted();
+	@Default("N")
+	public void setDeleted(String deleted);
 }
