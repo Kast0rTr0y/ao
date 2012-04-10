@@ -234,7 +234,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     @Override
     protected RenderFieldOptions renderFieldOptionsInAlterColumn()
     {
-        return new RenderFieldOptions(false, false);
+        return new RenderFieldOptions(false, false, true);
     }
 
     @Override
@@ -330,7 +330,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     @Override
 	protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        return SQLAction.of("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true)));
+        return SQLAction.of("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true)));
 	}
 
 	@Override

@@ -20,10 +20,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import net.java.ao.schema.Case;
 import net.java.ao.schema.IndexNameConverter;
@@ -67,9 +65,7 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1004,7 +1000,7 @@ public abstract class DatabaseProvider
         StringBuilder append = new StringBuilder();
         for (DDLField field : table.getFields())
         {
-            back.append("    ").append(renderField(nameConverters, table, field, new RenderFieldOptions(true, true))).append(",\n");
+            back.append("    ").append(renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true))).append(",\n");
 
             if (field.isPrimaryKey())
             {
@@ -1221,7 +1217,7 @@ public abstract class DatabaseProvider
      */
     protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
     {
-        String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true));
+        String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true));
         return SQLAction.of(addStmt);
     }
     
@@ -1274,7 +1270,7 @@ public abstract class DatabaseProvider
 
     protected RenderFieldOptions renderFieldOptionsInAlterColumn()
     {
-        return new RenderFieldOptions(true, true, true);
+        return new RenderFieldOptions(true, true, true, true);
     }
 
     /**
@@ -1504,7 +1500,7 @@ public abstract class DatabaseProvider
      * @param options
      * @return A DDL fragment to be embedded in a statement elsewhere.
      */
-    protected String renderField(NameConverters nameConverters, DDLTable table, DDLField field, RenderFieldOptions options)
+    protected final String renderField(NameConverters nameConverters, DDLTable table, DDLField field, RenderFieldOptions options)
     {
         StringBuilder back = new StringBuilder();
 
@@ -1535,7 +1531,7 @@ public abstract class DatabaseProvider
             }
         }
 
-        if (field.isNotNull() || field.isUnique())
+        if (options.renderNotNull && (field.isNotNull() || field.isUnique()))
         {
             back.append(" NOT NULL");
         }
@@ -2420,17 +2416,19 @@ public abstract class DatabaseProvider
     {
         public final boolean renderUnique;
         public final boolean renderDefault;
+        public final boolean renderNotNull;
         public final boolean forceNull;
 
-        public RenderFieldOptions(boolean renderUnique, boolean renderDefault)
+        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull)
         {
-            this(renderUnique, renderDefault, false);
+            this(renderUnique, renderDefault, renderNotNull, false);
         }
 
-        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean forceNull)
+        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull, boolean forceNull)
         {
             this.renderUnique = renderUnique;
             this.renderDefault = renderDefault;
+            this.renderNotNull = renderNotNull;
             this.forceNull = forceNull;
         }
     }
