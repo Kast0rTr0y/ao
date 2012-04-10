@@ -77,9 +77,9 @@ public interface Person extends Entity {
 	@OneToOne
 	public Nose getNose();
 	
-	@OneToMany(where="deleted = '0'")
+	@OneToMany(where="deleted = 'N'")
 	public Pen[] getPens();
 	
-	@ManyToMany(value=PersonSuit.class, where="deleted = '0'")
+	@ManyToMany(value=PersonSuit.class, where="deleted = 'N'")
 	public PersonLegalDefence[] getPersonLegalDefences();
 }

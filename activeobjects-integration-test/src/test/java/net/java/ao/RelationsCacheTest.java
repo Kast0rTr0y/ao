@@ -16,6 +16,7 @@
 package net.java.ao;
 
 import net.java.ao.it.DatabaseProcessor;
+import net.java.ao.it.model.Deleted;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
 import net.java.ao.it.model.PersonLegalDefence;
@@ -80,7 +81,7 @@ public class RelationsCacheTest extends ActiveObjectsIntegrationTest
         final Person person = getPerson();
         Pen pen = person.getPens()[0];
 
-        pen.setDeleted(true);
+        pen.setDeleted(Deleted.TRUE.asString());
         pen.save();
 
         Pen pen2 = checkSqlExecuted(new Callable<Pen>()
@@ -106,7 +107,7 @@ public class RelationsCacheTest extends ActiveObjectsIntegrationTest
         pen2.setPerson(person);
         pen2.save();
 
-        pen.setDeleted(false);
+        pen.setDeleted(Deleted.FALSE.asString());
         pen.save();
     }
 
@@ -155,7 +156,7 @@ public class RelationsCacheTest extends ActiveObjectsIntegrationTest
         final Person person = getPerson();
         PersonLegalDefence defence = person.getPersonLegalDefences()[0];
         PersonSuit suit = entityManager.get(PersonSuit.class, PersonSuitData.getIds()[0]);
-        suit.setDeleted(true);
+        suit.setDeleted(Deleted.TRUE.asString());
         suit.save();
 
         checkSqlExecuted(new Callable<Void>()
@@ -167,7 +168,7 @@ public class RelationsCacheTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        suit.setDeleted(false);
+        suit.setDeleted(Deleted.FALSE.asString());
         suit.save();
         person.getPersonLegalDefences();
 
