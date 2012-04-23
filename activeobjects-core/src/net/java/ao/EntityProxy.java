@@ -91,12 +91,14 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     }
 
     @SuppressWarnings("unchecked")
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if(method.getName().equals("getEntityProxy")) {
+	public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        final String methodName = method.getName();
+
+        if(methodName.equals("getEntityProxy")) {
             return this;
         }
 
-		if (method.getName().equals("getEntityType")) {
+		if (methodName.equals("getEntityType")) {
 			return type;
 		}
 
@@ -105,7 +107,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			implementation.init((T) proxy);
 		}
 
-		MethodImplWrapper methodImpl = implementation.getMethod(method.getName(), method.getParameterTypes());
+		final MethodImplWrapper methodImpl = implementation.getMethod(methodName, method.getParameterTypes());
 		if (methodImpl != null) {
 			final Class<?> declaringClass = methodImpl.getMethod().getDeclaringClass();
 			if (!Object.class.equals(declaringClass)) {
@@ -119,92 +121,141 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 		}
 
-		if (method.getName().equals(pkAccessor.getName())) {
+		if (methodName.equals(pkAccessor.getName())) {
 			return getKey();
-		} else if (method.getName().equals("save")) {
+		}
+        if (methodName.equals("save")) {
 			save((RawEntity<K>) proxy);
-
 			return Void.TYPE;
-		} else if (method.getName().equals("getEntityManager")) {
+		}
+        if (methodName.equals("getEntityManager")) {
             return manager;
-        } else if (method.getName().equals("addPropertyChangeListener")) {
+        }
+        if (methodName.equals("addPropertyChangeListener")) {
 			addPropertyChangeListener((PropertyChangeListener) args[0]);
 			return null;
-		} else if (method.getName().equals("removePropertyChangeListener")) {
+		}
+        if (methodName.equals("removePropertyChangeListener")) {
 			removePropertyChangeListener((PropertyChangeListener) args[0]);
 			return null;
-		} else if (method.getName().equals("hashCode")) {
+		}
+        if (methodName.equals("hashCode")) {
 			return hashCodeImpl();
-		} else if (method.getName().equals("equals")) {
+		}
+        if (methodName.equals("equals")) {
 			return equalsImpl((RawEntity<K>) proxy, args[0]);
-		} else if (method.getName().equals("toString")) {
+		}
+        if (methodName.equals("toString")) {
 			return toStringImpl();
-		} else if (method.getName().equals("init")) {
+		}
+        if (methodName.equals("init")) {
 			return null;
 		}
-		
-		checkConstraints(method, args);
 
-        String tableName = getTableNameConverter().getName(type);
+        final AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
 
-		Class<?> attributeType = Common.getAttributeTypeFromMethod(method);
-		String polyFieldName = null;
-		
-		if (attributeType != null) {
-            polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null : 
-				getFieldNameConverter().getPolyTypeName(method));
-		}
-		
-		Mutator mutatorAnnotation = method.getAnnotation(Mutator.class);
-		Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
-		OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
-		OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
-		ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
+        if (annotations.getAnnotation(NotNull.class) != null && args != null && args.length > 0) {
+            if (args[0] == null) {
+                throw new IllegalArgumentException("Field '" + getFieldNameConverter().getName(method) + "' does not accept null values");
+            }
+        }
 
-        AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
-		
-		Transient transientAnnotation = annotations.getAnnotation(Transient.class);
-
-		// check annotations first, they trump all
+        final OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
         if (oneToOneAnnotation != null && Common.interfaceInheritsFrom(method.getReturnType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
+            if (oneToOneAnnotation.reverse().isEmpty()) {
+                return legacyFetchOneToOne((RawEntity<K>) proxy, method, oneToOneAnnotation);
+            } else {
+                // TODO
+                return legacyFetchOneToOne((RawEntity<K>) proxy, method, oneToOneAnnotation);
+            }
+		}
 
-            Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0], 
-					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
-					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
-			
-			return back.length == 0 ? null : back[0];
-		} else if (oneToManyAnnotation != null && method.getReturnType().isArray() 
+        final OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
+        if (oneToManyAnnotation != null && method.getReturnType().isArray()
 				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+            if (oneToManyAnnotation.reverse().isEmpty()) {
+                return legacyFetchOneToMany((RawEntity<K>) proxy, method, oneToManyAnnotation);
+            } else {
+                // TODO
+                return legacyFetchOneToMany((RawEntity<K>) proxy, method, oneToManyAnnotation);
+            }
+		}
 
-            return retrieveRelations((RawEntity<K>) proxy, new String[0], 
-					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
-					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
-		} else if (manyToManyAnnotation != null && method.getReturnType().isArray() 
+        final ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
+        if (manyToManyAnnotation != null && method.getReturnType().isArray()
 				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> throughType = manyToManyAnnotation.value();
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+            if (manyToManyAnnotation.reverse().isEmpty() || manyToManyAnnotation.through().isEmpty()) {
+                return legacyFetchManyToMany((RawEntity<K>) proxy, method, manyToManyAnnotation);
+            } else {
+                // TODO
+                return legacyFetchManyToMany((RawEntity<K>) proxy, method, manyToManyAnnotation);
+            }
+		}
 
-            return retrieveRelations((RawEntity<K>) proxy, null, 
-					Common.getMappingFields(getFieldNameConverter(),
-							throughType, type), throughType, (Class<? extends RawEntity>) type, 
-							Common.where(manyToManyAnnotation, getFieldNameConverter()),
-							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, this.type),
-							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
-		} else if (Common.isAccessor(method)) {
-            return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, getFieldNameConverter().getName(method),
-                    polyFieldName, method.getReturnType(), transientAnnotation == null);
-		} else if (Common.isMutator(method)) {
+        final String polyFieldName;
+        final Class<?> attributeType = Common.getAttributeTypeFromMethod(method);
+        if (attributeType == null) {
+            polyFieldName = null;
+        } else {
+            polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null :
+                    getFieldNameConverter().getPolyTypeName(method));
+        }
+
+        if (Common.isAccessor(method)) {
+            return invokeGetter((RawEntity<?>) proxy, getKey(), getTableNameConverter().getName(type), getFieldNameConverter().getName(method),
+                    polyFieldName, method.getReturnType(), annotations.getAnnotation(Transient.class) == null);
+		}
+
+        if (Common.isMutator(method)) {
             invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], polyFieldName);
-
 			return Void.TYPE;
 		}
 
 		throw new RuntimeException("Cannot handle method with signature: " + method.toString());
 	}
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private Object legacyFetchManyToMany(final RawEntity<K> proxy, final Method method, final ManyToMany manyToManyAnnotation) throws SQLException
+    {
+        final Class<? extends RawEntity<?>> throughType = manyToManyAnnotation.value();
+        final Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        return retrieveRelations((RawEntity<K>) proxy, null,
+                Common.getMappingFields(getFieldNameConverter(),
+                        throughType, type), throughType, (Class<? extends RawEntity>) type,
+                        Common.where(manyToManyAnnotation, getFieldNameConverter()),
+                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, this.type),
+                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
+    }
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private Object legacyFetchOneToMany(final RawEntity<K> proxy, final Method method, final OneToMany oneToManyAnnotation) throws SQLException
+    {
+        final Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        return retrieveRelations((RawEntity<K>) proxy, new String[0],
+                new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
+                (Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
+    }
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private Object legacyFetchOneToOne(final RawEntity<K> proxy, final Method method, final OneToOne oneToOneAnnotation) throws SQLException
+    {
+        Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
+        final Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0],
+                new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
+                (Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
+        return back.length == 0 ? null : back[0];
+    }
 
     private TableNameConverter getTableNameConverter()
     {
@@ -999,15 +1050,4 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         return type.equals(int.class) || type.equals(Integer.class);
     }
 
-    private void checkConstraints(Method method, Object[] args) {
-        AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
-		
-		NotNull notNullAnnotation = annotations.getAnnotation(NotNull.class);
-		if (notNullAnnotation != null && args != null && args.length > 0) {
-			if (args[0] == null) {
-                String name = getFieldNameConverter().getName(method);
-				throw new IllegalArgumentException("Field '" + name + "' does not accept null values");
-			}
-		}
-	}
 }

@@ -59,6 +59,16 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface OneToMany {
+
+    /**
+     * <p>The name of the corresponding property in the entities returned by the annotated method.</p>
+     *
+     * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
+     * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>
+     *
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    String reverse() default "";
 	
 	/**
 	 * <p>A String clause allowing developer-specified additional
