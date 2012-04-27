@@ -45,8 +45,6 @@ import com.google.common.collect.Iterables;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
-import net.java.ao.cache.RAMRelationsCache;
-import net.java.ao.cache.RelationsCache;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.CachingNameConverters;
 import net.java.ao.schema.FieldNameConverter;
@@ -95,8 +93,6 @@ public class EntityManager
 	private Map<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 	private final ReadWriteLock valGenCacheLock = new ReentrantReadWriteLock(true);
 
-	private final RelationsCache relationsCache = new RAMRelationsCache();
-    
     private final Set<RawEntity<?>> dirty = new HashSet<RawEntity<?>>();
 
     /**
@@ -177,7 +173,6 @@ public class EntityManager
         try
         {
             entityCache.clear();
-            relationsCache.flush();
         }
         finally
         {
@@ -216,7 +211,6 @@ public class EntityManager
 			entry.getValue().flushCache(entry.getKey());
 		}
 
-		relationsCache.remove(types.toArray(new Class[types.size()]));
         synchronized (dirty) {
             dirty.removeAll(Arrays.asList(entities));
         }
@@ -267,7 +261,6 @@ public class EntityManager
                 cacheLayer.clear();
             }
 
-            relationsCache.remove(types.toArray(new Class[types.size()]));
             dirty.clear();
         }
     }
@@ -527,8 +520,6 @@ public class EntityManager
             closeQuietly(connection);
         }
 
-		relationsCache.remove(type);
-
 		back.init();
 		return back;
 	}
@@ -626,7 +617,6 @@ public class EntityManager
 						typeInfo.getLogicalType().putToDatabase(this, stmt, index++, entity, typeInfo.getJdbcWriteType());
 					}
 
-					relationsCache.remove(type);
 					stmt.executeUpdate();
 				}
             }
@@ -1168,10 +1158,6 @@ public class EntityManager
 		} finally {
 			proxyLock.readLock().unlock();
 		}
-	}
-
-	RelationsCache getRelationsCache() {
-		return relationsCache;
 	}
 
 	private Reference<RawEntity<?>> createRef(RawEntity<?> entity) {

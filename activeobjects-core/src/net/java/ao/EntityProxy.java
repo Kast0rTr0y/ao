@@ -237,10 +237,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             }
             fields = back.toArray(new String[back.size()]);
         }
-        final RawEntity<?>[] cached = manager.getRelationsCache().get(proxy, type, type, fields, where);
-        if (cached != null) {
-            return cached;
-        }
         final List<RawEntity<?>> back = new ArrayList<RawEntity<?>>();
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         final String table = getTableNameConverter().getName(type);
@@ -334,9 +330,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         } finally {
             conn.close();
         }
-        final RawEntity<?>[] fetched = back.toArray((RawEntity<?>[]) Array.newInstance(type, back.size()));
-        manager.getRelationsCache().put(proxy, fetched, type, fetched, type, fields, where);
-        return fetched;
+        return back.toArray((RawEntity<?>[]) Array.newInstance(type, back.size()));
     }
 
     private RawEntity fetchOneToOne(RawEntity<K> proxy, Method method, OneToOne annotation) throws SQLException
@@ -465,10 +459,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			TypeInfo pkType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
             pkType.getLogicalType().putToDatabase(this.manager, stmt, index++, key, pkType.getJdbcWriteType());
 
-            this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
-
-            this.manager.getRelationsCache().remove(entity, dirtyFields);
 
 			stmt.executeUpdate();
 
@@ -727,11 +718,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
         final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getFieldNameConverter()), inMapFields, outMapFields, where);
 
-        V[] cached = manager.getRelationsCache().get(entity, finalType, type, fields, where);
-		if (cached != null) {
-			return cached;
-		}
-		
 		List<V> back = new ArrayList<V>();
 		List<RawEntity<?>> throughValues = new ArrayList<RawEntity<?>>();
 		List<String> resPolyNames = new ArrayList<String>(thatPolyNames == null ? 0 : thatPolyNames.length);
@@ -1030,13 +1016,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             closeQuietly(res, stmt, conn);
         }
 		
-		cached = back.toArray((V[]) Array.newInstance(finalType, back.size()));
-
-        manager.getRelationsCache().put(entity, 
-				(throughValues.size() > 0 ? throughValues.toArray(new RawEntity[throughValues.size()]) : cached), 
-				type, cached, finalType, fields, where);
-		
-		return cached;
+		return back.toArray((V[]) Array.newInstance(finalType, back.size()));
 	}
 
     private TypeManager getTypeManager()

@@ -22,11 +22,6 @@ import net.java.ao.RawEntity;
  * @author Daniel Spiewak
  */
 public class RAMCache implements Cache {
-	private final RAMRelationsCache relationsCache;
-	
-	public RAMCache() {
-		relationsCache = new RAMRelationsCache();
-	}
 
 	public CacheLayer createCacheLayer(RawEntity<?> entity) {
 		return new RAMCacheLayer();
@@ -35,7 +30,4 @@ public class RAMCache implements Cache {
 	public void dispose() {
 	}
 
-	public RelationsCache getRelationsCache() {
-		return relationsCache;
-	}
 }
