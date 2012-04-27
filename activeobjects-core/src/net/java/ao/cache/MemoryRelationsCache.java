@@ -37,7 +37,7 @@ final class MemoryRelationsCache implements RelationsCache
     }
 
     @Override
-    public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where)
+    public <T extends RawEntity<?>> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where)
     {
         return (T[]) cache.get(new MemoryRelationsCacheKey(from, toType, throughType, fields, where));
     }

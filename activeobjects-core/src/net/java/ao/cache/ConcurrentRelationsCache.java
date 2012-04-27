@@ -20,7 +20,7 @@ final class ConcurrentRelationsCache implements RelationsCache
     }
 
     @Override
-    public <T extends RawEntity<K>, K> T[] get(final RawEntity<?> from, final Class<T> toType, final Class<? extends RawEntity<?>> throughType,
+    public <T extends RawEntity<?>> T[] get(final RawEntity<?> from, final Class<T> toType, final Class<? extends RawEntity<?>> throughType,
                                                final String[] fields, final String where)
     {
         return withLock(lock.readLock(), new Callable<T[]>()

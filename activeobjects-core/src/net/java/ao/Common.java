@@ -91,7 +91,11 @@ public final class Common {
 		return otherType.isAssignableFrom(type);
 	}
 
-	public static String[] getMappingFields(FieldNameConverter converter, Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to)
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    public static String[] getMappingFields(FieldNameConverter converter, Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to)
     {
 		Set<String> back = new LinkedHashSet<String>();
 
@@ -570,6 +574,7 @@ public final class Common {
      * any exception
      * @param resultSet the result set to close
      */
+    @Deprecated
     public static void closeQuietly(ResultSet resultSet)
     {
         if (resultSet != null)
@@ -590,6 +595,7 @@ public final class Common {
      * any exception
      * @param statement the statement to close
      */
+    @Deprecated
     public static void closeQuietly(Statement statement)
     {
         if (statement != null)
@@ -610,6 +616,7 @@ public final class Common {
      * any exception
      * @param connection the connection to close, can be {@code null}
      */
+    @Deprecated
     public static void closeQuietly(Connection connection)
     {
         if (connection != null)

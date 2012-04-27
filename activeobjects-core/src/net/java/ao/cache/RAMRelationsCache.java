@@ -35,7 +35,7 @@ public final class RAMRelationsCache implements RelationsCache
     }
 
     @Override
-    public <T extends RawEntity<K>, K> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where)
+    public <T extends RawEntity<?>> T[] get(RawEntity<?> from, Class<T> toType, Class<? extends RawEntity<?>> throughType, String[] fields, String where)
     {
         final T[] ts = cache.get(from, toType, throughType, fields, where);
 
