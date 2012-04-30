@@ -224,19 +224,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final String inMapField = annotation.reverse();
         final String outMapField = Common.getPrimaryKeyField(type, getFieldNameConverter());
         final String where = where(annotation, getFieldNameConverter());
-        final String[] fields;
-        {
-            final List<String> back = new ArrayList<String>();
-            back.add(outMapField);
-            if (!inMapField.trim().equalsIgnoreCase(outMapField)) {
-                back.add(inMapField);
-            }
-            final Matcher matcher = SqlUtils.WHERE_CLAUSE.matcher(where);
-            while (matcher.find()) {
-                back.add(matcher.group(1));
-            }
-            fields = back.toArray(new String[back.size()]);
-        }
         final List<RawEntity<?>> back = new ArrayList<RawEntity<?>>();
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         final String table = getTableNameConverter().getName(type);
