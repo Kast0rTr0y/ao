@@ -97,8 +97,6 @@ public class EntityManager
 
 	private final RelationsCache relationsCache = new RAMRelationsCache();
     
-    private final Set<RawEntity<?>> dirty = new HashSet<RawEntity<?>>();
-
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified
      * {@link DatabaseProvider}.  This constructor initializes the entity and proxy
@@ -183,10 +181,6 @@ public class EntityManager
         {
             entityCacheLock.writeLock().unlock();
         }
-        
-        synchronized (dirty) {
-            dirty.clear();
-        }
     }
 
 	/**
@@ -217,60 +211,7 @@ public class EntityManager
 		}
 
 		relationsCache.remove(types.toArray(new Class[types.size()]));
-        synchronized (dirty) {
-            dirty.removeAll(Arrays.asList(entities));
-        }
 	}
-
-    void addToDirty(final RawEntity<?> entity)
-    {
-        synchronized (dirty) {
-            dirty.add(entity);
-        }
-    }
-
-    void removeFromDirty(final RawEntity<?> entity)
-    {
-        synchronized (dirty) {
-            dirty.remove(entity);
-        }
-    }
-
-    /**
-     * Flushes the value caches of the specified entities along with all of the relevant
-     * relations cache entries for all dirty entries. This should be called after a transaction is rolled back.  This
-     * does not actually remove the entity instances themselves from the instance cache.  Rather, it just flushes all of
-     * their internally cached values (with the exception of the primary key).
-     */
-    public void flushDirty()
-    {
-        synchronized (dirty) {
-            final RawEntity<?>[] entities = dirty.toArray(new RawEntity<?>[dirty.size()]);
-            List<Class<? extends RawEntity<?>>> types = new ArrayList<Class<? extends RawEntity<?>>>(entities.length);
-            Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
-
-            proxyLock.readLock().lock();
-            try {
-                for (RawEntity<?> entity : entities) {
-                    verify(entity);
-
-                    types.add(entity.getEntityType());
-                    toFlush.put(entity, proxies.get(entity));
-                }
-            } finally {
-                proxyLock.readLock().unlock();
-            }
-
-            for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
-                final CacheLayer cacheLayer = entry.getValue().getCacheLayer(entry.getKey());
-                cacheLayer.clearDirty();
-                cacheLayer.clear();
-            }
-
-            relationsCache.remove(types.toArray(new Class[types.size()]));
-            dirty.clear();
-        }
-    }
 
 	/**
 	 * <p>Returns an array of entities of the specified type corresponding to the
