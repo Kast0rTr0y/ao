@@ -83,8 +83,15 @@ public class EntityManager
 	private Map<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> proxies;
 	private final ReadWriteLock proxyLock = new ReentrantReadWriteLock(true);
 
-	private Map<CacheKey<?>, Reference<RawEntity<?>>> entityCache;
-	private final ReadWriteLock entityCacheLock = new ReentrantReadWriteLock(true);
+	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
+
+        @Override
+        protected Map<CacheKey<?>, Reference<RawEntity<?>>> initialValue()
+        {
+            return new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
+        }
+
+    };
 
 	private Cache cache;
 	private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
@@ -124,7 +131,6 @@ public class EntityManager
             proxies = new MapMaker().softKeys().makeMap();
         }
 
-        entityCache = new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
         cache = new RAMCache();
         valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
 
@@ -171,16 +177,8 @@ public class EntityManager
 			entry.getValue().flushCache(entry.getKey());
 		}
 
-        entityCacheLock.writeLock().lock();
-        try
-        {
-            entityCache.clear();
-            relationsCache.flush();
-        }
-        finally
-        {
-            entityCacheLock.writeLock().unlock();
-        }
+        entityCache.get().clear();
+        relationsCache.flush();
     }
 
 	/**
@@ -280,21 +278,16 @@ public class EntityManager
 		int index = 0;
 
 		for (K key : keys) {
-			entityCacheLock.writeLock().lock();
-			try {	// upcast to workaround bug in javac
-				Reference<?> reference = entityCache.get(new CacheKey<K>(key, type));
-				Reference<T> ref = (Reference<T>) reference;
-				T entity = (ref == null ? null : ref.get());
+            Reference<?> reference = entityCache.get().get(new CacheKey<K>(key, type)); // upcast to workaround bug in javac
+            Reference<T> ref = (Reference<T>) reference;
+            T entity = (ref == null ? null : ref.get());
 
-				if (entity != null) {
-					back[index++] = entity;
-				} else {
-					back[index++] = create.invoke(key);
-				}
-			} finally {
-				entityCacheLock.writeLock().unlock();
-			}
-		}
+            if (entity != null) {
+                back[index++] = entity;
+            } else {
+                back[index++] = create.invoke(key);
+            }
+        }
 
 		return back;
 	}
@@ -322,7 +315,7 @@ public class EntityManager
 			proxyLock.writeLock().unlock();
 		}
 
-		entityCache.put(new CacheKey<K>(key, type), createRef(entity));
+		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
 		return entity;
 	}
 
@@ -539,60 +532,55 @@ public class EntityManager
 			organizedEntities.get(type).add(entity);
 		}
 
-		entityCacheLock.writeLock().lock();
-		try {
-			Connection conn = null;
-            PreparedStatement stmt = null;
-			try
-            {
-                conn = provider.getConnection();
-				for (Class<? extends RawEntity<?>> type : organizedEntities.keySet()) {
-					List<RawEntity<?>> entityList = organizedEntities.get(type);
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            conn = provider.getConnection();
+            for (Class<? extends RawEntity<?>> type : organizedEntities.keySet()) {
+                List<RawEntity<?>> entityList = organizedEntities.get(type);
 
-					StringBuilder sql = new StringBuilder("DELETE FROM ");
-                    sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
-					sql.append(" WHERE ").append(provider.processID(
-							Common.getPrimaryKeyField(type, getFieldNameConverter()))).append(" IN (?");
+                StringBuilder sql = new StringBuilder("DELETE FROM ");
+                sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
+                sql.append(" WHERE ").append(provider.processID(
+                        Common.getPrimaryKeyField(type, getFieldNameConverter()))).append(" IN (?");
 
-					for (int i = 1; i < entityList.size(); i++) {
-						sql.append(",?");
-					}
-					sql.append(')');
+                for (int i = 1; i < entityList.size(); i++) {
+                    sql.append(",?");
+                }
+                sql.append(')');
 
-					stmt = provider.preparedStatement(conn, sql);
+                stmt = provider.preparedStatement(conn, sql);
 
-					int index = 1;
-					for (RawEntity<?> entity : entityList) {
-					    TypeInfo typeInfo = provider.getTypeManager().getType(entity.getEntityType());
-						typeInfo.getLogicalType().putToDatabase(this, stmt, index++, entity, typeInfo.getJdbcWriteType());
-					}
+                int index = 1;
+                for (RawEntity<?> entity : entityList) {
+                    TypeInfo typeInfo = provider.getTypeManager().getType(entity.getEntityType());
+                    typeInfo.getLogicalType().putToDatabase(this, stmt, index++, entity, typeInfo.getJdbcWriteType());
+                }
 
-					relationsCache.remove(type);
-					stmt.executeUpdate();
-				}
+                relationsCache.remove(type);
+                stmt.executeUpdate();
             }
-            finally
-            {
-                closeQuietly(stmt);
-                closeQuietly(conn);
-            }
+        }
+        finally
+        {
+            closeQuietly(stmt);
+            closeQuietly(conn);
+        }
 
+        for (RawEntity<?> entity : entities) {
+            entityCache.get().remove(new CacheKey(Common.getPrimaryKeyValue(entity), entity.getEntityType()));
+        }
+
+        proxyLock.writeLock().lock();
+        try {
             for (RawEntity<?> entity : entities) {
-				entityCache.remove(new CacheKey(Common.getPrimaryKeyValue(entity), entity.getEntityType()));
-			}
-
-			proxyLock.writeLock().lock();
-			try {
-				for (RawEntity<?> entity : entities) {
-					proxies.remove(entity);
-				}
-			} finally {
-				proxyLock.writeLock().unlock();
-			}
-		} finally {
-			entityCacheLock.writeLock().unlock();
-		}
-	}
+                proxies.remove(entity);
+            }
+        } finally {
+            proxyLock.writeLock().unlock();
+        }
+    }
 
 	/**
 	 * Returns all entities of the given type.  This actually peers the call to
