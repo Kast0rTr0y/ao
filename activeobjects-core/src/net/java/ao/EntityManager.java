@@ -181,6 +181,13 @@ public class EntityManager
         relationsCache.flush();
     }
 
+    /**
+     * Flush the current thread's entity cache. Should be called after a transaction is committed or rolled back.
+     */
+    public void flushEntityCache() {
+        entityCache.get().clear();
+    }
+
 	/**
 	 * Flushes the value caches of the specified entities along with all of the relevant
 	 * relations cache entries.  This should be called after a process outside of AO control
