@@ -153,6 +153,8 @@ public abstract class Transaction<T>
             {
                 provider.rollbackTransaction(c);
                 manager.flushAll();
+            } else {
+                manager.flushEntityCache();
             }
             provider.setCloseable(c, true);
             closeQuietly(c);
