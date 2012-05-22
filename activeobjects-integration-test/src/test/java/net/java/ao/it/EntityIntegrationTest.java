@@ -30,7 +30,6 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.beans.PropertyChangeEvent;
@@ -41,8 +40,6 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -629,22 +626,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToManyRetrievalFromCache() throws Exception
-    {
-        final Person person = getPerson();
-        person.getPens(); // caching
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPens();
-                return null;
-            }
-        });
-    }
-
-    @Test
     public void testOneToManyCacheExpiry() throws Exception
     {
         final Person person = getPerson();
@@ -770,22 +751,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-    }
-
-    @Test
-    public void testManyToManyRetrievalFromCache() throws Exception
-    {
-        final Person person = getPerson();
-        person.getPersonLegalDefences();
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
     }
 
     @Test
@@ -972,22 +937,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-    }
-
-    @Test
-    public void testPolymorphicOneToManyRetrievalFromCache() throws Exception
-    {
-        final Post post = getPost();
-        post.getComments(); // caching
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                post.getComments();
-                return null;
-            }
-        });
     }
 
     @Test
@@ -1182,33 +1131,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-    }
-
-    @Test
-    public void testPolymorphicManyToManyRetrievalFromCache() throws Exception
-    {
-        final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[0]);
-        magazine.getAuthors();
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        magazine.getDistributions();
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
     }
 
     @Test

@@ -45,8 +45,6 @@ import com.google.common.collect.Iterables;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
-import net.java.ao.cache.RAMRelationsCache;
-import net.java.ao.cache.RelationsCache;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.CachingNameConverters;
 import net.java.ao.schema.FieldNameConverter;
@@ -102,8 +100,6 @@ public class EntityManager
 	private Map<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 	private final ReadWriteLock valGenCacheLock = new ReentrantReadWriteLock(true);
 
-	private final RelationsCache relationsCache = new RAMRelationsCache();
-    
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified
      * {@link DatabaseProvider}.  This constructor initializes the entity and proxy
@@ -178,7 +174,6 @@ public class EntityManager
 		}
 
         entityCache.get().clear();
-        relationsCache.flush();
     }
 
     /**
@@ -196,15 +191,12 @@ public class EntityManager
 	 * of their internally cached values (with the exception of the primary key).
 	 */
 	public void flush(RawEntity<?>... entities) {
-		List<Class<? extends RawEntity<?>>> types = new ArrayList<Class<? extends RawEntity<?>>>(entities.length);
 		Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
 
 		proxyLock.readLock().lock();
 		try {
 			for (RawEntity<?> entity : entities) {
 				verify(entity);
-
-				types.add(entity.getEntityType());
 				toFlush.put(entity, proxies.get(entity));
 			}
 		} finally {
@@ -214,8 +206,6 @@ public class EntityManager
 		for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
 			entry.getValue().flushCache(entry.getKey());
 		}
-
-		relationsCache.remove(types.toArray(new Class[types.size()]));
 	}
 
 	/**
@@ -467,9 +457,6 @@ public class EntityManager
         {
             closeQuietly(connection);
         }
-
-		relationsCache.remove(type);
-
 		back.init();
 		return back;
 	}
@@ -564,8 +551,6 @@ public class EntityManager
                     TypeInfo typeInfo = provider.getTypeManager().getType(entity.getEntityType());
                     typeInfo.getLogicalType().putToDatabase(this, stmt, index++, entity, typeInfo.getJdbcWriteType());
                 }
-
-                relationsCache.remove(type);
                 stmt.executeUpdate();
             }
         }
@@ -1104,10 +1089,6 @@ public class EntityManager
 		} finally {
 			proxyLock.readLock().unlock();
 		}
-	}
-
-	RelationsCache getRelationsCache() {
-		return relationsCache;
 	}
 
 	private Reference<RawEntity<?>> createRef(RawEntity<?> entity) {

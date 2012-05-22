@@ -19,7 +19,6 @@ import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -34,7 +33,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -43,10 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Matcher;
-
-import net.java.ao.types.LogicalType;
-
 import static net.java.ao.Common.*;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -167,7 +161,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         if (oneToOneAnnotation != null && Common.interfaceInheritsFrom(method.getReturnType(), RawEntity.class)) {
 			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
 
-            Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0], 
+            Object[] back = retrieveRelations(new String[0],
 					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
 					(Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
 					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
@@ -177,7 +171,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
 			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
 
-            return retrieveRelations((RawEntity<K>) proxy, new String[0], 
+            return retrieveRelations(new String[0],
 					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
 					(Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
 					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
@@ -186,7 +180,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			Class<? extends RawEntity<?>> throughType = manyToManyAnnotation.value();
 			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
 
-            return retrieveRelations((RawEntity<K>) proxy, null, 
+            return retrieveRelations(null,
 					Common.getMappingFields(getFieldNameConverter(),
 							throughType, type), throughType, (Class<? extends RawEntity>) type, 
 							Common.where(manyToManyAnnotation, getFieldNameConverter()),
@@ -280,12 +274,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 			TypeInfo pkType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
             pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
-
-            this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
-
-            this.manager.getRelationsCache().remove(entity, dirtyFields);
-
 			stmt.executeUpdate();
 
 			for (PropertyChangeListener l : listeners) {
@@ -513,13 +502,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
 	}
 
-	private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity, String[] inMapFields, 
-			String[] outMapFields, Class<V> type, String where, String[] thisPolyNames) throws SQLException {
-		return retrieveRelations(entity, inMapFields, outMapFields, type, type, where, thisPolyNames, null);
+	private <V extends RawEntity<K>> V[] retrieveRelations(String[] inMapFields,
+                                                           String[] outMapFields, Class<V> type, String where, String[] thisPolyNames) throws SQLException {
+		return retrieveRelations(inMapFields, outMapFields, type, type, where, thisPolyNames, null);
 	}
 
-    private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity,
-                                                           String[] inMapFields,
+    private <V extends RawEntity<K>> V[] retrieveRelations(String[] inMapFields,
                                                            String[] outMapFields,
                                                            Class<? extends RawEntity<?>> type,
                                                            Class<V> finalType,
@@ -530,15 +518,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		if (inMapFields == null || inMapFields.length == 0) {
             inMapFields = Common.getMappingFields(getFieldNameConverter(), type, this.type);
 		}
-        final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getFieldNameConverter()), inMapFields, outMapFields, where);
-
-        V[] cached = manager.getRelationsCache().get(entity, finalType, type, fields, where);
-		if (cached != null) {
-			return cached;
-		}
-		
 		List<V> back = new ArrayList<V>();
-		List<RawEntity<?>> throughValues = new ArrayList<RawEntity<?>>();
 		List<String> resPolyNames = new ArrayList<String>(thatPolyNames == null ? 0 : thatPolyNames.length);
 
         String table = getTableNameConverter().getName(type);
@@ -553,7 +533,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             conn = provider.getConnection();
 			StringBuilder sql = new StringBuilder();
 			String returnField;
-			String throughField = null;
+			String throughField;
 			int numParams = 0;
 			
 			Set<String> selectFields = new LinkedHashSet<String>();
@@ -791,8 +771,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 
 			dbType = Common.getPrimaryKeyType(provider.getTypeManager(), finalType);
-			final TypeInfo<Object> throughDBType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<Object>>) type);
-			
 			res = stmt.executeQuery();
 			while (res.next()) {
                 K returnValue = dbType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) type, returnField);
@@ -808,13 +786,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				if (backType.equals(this.type) && returnValue.equals(key)) {
 					continue;
 				}
-				
-				if (throughField != null) {
-				    LogicalType logicalType = throughDBType.getLogicalType();
-                    throughValues.add(manager.peer((Class<? extends RawEntity<Object>>) type,
-                            logicalType.pullFromDatabase(manager, res, type, throughField)));
-				}
-
                 V returnValueEntity = manager.peer(backType, returnValue);
                 CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
 
@@ -834,14 +805,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		} finally {
             closeQuietly(res, stmt, conn);
         }
-		
-		cached = back.toArray((V[]) Array.newInstance(finalType, back.size()));
-
-        manager.getRelationsCache().put(entity, 
-				(throughValues.size() > 0 ? throughValues.toArray(new RawEntity[throughValues.size()]) : cached), 
-				type, cached, finalType, fields, where);
-		
-		return cached;
+		return back.toArray((V[]) Array.newInstance(finalType, back.size()));
 	}
 
     private TypeManager getTypeManager()
@@ -859,24 +823,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     {
         return (Class<O>) object.getClass();
     }
-
-    private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
-		List<String> back = new ArrayList<String>();
-		back.addAll(Arrays.asList(outMapFields));
-		
-		if (inMapFields != null && inMapFields.length > 0) {
-			if (!inMapFields[0].trim().equalsIgnoreCase(pkField)) {
-				back.addAll(Arrays.asList(inMapFields));
-			}
-		}
-		
-		Matcher matcher = SqlUtils.WHERE_CLAUSE.matcher(where);
-		while (matcher.find()) {
-			back.add(matcher.group(1));
-		}
-		
-		return back.toArray(new String[back.size()]);
-	}
 
     private <V> V convertValue(ResultSet res, String field, String polyName, Class<V> type) throws SQLException
     {
