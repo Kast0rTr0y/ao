@@ -155,8 +155,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				getFieldNameConverter().getPolyTypeName(method));
 		}
 		
-		Mutator mutatorAnnotation = method.getAnnotation(Mutator.class);
-		Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
 		OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
 		OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
 		ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
@@ -281,7 +279,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 			TypeInfo pkType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
-            pkType.getLogicalType().putToDatabase(this.manager, stmt, index++, key, pkType.getJdbcWriteType());
+            pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
 
             this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
 			cacheLayer.clearFlush();
@@ -944,11 +942,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
      */
     private boolean isBigDecimal(Object value, Class<?> type)
     {
-        if (!(value instanceof BigDecimal))
-        {
-            return false;
-        }
-        return isInteger(type) || isLong(type) || isFloat(type) || isDouble(type);
+        return value instanceof BigDecimal && (isInteger(type) || isLong(type) || isFloat(type) || isDouble(type));
     }
 
     private Object handleBigDecimal(Object value, Class<?> type)

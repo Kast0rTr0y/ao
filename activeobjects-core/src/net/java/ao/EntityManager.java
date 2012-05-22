@@ -374,7 +374,7 @@ public class EntityManager
 	 * be aware of the performance implications.</p>
 	 *
 	 * <p>This method delegates the action INSERT action to
-	 * {@link DatabaseProvider#insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)}.
+	 * {@link DatabaseProvider#insertReturningKey}.
 	 * This is necessary because not all databases support the JDBC <code>RETURN_GENERATED_KEYS</code>
 	 * constant (e.g. PostgreSQL and HSQLDB).  Thus, the database provider itself is
 	 * responsible for handling INSERTion and retrieval of the correct primary key
