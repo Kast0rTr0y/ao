@@ -53,8 +53,6 @@ import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-
-import com.google.common.collect.MapMaker;
 import net.java.ao.util.StringUtils;
 
 /**
@@ -77,10 +75,6 @@ public class EntityManager
 
     private final SchemaConfiguration schemaConfiguration;
     private final NameConverters nameConverters;
-
-	private Map<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> proxies;
-	private final ReadWriteLock proxyLock = new ReentrantReadWriteLock(true);
-
 	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
 
         @Override
@@ -117,16 +111,6 @@ public class EntityManager
     {
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
-
-        if (configuration.useWeakCache())
-        {
-            proxies = new MapMaker().weakKeys().makeMap();
-        }
-        else
-        {
-            proxies = new MapMaker().softKeys().makeMap();
-        }
-
         cache = new RAMCache();
         valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
 
@@ -158,19 +142,11 @@ public class EntityManager
 	 * method should be used instead.
 	 */
 	public void flushAll() {
-		List<Map.Entry<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>> toFlush = new LinkedList<Map.Entry<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>>>();
-
-		proxyLock.readLock().lock();
-		try {
-			for (Map.Entry<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> proxy : proxies.entrySet()) {
-				toFlush.add(proxy);
-			}
-		} finally {
-			proxyLock.readLock().unlock();
-		}
-
-		for (Map.Entry<RawEntity<?>, EntityProxy<? extends RawEntity<?>, ?>> entry : toFlush) {
-			entry.getValue().flushCache(entry.getKey());
+		for (final Reference<RawEntity<?>> entityReference : entityCache.get().values()) {
+            final RawEntity<?> entity = entityReference.get();
+            if (entity != null) {
+                ((EntityProxyAccessor) entity).getEntityProxy().flushCache(entity);
+            }
 		}
 
         entityCache.get().clear();
@@ -192,18 +168,11 @@ public class EntityManager
 	 */
 	public void flush(RawEntity<?>... entities) {
 		Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
-
-		proxyLock.readLock().lock();
-		try {
-			for (RawEntity<?> entity : entities) {
-				verify(entity);
-				toFlush.put(entity, proxies.get(entity));
-			}
-		} finally {
-			proxyLock.readLock().unlock();
-		}
-
-		for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
+        for (RawEntity<?> entity : entities) {
+            verify(entity);
+            toFlush.put(entity, getProxyForEntity(entity));
+        }
+        for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
 			entry.getValue().flushCache(entry.getKey());
 		}
 	}
@@ -304,14 +273,6 @@ public class EntityManager
 		EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, type, key);
 
 		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy));
-
-		proxyLock.writeLock().lock();
-		try {
-			proxies.put(entity, proxy);
-		} finally {
-			proxyLock.writeLock().unlock();
-		}
-
 		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
 		return entity;
 	}
@@ -562,15 +523,6 @@ public class EntityManager
 
         for (RawEntity<?> entity : entities) {
             entityCache.get().remove(new CacheKey(Common.getPrimaryKeyValue(entity), entity.getEntityType()));
-        }
-
-        proxyLock.writeLock().lock();
-        try {
-            for (RawEntity<?> entity : entities) {
-                proxies.remove(entity);
-            }
-        } finally {
-            proxyLock.writeLock().unlock();
         }
     }
 
@@ -1083,13 +1035,8 @@ public class EntityManager
 	}
 
     <T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
-		proxyLock.readLock().lock();
-		try {
-            return ((EntityProxyAccessor) entity).getEntityProxy();
-		} finally {
-			proxyLock.readLock().unlock();
-		}
-	}
+        return ((EntityProxyAccessor) entity).getEntityProxy();
+    }
 
 	private Reference<RawEntity<?>> createRef(RawEntity<?> entity) {
 		if (configuration.useWeakCache()) {
