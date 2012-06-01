@@ -83,10 +83,12 @@ public final class Common {
 		return back.toString();
 	}
 
+    @Deprecated
 	public static boolean interfaceInheritsFrom(Class<?> type, Class<?> superType) {
-		return typeInstanceOf(type, superType);
-	}
+        return superType.isAssignableFrom(type);
+    }
 
+    @Deprecated
 	public static boolean typeInstanceOf(Class<?> type, Class<?> otherType) {
 		return otherType.isAssignableFrom(type);
 	}
@@ -106,10 +108,10 @@ public final class Common {
 				continue;
 			}
 
-			if (interfaceInheritsFrom(attributeType, to)) {
+            if (to.isAssignableFrom(attributeType)) {
 				back.add(converter.getName(method));
 			} else if (attributeType.getAnnotation(Polymorphic.class) != null
-					&& interfaceInheritsFrom(to, attributeType)) {
+					&& attributeType.isAssignableFrom(to)) {
 				back.add(converter.getName(method));
 			}
 		}
@@ -124,7 +126,7 @@ public final class Common {
 		for (Method method : from.getMethods()) {
 			Class<?> attributeType = getAttributeTypeFromMethod(method);
 
-			if (attributeType != null && interfaceInheritsFrom(to, attributeType)
+            if (attributeType != null && attributeType.isAssignableFrom(to)
 					&& attributeType.getAnnotation(Polymorphic.class) != null) {
 				back.add(converter.getPolyTypeName(method));
 			}
@@ -245,7 +247,7 @@ public final class Common {
 				String name = manager.getNameConverters().getFieldNameConverter().getName(m);
 
 				// don't index Entity fields
-				if (name != null && !Common.interfaceInheritsFrom(attributeType, RawEntity.class) && !back.contains(name)) {
+                if (name != null && !RawEntity.class.isAssignableFrom(attributeType) && !back.contains(name)) {
 					back.add(name);
 				}
 			}

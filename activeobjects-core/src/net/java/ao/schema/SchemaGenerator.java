@@ -177,7 +177,7 @@ public final class SchemaGenerator
 				String attributeName = fieldConverter.getName(method);
 				Class<?> type = Common.getAttributeTypeFromMethod(method);
 
-				if (attributeName != null && type != null && Common.interfaceInheritsFrom(type, RawEntity.class)) {
+                if (attributeName != null && type != null && RawEntity.class.isAssignableFrom(type)) {
 					if (!type.equals(clazz)) {
 						individualDeps.add((Class<? extends RawEntity<?>>) type);
 
@@ -273,7 +273,7 @@ public final class SchemaGenerator
 					fields.add(field);
 				}
 
-				if (Common.interfaceInheritsFrom(type, RawEntity.class)
+                if (RawEntity.class.isAssignableFrom(type)
 						&& type.getAnnotation(Polymorphic.class) != null) {
 					field.setDefaultValue(null);		// polymorphic fields can't have default
 
@@ -356,7 +356,7 @@ public final class SchemaGenerator
 			String attributeName = fieldConverter.getName(method);
 			Class<?> type =  Common.getAttributeTypeFromMethod(method);
 
-			if (type != null && attributeName != null && Common.interfaceInheritsFrom(type, RawEntity.class)
+            if (type != null && attributeName != null && RawEntity.class.isAssignableFrom(type)
 					&& type.getAnnotation(Polymorphic.class) == null) {
 				DDLForeignKey key = new DDLForeignKey();
 
@@ -385,7 +385,7 @@ public final class SchemaGenerator
 				Indexed indexedAnno = annotations.getAnnotation(Indexed.class);
 				Class<?> type = Common.getAttributeTypeFromMethod(method);
 
-				if (indexedAnno != null || (type != null && Common.interfaceInheritsFrom(type, RawEntity.class))) {
+                if (indexedAnno != null || (type != null && RawEntity.class.isAssignableFrom(type))) {
 					DDLIndex index = new DDLIndex();
 					index.setField(attributeName);
 					index.setTable(tableName);
