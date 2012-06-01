@@ -18,7 +18,19 @@ public class TransactionTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testRollback() throws Exception
+    public void testRollbackUnsaved() throws Exception
+    {
+        testRollback(false);
+    }
+
+    @Test
+    @NonTransactional
+    public void testRollbackSaved() throws Exception
+    {
+        testRollback(true);
+    }
+
+    private void testRollback(final boolean save) throws SQLException
     {
         entityManager.migrate(Author.class);
         final int id = new Transaction<Integer>(entityManager)
@@ -44,6 +56,9 @@ public class TransactionTest extends ActiveObjectsIntegrationTest
                 {
                     final Author author = entityManager.get(Author.class, id);
                     author.setName("Emily Bronte");
+                    if (save) {
+                        author.save();
+                    }
                     throw new RuntimeException();
                 }
 

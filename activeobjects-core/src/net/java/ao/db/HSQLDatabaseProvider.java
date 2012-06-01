@@ -319,7 +319,41 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                         .append(withSchema(table.getName()))
                         .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
             }
+
+            if (!field.isNotNull())
+            {
+                sql.add(SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ").append(withSchema(table.getName()))
+                        .append(" ALTER COLUMN ").append(oldField.getName())
+                        .append(" SET NULL")));
+            }
+
+            if (field.isNotNull())
+            {
+                sql.add(SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ").append(withSchema(table.getName()))
+                        .append(" ALTER COLUMN ").append(oldField.getName())
+                        .append(" SET NOT NULL")));
+            }
+
+            if (field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue()))
+            {
+                sql.add(SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ").append(withSchema(table.getName()))
+                        .append(" ALTER COLUMN ").append(oldField.getName())
+                        .append(" SET DEFAULT ").append(renderValue(field.getDefaultValue()))));
+            }
+
+            if (field.getDefaultValue() == null && oldField.getDefaultValue() != null)
+            {
+                sql.add(SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ").append(withSchema(table.getName()))
+                        .append(" ALTER COLUMN ").append(oldField.getName())
+                        .append(" DROP DEFAULT")));
+            }
         }
+
+
 
         // re-enabling the foreign keys!
         for (DDLForeignKey fk : foreignKeysForField)
@@ -337,7 +371,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                 .append(" UNIQUE (").append(processID(field.getName())).append(")"));
     }
 
-	@Override
+    @Override
 	protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
 	{
 		StringBuilder current = new StringBuilder();
@@ -348,7 +382,13 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 		return SQLAction.of(current);
 	}
 
-	@Override
+    @Override
+    protected RenderFieldOptions renderFieldOptionsInAlterColumn()
+    {
+        return new RenderFieldOptions(true, false, false);
+    }
+
+    @Override
 	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
 	{
 		StringBuilder back = new StringBuilder("ALTER TABLE ");
