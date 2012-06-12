@@ -61,7 +61,7 @@ import java.lang.annotation.Target;
 public @interface OneToOne {
 
     /**
-     * <p>The name of the corresponding property in the remote entity.</p>
+     * <p>The name of the corresponding getter method in the remote entity.</p>
      *
      * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
      * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>

@@ -61,7 +61,7 @@ import java.lang.annotation.Target;
 public @interface OneToMany {
 
     /**
-     * <p>The name of the corresponding property in the entities returned by the annotated method.</p>
+     * <p>The name of the corresponding getter method in the entities returned by the annotated method.</p>
      *
      * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
      * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>

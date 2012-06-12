@@ -72,7 +72,7 @@ public @interface ManyToMany {
 	Class<? extends RawEntity<?>> value();
 
     /**
-     * <p>The name of the property in the joining entity that refers to the annotated entity.</p>
+     * <p>The name of the getter method in the joining entity that refers to the annotated entity.</p>
      *
      * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
      * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>
@@ -82,7 +82,7 @@ public @interface ManyToMany {
     String reverse() default "";
 
     /**
-     * <p>The name of the property in the joining entity that refers to the entities to be returned by the annotated
+     * <p>The name of the getter method in the joining entity that refers to the entities to be returned by the annotated
      * method.</p>
      *
      * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
