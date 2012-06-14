@@ -18,7 +18,7 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     public interface OneToOneNode extends Entity
     {
 
-        @OneToOne(reverse = "parent")
+        @OneToOne(reverse = "getParent")
         OneToOneNode getChild();
 
         void setChild(OneToOneNode child);
@@ -60,10 +60,10 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     public interface Adult extends Entity
     {
 
-        @OneToMany(reverse = "parent")
+        @OneToMany(reverse = "getParent")
         Child[] getChildren();
 
-        @OneToMany(reverse = "teacher")
+        @OneToMany(reverse = "getTeacher")
         Child[] getStudents();
 
     }
@@ -102,10 +102,10 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     public interface ManyToManyNode extends Entity
     {
 
-        @ManyToMany(value = ManyToManyEdge.class, reverse = "output", through = "input")
+        @ManyToMany(value = ManyToManyEdge.class, reverse = "getOutputs", through = "getInput")
         ManyToManyNode[] getInputs();
 
-        @ManyToMany(value = ManyToManyEdge.class, reverse = "input", through = "output")
+        @ManyToMany(value = ManyToManyEdge.class, reverse = "getInputs", through = "getOutput")
         ManyToManyNode[] getOutputs();
 
     }
