@@ -42,8 +42,8 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     {
         entityManager.migrate(OneToOneNode.class);
         final OneToOneNode grandparent = entityManager.create(OneToOneNode.class);
-        final OneToOneNode parent = entityManager.create(OneToOneNode.class, new DBParam("parent_id", grandparent));
-        final OneToOneNode child = entityManager.create(OneToOneNode.class, new DBParam("parent_id", parent), new DBParam("related_id", grandparent));
+        final OneToOneNode parent = entityManager.create(OneToOneNode.class, new DBParam("PARENT_ID", grandparent));
+        final OneToOneNode child = entityManager.create(OneToOneNode.class, new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
         grandparent.setRelated(child);
         grandparent.save();
         Assert.assertNull(grandparent.getParent());
@@ -91,7 +91,7 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         entityManager.migrate(Adult.class, Child.class);
         final Adult parent = entityManager.create(Adult.class);
         final Adult teacher = entityManager.create(Adult.class);
-        final Child child = entityManager.create(Child.class, new DBParam("parent_id", parent), new DBParam("teacher_id", teacher));
+        final Child child = entityManager.create(Child.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
         final Child[] children = {child};
         Assert.assertArrayEquals(children, parent.getChildren());
         Assert.assertEquals(0, parent.getStudents().length);
@@ -133,7 +133,7 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         entityManager.migrate(ManyToManyNode.class, ManyToManyEdge.class);
         final ManyToManyNode input = entityManager.create(ManyToManyNode.class);
         final ManyToManyNode output = entityManager.create(ManyToManyNode.class);
-        entityManager.create(ManyToManyEdge.class, new DBParam("input_id", input), new DBParam("output_id", output));
+        entityManager.create(ManyToManyEdge.class, new DBParam("INPUT_ID", input), new DBParam("OUTPUT_ID", output));
         Assert.assertArrayEquals(new ManyToManyNode[]{output}, input.getOutputs());
         Assert.assertEquals(0, input.getInputs().length);
         Assert.assertArrayEquals(new ManyToManyNode[]{input}, output.getInputs());
