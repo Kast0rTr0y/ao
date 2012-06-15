@@ -1,19 +1,7 @@
 package net.java.ao.it;
 
-import java.net.URL;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-
-import org.junit.Test;
-
 import net.java.ao.DBParam;
 import net.java.ao.EntityStreamCallback;
 import net.java.ao.Query;
@@ -29,7 +17,17 @@ import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
+import org.junit.Test;
+
+import java.net.URL;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -82,21 +80,21 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement stmt) throws Exception
-                    {
-                        stmt.setLong(1, company.getCompanyID());
-                    }
+                         new DbUtils.StatementCallback()
+                         {
+                             public void setParameters(PreparedStatement stmt) throws Exception
+                             {
+                                 stmt.setLong(1, company.getCompanyID());
+                             }
 
-                    public void processResult(ResultSet res) throws Exception
-                    {
-                        if (!res.next())
-                        {
-                            fail("Unable to find INSERTed company row");
-                        }
-                    }
-                });
+                             public void processResult(ResultSet res) throws Exception
+                             {
+                                 if (!res.next())
+                                 {
+                                     fail("Unable to find INSERTed company row");
+                                 }
+                             }
+                         });
     }
 
     @Test
@@ -111,25 +109,25 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement stmt) throws Exception
-                    {
-                        stmt.setLong(1, company.getCompanyID());
-                    }
+                         new DbUtils.StatementCallback()
+                         {
+                             public void setParameters(PreparedStatement stmt) throws Exception
+                             {
+                                 stmt.setLong(1, company.getCompanyID());
+                             }
 
-                    public void processResult(ResultSet res) throws Exception
-                    {
-                        if (res.next())
-                        {
-                            assertEquals(null, res.getString("name"));
-                        }
-                        else
-                        {
-                            fail("Unable to find INSERTed company row");
-                        }
-                    }
-                });
+                             public void processResult(ResultSet res) throws Exception
+                             {
+                                 if (res.next())
+                                 {
+                                     assertEquals(null, res.getString("name"));
+                                 }
+                                 else
+                                 {
+                                     fail("Unable to find INSERTed company row");
+                                 }
+                             }
+                         });
     }
 
     @Test
@@ -144,28 +142,28 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         });
 
         executeStatement("SELECT " + escapeFieldName(Person.class, "getURL") + " FROM "
-                + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
-                new DbUtils.StatementCallback()
-                {
+                             + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
+                         new DbUtils.StatementCallback()
+                         {
 
-                    public void setParameters(PreparedStatement stmt) throws Exception
-                    {
-                        stmt.setInt(1, person.getID());
-                    }
+                             public void setParameters(PreparedStatement stmt) throws Exception
+                             {
+                                 stmt.setInt(1, person.getID());
+                             }
 
-                    public void processResult(ResultSet res) throws Exception
-                    {
-                        if (res.next())
-                        {
-                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
-                        }
-                        else
-                        {
-                            fail("Unable to find INSERTed person row");
-                        }
+                             public void processResult(ResultSet res) throws Exception
+                             {
+                                 if (res.next())
+                                 {
+                                     assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
+                                 }
+                                 else
+                                 {
+                                     fail("Unable to find INSERTed person row");
+                                 }
 
-                    }
-                });
+                             }
+                         });
     }
 
     @Test
@@ -183,25 +181,25 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         });
 
         executeStatement("SELECT " + escapeFieldName(Company.class, "getName") + " FROM " + getTableName(Company.class) + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement stmt) throws Exception
-                    {
-                        stmt.setLong(1, company.getCompanyID());
-                    }
+                         new DbUtils.StatementCallback()
+                         {
+                             public void setParameters(PreparedStatement stmt) throws Exception
+                             {
+                                 stmt.setLong(1, company.getCompanyID());
+                             }
 
-                    public void processResult(ResultSet res) throws Exception
-                    {
-                        if (res.next())
-                        {
-                            assertEquals(null, res.getString("name"));
-                        }
-                        else
-                        {
-                            fail("Unable to find INSERTed company row");
-                        }
-                    }
-                });
+                             public void processResult(ResultSet res) throws Exception
+                             {
+                                 if (res.next())
+                                 {
+                                     assertEquals(null, res.getString("name"));
+                                 }
+                                 else
+                                 {
+                                     fail("Unable to find INSERTed company row");
+                                 }
+                             }
+                         });
     }
 
     @Test
@@ -219,26 +217,26 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         });
 
         executeStatement("SELECT " + escapeFieldName(Person.class, "getURL") + " FROM " + getTableName(Person.class) + " WHERE " + escapeFieldName(Person.class, "getID") + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement stmt) throws Exception
-                    {
-                        stmt.setInt(1, person.getID());
-                    }
+                         new DbUtils.StatementCallback()
+                         {
+                             public void setParameters(PreparedStatement stmt) throws Exception
+                             {
+                                 stmt.setInt(1, person.getID());
+                             }
 
-                    public void processResult(ResultSet res) throws Exception
-                    {
-                        if (res.next())
-                        {
-                            assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
-                        }
-                        else
-                        {
-                            fail("Unable to find INSERTed person row");
-                        }
+                             public void processResult(ResultSet res) throws Exception
+                             {
+                                 if (res.next())
+                                 {
+                                     assertEquals("http://www.codecommit.com", res.getString(getFieldName(Person.class, "getURL")).toString());
+                                 }
+                                 else
+                                 {
+                                     fail("Unable to find INSERTed person row");
+                                 }
 
-                    }
-                });
+                             }
+                         });
     }
 
     @Test
@@ -298,8 +296,6 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         assertNotNull(company);
         assertEquals(CompanyData.getIds()[1], company.getCompanyID());
     }
-
-
 
     @Test
     public void testFindCheckPreload() throws Exception
@@ -370,15 +366,15 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         final String personTableName = getTableName(Person.class);
 
         Company[] coolCompanies = entityManager.findWithSQL(Company.class,
-                getFieldName(Company.class, "getCompanyID"),
-                "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM "
-                        + companyTableName + " WHERE " + escapeFieldName(Company.class, "isCool") + " = ?", true);
+                                                            getFieldName(Company.class, "getCompanyID"),
+                                                            "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM "
+                                                                + companyTableName + " WHERE " + escapeFieldName(Company.class, "isCool") + " = ?", true);
 
         assertEquals(1, coolCompanies.length);
         assertEquals(CompanyData.getIds()[1], coolCompanies[0].getCompanyID());
 
         final Company[] allCompanies = entityManager.findWithSQL(Company.class, getFieldName(Company.class, "getCompanyID"),
-                "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + companyTableName);
+                                                                 "SELECT " + escapeFieldName(Company.class, "getCompanyID") + " FROM " + companyTableName);
 
         assertEquals(CompanyData.getIds().length, allCompanies.length);
 
@@ -402,9 +398,9 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
 
         final Company company = entityManager.get(Company.class, CompanyData.getIds()[0]);
         Person[] people = entityManager.findWithSQL(Person.class, getFieldName(Person.class, "getID"),
-                "SELECT " + escapeFieldName(Person.class, "getID") + " FROM "
-                + personTableName
-                + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?", company);
+                                                    "SELECT " + escapeFieldName(Person.class, "getID") + " FROM "
+                                                        + personTableName
+                                                        + " WHERE " + escapeFieldName(Company.class, "getCompanyID") + " = ?", company);
         Person[] companyPeople = company.getPeople();
 
         assertEquals(companyPeople.length, people.length);
@@ -427,17 +423,18 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
             }
         }
     }
-    
+
     /**
      * Load all rows from the company table through the stream API
      */
     @Test
-    public void testStream() throws SQLException {
+    public void testStream() throws SQLException
+    {
         final List<Company> streamed = new ArrayList<Company>();
-        
+
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
-        
+
         entityManager.stream(Company.class, new EntityStreamCallback<Company, Long>()
         {
             @Override
@@ -446,7 +443,7 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
                 streamed.add(t);
             }
         });
-        
+
         assertEquals(CompanyData.ids.length, streamed.size());
         for (final String name : CompanyData.NAMES)
         {
@@ -456,23 +453,25 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
                 @Override
                 public boolean apply(Company company)
                 {
-                    return name.equals(company.getName()); 
+                    return name.equals(company.getName());
                 }
             });
         }
     }
-    
+
     /**
      * Load only one row from the company table through the stream API
-     * @throws SQLException 
+     *
+     * @throws SQLException
      */
     @Test
-    public void testStreamWithQuery() throws SQLException {
+    public void testStreamWithQuery() throws SQLException
+    {
         final List<Company> streamed = new ArrayList<Company>();
-        
+
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
-        
+
         Query query = new Query(QueryType.SELECT, "*").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
@@ -482,21 +481,22 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
                 streamed.add(t);
             }
         });
-        
+
         assertEquals("There should have only been one row matching the query", 1, streamed.size());
         assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());
     }
-    
+
     /**
      * Query matches no rows
      */
     @Test
-    public void testStreamWithQueryNoResult() throws SQLException {
+    public void testStreamWithQueryNoResult() throws SQLException
+    {
         final List<Company> streamed = new ArrayList<Company>();
-        
+
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
-        
+
         Query query = new Query(QueryType.SELECT, "*").from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", "NotInTheDatabase");
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
@@ -506,20 +506,21 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
                 streamed.add(t);
             }
         });
-        
+
         assertTrue("No rows should have matched the query", streamed.isEmpty());
     }
-    
+
     /**
      * Query with limited fields, should be expanded to full query for stream
      */
     @Test
-    public void testStreamWithQueryLimitedFields() throws SQLException {
+    public void testStreamWithQueryLimitedFields() throws SQLException
+    {
         final List<Company> streamed = new ArrayList<Company>();
-        
+
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
-        
+
         Query query = new Query(QueryType.SELECT, getFieldName(Company.class, "getCompanyID")).from(Company.class).where(getFieldName(Company.class, "getName") + " = ?", CompanyData.NAMES[0]);
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>()
         {
@@ -529,9 +530,9 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
                 streamed.add(t);
             }
         });
-        
+
         assertEquals("There should have only been one row matching the query", 1, streamed.size());
-        assertNull("name field should not have been preloaded", streamed.get(0).getName());        
+        assertNull("name field should not have been preloaded", streamed.get(0).getName());
         assertNotNull("ID field should have been preloaded", streamed.get(0).getCompanyID());
     }
 
