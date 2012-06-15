@@ -41,6 +41,7 @@ import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.OneToMany;
 import net.java.ao.Polymorphic;
 import net.java.ao.RawEntity;
 import net.java.ao.SchemaConfiguration;
@@ -59,7 +60,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.addAll;
-import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static net.java.ao.types.TypeQualifiers.MAX_STRING_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
@@ -81,22 +81,26 @@ public final class SchemaGenerator
                                Class<? extends RawEntity<?>>... classes) throws SQLException
     {
         final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, classes);
-
-        Connection conn = null;
-        Statement stmt = null;
-        Set<String> completedStatements = new HashSet<String>();
+        final Connection conn = provider.getConnection();
         try
         {
-            conn = provider.getConnection();
-            stmt = conn.createStatement();
-            for (Iterable<SQLAction> actionGroup : actionGroups)
+            final Statement stmt = conn.createStatement();
+            try
             {
-                addAll(completedStatements, provider.executeUpdatesForActions(stmt, actionGroup, completedStatements));
+                Set<String> completedStatements = new HashSet<String>();
+                for (Iterable<SQLAction> actionGroup : actionGroups)
+                {
+                    addAll(completedStatements, provider.executeUpdatesForActions(stmt, actionGroup, completedStatements));
+                }
+            }
+            finally
+            {
+                stmt.close();
             }
         }
         finally
         {
-            closeQuietly(stmt, conn);
+            conn.close();
         }
     }
     
@@ -164,37 +168,62 @@ public final class SchemaGenerator
 		return parsedTables.toArray(new DDLTable[parsedTables.size()]);
 	}
 
-	private static void parseDependencies(FieldNameConverter fieldConverter, Map<Class<? extends RawEntity<?>>,
-            Set<Class<? extends RawEntity<?>>>> deps, Set<Class<? extends RawEntity<?>>> roots, Class<? extends RawEntity<?>>... classes) {
-		for (Class<? extends RawEntity<?>> clazz : classes) {
-			if (deps.containsKey(clazz)) {
-				continue;
-			}
+    private static void parseDependencies(
+            final FieldNameConverter fieldConverter,
+            final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps,
+            final Set<Class<? extends RawEntity<?>>> roots, Class<? extends RawEntity<?>> clazz)
+    {
+        if (deps.containsKey(clazz))
+        {
+            return;
+        }
+        final Set<Class<? extends RawEntity<?>>> individualDeps = new LinkedHashSet<Class<? extends RawEntity<?>>>();
+        for (final Method method : clazz.getMethods())
+        {
+            final Class<?> type = Common.getAttributeTypeFromMethod(method);
+            validateOneToManyAnnotation(method);
+            if (fieldConverter.getName(method) != null && type != null && !type.equals(clazz) && RawEntity.class.isAssignableFrom(type))
+            {
+                individualDeps.add((Class<? extends RawEntity<?>>) type);
+                parseDependencies(fieldConverter, deps, roots, (Class<? extends RawEntity<?>>) type);
+            }
+        }
 
-			Set<Class<? extends RawEntity<?>>> individualDeps = new LinkedHashSet<Class<? extends RawEntity<?>>>();
+        if (individualDeps.size() == 0)
+        {
+            roots.add(clazz);
+        }
+        else
+        {
+            deps.put(clazz, individualDeps);
+        }
+    }
 
-			for (Method method : clazz.getMethods()) {
-				String attributeName = fieldConverter.getName(method);
-				Class<?> type = Common.getAttributeTypeFromMethod(method);
+    private static void validateOneToManyAnnotation(final Method method)
+    {
+        final OneToMany oneToMany = method.getAnnotation(OneToMany.class);
+        if (oneToMany != null)
+        {
+            final String reverse = oneToMany.reverse();
+            if (reverse.length() == 0)
+            {
+                logger.warn(method + " does not have a value specified for the reverse element of its OneToMany annotation. A value will be required by a future version of ActiveObjects.");
+            }
+            else
+            {
+                try
+                {
+                    method.getReturnType().getComponentType().getMethod(reverse);
+                }
+                catch (final NoSuchMethodException exception)
+                {
+                    throw new IllegalArgumentException(method + " has OneToMany annotation with an invalid reverse element value. It be the name of the corresponding getter method on the related entity.", exception);
+                }
+            }
+        }
+    }
 
-                if (attributeName != null && type != null && RawEntity.class.isAssignableFrom(type)) {
-					if (!type.equals(clazz)) {
-						individualDeps.add((Class<? extends RawEntity<?>>) type);
-
-						parseDependencies(fieldConverter, deps, roots, (Class<? extends RawEntity<?>>) type);
-					}
-				}
-			}
-
-			if (individualDeps.size() == 0) {
-				roots.add(clazz);
-			} else {
-				deps.put(clazz, individualDeps);
-			}
-		}
-	}
-
-	private static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
+    private static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
     {
 		String sqlName = nameConverter.getName(clazz);
 

@@ -5,6 +5,7 @@ import net.java.ao.Entity;
 import net.java.ao.ManyToMany;
 import net.java.ao.OneToMany;
 import net.java.ao.OneToOne;
+import net.java.ao.Preload;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -97,6 +98,84 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         Assert.assertEquals(0, parent.getStudents().length);
         Assert.assertArrayEquals(children, teacher.getStudents());
         Assert.assertEquals(0, teacher.getChildren().length);
+    }
+
+    @Preload
+    public interface PreloadAdult extends Entity
+    {
+
+        @OneToMany(reverse = "getParent")
+        PreloadChild[] getChildren();
+
+        @OneToMany(reverse = "getTeacher")
+        PreloadChild[] getStudents();
+
+    }
+
+    @Preload
+    public interface PreloadChild extends Entity
+    {
+
+        PreloadAdult getParent();
+
+        void setParent(PreloadAdult parent);
+
+        PreloadAdult getTeacher();
+
+        void setTeacher(PreloadAdult teacher);
+
+    }
+
+    /**
+     * <p>Test a {@link Preload}ed entity having a {@link OneToMany} relationship to an entity that has multiple
+     * properties of the same type.</p>
+     */
+    @Test
+    public void testOneToManyWithPreload() throws Exception
+    {
+        entityManager.migrate(PreloadAdult.class, PreloadChild.class);
+        final PreloadAdult parent = entityManager.create(PreloadAdult.class);
+        final PreloadAdult teacher = entityManager.create(PreloadAdult.class);
+        final PreloadChild child = entityManager.create(PreloadChild.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
+        final PreloadChild[] children = {child};
+        Assert.assertArrayEquals(children, parent.getChildren());
+        Assert.assertEquals(0, parent.getStudents().length);
+        Assert.assertArrayEquals(children, teacher.getStudents());
+        Assert.assertEquals(0, teacher.getChildren().length);
+    }
+
+    public interface InvalidAdult extends Entity
+    {
+
+        @OneToMany(reverse = "parent")
+        Child[] getChildren();
+
+        @OneToMany(reverse = "teacher")
+        Child[] getStudents();
+
+    }
+
+    public interface InvalidChild extends Entity
+    {
+
+        Adult getParent();
+
+        void setParent(Adult parent);
+
+        Adult getTeacher();
+
+        void setTeacher(Adult teacher);
+
+    }
+
+    /**
+     * <p>Test that an entity with an invalid {@link OneToMany#reverse()} value throws an exception during
+     * {@link net.java.ao.EntityManager#migrate(Class[])}.</p>
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testOneToManyWithInvalidReverse() throws Exception
+    {
+        entityManager.migrate(InvalidAdult.class, InvalidChild.class);
     }
 
     public interface ManyToManyNode extends Entity
