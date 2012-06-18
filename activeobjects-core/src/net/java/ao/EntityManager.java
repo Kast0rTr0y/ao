@@ -29,7 +29,6 @@ import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.types.TypeInfo;
-import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
 import java.lang.ref.Reference;
@@ -582,7 +581,6 @@ public class EntityManager
                     sql.append(')');
 
                     stmt = provider.preparedStatement(conn, sql);
-
                     int index = 1;
                     for (RawEntity<?> entity : entityList)
                     {
@@ -622,6 +620,67 @@ public class EntityManager
         {
             entityCacheLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * <p>Deletes rows from the table corresponding to {@code type}. In contrast to {@link #delete(RawEntity[])}, this
+     * method allows you to delete rows without creating entities for them first.</p>
+     *
+     * <p>Example:</p>
+     *
+     * <pre>manager.deleteWithSQL(Person.class, "name = ?", "Charlie")</pre>
+     *
+     * <p>The SQL in {@code criteria} is not parsed or modified in any way by ActiveObjects, and is simply appended to
+     * the DELETE statement in a WHERE clause. The above example would cause an SQL statement similar to the following
+     * to be executed:</p>
+     *
+     * <pre>DELETE FROM people WHERE name = 'Charlie';</pre>
+     *
+     * <p>If {@code criteria} is {@code null}, this method deletes all rows from the table corresponding to {@code
+     * type}.</p>
+     *
+     * <p>This method does not attempt to determine the set of entities affected by the statement. As such, it is
+     * recommended that you call {@link #flushAll()} after calling this method.</p>
+     *
+     * @param type The entity type corresponding to the table to delete from.
+     * @param criteria An optional SQL fragment specifying which rows to delete.
+     * @param parameters A varargs array of parameters to be passed to the executed prepared statement. The length of
+     * this array <i>must</i> match the number of parameters (denoted by the '?' char) in {@code criteria}.
+     * @return The number of rows deleted from the table.
+     * @see #delete(RawEntity...)
+     * @see #find(Class, String, Object...)
+     * @see #findWithSQL(Class, String, String, Object...)
+     */
+    public <K> int deleteWithSQL(Class<? extends RawEntity<K>> type, String criteria, Object... parameters) throws SQLException
+    {
+        int rowCount = 0;
+
+        Connection connection = null;
+        PreparedStatement stmt = null;
+
+        StringBuilder sql = new StringBuilder("DELETE FROM ");
+        sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
+
+        if (criteria != null)
+        {
+            sql.append(" WHERE ");
+            sql.append(criteria);
+        }
+
+        try
+        {
+            connection = provider.getConnection();
+            stmt = provider.preparedStatement(connection, sql);
+            putStatementParameters(stmt, parameters);
+            rowCount = stmt.executeUpdate();
+        }
+        finally
+        {
+            closeQuietly(stmt);
+            closeQuietly(connection);
+        }
+
+        return rowCount;
     }
 
     /**
@@ -865,20 +924,7 @@ public class EntityManager
         {
             connection = provider.getConnection();
             stmt = provider.preparedStatement(connection, sql);
-
-            final TypeManager manager = provider.getTypeManager();
-            for (int i = 0; i < parameters.length; i++)
-            {
-                Class javaType = parameters[i].getClass();
-
-                if (parameters[i] instanceof RawEntity)
-                {
-                    javaType = ((RawEntity<?>)parameters[i]).getEntityType();
-                }
-
-                TypeInfo<Object> typeInfo = manager.getType(javaType);
-                typeInfo.getLogicalType().putToDatabase(this, stmt, i + 1, parameters[i], typeInfo.getJdbcWriteType());
-            }
+            putStatementParameters(stmt, parameters);
 
             res = stmt.executeQuery();
             while (res.next())
@@ -1205,6 +1251,18 @@ public class EntityManager
         if (entity.getEntityManager() != this)
         {
             throw new RuntimeException("Entities can only be used with a single EntityManager instance");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void putStatementParameters(PreparedStatement stmt, Object... parameters) throws SQLException
+    {
+        int index = 1;
+        for (Object parameter : parameters)
+        {
+            Class entityTypeOrClass = (parameter instanceof RawEntity) ? ((RawEntity)parameter).getEntityType() : parameter.getClass();
+            TypeInfo<Object> typeInfo = provider.getTypeManager().getType(entityTypeOrClass);
+            typeInfo.getLogicalType().putToDatabase(this, stmt, index++, parameter, typeInfo.getJdbcWriteType());
         }
     }
 
