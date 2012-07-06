@@ -119,7 +119,11 @@ public final class Common {
 		return back.toArray(new String[back.size()]);
 	}
 
-	public static String[] getPolymorphicFieldNames(FieldNameConverter converter, Class<? extends RawEntity<?>> from,
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    public static String[] getPolymorphicFieldNames(FieldNameConverter converter, Class<? extends RawEntity<?>> from,
 			Class<? extends RawEntity<?>> to) {
 		Set<String> back = new LinkedHashSet<String>();
 

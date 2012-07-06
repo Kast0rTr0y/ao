@@ -181,10 +181,10 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     public interface ManyToManyNode extends Entity
     {
 
-        @ManyToMany(value = ManyToManyEdge.class, reverse = "getOutputs", through = "getInput")
+        @ManyToMany(value = ManyToManyEdge.class, reverse = "getOutput", through = "getInput")
         ManyToManyNode[] getInputs();
 
-        @ManyToMany(value = ManyToManyEdge.class, reverse = "getInputs", through = "getOutput")
+        @ManyToMany(value = ManyToManyEdge.class, reverse = "getInput", through = "getOutput")
         ManyToManyNode[] getOutputs();
 
     }
