@@ -221,6 +221,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final String reversePolymorphicTypeFieldName = getAttributeTypeFromMethod(reverseMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(reverseMethod) : null;
         final String remotePolymorphicTypeFieldName = getAttributeTypeFromMethod(throughMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(throughMethod) : null;
         final String reverseField = getFieldNameConverter().getName(reverseMethod);
+        final String throughField = getFieldNameConverter().getName(throughMethod);
         final String throughTable = getTableNameConverter().getName(throughType);
         final StringBuilder sql = new StringBuilder("SELECT ");
         final String returnField;
@@ -246,12 +247,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         }
         else
         {
-            returnField = remotePrimaryKeyFieldName;
-            sql.append(provider.processID(remotePrimaryKeyFieldName));
-            selectFields.add(remotePrimaryKeyFieldName);
-            final String throughField = Common.getPrimaryKeyField(throughType, getFieldNameConverter());
-            sql.append(',').append(provider.processID(throughField));
-            selectFields.add(throughField);
+            returnField = throughField;
+            sql.append(provider.processID(returnField));
+            selectFields.add(returnField);
             if (remotePolymorphicTypeFieldName != null)
             {
                 sql.append(',').append(provider.processID(remotePolymorphicTypeFieldName));
