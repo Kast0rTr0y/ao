@@ -212,50 +212,22 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     {
         @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
         final Class<? extends RawEntity<?>> throughType = annotation.value();
-        final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
         final String whereClause = Common.where(annotation, getFieldNameConverter());
-        final Preload preloadAnnotation = remoteType.getAnnotation(Preload.class);
         final Method reverseMethod = throughType.getMethod(annotation.reverse());
         final Method throughMethod = throughType.getMethod(annotation.through());
         final String reversePolymorphicTypeFieldName = getAttributeTypeFromMethod(reverseMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(reverseMethod) : null;
         final String remotePolymorphicTypeFieldName = getAttributeTypeFromMethod(throughMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(throughMethod) : null;
-        final String reverseField = getFieldNameConverter().getName(reverseMethod);
-        final String throughField = getFieldNameConverter().getName(throughMethod);
-        final String throughTable = getTableNameConverter().getName(throughType);
-        final StringBuilder sql = new StringBuilder("SELECT ");
-        final String returnField;
+        final String returnField = getFieldNameConverter().getName(throughMethod);
         final Set<String> selectFields = new LinkedHashSet<String>();
         final DatabaseProvider provider = manager.getProvider();
-        if (preloadAnnotation != null && !ignorePreload)
+        final StringBuilder sql = new StringBuilder("SELECT ").append(provider.processID(returnField));
+        selectFields.add(returnField);
+        if (remotePolymorphicTypeFieldName != null)
         {
-            final String finalTable = getTableNameConverter().getName(remoteType);
-            returnField = provider.shorten(finalTable + "__aointernal__id");
-            final String finalPKField = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
-            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
-            if (selectFields.remove(Preload.ALL))
-            {
-                selectFields.addAll(Common.getValueFieldsNames(remoteType, getFieldNameConverter()));
-            }
-            sql.append("f.").append(provider.processID(finalPKField)).append(" AS ").append(provider.quote(returnField)).append(",t.").append(provider.processID(Common.getPrimaryKeyField(throughType, getFieldNameConverter()))).append(" AS ").append(provider.quote(provider.shorten(throughTable + "__aointernal__id"))).append(',');
-            for (final String field : selectFields)
-            {
-                sql.append("f.").append(provider.processID(field)).append(',');
-            }
-            sql.setLength(sql.length() - 1);
-            sql.append(" FROM ").append(provider.withSchema(throughTable)).append(" t INNER JOIN ").append(provider.withSchema(finalTable)).append(" f ON t.").append(provider.processID(remotePrimaryKeyFieldName)).append(" = f.").append(provider.processID(finalPKField)).append(" WHERE t.").append(provider.processID(reverseField)).append(" = ?");
+            sql.append(',').append(provider.processID(remotePolymorphicTypeFieldName));
+            selectFields.add(remotePolymorphicTypeFieldName);
         }
-        else
-        {
-            returnField = throughField;
-            sql.append(provider.processID(returnField));
-            selectFields.add(returnField);
-            if (remotePolymorphicTypeFieldName != null)
-            {
-                sql.append(',').append(provider.processID(remotePolymorphicTypeFieldName));
-                selectFields.add(remotePolymorphicTypeFieldName);
-            }
-            sql.append(" FROM ").append(provider.withSchema(throughTable)).append(" WHERE ").append(provider.processID(reverseField)).append(" = ?");
-        }
+        sql.append(" FROM ").append(provider.withSchema(getTableNameConverter().getName(throughType))).append(" WHERE ").append(provider.processID(getFieldNameConverter().getName(reverseMethod))).append(" = ?");
         if (!whereClause.trim().equals(""))
         {
             sql.append(" AND (").append(provider.processWhereClause(whereClause)).append(")");
