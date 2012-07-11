@@ -263,27 +263,27 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     }
 
     @Preload
-    public interface PreloadManyToManyNode extends Entity
+    public interface PLManyToManyNode extends Entity
     {
 
-        @ManyToMany(value = PreloadManyToManyEdge.class, reverse = "getOutput", through = "getInput")
-        PreloadManyToManyNode[] getInputs();
+        @ManyToMany(value = PLManyToManyEdge.class, reverse = "getOutput", through = "getInput")
+        PLManyToManyNode[] getInputs();
 
-        @ManyToMany(value = PreloadManyToManyEdge.class, reverse = "getInput", through = "getOutput")
-        PreloadManyToManyNode[] getOutputs();
+        @ManyToMany(value = PLManyToManyEdge.class, reverse = "getInput", through = "getOutput")
+        PLManyToManyNode[] getOutputs();
 
     }
 
-    public interface PreloadManyToManyEdge extends Entity
+    public interface PLManyToManyEdge extends Entity
     {
 
-        PreloadManyToManyNode getInput();
+        PLManyToManyNode getInput();
 
-        void setInput(PreloadManyToManyNode input);
+        void setInput(PLManyToManyNode input);
 
-        PreloadManyToManyNode getOutput();
+        PLManyToManyNode getOutput();
 
-        void setOutput(PreloadManyToManyNode output);
+        void setOutput(PLManyToManyNode output);
 
     }
 
@@ -294,13 +294,13 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     @Test
     public void testManyToManyWithPreload() throws Exception
     {
-        entityManager.migrate(PreloadManyToManyNode.class, PreloadManyToManyEdge.class);
-        final PreloadManyToManyNode input = entityManager.create(PreloadManyToManyNode.class);
-        final PreloadManyToManyNode output = entityManager.create(PreloadManyToManyNode.class);
-        entityManager.create(PreloadManyToManyEdge.class, new DBParam("INPUT_ID", input), new DBParam("OUTPUT_ID", output));
-        Assert.assertArrayEquals(new PreloadManyToManyNode[]{output}, input.getOutputs());
+        entityManager.migrate(PLManyToManyNode.class, PLManyToManyEdge.class);
+        final PLManyToManyNode input = entityManager.create(PLManyToManyNode.class);
+        final PLManyToManyNode output = entityManager.create(PLManyToManyNode.class);
+        entityManager.create(PLManyToManyEdge.class, new DBParam("INPUT_ID", input), new DBParam("OUTPUT_ID", output));
+        Assert.assertArrayEquals(new PLManyToManyNode[]{output}, input.getOutputs());
         Assert.assertEquals(0, input.getInputs().length);
-        Assert.assertArrayEquals(new PreloadManyToManyNode[]{input}, output.getInputs());
+        Assert.assertArrayEquals(new PLManyToManyNode[]{input}, output.getInputs());
         Assert.assertEquals(0, output.getOutputs().length);
     }
 
