@@ -59,21 +59,21 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     }
 
     @Preload
-    public interface PreloadOneToOneNode extends Entity
+    public interface PlOneToOneNode extends Entity
     {
 
         @OneToOne(reverse = "getParent")
-        PreloadOneToOneNode getChild();
+        PlOneToOneNode getChild();
 
-        void setChild(PreloadOneToOneNode child);
+        void setChild(PlOneToOneNode child);
 
-        PreloadOneToOneNode getParent();
+        PlOneToOneNode getParent();
 
-        void setParent(PreloadOneToOneNode parent);
+        void setParent(PlOneToOneNode parent);
 
-        PreloadOneToOneNode getRelated();
+        PlOneToOneNode getRelated();
 
-        void setRelated(PreloadOneToOneNode related);
+        void setRelated(PlOneToOneNode related);
 
     }
 
@@ -84,10 +84,10 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     @Test
     public void testOneToOneWithPreload() throws Exception
     {
-        entityManager.migrate(PreloadOneToOneNode.class);
-        final PreloadOneToOneNode grandparent = entityManager.create(PreloadOneToOneNode.class);
-        final PreloadOneToOneNode parent = entityManager.create(PreloadOneToOneNode.class, new DBParam("PARENT_ID", grandparent));
-        final PreloadOneToOneNode child = entityManager.create(PreloadOneToOneNode.class, new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
+        entityManager.migrate(PlOneToOneNode.class);
+        final PlOneToOneNode grandparent = entityManager.create(PlOneToOneNode.class);
+        final PlOneToOneNode parent = entityManager.create(PlOneToOneNode.class, new DBParam("PARENT_ID", grandparent));
+        final PlOneToOneNode child = entityManager.create(PlOneToOneNode.class, new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
         grandparent.setRelated(child);
         grandparent.save();
         Assert.assertNull(grandparent.getParent());
@@ -144,28 +144,28 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     }
 
     @Preload
-    public interface PreloadAdult extends Entity
+    public interface PlAdult extends Entity
     {
 
         @OneToMany(reverse = "getParent")
-        PreloadChild[] getChildren();
+        PlChild[] getChildren();
 
         @OneToMany(reverse = "getTeacher")
-        PreloadChild[] getStudents();
+        PlChild[] getStudents();
 
     }
 
     @Preload
-    public interface PreloadChild extends Entity
+    public interface PlChild extends Entity
     {
 
-        PreloadAdult getParent();
+        PlAdult getParent();
 
-        void setParent(PreloadAdult parent);
+        void setParent(PlAdult parent);
 
-        PreloadAdult getTeacher();
+        PlAdult getTeacher();
 
-        void setTeacher(PreloadAdult teacher);
+        void setTeacher(PlAdult teacher);
 
     }
 
@@ -176,11 +176,11 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     @Test
     public void testOneToManyWithPreload() throws Exception
     {
-        entityManager.migrate(PreloadAdult.class, PreloadChild.class);
-        final PreloadAdult parent = entityManager.create(PreloadAdult.class);
-        final PreloadAdult teacher = entityManager.create(PreloadAdult.class);
-        final PreloadChild child = entityManager.create(PreloadChild.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
-        final PreloadChild[] children = {child};
+        entityManager.migrate(PlAdult.class, PlChild.class);
+        final PlAdult parent = entityManager.create(PlAdult.class);
+        final PlAdult teacher = entityManager.create(PlAdult.class);
+        final PlChild child = entityManager.create(PlChild.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
+        final PlChild[] children = {child};
         Assert.assertArrayEquals(children, parent.getChildren());
         Assert.assertEquals(0, parent.getStudents().length);
         Assert.assertArrayEquals(children, teacher.getStudents());
