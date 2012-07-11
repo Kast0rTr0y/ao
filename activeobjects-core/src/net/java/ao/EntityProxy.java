@@ -213,6 +213,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
         final Class<? extends RawEntity<?>> throughType = annotation.value();
         final String whereClause = Common.where(annotation, getFieldNameConverter());
+        final Preload preloadAnnotation = remoteType.getAnnotation(Preload.class);
         final Method reverseMethod = throughType.getMethod(annotation.reverse());
         final Method throughMethod = throughType.getMethod(annotation.through());
         final String reversePolymorphicTypeFieldName = getAttributeTypeFromMethod(reverseMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(reverseMethod) : null;
@@ -227,14 +228,29 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             sql.append(',').append(provider.processID(remotePolymorphicTypeFieldName));
             selectFields.add(remotePolymorphicTypeFieldName);
         }
-        sql.append(" FROM ").append(provider.withSchema(getTableNameConverter().getName(throughType))).append(" WHERE ").append(provider.processID(getFieldNameConverter().getName(reverseMethod))).append(" = ?");
+        final String throughTable = provider.withSchema(getTableNameConverter().getName(throughType));
+        sql.append(" FROM ").append(throughTable).append(" t ");
+        if (preloadAnnotation != null) {
+            final String remoteTable = provider.withSchema(getTableNameConverter().getName(remoteType));
+            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(returnField).append(" = r.").append(Common.getPrimaryKeyField(remoteType, getFieldNameConverter()));
+        }
+        final String reverseField = provider.processID(getFieldNameConverter().getName(reverseMethod));
+        sql.append(" WHERE ");
+        if (preloadAnnotation != null) {
+            sql.append("t.");
+        }
+        sql.append(reverseField).append(" = ?");
+        if (reversePolymorphicTypeFieldName != null)
+        {
+            sql.append(" AND ");
+            if (preloadAnnotation != null) {
+                sql.append("t.");
+            }
+            sql.append(provider.processID(reversePolymorphicTypeFieldName)).append(" = ?");
+        }
         if (!whereClause.trim().equals(""))
         {
             sql.append(" AND (").append(provider.processWhereClause(whereClause)).append(")");
-        }
-        if (reversePolymorphicTypeFieldName != null)
-        {
-            sql.append(" AND ").append(provider.processID(reversePolymorphicTypeFieldName)).append(" = ?");
         }
         final List<RawEntity> back = new ArrayList<RawEntity>();
         final Connection conn = provider.getConnection();
