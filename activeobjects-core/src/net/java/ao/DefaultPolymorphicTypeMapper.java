@@ -115,7 +115,7 @@ public final class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper
 	public String convert(Class<? extends RawEntity<?>> type) {
 		String back = mappings.get(type);
 		if (back == null) {
-			return type.getCanonicalName();		// sane default
+			return type.getName();		// sane default
 		}
 		
 		return back;

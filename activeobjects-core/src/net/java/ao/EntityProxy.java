@@ -284,13 +284,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 {
                     while (res.next())
                     {
-                        final K returnValue = primaryKeyType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) throughType, returnField);
-                        Class<? extends RawEntity> backType = remoteType;
                         if (selectFields.remove(Preload.ALL))
                         {
                             selectFields.addAll(Common.getValueFieldsNames(remoteType, getFieldNameConverter()));
                         }
-                        final RawEntity returnValueEntity = manager.peer(backType, returnValue);
+                        final RawEntity returnValueEntity = manager.peer((Class<? extends RawEntity>) (remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))), primaryKeyType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) throughType, returnField));
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         for (final String field : selectFields)
                         {
