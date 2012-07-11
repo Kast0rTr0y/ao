@@ -15,9 +15,9 @@ public class TestPolymorphicManyToMany extends ActiveObjectsIntegrationTest
     public interface Person extends Entity
     {
 
-        String getName();
+        String getFullName();
 
-        void setName(String name);
+        void setFullName(String name);
 
         @ManyToMany(value = Parenthood.class, reverse = "getParent", through = "getChild")
         Person[] getChildren();
@@ -60,8 +60,8 @@ public class TestPolymorphicManyToMany extends ActiveObjectsIntegrationTest
     public void testPolymorphicManyToMany() throws Exception
     {
         entityManager.migrate(Man.class, Woman.class, Parenthood.class);
-        final Person parent = entityManager.create(Man.class, new DBParam("name", "John Smith"));
-        final Person child = entityManager.create(Woman.class, new DBParam("name", "Sarah Smith"));
+        final Person parent = entityManager.create(Man.class, new DBParam("full_name", "John Smith"));
+        final Person child = entityManager.create(Woman.class, new DBParam("full_name", "Sarah Smith"));
         entityManager.create(Parenthood.class, new DBParam("parent_id", parent), new DBParam("parent_type", Man.class.getName()), new DBParam("child_id", child), new DBParam("child_type", Woman.class.getName()));
         Assert.assertArrayEquals(new Person[]{child}, parent.getChildren());
         Assert.assertEquals(0, parent.getParents().length);
