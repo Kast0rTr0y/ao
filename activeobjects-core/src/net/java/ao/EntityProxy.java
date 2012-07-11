@@ -210,7 +210,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
     private RawEntity[] fetchManyToMany(final Method method, final ManyToMany annotation) throws SQLException, NoSuchMethodException
     {
-        // TODO: Polymorphism?
         @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
         final Class<? extends RawEntity<?>> throughType = annotation.value();
         final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());

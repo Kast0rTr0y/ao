@@ -58,6 +58,49 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         Assert.assertSame(grandparent, child.getRelated());
     }
 
+    @Preload
+    public interface PreloadOneToOneNode extends Entity
+    {
+
+        @OneToOne(reverse = "getParent")
+        PreloadOneToOneNode getChild();
+
+        void setChild(PreloadOneToOneNode child);
+
+        PreloadOneToOneNode getParent();
+
+        void setParent(PreloadOneToOneNode parent);
+
+        PreloadOneToOneNode getRelated();
+
+        void setRelated(PreloadOneToOneNode related);
+
+    }
+
+    /**
+     * <p>Test a @{link Preload}ed entity having a {@link OneToOne} relationship to an entity that has multiple
+     * properties of the same type.</p>
+     */
+    @Test
+    public void testOneToOneWithPreload() throws Exception
+    {
+        entityManager.migrate(PreloadOneToOneNode.class);
+        final PreloadOneToOneNode grandparent = entityManager.create(PreloadOneToOneNode.class);
+        final PreloadOneToOneNode parent = entityManager.create(PreloadOneToOneNode.class, new DBParam("PARENT_ID", grandparent));
+        final PreloadOneToOneNode child = entityManager.create(PreloadOneToOneNode.class, new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
+        grandparent.setRelated(child);
+        grandparent.save();
+        Assert.assertNull(grandparent.getParent());
+        Assert.assertSame(parent, grandparent.getChild());
+        Assert.assertSame(child, grandparent.getRelated());
+        Assert.assertSame(grandparent, parent.getParent());
+        Assert.assertSame(child, parent.getChild());
+        Assert.assertNull(parent.getRelated());
+        Assert.assertSame(parent, child.getParent());
+        Assert.assertNull(child.getChild());
+        Assert.assertSame(grandparent, child.getRelated());
+    }
+
     public interface Adult extends Entity
     {
 
@@ -216,6 +259,48 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         Assert.assertArrayEquals(new ManyToManyNode[]{output}, input.getOutputs());
         Assert.assertEquals(0, input.getInputs().length);
         Assert.assertArrayEquals(new ManyToManyNode[]{input}, output.getInputs());
+        Assert.assertEquals(0, output.getOutputs().length);
+    }
+
+    @Preload
+    public interface PreloadManyToManyNode extends Entity
+    {
+
+        @ManyToMany(value = PreloadManyToManyEdge.class, reverse = "getOutput", through = "getInput")
+        PreloadManyToManyNode[] getInputs();
+
+        @ManyToMany(value = PreloadManyToManyEdge.class, reverse = "getInput", through = "getOutput")
+        PreloadManyToManyNode[] getOutputs();
+
+    }
+
+    public interface PreloadManyToManyEdge extends Entity
+    {
+
+        PreloadManyToManyNode getInput();
+
+        void setInput(PreloadManyToManyNode input);
+
+        PreloadManyToManyNode getOutput();
+
+        void setOutput(PreloadManyToManyNode output);
+
+    }
+
+    /**
+     * <p>Test an entity having a {@link net.java.ao.ManyToMany} relationship with a joining entity that has multiple
+     * properties of the same type.</p>
+     */
+    @Test
+    public void testManyToManyWithPreload() throws Exception
+    {
+        entityManager.migrate(PreloadManyToManyNode.class, PreloadManyToManyEdge.class);
+        final PreloadManyToManyNode input = entityManager.create(PreloadManyToManyNode.class);
+        final PreloadManyToManyNode output = entityManager.create(PreloadManyToManyNode.class);
+        entityManager.create(PreloadManyToManyEdge.class, new DBParam("INPUT_ID", input), new DBParam("OUTPUT_ID", output));
+        Assert.assertArrayEquals(new PreloadManyToManyNode[]{output}, input.getOutputs());
+        Assert.assertEquals(0, input.getInputs().length);
+        Assert.assertArrayEquals(new PreloadManyToManyNode[]{input}, output.getInputs());
         Assert.assertEquals(0, output.getOutputs().length);
     }
 
