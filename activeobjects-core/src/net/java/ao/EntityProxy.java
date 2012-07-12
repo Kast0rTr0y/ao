@@ -221,18 +221,27 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final String returnField = getFieldNameConverter().getName(throughMethod);
         final Set<String> selectFields = new LinkedHashSet<String>();
         final DatabaseProvider provider = manager.getProvider();
-        final StringBuilder sql = new StringBuilder("SELECT ").append(provider.processID(returnField));
-        selectFields.add(returnField);
+        final StringBuilder sql = new StringBuilder("SELECT t.").append(provider.processID(returnField));
         if (remotePolymorphicTypeFieldName != null)
         {
-            sql.append(',').append(provider.processID(remotePolymorphicTypeFieldName));
-            selectFields.add(remotePolymorphicTypeFieldName);
+            sql.append(", t.").append(provider.processID(remotePolymorphicTypeFieldName));
+        }
+        if (preloadAnnotation != null && !ignorePreload) {
+            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            if (selectFields.contains(Preload.ALL)) {
+                sql.append(", r.*");
+            } else {
+                for (final String field : selectFields) {
+                    sql.append(", r.").append(manager.getProvider().processID(field));
+                }
+            }
         }
         final String throughTable = provider.withSchema(getTableNameConverter().getName(throughType));
         sql.append(" FROM ").append(throughTable).append(" t ");
+        final String remotePrimaryKeyField = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
         if (preloadAnnotation != null) {
             final String remoteTable = provider.withSchema(getTableNameConverter().getName(remoteType));
-            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(provider.processID(Common.getPrimaryKeyField(remoteType, getFieldNameConverter())));
+            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(provider.processID(remotePrimaryKeyField));
         }
         final String reverseField = provider.processID(getFieldNameConverter().getName(reverseMethod));
         sql.append(" WHERE ");
@@ -277,6 +286,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         }
                         final RawEntity returnValueEntity = manager.peer((Class<? extends RawEntity>) (remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))), primaryKeyType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) throughType, returnField));
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
+                        returnLayer.put(remotePrimaryKeyField, res.getObject(1));
                         for (final String field : selectFields)
                         {
                             returnLayer.put(field, res.getObject(field));
