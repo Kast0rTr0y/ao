@@ -232,7 +232,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         sql.append(" FROM ").append(throughTable).append(" t ");
         if (preloadAnnotation != null) {
             final String remoteTable = provider.withSchema(getTableNameConverter().getName(remoteType));
-            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(Common.getPrimaryKeyField(remoteType, getFieldNameConverter()));
+            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(provider.processID(Common.getPrimaryKeyField(remoteType, getFieldNameConverter())));
         }
         final String reverseField = provider.processID(getFieldNameConverter().getName(reverseMethod));
         sql.append(" WHERE ");
