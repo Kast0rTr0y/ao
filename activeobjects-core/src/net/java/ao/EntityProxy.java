@@ -218,9 +218,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final Method throughMethod = throughType.getMethod(annotation.through());
         final String reversePolymorphicTypeFieldName = getAttributeTypeFromMethod(reverseMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(reverseMethod) : null;
         final String remotePolymorphicTypeFieldName = getAttributeTypeFromMethod(throughMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(throughMethod) : null;
-        final String returnField = getFieldNameConverter().getName(throughMethod);
-        final Set<String> selectFields = new LinkedHashSet<String>();
         final DatabaseProvider provider = manager.getProvider();
+        final String returnField = provider.processID(getFieldNameConverter().getName(throughMethod));
+        final Set<String> selectFields = new LinkedHashSet<String>();
         final StringBuilder sql = new StringBuilder("SELECT ").append(provider.processID(returnField));
         selectFields.add(returnField);
         if (remotePolymorphicTypeFieldName != null)
