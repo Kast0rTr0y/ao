@@ -1260,12 +1260,12 @@ public class EntityManager
     @SuppressWarnings("unchecked")
     private void putStatementParameters(PreparedStatement stmt, Object... parameters) throws SQLException
     {
-        int index = 1;
-        for (Object parameter : parameters)
+        for (int i = 0; i < parameters.length; ++i)
         {
+            Object parameter = parameters[i];
             Class entityTypeOrClass = (parameter instanceof RawEntity) ? ((RawEntity)parameter).getEntityType() : parameter.getClass();
             TypeInfo<Object> typeInfo = provider.getTypeManager().getType(entityTypeOrClass);
-            typeInfo.getLogicalType().putToDatabase(this, stmt, index++, parameter, typeInfo.getJdbcWriteType());
+            typeInfo.getLogicalType().putToDatabase(this, stmt, i + 1, parameter, typeInfo.getJdbcWriteType());
         }
     }
 
