@@ -41,7 +41,9 @@ import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.AnnotationDelegate;
 import net.java.ao.Common;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.ManyToMany;
 import net.java.ao.OneToMany;
+import net.java.ao.OneToOne;
 import net.java.ao.Polymorphic;
 import net.java.ao.RawEntity;
 import net.java.ao.SchemaConfiguration;
@@ -181,6 +183,8 @@ public final class SchemaGenerator
         for (final Method method : clazz.getMethods())
         {
             final Class<?> type = Common.getAttributeTypeFromMethod(method);
+            validateManyToManyAnnotation(method);
+            validateOneToOneAnnotation(method);
             validateOneToManyAnnotation(method);
             if (fieldConverter.getName(method) != null && type != null && !type.equals(clazz) && RawEntity.class.isAssignableFrom(type))
             {
@@ -199,6 +203,44 @@ public final class SchemaGenerator
         }
     }
 
+    private static void validateManyToManyAnnotation(final Method method)
+    {
+        final ManyToMany manyToMany = method.getAnnotation(ManyToMany.class);
+        if (manyToMany != null)
+        {
+            final Class<? extends RawEntity<?>> throughType = manyToMany.value();
+            final String reverse = manyToMany.reverse();
+            if (reverse.length() == 0)
+            {
+                logger.warn(method + " does not have a value specified for the reverse element of its ManyToMany annotation. A value will be required by a future version of ActiveObjects.");
+            }
+            else
+            {
+                try
+                {
+                    throughType.getMethod(reverse);
+                }
+                catch (final NoSuchMethodException exception)
+                {
+                    throw new IllegalArgumentException(method + " has a ManyToMany annotation with an invalid reverse element value. It must be the name of the corresponding getter method on the joining entity.", exception);
+                }
+            }
+            if (manyToMany.through().length() == 0)
+            {
+                logger.warn(method + " does not have a value specified for the through element of its ManyToMany annotation. A value will be required by a future version of ActiveObjects.");
+            } else {
+                try
+                {
+                    throughType.getMethod(manyToMany.through());
+                }
+                catch (final NoSuchMethodException exception)
+                {
+                    throw new IllegalArgumentException(method + " has a ManyToMany annotation with an invalid through element value. It must be the name of the getter method on the joining entity that refers to the remote entities.", exception);
+                }
+            }
+        }
+    }
+
     private static void validateOneToManyAnnotation(final Method method)
     {
         final OneToMany oneToMany = method.getAnnotation(OneToMany.class);
@@ -214,6 +256,30 @@ public final class SchemaGenerator
                 try
                 {
                     method.getReturnType().getComponentType().getMethod(reverse);
+                }
+                catch (final NoSuchMethodException exception)
+                {
+                    throw new IllegalArgumentException(method + " has a OneToMany annotation with an invalid reverse element value. It must be the name of the corresponding getter method on the related entity.", exception);
+                }
+            }
+        }
+    }
+
+    private static void validateOneToOneAnnotation(final Method method)
+    {
+        final OneToOne oneToOne = method.getAnnotation(OneToOne.class);
+        if (oneToOne != null)
+        {
+            final String reverse = oneToOne.reverse();
+            if (reverse.length() == 0)
+            {
+                logger.warn(method + " does not have a value specified for the reverse element of its OneToOne annotation. A value will be required by a future version of ActiveObjects.");
+            }
+            else
+            {
+                try
+                {
+                    method.getReturnType().getMethod(reverse);
                 }
                 catch (final NoSuchMethodException exception)
                 {
