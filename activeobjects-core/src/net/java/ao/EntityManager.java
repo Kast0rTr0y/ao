@@ -655,9 +655,6 @@ public class EntityManager
     {
         int rowCount = 0;
 
-        Connection connection = null;
-        PreparedStatement stmt = null;
-
         StringBuilder sql = new StringBuilder("DELETE FROM ");
         sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
 
@@ -667,17 +664,23 @@ public class EntityManager
             sql.append(criteria);
         }
 
+        final Connection connection = provider.getConnection();
         try
         {
-            connection = provider.getConnection();
-            stmt = provider.preparedStatement(connection, sql);
-            putStatementParameters(stmt, parameters);
-            rowCount = stmt.executeUpdate();
+            final PreparedStatement stmt = provider.preparedStatement(connection, sql);
+            try
+            {
+                putStatementParameters(stmt, parameters);
+                rowCount = stmt.executeUpdate();
+            }
+            finally
+            {
+                stmt.close();
+            }
         }
         finally
         {
-            closeQuietly(stmt);
-            closeQuietly(connection);
+            connection.close();
         }
 
         return rowCount;
