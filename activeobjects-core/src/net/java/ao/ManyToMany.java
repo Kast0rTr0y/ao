@@ -71,7 +71,28 @@ public @interface ManyToMany {
 	 */
 	Class<? extends RawEntity<?>> value();
 
-	/**
+    /**
+     * <p>The name of the getter method in the joining entity that refers to the annotated entity.</p>
+     *
+     * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
+     * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>
+     *
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    String reverse() default "";
+
+    /**
+     * <p>The name of the getter method in the joining entity that refers to the entities to be returned by the annotated
+     * method.</p>
+     *
+     * <p>If this is not specified, a warning will be logged at migration time, and ActiveObjects may behave in
+     * unexpected ways. Future versions of ActiveObjects may require that this property be specified.</p>
+     *
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    String through() default "";
+
+    /**
 	 * <p>A String clause allowing developer-specified additional
 	 * conditions to be imposed on the relationship.  The String 
 	 * must be a proper SQL WHERE clause:</p>

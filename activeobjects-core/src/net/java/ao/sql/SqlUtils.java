@@ -91,27 +91,32 @@ public final class SqlUtils
 
     }
 
+    @Deprecated
     public static void closeQuietly(Connection connection)
     {
         Common.closeQuietly(connection);
     }
 
+    @Deprecated
     public static void closeQuietly(Statement statement)
     {
         Common.closeQuietly(statement);
     }
 
+    @Deprecated
     public static void closeQuietly(ResultSet resultSet)
     {
         Common.closeQuietly(resultSet);
     }
 
+    @Deprecated
     public static void closeQuietly(Statement st, Connection c)
     {
         closeQuietly(st);
         closeQuietly(c);
     }
 
+    @Deprecated
     public static void closeQuietly(ResultSet rs, Statement st, Connection c)
     {
         closeQuietly(rs);

@@ -115,7 +115,7 @@ public final class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper
 	public String convert(Class<? extends RawEntity<?>> type) {
 		String back = mappings.get(type);
 		if (back == null) {
-			return type.getCanonicalName();		// sane default
+			return type.getName();		// sane default
 		}
 		
 		return back;
@@ -125,7 +125,7 @@ public final class DefaultPolymorphicTypeMapper implements PolymorphicTypeMapper
 		Set<Class<? extends RawEntity<?>>> set = reverse.get(type);
 		if (set != null && set.size() != 0) {
 			for (Class<? extends RawEntity<?>> clazz : set) {
-				if (Common.interfaceInheritsFrom(clazz, parent)) {
+                if (parent.isAssignableFrom(clazz)) {
 					return clazz;
 				}
 			}

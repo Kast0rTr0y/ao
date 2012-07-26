@@ -76,8 +76,6 @@ public interface Cache {
 	 */
 	public CacheLayer createCacheLayer(RawEntity<?> entity);
 	
-	public RelationsCache getRelationsCache();
-	
 	/**
 	 * Frees all resources associated with the cache.  This should be used to
 	 * handle things like closing connections, freeing result-sets, etc.  This

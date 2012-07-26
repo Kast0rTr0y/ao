@@ -19,7 +19,6 @@ import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -34,7 +33,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -43,11 +41,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Matcher;
 
-import net.java.ao.types.LogicalType;
-
-import static net.java.ao.Common.*;
+import static net.java.ao.Common.getAttributeTypeFromMethod;
+import static net.java.ao.Common.preloadValue;
+import static net.java.ao.Common.where;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -87,16 +84,18 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
     private FieldNameConverter getFieldNameConverter()
     {
-        return this.manager.getNameConverters().getFieldNameConverter();
+        return manager.getNameConverters().getFieldNameConverter();
     }
 
     @SuppressWarnings("unchecked")
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if(method.getName().equals("getEntityProxy")) {
+	public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        final String methodName = method.getName();
+
+        if(methodName.equals("getEntityProxy")) {
             return this;
         }
 
-		if (method.getName().equals("getEntityType")) {
+		if (methodName.equals("getEntityType")) {
 			return type;
 		}
 
@@ -105,7 +104,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			implementation.init((T) proxy);
 		}
 
-		MethodImplWrapper methodImpl = implementation.getMethod(method.getName(), method.getParameterTypes());
+		final MethodImplWrapper methodImpl = implementation.getMethod(methodName, method.getParameterTypes());
 		if (methodImpl != null) {
 			final Class<?> declaringClass = methodImpl.getMethod().getDeclaringClass();
 			if (!Object.class.equals(declaringClass)) {
@@ -119,92 +118,409 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 		}
 
-		if (method.getName().equals(pkAccessor.getName())) {
+		if (methodName.equals(pkAccessor.getName())) {
 			return getKey();
-		} else if (method.getName().equals("save")) {
+		}
+        if (methodName.equals("save")) {
 			save((RawEntity<K>) proxy);
-
 			return Void.TYPE;
-		} else if (method.getName().equals("getEntityManager")) {
+		}
+        if (methodName.equals("getEntityManager")) {
             return manager;
-        } else if (method.getName().equals("addPropertyChangeListener")) {
+        }
+        if (methodName.equals("addPropertyChangeListener")) {
 			addPropertyChangeListener((PropertyChangeListener) args[0]);
 			return null;
-		} else if (method.getName().equals("removePropertyChangeListener")) {
+		}
+        if (methodName.equals("removePropertyChangeListener")) {
 			removePropertyChangeListener((PropertyChangeListener) args[0]);
 			return null;
-		} else if (method.getName().equals("hashCode")) {
+		}
+        if (methodName.equals("hashCode")) {
 			return hashCodeImpl();
-		} else if (method.getName().equals("equals")) {
+		}
+        if (methodName.equals("equals")) {
 			return equalsImpl((RawEntity<K>) proxy, args[0]);
-		} else if (method.getName().equals("toString")) {
+		}
+        if (methodName.equals("toString")) {
 			return toStringImpl();
-		} else if (method.getName().equals("init")) {
+		}
+        if (methodName.equals("init")) {
 			return null;
 		}
-		
-		checkConstraints(method, args);
 
-        String tableName = getTableNameConverter().getName(type);
+        final AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
 
-		Class<?> attributeType = Common.getAttributeTypeFromMethod(method);
-		String polyFieldName = null;
-		
-		if (attributeType != null) {
-            polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null : 
-				getFieldNameConverter().getPolyTypeName(method));
+        if (annotations.getAnnotation(NotNull.class) != null && args != null && args.length > 0) {
+            if (args[0] == null) {
+                throw new IllegalArgumentException("Field '" + getFieldNameConverter().getName(method) + "' does not accept null values");
+            }
+        }
+
+        final OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
+        if (oneToOneAnnotation != null && RawEntity.class.isAssignableFrom(method.getReturnType())) {
+            if (oneToOneAnnotation.reverse().isEmpty()) {
+                return legacyFetchOneToOne((RawEntity<K>) proxy, method, oneToOneAnnotation);
+            } else {
+                return fetchOneToOne(method, oneToOneAnnotation);
+            }
 		}
-		
-		Mutator mutatorAnnotation = method.getAnnotation(Mutator.class);
-		Accessor accessorAnnotation = method.getAnnotation(Accessor.class);
-		OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
-		OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
-		ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
 
-        AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
-		
-		Transient transientAnnotation = annotations.getAnnotation(Transient.class);
+        final OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
+        if (oneToManyAnnotation != null && method.getReturnType().isArray()
+				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
+            if (oneToManyAnnotation.reverse().isEmpty()) {
+                return legacyFetchOneToMany((RawEntity<K>) proxy, method, oneToManyAnnotation);
+            } else {
+                return fetchOneToMany(method, oneToManyAnnotation);
+            }
+		}
 
-		// check annotations first, they trump all
-        if (oneToOneAnnotation != null && Common.interfaceInheritsFrom(method.getReturnType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
+        final ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
+        if (manyToManyAnnotation != null && method.getReturnType().isArray()
+				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
+            if (manyToManyAnnotation.reverse().isEmpty() || manyToManyAnnotation.through().isEmpty()) {
+                return legacyFetchManyToMany((RawEntity<K>) proxy, method, manyToManyAnnotation);
+            } else {
+                return fetchManyToMany(method, manyToManyAnnotation);
+            }
+		}
 
-            Object[] back = retrieveRelations((RawEntity<K>) proxy, new String[0], 
-					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
-					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
-			
-			return back.length == 0 ? null : back[0];
-		} else if (oneToManyAnnotation != null && method.getReturnType().isArray() 
-				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        final String polyFieldName;
+        final Class<?> attributeType = Common.getAttributeTypeFromMethod(method);
+        if (attributeType == null) {
+            polyFieldName = null;
+        } else {
+            polyFieldName = (attributeType.getAnnotation(Polymorphic.class) == null ? null :
+                    getFieldNameConverter().getPolyTypeName(method));
+        }
 
-            return retrieveRelations((RawEntity<K>) proxy, new String[0], 
-					new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) }, 
-					(Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
-					Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
-		} else if (manyToManyAnnotation != null && method.getReturnType().isArray() 
-				&& Common.interfaceInheritsFrom(method.getReturnType().getComponentType(), RawEntity.class)) {
-			Class<? extends RawEntity<?>> throughType = manyToManyAnnotation.value();
-			Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        if (Common.isAccessor(method)) {
+            return invokeGetter((RawEntity<?>) proxy, getKey(), getTableNameConverter().getName(type), getFieldNameConverter().getName(method),
+                    polyFieldName, method.getReturnType(), annotations.getAnnotation(Transient.class) == null);
+		}
 
-            return retrieveRelations((RawEntity<K>) proxy, null, 
-					Common.getMappingFields(getFieldNameConverter(),
-							throughType, type), throughType, (Class<? extends RawEntity>) type, 
-							Common.where(manyToManyAnnotation, getFieldNameConverter()),
-							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, this.type),
-							Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
-		} else if (Common.isAccessor(method)) {
-            return invokeGetter((RawEntity<?>) proxy, getKey(), tableName, getFieldNameConverter().getName(method),
-                    polyFieldName, method.getReturnType(), transientAnnotation == null);
-		} else if (Common.isMutator(method)) {
+        if (Common.isMutator(method)) {
             invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], polyFieldName);
-
 			return Void.TYPE;
 		}
 
 		throw new RuntimeException("Cannot handle method with signature: " + method.toString());
 	}
+
+    private RawEntity[] fetchManyToMany(final Method method, final ManyToMany annotation) throws SQLException, NoSuchMethodException
+    {
+        @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        final Class<? extends RawEntity<?>> throughType = annotation.value();
+        final String whereClause = Common.where(annotation, getFieldNameConverter());
+        final Preload preloadAnnotation = remoteType.getAnnotation(Preload.class);
+        final Method reverseMethod = throughType.getMethod(annotation.reverse());
+        final Method throughMethod = throughType.getMethod(annotation.through());
+        final String reversePolymorphicTypeFieldName = getAttributeTypeFromMethod(reverseMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(reverseMethod) : null;
+        final String remotePolymorphicTypeFieldName = getAttributeTypeFromMethod(throughMethod).isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(throughMethod) : null;
+        final String returnField = getFieldNameConverter().getName(throughMethod);
+        final Set<String> selectFields = new LinkedHashSet<String>();
+        final DatabaseProvider provider = manager.getProvider();
+        final StringBuilder sql = new StringBuilder("SELECT t.").append(provider.processID(returnField));
+        if (remotePolymorphicTypeFieldName != null)
+        {
+            sql.append(", t.").append(provider.processID(remotePolymorphicTypeFieldName));
+        }
+        if (preloadAnnotation != null && !ignorePreload) {
+            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            if (selectFields.contains(Preload.ALL)) {
+                sql.append(", r.*");
+            } else {
+                for (final String field : selectFields) {
+                    sql.append(", r.").append(manager.getProvider().processID(field));
+                }
+            }
+        }
+        final String throughTable = provider.withSchema(getTableNameConverter().getName(throughType));
+        sql.append(" FROM ").append(throughTable).append(" t ");
+        final String remotePrimaryKeyField = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
+        if (preloadAnnotation != null) {
+            final String remoteTable = provider.withSchema(getTableNameConverter().getName(remoteType));
+            sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(provider.processID(remotePrimaryKeyField));
+        }
+        final String reverseField = provider.processID(getFieldNameConverter().getName(reverseMethod));
+        sql.append(" WHERE ");
+        if (preloadAnnotation != null) {
+            sql.append("t.");
+        }
+        sql.append(reverseField).append(" = ?");
+        if (reversePolymorphicTypeFieldName != null)
+        {
+            sql.append(" AND ");
+            if (preloadAnnotation != null) {
+                sql.append("t.");
+            }
+            sql.append(provider.processID(reversePolymorphicTypeFieldName)).append(" = ?");
+        }
+        if (!whereClause.trim().equals(""))
+        {
+            sql.append(" AND (").append(provider.processWhereClause(whereClause)).append(")");
+        }
+        final List<RawEntity> back = new ArrayList<RawEntity>();
+        final Connection conn = provider.getConnection();
+        try
+        {
+            final PreparedStatement stmt = provider.preparedStatement(conn, sql);
+            try
+            {
+                final TypeInfo<K> dbType = getTypeManager().getType(getClass(key));
+                dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
+                if (reversePolymorphicTypeFieldName != null)
+                {
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(this.type));
+                }
+                final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<K>>) remoteType);
+                final ResultSet res = stmt.executeQuery();
+                try
+                {
+                    while (res.next())
+                    {
+                        if (selectFields.remove(Preload.ALL))
+                        {
+                            selectFields.addAll(Common.getValueFieldsNames(remoteType, getFieldNameConverter()));
+                        }
+                        final RawEntity returnValueEntity = manager.peer((Class<? extends RawEntity>) (remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))), primaryKeyType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) throughType, returnField));
+                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
+                        returnLayer.put(remotePrimaryKeyField, res.getObject(1));
+                        for (final String field : selectFields)
+                        {
+                            returnLayer.put(field, res.getObject(field));
+                        }
+                        back.add(returnValueEntity);
+                    }
+                }
+                finally
+                {
+                    res.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+        return back.toArray((RawEntity[]) Array.newInstance(remoteType, back.size()));
+    }
+
+    private RawEntity[] fetchOneToMany(final Method method, final OneToMany annotation) throws SQLException, NoSuchMethodException
+    {
+        @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
+        final String whereClause = where(annotation, getFieldNameConverter());
+        final Preload preloadAnnotation = remoteType.getAnnotation(Preload.class);
+        final Method remoteMethod = remoteType.getMethod(annotation.reverse());
+        final String remotePolymorphicTypeFieldName = getPolymorphicTypeFieldName(remoteMethod);
+        final StringBuilder sql = new StringBuilder("SELECT ");
+        final Set<String> selectFields = new LinkedHashSet<String>();
+        selectFields.add(remotePrimaryKeyFieldName);
+        if (preloadAnnotation != null && !ignorePreload) {
+            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            if (selectFields.contains(Preload.ALL)) {
+                sql.append(Preload.ALL);
+            } else {
+                for (final String field : selectFields) {
+                    sql.append(manager.getProvider().processID(field)).append(',');
+                }
+                sql.setLength(sql.length() - 1);
+            }
+        } else {
+            sql.append(manager.getProvider().processID(remotePrimaryKeyFieldName));
+        }
+        sql.append(" FROM ").append(manager.getProvider().withSchema(getTableNameConverter().getName(remoteType)));
+        sql.append(" WHERE ").append(manager.getProvider().processID(getFieldNameConverter().getName(remoteMethod))).append(" = ?");
+        if (!whereClause.trim().equals("")) {
+            sql.append(" AND (").append(manager.getProvider().processWhereClause(whereClause)).append(")");
+        }
+        if (remotePolymorphicTypeFieldName != null) {
+            sql.append(" AND ").append(manager.getProvider().processID(remotePolymorphicTypeFieldName)).append(" = ?");
+        }
+        final Connection conn = manager.getProvider().getConnection();
+        try {
+            final PreparedStatement stmt = manager.getProvider().preparedStatement(conn, sql);
+            try
+            {
+                final TypeInfo<K> dbType = getTypeManager().getType(getClass(key));
+                dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
+                if (remotePolymorphicTypeFieldName != null) {
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(this.type));
+                }
+                final ResultSet res = stmt.executeQuery();
+                try {
+                    final List<RawEntity<?>> result = new ArrayList<RawEntity<?>>();
+                    while (res.next()) {
+                        final Object returnValue = Common.getPrimaryKeyType(getTypeManager(), (Class) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class) remoteType, remotePrimaryKeyFieldName);
+                        final RawEntity<?> returnValueEntity = manager.peer((Class) remoteType, returnValue);
+                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
+                        if (selectFields.remove(Preload.ALL))
+                        {
+                            selectFields.addAll(Common.getValueFieldsNames(remoteType, getFieldNameConverter()));
+                        }
+                        for (final String field : selectFields) {
+                            returnLayer.put(field, res.getObject(field));
+                        }
+                        result.add(returnValueEntity);
+                    }
+                    return result.toArray((RawEntity<?>[]) Array.newInstance(remoteType, result.size()));
+                } finally {
+                    res.close();
+                }
+            } finally {
+                stmt.close();
+            }
+        } finally {
+            conn.close();
+        }
+    }
+
+    private String getPolymorphicTypeFieldName(final Method remoteMethod)
+    {
+        final Class<?> attributeType = getAttributeTypeFromMethod(remoteMethod);
+        return attributeType != null && attributeType.isAssignableFrom(this.type)
+                && attributeType.isAnnotationPresent(Polymorphic.class) ? getFieldNameConverter().getPolyTypeName(remoteMethod) : null;
+    }
+
+    private RawEntity fetchOneToOne(final Method method, final OneToOne annotation) throws SQLException, NoSuchMethodException
+    {
+        @SuppressWarnings("unchecked") final Class<? extends RawEntity<?>> remoteType = (Class<? extends RawEntity<?>>) method.getReturnType();
+        final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
+        final String whereClause = Common.where(annotation, getFieldNameConverter());
+        final Method remoteMethod = remoteType.getMethod(annotation.reverse());
+        final String remotePolymorphicTypeFieldName = getPolymorphicTypeFieldName(remoteMethod);
+        final Preload preloadAnnotation = remoteType.getAnnotation(Preload.class);
+        final StringBuilder sql = new StringBuilder("SELECT ");
+        final Set<String> selectFields = new LinkedHashSet<String>();
+        selectFields.add(remotePrimaryKeyFieldName);
+        if (preloadAnnotation != null && !ignorePreload)
+        {
+            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            if (selectFields.contains(Preload.ALL))
+            {
+                sql.append(Preload.ALL);
+            }
+            else
+            {
+                for (final String field : selectFields)
+                {
+                    sql.append(manager.getProvider().processID(field)).append(',');
+                }
+                sql.setLength(sql.length() - 1);
+            }
+        }
+        else
+        {
+            sql.append(manager.getProvider().processID(remotePrimaryKeyFieldName));
+        }
+        sql.append(" FROM ").append(manager.getProvider().withSchema(getTableNameConverter().getName(remoteType)));
+        sql.append(" WHERE ").append(manager.getProvider().processID(getFieldNameConverter().getName(remoteMethod))).append(" = ?");
+        if (whereClause.trim().length() != 0)
+        {
+            sql.append(" AND (").append(manager.getProvider().processWhereClause(whereClause)).append(")");
+        }
+        if (remotePolymorphicTypeFieldName != null)
+        {
+            sql.append(" AND ").append(manager.getProvider().processID(remotePolymorphicTypeFieldName)).append(" = ?");
+        }
+        final Connection conn = manager.getProvider().getConnection();
+        try
+        {
+            final PreparedStatement stmt = manager.getProvider().preparedStatement(conn, sql);
+            try
+            {
+                final TypeInfo<K> dbType = getTypeManager().getType(getClass(key));
+                dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
+                if (remotePolymorphicTypeFieldName != null)
+                {
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(this.type));
+                }
+                final ResultSet res = stmt.executeQuery();
+                try
+                {
+                    if (res.next())
+                    {
+                        final RawEntity returnValueEntity = manager.peer((Class) remoteType, Common.getPrimaryKeyType(getTypeManager(), (Class<? extends RawEntity<K>>) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class<K>) remoteType, remotePrimaryKeyFieldName));
+                        if (selectFields.remove(Preload.ALL))
+                        {
+                            selectFields.addAll(Common.getValueFieldsNames(remoteType, getFieldNameConverter()));
+                        }
+                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
+                        for (final String field : selectFields)
+                        {
+                            returnLayer.put(field, res.getObject(field));
+                        }
+                        return returnValueEntity;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                finally
+                {
+                    res.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        finally
+        {
+            conn.close();
+        }
+    }
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private RawEntity[] legacyFetchManyToMany(final RawEntity<K> proxy, final Method method, final ManyToMany manyToManyAnnotation) throws SQLException
+    {
+        final Class<? extends RawEntity<?>> throughType = manyToManyAnnotation.value();
+        final Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        return retrieveRelations(proxy, null,
+                Common.getMappingFields(getFieldNameConverter(),
+                        throughType, type), throughType, (Class<? extends RawEntity>) type,
+                        Common.where(manyToManyAnnotation, getFieldNameConverter()),
+                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, this.type),
+                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
+    }
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private RawEntity[] legacyFetchOneToMany(final RawEntity<K> proxy, final Method method, final OneToMany oneToManyAnnotation) throws SQLException
+    {
+        final Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType().getComponentType();
+        return retrieveRelations(proxy, new String[0],
+                new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
+                (Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
+    }
+
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private RawEntity legacyFetchOneToOne(final RawEntity<K> proxy, final Method method, final OneToOne oneToOneAnnotation) throws SQLException
+    {
+        Class<? extends RawEntity<?>> type = (Class<? extends RawEntity<?>>) method.getReturnType();
+        final RawEntity[] back = retrieveRelations(proxy, new String[0],
+                new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
+                (Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, this.type));
+        return back.length == 0 ? null : back[0];
+    }
 
     private TableNameConverter getTableNameConverter()
     {
@@ -281,13 +597,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 			}
 			TypeInfo pkType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
-            pkType.getLogicalType().putToDatabase(this.manager, stmt, index++, key, pkType.getJdbcWriteType());
-
-            this.manager.getRelationsCache().remove(cacheLayer.getToFlush());
+            pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
 			cacheLayer.clearFlush();
-
-            this.manager.getRelationsCache().remove(entity, dirtyFields);
-
 			stmt.executeUpdate();
 
 			for (PropertyChangeListener l : listeners) {
@@ -410,10 +721,10 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					return handleNullReturn((V) value, type);
                 } else if (isBigDecimal(value, type)) { // Oracle for example returns BigDecimal when we expect doubles
                     return (V) handleBigDecimal(value, type);
-				} else if (Common.interfaceInheritsFrom(type, RawEntity.class) 
+				} else if (RawEntity.class.isAssignableFrom(type)
 						&& instanceOf(value, Common.getPrimaryKeyClassType((Class<? extends RawEntity<K>>) type))) {
                     value = manager.peer((Class<? extends RawEntity<Object>>) type, value);
-	
+
 					cacheLayer.put(name, value);
 					return handleNullReturn((V) value, type);
 				} else {
@@ -515,32 +826,32 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
 	}
 
-	private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity, String[] inMapFields, 
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity, String[] inMapFields,
 			String[] outMapFields, Class<V> type, String where, String[] thisPolyNames) throws SQLException {
 		return retrieveRelations(entity, inMapFields, outMapFields, type, type, where, thisPolyNames, null);
 	}
 
-    private <V extends RawEntity<K>> V[] retrieveRelations(RawEntity<K> entity,
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    private <V extends RawEntity<K>> V[] retrieveRelations(final RawEntity<K> entity,
                                                            String[] inMapFields,
-                                                           String[] outMapFields,
-                                                           Class<? extends RawEntity<?>> type,
-                                                           Class<V> finalType,
-                                                           String where,
-                                                           String[] thisPolyNames,
-                                                           String[] thatPolyNames) throws SQLException
+                                                           final String[] outMapFields,
+                                                           final Class<? extends RawEntity<?>> type,
+                                                           final Class<V> finalType,
+                                                           final String where,
+                                                           final String[] thisPolyNames,
+                                                           final String[] thatPolyNames) throws SQLException
     {
 		if (inMapFields == null || inMapFields.length == 0) {
             inMapFields = Common.getMappingFields(getFieldNameConverter(), type, this.type);
 		}
-        final String[] fields = getFields(Common.getPrimaryKeyField(finalType, getFieldNameConverter()), inMapFields, outMapFields, where);
-
-        V[] cached = manager.getRelationsCache().get(entity, finalType, type, fields, where);
-		if (cached != null) {
-			return cached;
-		}
-		
 		List<V> back = new ArrayList<V>();
-		List<RawEntity<?>> throughValues = new ArrayList<RawEntity<?>>();
 		List<String> resPolyNames = new ArrayList<String>(thatPolyNames == null ? 0 : thatPolyNames.length);
 
         String table = getTableNameConverter().getName(type);
@@ -555,7 +866,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             conn = provider.getConnection();
 			StringBuilder sql = new StringBuilder();
 			String returnField;
-			String throughField = null;
+			String throughField;
 			int numParams = 0;
 			
 			Set<String> selectFields = new LinkedHashSet<String>();
@@ -793,8 +1104,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 
 			dbType = Common.getPrimaryKeyType(provider.getTypeManager(), finalType);
-			final TypeInfo<Object> throughDBType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<Object>>) type);
-			
 			res = stmt.executeQuery();
 			while (res.next()) {
                 K returnValue = dbType.getLogicalType().pullFromDatabase(manager, res, (Class<K>) type, returnField);
@@ -810,13 +1119,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				if (backType.equals(this.type) && returnValue.equals(key)) {
 					continue;
 				}
-				
-				if (throughField != null) {
-				    LogicalType logicalType = throughDBType.getLogicalType();
-                    throughValues.add(manager.peer((Class<? extends RawEntity<Object>>) type,
-                            logicalType.pullFromDatabase(manager, res, type, throughField)));
-				}
-
                 V returnValueEntity = manager.peer(backType, returnValue);
                 CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
 
@@ -836,14 +1138,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		} finally {
             closeQuietly(res, stmt, conn);
         }
-		
-		cached = back.toArray((V[]) Array.newInstance(finalType, back.size()));
-
-        manager.getRelationsCache().put(entity, 
-				(throughValues.size() > 0 ? throughValues.toArray(new RawEntity[throughValues.size()]) : cached), 
-				type, cached, finalType, fields, where);
-		
-		return cached;
+		return back.toArray((V[]) Array.newInstance(finalType, back.size()));
 	}
 
     private TypeManager getTypeManager()
@@ -861,24 +1156,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     {
         return (Class<O>) object.getClass();
     }
-
-    private String[] getFields(String pkField, String[] inMapFields, String[] outMapFields, String where) {
-		List<String> back = new ArrayList<String>();
-		back.addAll(Arrays.asList(outMapFields));
-		
-		if (inMapFields != null && inMapFields.length > 0) {
-			if (!inMapFields[0].trim().equalsIgnoreCase(pkField)) {
-				back.addAll(Arrays.asList(inMapFields));
-			}
-		}
-		
-		Matcher matcher = SqlUtils.WHERE_CLAUSE.matcher(where);
-		while (matcher.find()) {
-			back.add(matcher.group(1));
-		}
-		
-		return back.toArray(new String[back.size()]);
-	}
 
     private <V> V convertValue(ResultSet res, String field, String polyName, Class<V> type) throws SQLException
     {
@@ -944,11 +1221,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
      */
     private boolean isBigDecimal(Object value, Class<?> type)
     {
-        if (!(value instanceof BigDecimal))
-        {
-            return false;
-        }
-        return isInteger(type) || isLong(type) || isFloat(type) || isDouble(type);
+        return value instanceof BigDecimal && (isInteger(type) || isLong(type) || isFloat(type) || isDouble(type));
     }
 
     private Object handleBigDecimal(Object value, Class<?> type)
@@ -996,15 +1269,4 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         return type.equals(int.class) || type.equals(Integer.class);
     }
 
-    private void checkConstraints(Method method, Object[] args) {
-        AnnotationDelegate annotations = Common.getAnnotationDelegate(getFieldNameConverter(), method);
-		
-		NotNull notNullAnnotation = annotations.getAnnotation(NotNull.class);
-		if (notNullAnnotation != null && args != null && args.length > 0) {
-			if (args[0] == null) {
-                String name = getFieldNameConverter().getName(method);
-				throw new IllegalArgumentException("Field '" + name + "' does not accept null values");
-			}
-		}
-	}
 }

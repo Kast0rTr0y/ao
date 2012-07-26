@@ -83,15 +83,21 @@ public final class Common {
 		return back.toString();
 	}
 
+    @Deprecated
 	public static boolean interfaceInheritsFrom(Class<?> type, Class<?> superType) {
-		return typeInstanceOf(type, superType);
-	}
+        return superType.isAssignableFrom(type);
+    }
 
+    @Deprecated
 	public static boolean typeInstanceOf(Class<?> type, Class<?> otherType) {
 		return otherType.isAssignableFrom(type);
 	}
 
-	public static String[] getMappingFields(FieldNameConverter converter, Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to)
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    public static String[] getMappingFields(FieldNameConverter converter, Class<? extends RawEntity<?>> from, Class<? extends RawEntity<?>> to)
     {
 		Set<String> back = new LinkedHashSet<String>();
 
@@ -102,10 +108,10 @@ public final class Common {
 				continue;
 			}
 
-			if (interfaceInheritsFrom(attributeType, to)) {
+            if (to.isAssignableFrom(attributeType)) {
 				back.add(converter.getName(method));
 			} else if (attributeType.getAnnotation(Polymorphic.class) != null
-					&& interfaceInheritsFrom(to, attributeType)) {
+					&& attributeType.isAssignableFrom(to)) {
 				back.add(converter.getName(method));
 			}
 		}
@@ -113,14 +119,18 @@ public final class Common {
 		return back.toArray(new String[back.size()]);
 	}
 
-	public static String[] getPolymorphicFieldNames(FieldNameConverter converter, Class<? extends RawEntity<?>> from,
+    /**
+     * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
+     */
+    @Deprecated
+    public static String[] getPolymorphicFieldNames(FieldNameConverter converter, Class<? extends RawEntity<?>> from,
 			Class<? extends RawEntity<?>> to) {
 		Set<String> back = new LinkedHashSet<String>();
 
 		for (Method method : from.getMethods()) {
 			Class<?> attributeType = getAttributeTypeFromMethod(method);
 
-			if (attributeType != null && interfaceInheritsFrom(to, attributeType)
+            if (attributeType != null && attributeType.isAssignableFrom(to)
 					&& attributeType.getAnnotation(Polymorphic.class) != null) {
 				back.add(converter.getPolyTypeName(method));
 			}
@@ -241,7 +251,7 @@ public final class Common {
 				String name = manager.getNameConverters().getFieldNameConverter().getName(m);
 
 				// don't index Entity fields
-				if (name != null && !Common.interfaceInheritsFrom(attributeType, RawEntity.class) && !back.contains(name)) {
+                if (name != null && !RawEntity.class.isAssignableFrom(attributeType) && !back.contains(name)) {
 					back.add(name);
 				}
 			}
@@ -570,6 +580,7 @@ public final class Common {
      * any exception
      * @param resultSet the result set to close
      */
+    @Deprecated
     public static void closeQuietly(ResultSet resultSet)
     {
         if (resultSet != null)
@@ -590,6 +601,7 @@ public final class Common {
      * any exception
      * @param statement the statement to close
      */
+    @Deprecated
     public static void closeQuietly(Statement statement)
     {
         if (statement != null)
@@ -610,6 +622,7 @@ public final class Common {
      * any exception
      * @param connection the connection to close, can be {@code null}
      */
+    @Deprecated
     public static void closeQuietly(Connection connection)
     {
         if (connection != null)

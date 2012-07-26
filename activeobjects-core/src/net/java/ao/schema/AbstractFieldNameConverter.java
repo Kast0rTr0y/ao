@@ -181,7 +181,7 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter, 
     private static boolean isAttributeOfTypeEntity(Method method)
     {
         final Class<?> attributeTypeFromMethod = Common.getAttributeTypeFromMethod(method);
-        return attributeTypeFromMethod != null && Common.interfaceInheritsFrom(attributeTypeFromMethod, RawEntity.class);
+        return attributeTypeFromMethod != null && RawEntity.class.isAssignableFrom(attributeTypeFromMethod);
     }
 
     public abstract String convertName(String name);
