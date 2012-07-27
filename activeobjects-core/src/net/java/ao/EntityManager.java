@@ -526,6 +526,70 @@ public class EntityManager
         }
     }
 
+    /**
+     * <p>Deletes rows from the table corresponding to {@code type}. In contrast to {@link #delete(RawEntity[])},
+     * this method allows you to delete rows without creating entities for them first.</p>
+     *
+     * <p>Example:</p>
+     *
+     * <pre>manager.deleteWithSQL(Person.class, "name = ?", "Charlie")</pre>
+     *
+     * <p>The SQL in {@code criteria} is not parsed or modified in any way by ActiveObjects, and is simply appended
+     * to the DELETE statement in a WHERE clause. The above example would cause an SQL statement similar to the
+     * following to be executed:</p>
+     *
+     * <pre>DELETE FROM people WHERE name = 'Charlie';</pre>
+     *
+     * <p>If {@code criteria} is {@code null}, this method deletes all rows from the table corresponding to {@code
+     * type}.</p>
+     *
+     * <p>This method does not attempt to determine the set of entities affected by the statement. As such, it is
+     * recommended that you call {@link #flushAll()} after calling this method.</p>
+     *
+     * @param type The entity type corresponding to the table to delete from.
+     * @param criteria An optional SQL fragment specifying which rows to delete.
+     * @param parameters A varargs array of parameters to be passed to the executed prepared statement. The length
+     * of this array <i>must</i> match the number of parameters (denoted by the '?' char) in {@code criteria}.
+     * @return The number of rows deleted from the table.
+     * @see #delete(RawEntity...)
+     * @see #find(Class, String, Object...)
+     * @see #findWithSQL(Class, String, String, Object...)
+     */
+    public <K> int deleteWithSQL(Class<? extends RawEntity<K>> type, String criteria, Object... parameters) throws SQLException
+    {
+        int rowCount = 0;
+
+        StringBuilder sql = new StringBuilder("DELETE FROM ");
+        sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
+
+        if (criteria != null)
+        {
+            sql.append(" WHERE ");
+            sql.append(criteria);
+        }
+
+        final Connection connection = provider.getConnection();
+        try
+        {
+            final PreparedStatement stmt = provider.preparedStatement(connection, sql);
+            try
+            {
+                putStatementParameters(stmt, parameters);
+                rowCount = stmt.executeUpdate();
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+        finally
+        {
+            connection.close();
+        }
+
+        return rowCount;
+    }
+
 	/**
 	 * Returns all entities of the given type.  This actually peers the call to
 	 * the {@link #find(Class, Query)} method.
@@ -1051,6 +1115,17 @@ public class EntityManager
 			throw new RuntimeException("Entities can only be used with a single EntityManager instance");
 		}
 	}
+
+    private void putStatementParameters(PreparedStatement stmt, Object... parameters) throws SQLException
+    {
+        for (int i = 0; i < parameters.length; ++i)
+        {
+            Object parameter = parameters[i];
+            Class entityTypeOrClass = (parameter instanceof RawEntity) ? ((RawEntity) parameter).getEntityType() : parameter.getClass();
+            @SuppressWarnings("unchecked") TypeInfo<Object> typeInfo = provider.getTypeManager().getType(entityTypeOrClass);
+            typeInfo.getLogicalType().putToDatabase(this, stmt, i + 1, parameter, typeInfo.getJdbcWriteType());
+        }
+    }
 
 	private static interface Function<R, F> {
 		public R invoke(F formals) throws SQLException;
