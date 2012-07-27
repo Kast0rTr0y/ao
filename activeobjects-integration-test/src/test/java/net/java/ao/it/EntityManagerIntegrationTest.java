@@ -266,7 +266,7 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     public void testDeleteWithSQLWithCriteria() throws SQLException
     {
         assertEquals(3, entityManager.count(Pen.class));
-        entityManager.deleteWithSQL(Pen.class, "width = ?", 0.7);
+        entityManager.deleteWithSQL(Pen.class, escapeFieldName(Pen.class, "getWidth") + " = ?", 0.7);
         assertEquals(2, entityManager.count(Pen.class));
     }
 
