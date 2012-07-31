@@ -11,7 +11,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>0.10-SNAPSHOT</version>
+    <version>0.20-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
@@ -55,11 +55,16 @@
             <name>Don Brown</name>
             <timezone>+10</timezone>
         </developer>
+        <developer>
+            <id>ahempel</id>
+            <name>Adrian Hempel</name>
+            <timezone>+10</timezone>
+        </developer>
     </developers>
 
     <issueManagement>
         <system>JIRA</system>
-        <url>http://java.net/jira/browse/ACTIVEOBJECTS</url>
+        <url>https://studio.atlassian.com/browse/AO</url>
     </issueManagement>
 
     <modules>
