@@ -220,4 +220,40 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         }
     }
 
+    @Test
+    public void testAlterDropForeignKeyComesBeforeDropTable()
+    {
+        final String localTableName = "localTableName";
+        final String foreignTableName = "foreignTableName";
+
+        final DDLAction dropForeignKey = newDropForeignKey(localTableName, foreignTableName);
+        final DDLAction dropLocalTable = newDropTable(localTableName);
+        final DDLAction dropForeignTable = newDropTable(foreignTableName);
+
+        final DDLAction[] ddlActions = SchemaReader.sortTopologically(new DDLAction[]{dropForeignTable, dropForeignKey, dropLocalTable});
+
+        assertEquals(dropForeignKey, ddlActions[0]);
+        // that's it we don't care in which order tables are dropped
+    }
+
+    private DDLAction newDropTable(String localTableName)
+    {
+        final DDLTable ddlTable = new DDLTable();
+        ddlTable.setName(localTableName);
+
+        final DDLAction dropTable = new DDLAction(DDLActionType.DROP);
+        dropTable.setTable(ddlTable);
+        return dropTable;
+    }
+
+    private DDLAction newDropForeignKey(String localTableName, String foreignTableName)
+    {
+        final DDLForeignKey foreignKey = new DDLForeignKey();
+        foreignKey.setDomesticTable(localTableName);
+        foreignKey.setTable(foreignTableName);
+
+        final DDLAction dropForeignKey = new DDLAction(DDLActionType.ALTER_DROP_KEY);
+        dropForeignKey.setKey(foreignKey);
+        return dropForeignKey;
+    }
 }

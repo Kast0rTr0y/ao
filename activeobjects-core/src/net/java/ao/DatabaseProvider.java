@@ -65,7 +65,6 @@ import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -218,11 +217,17 @@ public abstract class DatabaseProvider
             case CREATE:
                 return renderCreateTableActions(nameConverters, action.getTable());
 
+            case DROP:
+                return renderDropTableActions(nameConverters, action.getTable());
+
             case ALTER_ADD_COLUMN:
                 return renderAddColumnActions(nameConverters, action.getTable(), action.getField());
 
             case ALTER_CHANGE_COLUMN:
                 return renderAlterTableChangeColumn(nameConverters, action.getTable(), action.getOldField(), action.getField());
+
+            case ALTER_DROP_COLUMN:
+                return renderDropColumnActions(nameConverters, action.getTable(), action.getField());
 
             case ALTER_ADD_KEY:
                 return ImmutableList.of(renderAlterTableAddKey(action.getKey())

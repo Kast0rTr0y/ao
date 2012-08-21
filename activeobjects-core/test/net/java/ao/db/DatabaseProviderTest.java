@@ -81,6 +81,12 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
+    public final void testRenderActionDropTable() throws IOException
+    {
+        testRenderAction("drop-table.sql", createActionDropTable, getDatabaseProvider());
+    }
+
+    @Test
     public final void testRenderActionAddColumn() throws IOException
     {
         testRenderAction("add-column.sql", createActionAddColumn, getDatabaseProvider());
@@ -90,6 +96,12 @@ public abstract class DatabaseProviderTest
     public void testRenderActionAlterColumn() throws IOException
     {
         testRenderAction("alter-column.sql", createActionAlterColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionDropColumn() throws IOException
+    {
+        testRenderAction("drop-column.sql", createActionDropColumn, getDatabaseProvider());
     }
 
     @Test
@@ -266,6 +278,33 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
+    private Function<DatabaseProvider, DDLAction> createActionDropTable = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLAction back = new DDLAction(DDLActionType.DROP);
+
+            DDLTable table = new DDLTable();
+            table.setName("person");
+            back.setTable(table);
+
+            DDLField idField = new DDLField();
+            idField.setName("id");
+            idField.setType(db.getTypeManager().getType(int.class));
+            idField.setAutoIncrement(true);
+            idField.setNotNull(true);
+            idField.setPrimaryKey(true);
+
+            DDLField nameField = new DDLField();
+            nameField.setName("name");
+            nameField.setType(db.getTypeManager().getType(String.class));
+
+            table.setFields(new DDLField[]{idField, nameField});
+
+            return back;
+        }
+    };
+
     private Function<DatabaseProvider, DDLAction> createActionAddColumn = new Function<DatabaseProvider, DDLAction>()
     {
         public DDLAction apply(DatabaseProvider db)
@@ -306,6 +345,26 @@ public abstract class DatabaseProviderTest
 
             DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
             back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionDropColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
             back.setField(field);
             back.setTable(table);
 

@@ -235,6 +235,10 @@ public final class SchemaReader
 
         for (DDLTable table : dropTables)
         {
+            DDLAction action = new DDLAction(DDLActionType.DROP);
+            action.setTable(table);
+            actions.add(action);
+
             // remove all foreign keys on that table
             dropKeys.addAll(Arrays.asList(table.getForeignKeys()));
 
@@ -305,6 +309,14 @@ public final class SchemaReader
             for (DDLField field : createFields)
             {
                 DDLAction action = new DDLAction(DDLActionType.ALTER_ADD_COLUMN);
+                action.setTable(fromTable);
+                action.setField(field);
+                actions.add(action);
+            }
+
+            for (DDLField field : dropFields)
+            {
+                DDLAction action = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
                 action.setTable(fromTable);
                 action.setField(field);
                 actions.add(action);
@@ -546,8 +558,16 @@ public final class SchemaReader
                     dropIndexes.add(action);
                     break;
 
+                case ALTER_DROP_COLUMN:
+                    dropColumns.add(action);
+                    break;
+
                 case ALTER_CHANGE_COLUMN:
                     changeColumns.add(action);
+                    break;
+
+                case DROP:
+                    drops.add(action);
                     break;
 
                 case CREATE:
