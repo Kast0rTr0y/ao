@@ -174,13 +174,13 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         if (databaseUpdater == NullDatabase.class)
         {
             entityManager = createEntityManager();
-            entityManager.migrate(); // empty the database
+            entityManager.migrateAggressively(); // empty the database
             DATABASES.remove(jdbc);
         }
         else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex)
         {
             entityManager = createEntityManager();
-            entityManager.migrate(); // empty the database
+            entityManager.migrateAggressively(); // empty the database
             newInstance(databaseUpdater).update(entityManager);
             dbConfiguration.setEntityManager(entityManager);
             DATABASES.put(jdbc, dbConfiguration);

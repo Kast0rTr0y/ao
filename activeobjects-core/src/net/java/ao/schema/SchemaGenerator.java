@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -80,9 +81,10 @@ public final class SchemaGenerator
     public static void migrate(DatabaseProvider provider,
                                SchemaConfiguration schemaConfiguration,
                                NameConverters nameConverters,
+                               final boolean aggressive,
                                Class<? extends RawEntity<?>>... classes) throws SQLException
     {
-        final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, classes);
+        final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, aggressive, classes);
         final Connection conn = provider.getConnection();
         try
         {
@@ -109,13 +111,27 @@ public final class SchemaGenerator
     private static Iterable<Iterable<SQLAction>> generateImpl(final DatabaseProvider provider,
                                                  final SchemaConfiguration schemaConfiguration,
                                                  final NameConverters nameConverters,
+                                                 final boolean aggressive,
                                                  Class<? extends RawEntity<?>>... classes) throws SQLException
     {
         final DDLTable[] parsedTables = parseDDL(provider, nameConverters, classes);
         final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensitive()));
-        return Iterables.transform(ImmutableList.of(actions),
+        return Iterables.transform(Iterables.filter(ImmutableList.of(actions), new Predicate<DDLAction>() {
+
+            @Override
+            public boolean apply(final DDLAction input) {
+                switch (input.getActionType()) {
+                    case DROP:
+                    case ALTER_DROP_COLUMN:
+                        return aggressive;
+                    default:
+                        return true;
+                }
+            }
+
+        }),
                 new Function<DDLAction, Iterable<SQLAction>>()
                 {
                     public Iterable<SQLAction> apply(DDLAction from)
