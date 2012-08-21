@@ -8,6 +8,7 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.EntityUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -23,6 +24,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Autoincrement does not make sense on Boolean fields, so AO should throw an exception
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -32,6 +34,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Boolean is not allowed as a primary key.
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -41,6 +44,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Boolean has a limited scope, so we can easily test all possible values
      */
     @Test
+    @NonTransactional
     public void testPossibleValues() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -62,6 +66,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Do a create and update on a regular boolean column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -83,6 +88,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Test that delete works
      */
     @Test
+    @NonTransactional
     public void testDelete() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -118,6 +124,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * A default empty string should not be allowed on a boolean type
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -127,6 +134,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Test that correctly defined default values work (with different cases)
      */
     @Test
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -154,6 +162,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -170,6 +179,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -188,6 +198,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Column is set to NOT NULL, positive test
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -204,6 +215,7 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
      * Inserting null should not pass
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullData() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);

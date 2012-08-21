@@ -1,5 +1,6 @@
 package net.java.ao.it.datatypes;
 
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import net.java.ao.ActiveObjectsConfigurationException;
@@ -35,6 +36,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test simple clob column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -69,6 +71,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -85,6 +88,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -103,6 +107,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test not null column create
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -119,6 +124,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test NotNull column create no value
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnCreatingWithoutValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -131,6 +137,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test NotNull blob column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnSetNull() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -146,6 +153,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test default value
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -158,6 +166,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Empty String default value should not pass, is null on certain dbs
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -167,6 +176,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * Test deletion
      */
     @Test
+    @NonTransactional
     public void testDeletion() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);

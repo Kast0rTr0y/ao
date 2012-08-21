@@ -10,6 +10,7 @@ import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.schema.StringLength;
+import net.java.ao.test.jdbc.NonTransactional;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
@@ -30,6 +31,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * VarChar does not support AutoIncrement
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -39,6 +41,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * @NotNull not required for primary id column
      */
     @Test
+    @NonTransactional
     public void testPrimaryWithoutNotNull() throws Exception
     {
         entityManager.migrate(PrimaryWithoutNotNull.class);
@@ -48,6 +51,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Test creation using a String id
      */
     @Test
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -61,6 +65,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Empty String is treated as null on some databases, thus we expect an exception here
      */
     @Test(expected = ActiveObjectsException.class)
+    @NonTransactional
     public void testEmptyId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -72,6 +77,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Null can't be used as id
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNullId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -83,6 +89,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Test different values for a VarChar column (ID column in this case)
      */
     @Test
+    @NonTransactional
     public void testColumnValues() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -101,6 +108,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Update a simple varchar column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -122,6 +130,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Empty string is treated as null on certain databases, disallow
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -131,6 +140,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Check different default values
      */
     @Test
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -151,6 +161,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -167,6 +178,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -185,6 +197,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Test a not null column constraint column
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -201,6 +214,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Not providing a value for a not null column should fail
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNoValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -213,6 +227,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Inserting null in a not null column should throw an Exception
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -226,6 +241,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * (passes fine on hsql but blows on MSSQL/Oracle
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnEmptyString() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -238,6 +254,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * String length can be specified as long as it is within the maximum value for varchars in all databases
      */
     @Test
+    @NonTransactional
     public void testColumnWithAllowableLength() throws Exception
     {
         entityManager.migrate(ColumnWithAllowableLength.class);
@@ -255,6 +272,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * StringLength annotation that is above the maximum value for varchars in any database causes an error
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testColumnWithExcessiveLength() throws Exception
     {
         entityManager.migrate(ColumnWithExcessiveLength.class);

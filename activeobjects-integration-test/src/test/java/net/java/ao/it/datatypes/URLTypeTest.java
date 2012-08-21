@@ -10,6 +10,7 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.net.URL;
@@ -29,6 +30,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
 
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -38,6 +40,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * @NotNull not required for primary id column
      */
     @Test
+    @NonTransactional
     public void testPrimaryWithoutNotNull() throws Exception
     {
         entityManager.migrate(PrimaryWithoutNotNull.class);
@@ -47,6 +50,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Test creation using a URL id
      */
     @Test
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -61,6 +65,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Null can't be used as id
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNullId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -72,6 +77,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Test different values for a URL column (ID column in this case)
      */
     @Test
+    @NonTransactional
     public void testColumnValues() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -89,6 +95,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Update a simple url column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -111,6 +118,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Empty string is treated as null on certain databases, disallow
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -122,6 +130,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Invalid default values
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testInvalidDefaultColumn() throws Exception
     {
         entityManager.migrate(InvalidDefaultColumn.class);
@@ -133,6 +142,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Check different default values
      */
     @Test
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -149,6 +159,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -165,6 +176,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -183,6 +195,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Test a not null column constraint column
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -200,6 +213,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Not providing a value for a not null column should fail
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNoValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -212,6 +226,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * Inserting null in a not null column should throw an Exception
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -224,6 +239,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * create with a string instead of a URL object
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testWrongDatatype() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -238,6 +254,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * this should not be allowed, since it'd potentially allow writing of data that can't be read
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testWrongDatatypeCorrectData() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -252,6 +269,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      * this should not be allowed, since it'd allow writing of data that can't be read
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testWrongDatatypeWrongData() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
