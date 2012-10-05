@@ -135,9 +135,21 @@ public abstract class DatabaseProviderTest
         assertEquals(getExpectedWhereClause(), getDatabaseProvider().processWhereClause(where));
     }
 
+    @Test
+    public final void testProcessWhereClauseWithNoIdentifier()
+    {
+        final String where = "1 = 1";
+        assertEquals(getExpectedWhereClauseWithNoIdentifier(), getDatabaseProvider().processWhereClause(where));
+    }
+
     protected String getExpectedWhereClause()
     {
         return "field1 = 2 and field2 like %er";
+    }
+
+    protected String getExpectedWhereClauseWithNoIdentifier()
+    {
+        return "1 = 1";
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
