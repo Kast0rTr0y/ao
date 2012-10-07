@@ -57,9 +57,21 @@ public final class PostgresQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    {
+        return format("SELECT '%s' FROM %s ORDER BY '%s' DESC, '%s' DESC, '%s' ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithOrderClause()
     {
         return format("SELECT COUNT(*) FROM %s ORDER BY '%s' DESC", getExpectedTableName(Person.class), getPersonLastName());
+    }
+
+    @Override
+    protected String getExpectedSqlForCountWithMultipleOrderClauses()
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override
