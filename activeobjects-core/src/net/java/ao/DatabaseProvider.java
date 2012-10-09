@@ -755,7 +755,6 @@ public abstract class DatabaseProvider
 
     private String processOrderClause(String order)
     {
-        // TODO this will only "process" the first ID
         String[] orderClauses = order.split(",");
         StringBuilder sb = new StringBuilder();
         for(String orderClause : orderClauses)

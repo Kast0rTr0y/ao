@@ -121,6 +121,12 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    public final void testSelectWithMultipleOrderClausesMultipleOrders()
+    {
+        assertSelectSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders());
+    }
+
+    @Test
     public final void testCountWithOrderClause()
     {
         assertCountSqlEquals(getSelectWithOrderClauseQuery(), getExpectedSqlForCountWithOrderClause());
@@ -132,6 +138,12 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertCountSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForCountWithMultipleOrderClauses());
     }
 
+    @Test
+    public final void testCountWithMultipleOrderClausesMultipleOrders()
+    {
+        assertCountSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders());
+    }
+
     private Query getSelectWithOrderClauseQuery()
     {
         return Query.select().order(getPersonLastName() + " DESC");
@@ -139,21 +151,34 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
 
     private Query getSelectWithMultipleOrderClausesQuery()
     {
-        //return Query.select().order(getPersonLastName() + " DESC").order(getPersonAge() + " ASC").order(getPersonId() + " ASC");
+        return Query.select().order(getPersonLastName() + ", " + getPersonAge() + ", " + getPersonId());
+    }
+
+    private Query getSelectWithMultipleOrderClausesMultipleOrdersQuery()
+    {
         return Query.select().order(getPersonLastName() + " DESC, " + getPersonAge() + " ASC, " + getPersonId() + " ASC");
     }
 
     protected abstract String getExpectedSqlForSelectWithOrderClause();
 
-    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders()
     {
         return format("SELECT %s FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    {
+        return format("SELECT %s FROM %s ORDER BY %s, %s, %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
 
     protected abstract String getExpectedSqlForCountWithOrderClause();
 
     protected String getExpectedSqlForCountWithMultipleOrderClauses()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY %s, %s, %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    protected String getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders()
     {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
