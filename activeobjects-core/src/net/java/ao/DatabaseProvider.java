@@ -755,7 +755,20 @@ public abstract class DatabaseProvider
 
     private String processOrderClause(String order)
     {
-        return SqlUtils.ORDER_CLAUSE.matcher(order).replaceFirst(processID("$1"));
+        // TODO this will only "process" the first ID
+        String[] orderClauses = order.split(",");
+        StringBuilder sb = new StringBuilder();
+        for(String orderClause : orderClauses)
+        {
+            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst(processID("$1"));
+            if(sb.length() != 0)
+            {
+                sb.append(",");
+            }
+            sb.append(newClause);
+        }
+
+        return sb.toString();
     }
 
     /**

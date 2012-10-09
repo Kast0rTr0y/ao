@@ -57,21 +57,9 @@ public final class SqlServerQueryTest extends QueryTest
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected String getExpectedSqlForCountWithOrderClause()
     {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC", getExpectedTableName(Person.class), getPersonLastName());
-    }
-
-    @Override
-    protected String getExpectedSqlForCountWithMultipleOrderClauses()
-    {
-        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -35,6 +35,7 @@ import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -144,11 +145,18 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
 
     protected abstract String getExpectedSqlForSelectWithOrderClause();
 
-    protected abstract String getExpectedSqlForSelectWithMultipleOrderClauses();
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    {
+        return format("SELECT %s FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
 
     protected abstract String getExpectedSqlForCountWithOrderClause();
 
-    protected abstract String getExpectedSqlForCountWithMultipleOrderClauses();
+    protected String getExpectedSqlForCountWithMultipleOrderClauses()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
 
     @Test
     public final void testSelectWithLimit()
