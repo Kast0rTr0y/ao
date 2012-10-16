@@ -145,6 +145,7 @@ public abstract class DatabaseProviderTest
     @Test
     public final void testProcessWhereClauseWithWildcard()
     {
+        // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         final String where = "field1 = *";
         assertEquals(getExpectedWhereClauseWithWildcard(), getDatabaseProvider().processWhereClause(where));
     }
@@ -152,7 +153,7 @@ public abstract class DatabaseProviderTest
     @Test
     public final void testProcessWhereClauseWithUnderScoreIdentifier()
     {
-        final String where = "_field1 = *";
+        final String where = "_field1 = 1";
         assertEquals(getExpectedWhereClauseWithUnderscore(), getDatabaseProvider().processWhereClause(where));
     }
 
@@ -184,12 +185,13 @@ public abstract class DatabaseProviderTest
 
     protected String getExpectedWhereClauseWithWildcard()
     {
+        // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         return "field1 = *";
     }
 
     protected String getExpectedWhereClauseWithUnderscore()
     {
-        return "_field1 = *";
+        return "_field1 = 1";
     }
 
     protected String getExpectedWhereClauseWithNumericIdentifier()

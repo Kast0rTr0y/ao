@@ -27,6 +27,7 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     @Override
     protected String getExpectedWhereClauseWithWildcard()
     {
+        // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         // PostgreSQL should quote all but wildcards and digits
         return "\"field1\" = *";
     }
@@ -34,8 +35,7 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     @Override
     protected String getExpectedWhereClauseWithUnderscore()
     {
-        // PostgreSQL should quote all but wildcards and digits
-        return "\"_field1\" = *";
+        return "\"_field1\" = 1";
     }
 
     @Override
