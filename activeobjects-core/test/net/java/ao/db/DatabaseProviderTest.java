@@ -135,9 +135,78 @@ public abstract class DatabaseProviderTest
         assertEquals(getExpectedWhereClause(), getDatabaseProvider().processWhereClause(where));
     }
 
+    @Test
+    public final void testProcessWhereClauseWithNoIdentifier()
+    {
+        final String where = "1 = 1";
+        assertEquals(where, getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testProcessWhereClauseWithWildcard()
+    {
+        // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
+        final String where = "field1 = *";
+        assertEquals(getExpectedWhereClauseWithWildcard(), getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testProcessWhereClauseWithUnderScoreIdentifier()
+    {
+        final String where = "_field1 = 1";
+        assertEquals(getExpectedWhereClauseWithUnderscore(), getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testProcessWhereClauseWithNumericIdentifier()
+    {
+        final String where = "12345abc = 1";
+        assertEquals(getExpectedWhereClauseWithNumericIdentifier(), getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testProcessWhereClauseWithUnderscoredNumeric()
+    {
+        final String where = "_12345abc = 1";
+        assertEquals(getExpectedWhereClauseWithUnderscoredNumeric(), getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testProcessWhereClauseWithAlphaNumeric()
+    {
+        final String where = "a12345bc = 1";
+        assertEquals(getExpectedWhereClauseWithAlphaNumeric(), getDatabaseProvider().processWhereClause(where));
+    }
+
     protected String getExpectedWhereClause()
     {
         return "field1 = 2 and field2 like %er";
+    }
+
+    protected String getExpectedWhereClauseWithWildcard()
+    {
+        // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
+        return "field1 = *";
+    }
+
+    protected String getExpectedWhereClauseWithUnderscore()
+    {
+        return "_field1 = 1";
+    }
+
+    protected String getExpectedWhereClauseWithNumericIdentifier()
+    {
+        return "12345abc = 1";
+    }
+
+    protected String getExpectedWhereClauseWithUnderscoredNumeric()
+    {
+        return "_12345abc = 1";
+    }
+
+    protected String getExpectedWhereClauseWithAlphaNumeric()
+    {
+        return "a12345bc = 1";
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
