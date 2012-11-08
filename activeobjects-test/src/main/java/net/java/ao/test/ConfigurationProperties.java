@@ -11,7 +11,7 @@ public final class ConfigurationProperties
     public static String get(String key, final String defaultValue)
     {
         String value = load().getProperty(key, defaultValue);
-        if (value.startsWith("${")) // we're using an unfiltered test.properties
+        if (value == null || value.startsWith("${")) // we're using an unfiltered test.properties
         {
             value = defaultValue;
         }

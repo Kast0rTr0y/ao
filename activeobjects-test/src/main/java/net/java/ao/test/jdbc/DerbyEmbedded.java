@@ -2,21 +2,42 @@ package net.java.ao.test.jdbc;
 
 public class DerbyEmbedded extends AbstractJdbcConfiguration
 {
-    @Override
-    public String getUrl()
+
+    public static final String DEFAULT_URL = "jdbc:derby:memory:ao_test;create=true";
+    public static final String DEFAULT_USER = "sa";
+    public static final String DEFAULT_PASSWORD = "password";
+
+    public DerbyEmbedded()
     {
-        return "jdbc:derby:memory:ao_test;create=true";
+        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, null);
+    }
+
+    public DerbyEmbedded(String url, String username, String password, String schema)
+    {
+        super(url, username, password, schema);
     }
 
     @Override
-    public String getUsername()
+    protected String getDefaultSchema()
     {
-        return "sa";
+        return null;
     }
 
     @Override
-    public String getPassword()
+    protected String getDefaultUrl()
     {
-        return "password";
+        return DEFAULT_URL;
+    }
+
+    @Override
+    protected String getDefaultUsername()
+    {
+        return DEFAULT_USER;
+    }
+
+    @Override
+    protected String getDefaultPassword()
+    {
+        return DEFAULT_PASSWORD;
     }
 }
