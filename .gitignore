@@ -3,5 +3,6 @@ target
 *.iml
 *.ipr
 *.iws
+.idea/
 *.log
 bin
