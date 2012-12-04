@@ -15,9 +15,9 @@
  */
 package net.java.ao;
 
-import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.info.SchemaInfoResolver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +25,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Daniel Spiewak
@@ -62,11 +63,13 @@ public class EntityManagerTest
         final NameConverters nameConverters = mock(NameConverters.class);
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
+        final SchemaInfoResolver schemaInfoResolver = mock(SchemaInfoResolver.class);
 
         final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
         when(configuration.getNameConverters()).thenReturn(nameConverters);
         when(nameConverters.getTableNameConverter()).thenReturn(tableNameConverter);
         when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
+        when(configuration.getSchemaInfoResolver()).thenReturn(schemaInfoResolver);
         return configuration;
     }
 }

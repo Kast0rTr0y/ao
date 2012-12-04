@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.List;
 
+import net.java.ao.schema.info.SchemaInfo;
 import net.java.ao.types.TypeInfo;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -89,8 +90,8 @@ public class SearchableEntityManager extends EntityManager {
     }
 
     @Override
-	protected <T extends RawEntity<K>, K> T getAndInstantiate(Class<T> type, K key) {
-		T back = super.getAndInstantiate(type, key);
+	protected <T extends RawEntity<K>, K> T getAndInstantiate(SchemaInfo<T> schemaInfo, K key) {
+		T back = super.getAndInstantiate(schemaInfo, key);
 		back.addPropertyChangeListener(new IndexAppender<T, K>(back));
 
 		return back;
@@ -111,6 +112,7 @@ public class SearchableEntityManager extends EntityManager {
 	@SuppressWarnings("unchecked")
 	public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException, SQLException
     {
+        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
 		String table = getTableNameConverter().getName(type);
 		List<String> indexFields = Common.getSearchableFields(this, type);
 		String[] searchFields = new String[indexFields.size()];
@@ -133,7 +135,7 @@ public class SearchableEntityManager extends EntityManager {
 		}
 		searcher.close();
 
-		return peer(type, keys);
+		return peer(schemaInfo, keys);
 	}
 
 	@Override

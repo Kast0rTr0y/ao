@@ -12,6 +12,8 @@ public class ImmutableSchemaInfo<T extends RawEntity<?>> implements SchemaInfo<T
 {
 
     private final Class<T> entityType;
+    private final String tableName;
+    private final String primaryKeyFieldName;
     private final ImmutableSet<Method> accessors;
     private final ImmutableSet<Method> mutators;
     private final Map<Method, String> fieldNameByMethod;
@@ -20,6 +22,8 @@ public class ImmutableSchemaInfo<T extends RawEntity<?>> implements SchemaInfo<T
 
     protected ImmutableSchemaInfo(
             Class<T> entityType,
+            String tableName,
+            String primaryKeyFieldName,
             Set<Method> accessors,
             Set<Method> mutators,
             Map<Method, String> fieldNameByMethod,
@@ -27,6 +31,8 @@ public class ImmutableSchemaInfo<T extends RawEntity<?>> implements SchemaInfo<T
             Map<String, Class<?>> fieldTypeByFieldName)
     {
         this.entityType = entityType;
+        this.tableName = tableName;
+        this.primaryKeyFieldName = primaryKeyFieldName;
         this.accessors = ImmutableSet.copyOf(accessors);
         this.mutators = ImmutableSet.copyOf(mutators);
         this.fieldNameByMethod = ImmutableMap.copyOf(fieldNameByMethod);
@@ -38,6 +44,18 @@ public class ImmutableSchemaInfo<T extends RawEntity<?>> implements SchemaInfo<T
     public Class<T> getEntityType()
     {
         return entityType;
+    }
+
+    @Override
+    public String getTableName()
+    {
+        return tableName;
+    }
+
+    @Override
+    public String getPrimaryKey()
+    {
+        return primaryKeyFieldName;
     }
 
     @Override
@@ -82,4 +100,19 @@ public class ImmutableSchemaInfo<T extends RawEntity<?>> implements SchemaInfo<T
         return polyNameByFieldName.get(fieldName);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ImmutableSchemaInfo that = (ImmutableSchemaInfo) o;
+
+        return !(entityType != null ? !entityType.equals(that.entityType) : that.entityType != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return entityType != null ? entityType.hashCode() : 0;
+    }
 }

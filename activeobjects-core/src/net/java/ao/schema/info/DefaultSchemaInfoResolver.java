@@ -10,6 +10,7 @@ import net.java.ao.Polymorphic;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.PrimaryKey;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -23,6 +24,7 @@ public class DefaultSchemaInfoResolver implements SchemaInfoResolver
     {
         FieldNameConverter fieldNameConverter = nameConverters.getFieldNameConverter();
 
+        String primaryKeyFieldName = null;
         Set<Method> accessors = Sets.newHashSet();
         Set<Method> mutators = Sets.newHashSet();
         Map<Method, String> fieldNameByMethod = Maps.newHashMap();
@@ -75,10 +77,18 @@ public class DefaultSchemaInfoResolver implements SchemaInfoResolver
                     polyNameByFieldName.put(fieldName, polyFieldName);
                 }
             }
+
+            if (primaryKeyFieldName == null && method.isAnnotationPresent(PrimaryKey.class))
+            {
+                primaryKeyFieldName = fieldName;
+            }
+
         }
 
         return new ImmutableSchemaInfo<T>(
                 type,
+                nameConverters.getTableNameConverter().getName(type),
+                primaryKeyFieldName,
                 accessors,
                 mutators,
                 fieldNameByMethod,

@@ -9,6 +9,10 @@ public interface SchemaInfo<T extends RawEntity<?>>
 
     Class<T> getEntityType();
 
+    String getTableName();
+
+    String getPrimaryKey();
+
     String getFieldName(Method method);
 
     Class<?> getFieldType(String fieldName);

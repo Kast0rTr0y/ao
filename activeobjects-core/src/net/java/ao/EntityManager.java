@@ -21,6 +21,7 @@ import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
 import net.java.ao.schema.*;
 import net.java.ao.schema.info.SchemaInfo;
+import net.java.ao.schema.info.SchemaInfoResolver;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
 
@@ -68,6 +69,9 @@ public class EntityManager
 
     private final SchemaConfiguration schemaConfiguration;
     private final NameConverters nameConverters;
+
+    private final SchemaInfoResolver schemaInfoResolver;
+
 	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
 
         @Override
@@ -110,6 +114,8 @@ public class EntityManager
         schemaConfiguration = checkNotNull(configuration.getSchemaConfiguration());
 
         typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
+
+        schemaInfoResolver = checkNotNull(configuration.getSchemaInfoResolver(), "schemaInfoResolver");
     }
 
 
@@ -235,16 +241,17 @@ public class EntityManager
         };
     }
 
-    protected <T extends RawEntity<K>, K> T[] peer(final Class<T> type, K... keys) throws SQLException
+    protected <T extends RawEntity<K>, K> T[] peer(final SchemaInfo<T> schemaInfo, K... keys) throws SQLException
     {
-        return getFromCache(type, new Function<T, K>()
+        return getFromCache(schemaInfo.getEntityType(), new Function<T, K>()
         {
             public T invoke(K key)
             {
-                return getAndInstantiate(type, key);
+                return getAndInstantiate(schemaInfo, key);
             }
         }, keys);
     }
+
 
     private <T extends RawEntity<K>, K> T[] getFromCache(Class<T> type, Function<T, K> create, K... keys) throws SQLException
     {
@@ -272,15 +279,16 @@ public class EntityManager
      * method should not be repurposed to perform any caching, since ActiveObjects already assumes that the caching has
      * been performed.
      *
-     * @param type The type of the entity to create.
+     * @param schemaInfo The type of the entity to create.
      * @param key The primary key corresponding to the entity instance required.
      * @return An entity instance of the specified type and primary key.
      */
-    protected <T extends RawEntity<K>, K> T getAndInstantiate(Class<T> type, K key)
+    protected <T extends RawEntity<K>, K> T getAndInstantiate(SchemaInfo<T> schemaInfo, K key)
     {
-        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, type, key);
+        Class<T> type = schemaInfo.getEntityType();
+        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, schemaInfo, key);
 
-		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type, EntityProxyAccessor.class}, proxy));
+		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
 		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
 		return entity;
 	}
@@ -301,9 +309,9 @@ public class EntityManager
         return get(type, toArray(key))[0];
     }
 
-    protected <T extends RawEntity<K>, K> T peer(Class<T> type, K key) throws SQLException
+    protected <T extends RawEntity<K>, K> T peer(SchemaInfo<T> schemaInfo, K key) throws SQLException
     {
-        return peer(type, toArray(key))[0];
+        return peer(schemaInfo, toArray(key))[0];
     }
 
     @SuppressWarnings("unchecked")
@@ -346,7 +354,8 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
-		final String table = nameConverters.getTableNameConverter().getName(type);
+        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
+		final String table = schemaInfo.getTableName();
 
         Set<DBParam> listParams = new HashSet<DBParam>();
         listParams.addAll(Arrays.asList(params));
@@ -354,7 +363,7 @@ public class EntityManager
         for (Method method : MethodFinder.getInstance().findAnnotatedMethods(Generator.class, type))
         {
             Generator genAnno = method.getAnnotation(Generator.class);
-            final String field = nameConverters.getFieldNameConverter().getName(method);
+            final String field = schemaInfo.getFieldName(method);
             ValueGenerator<?> generator;
 
             valGenCacheLock.writeLock().lock();
@@ -426,7 +435,7 @@ public class EntityManager
         try
         {
             connection = provider.getConnection();
-            back = peer(type, provider.insertReturningKey(this, connection,
+            back = peer(schemaInfo, provider.insertReturningKey(this, connection,
                                                           type,
                                                           Common.getPrimaryKeyClassType(type),
                                                           Common.getPrimaryKeyField(type, getFieldNameConverter()),
@@ -727,6 +736,8 @@ public class EntityManager
 
         query.resolveFields(type, getFieldNameConverter());
 
+        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
+
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         if (preloadAnnotation != null)
         {
@@ -795,7 +806,7 @@ public class EntityManager
             final String[] canonicalFields = query.getCanonicalFields(provider, getFieldNameConverter(), type);
             while (res.next())
             {
-                final T entity = peer(type, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
+                final T entity = peer(schemaInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
                 final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
 
                 for (String cacheField : canonicalFields)
@@ -841,6 +852,7 @@ public class EntityManager
     public <T extends RawEntity<K>, K> T[] findWithSQL(Class<T> type, String keyField, String sql, Object... parameters) throws SQLException
     {
         List<T> back = new ArrayList<T>();
+        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
 
         Connection connection = null;
         PreparedStatement stmt = null;
@@ -854,7 +866,7 @@ public class EntityManager
             res = stmt.executeQuery();
             while (res.next())
             {
-                back.add(peer(type, Common.getPrimaryKeyType(provider.getTypeManager(), type).getLogicalType().pullFromDatabase(this, res, (Class<K>)type, keyField)));
+                back.add(peer(schemaInfo, Common.getPrimaryKeyType(provider.getTypeManager(), type).getLogicalType().pullFromDatabase(this, res, (Class<K>)type, keyField)));
             }
         }
         finally
@@ -916,7 +928,7 @@ public class EntityManager
 
         // the factory caches details about the proxied interface, since reflection calls are expensive
         // inside the stream loop
-        SchemaInfo<T> schemaInfo = configuration.getSchemaInfoResolver().resolve(nameConverters, type);
+        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
 
         // Execute the` query
         Connection conn = null;
@@ -1030,6 +1042,10 @@ public class EntityManager
     public NameConverters getNameConverters()
     {
         return nameConverters;
+    }
+
+    protected <T extends RawEntity<?>> SchemaInfo<T> resolveSchemaInfo(Class<T> type) {
+        return schemaInfoResolver.resolve(nameConverters, type);
     }
 
     /**

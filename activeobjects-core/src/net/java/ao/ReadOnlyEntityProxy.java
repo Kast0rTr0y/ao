@@ -60,7 +60,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         if(methodName.equals("getEntityProxy")) {
             return this;
         } else if (methodName.equals("getEntityType")) {
-            return schemaInfo.getEntityType();
+            return getType();
         } else if (methodName.equals("save")) {
             // someone tried to call "save" at a read-only instance. We don't simply ignore that but rather throw an
             // exception, so the client knows that the call did not do what he expected.
@@ -123,7 +123,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
     }
 
     public int hashCodeImpl() {
-        return (key.hashCode() + schemaInfo.getEntityType().hashCode()) % (2 << 15);
+        return (key.hashCode() + schemaInfo.hashCode()) % (2 << 15);
     }
 
     public boolean equalsImpl(RawEntity<K> proxy, Object obj) {
@@ -167,7 +167,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         if (obj instanceof ReadOnlyEntityProxy<?, ?>) {
             ReadOnlyEntityProxy<?, ?> proxy = (ReadOnlyEntityProxy<?, ?>) obj;
 
-            if (proxy.schemaInfo.getEntityType().equals(schemaInfo.getEntityType()) && proxy.key.equals(key)) {
+            if (proxy.schemaInfo.equals(schemaInfo) && proxy.key.equals(key)) {
                 return true;
             }
         }

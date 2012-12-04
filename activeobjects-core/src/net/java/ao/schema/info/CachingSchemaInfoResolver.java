@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 public class CachingSchemaInfoResolver extends SchemaInfoResolverWrapper implements SchemaInfoResolver
 {
 
-    private final ConcurrentMap<Class, SchemaInfo> cache = new ConcurrentHashMap<Class, SchemaInfo>();
+    private final ConcurrentMap<CacheKey, SchemaInfo> cache = new ConcurrentHashMap<CacheKey, SchemaInfo>();
 
     public CachingSchemaInfoResolver()
     {
@@ -25,17 +25,59 @@ public class CachingSchemaInfoResolver extends SchemaInfoResolverWrapper impleme
     @Override
     public <T extends RawEntity<?>> SchemaInfo<T> resolve(NameConverters nameConverters, Class<T> type)
     {
-        SchemaInfo<T> schemaInfo = cache.get(type);
+        CacheKey key = new CacheKey(nameConverters, type);
+        SchemaInfo<T> schemaInfo = cache.get(key);
         if (schemaInfo == null)
         {
             SchemaInfo<T> created = super.resolve(nameConverters, type);
-            schemaInfo = cache.putIfAbsent(type, created);
+            schemaInfo = cache.putIfAbsent(key, created);
             if (schemaInfo == null)
             {
                 schemaInfo = created;
             }
         }
         return schemaInfo;
+    }
+
+    private static class CacheKey
+    {
+        private final NameConverters nameConverters;
+        private final Class type;
+
+        private CacheKey(NameConverters nameConverters, Class type)
+        {
+            this.nameConverters = nameConverters;
+            this.type = type;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CacheKey cacheKey = (CacheKey) o;
+
+            return !(nameConverters != null ? !nameConverters.equals(cacheKey.nameConverters) : cacheKey.nameConverters != null)
+                    && !(type != null ? !type.equals(cacheKey.type) : cacheKey.type != null);
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = nameConverters != null ? nameConverters.hashCode() : 0;
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "CacheKey{" +
+                    "nameConverters=" + nameConverters +
+                    ", type=" + type +
+                    '}';
+        }
     }
 
 }

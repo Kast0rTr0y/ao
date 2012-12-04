@@ -44,6 +44,7 @@ import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
+import net.java.ao.schema.info.SchemaInfo;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
@@ -66,8 +67,8 @@ public final class Common {
 
     public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) throws SQLException
     {
-		return manager.peer(type, key);
-	}
+        return manager.peer(manager.resolveSchemaInfo(type), key);
+    }
 
 	public static String convertSimpleClassName(String name) {
 		String[] array = name.split("\\.");
@@ -81,16 +82,6 @@ public final class Common {
 		back.append(name.substring(1));
 
 		return back.toString();
-	}
-
-    @Deprecated
-	public static boolean interfaceInheritsFrom(Class<?> type, Class<?> superType) {
-        return superType.isAssignableFrom(type);
-    }
-
-    @Deprecated
-	public static boolean typeInstanceOf(Class<?> type, Class<?> otherType) {
-		return otherType.isAssignableFrom(type);
 	}
 
     /**
