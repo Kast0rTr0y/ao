@@ -19,10 +19,10 @@
         <oracle.version>11.2.0.7.0</oracle.version>
         <db.skip>false</db.skip>
         <db.host>localhost</db.host>
-        <db.name>ao</db.name>
+        <db.name>ao_test</db.name>
         <db.sid>orcl</db.sid>
-        <db.username>aotestuser</db.username>
-        <db.password>aotestpassword</db.password>
+        <db.username>ao_user</db.username>
+        <db.password>ao_password</db.password>
         <db.schema>ao_schema</db.schema>
     </properties>
 
