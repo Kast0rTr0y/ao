@@ -85,7 +85,7 @@
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
@@ -176,7 +176,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -224,7 +224,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -273,7 +273,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -322,7 +322,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -371,7 +371,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -416,7 +416,7 @@
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MysqlIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest
                             </excludedGroups>
