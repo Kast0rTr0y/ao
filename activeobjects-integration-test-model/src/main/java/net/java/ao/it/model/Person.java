@@ -61,6 +61,7 @@ public interface Person extends Entity {
 
 	@Default("http://www.google.com")
 	@Mutator("url")
+    @StringLength(255)
 	public void setURL(URL url);
 	
 	public Company getCompany();
