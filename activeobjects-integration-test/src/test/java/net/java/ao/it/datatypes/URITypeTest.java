@@ -8,6 +8,7 @@ import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
+import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import org.junit.Test;
@@ -296,6 +297,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
+        @StringLength(255)
         public URI getId();
     }
 
@@ -305,6 +307,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface PrimaryWithoutNotNull extends RawEntity<URI>
     {
         @PrimaryKey("ID")
+        @StringLength(255)
         public URI getId();
     }
 
@@ -315,6 +318,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     {
         @NotNull
         @PrimaryKey("ID")
+        @StringLength(255)
         public URI getId();
     }
 
@@ -323,6 +327,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
      */
     public static interface SimpleColumn extends Entity
     {
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
@@ -333,6 +338,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface EmptyDefaultColumn extends Entity
     {
         @Default("")
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
@@ -343,6 +349,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface DefaultColumn extends Entity
     {
         @Default("http://www.google.com?q=active%20objects")
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
@@ -350,6 +357,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface InvalidDefaultColumn extends Entity
     {
         @Default(":\\NULL*")
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
@@ -360,6 +368,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface NotNullColumn extends Entity
     {
         @NotNull
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
@@ -370,6 +379,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
     public static interface Indexed extends Entity
     {
         @net.java.ao.schema.Indexed
+        @StringLength(255)
         public URI getUri();
         public void setUri(URI uri);
     }
