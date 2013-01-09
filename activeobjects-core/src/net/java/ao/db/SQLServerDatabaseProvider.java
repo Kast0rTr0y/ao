@@ -1,15 +1,15 @@
 /*
  * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
+ *
+ *	    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -130,7 +130,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))));
         }
-        
+
         sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
         if (field.isPrimaryKey())
@@ -142,8 +142,9 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
         if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
         {
+            //lowercase 'sys.objects' because the database could be case sensitive, and the lowercase name is the proper name for such cases.
             sql.add(SQLAction.of(new StringBuilder()
-                    .append("IF EXISTS (SELECT 1 FROM SYS.OBJECTS WHERE NAME = ").append(renderValue(defaultConstraintName(table, field))).append(") ")
+                    .append("IF EXISTS (SELECT 1 FROM sys.objects WHERE NAME = ").append(renderValue(defaultConstraintName(table, field))).append(") ")
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(defaultConstraintName(table, field))));
 
@@ -180,7 +181,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 
         return sql.build();
     }
-    
+
     private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field)
     {
         return Iterables.filter(newArrayList(table.getIndexes()), new Predicate<DDLIndex>()
@@ -224,7 +225,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             return null;
         }
     }
-    
+
     @Override
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
