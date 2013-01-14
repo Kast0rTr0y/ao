@@ -1,7 +1,7 @@
 CREATE TABLE person (
     id INTEGER AUTO_INCREMENT NOT NULL,
     firstName VARCHAR(255) NOT NULL,
-    lastName TEXT,
+    lastName LONGTEXT,
     age INTEGER,
     url VARCHAR(767) NOT NULL,
     height DOUBLE DEFAULT 62.3,
