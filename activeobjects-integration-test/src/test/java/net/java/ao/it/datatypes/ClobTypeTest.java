@@ -1,7 +1,5 @@
 package net.java.ao.it.datatypes;
 
-import org.junit.Test;
-
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
@@ -9,6 +7,9 @@ import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import org.junit.Test;
+
+import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -29,6 +30,30 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
             sb.append("0123456789#");
         }
         LARGE_CLOB = sb.append(size).toString();
+    }
+
+    /**
+     * Tests that we can insert a string of length greather than 2^16 characters in length.
+     * see https://ecosystem.atlassian.net/browse/AO-396 for details.
+     */
+    @Test
+    public void testUnlimitedLengthText() throws Exception
+    {
+        entityManager.migrate(LargeTextColumn.class);
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        final int size = 2^17;
+        params.put(getFieldName(LargeTextColumn.class, "getText"), createString(size));
+        LargeTextColumn entity = entityManager.create(LargeTextColumn.class, params);
+        entity.save();
+        entityManager.flushAll();
+        LargeTextColumn[] found = entityManager.find(LargeTextColumn.class);
+        assertEquals("should only have inserted 1 row", 1, found.length);
+        assertEquals("should be " + size + " long", size, found[0].getText().length());
+    }
+
+    private String createString(int size)
+    {
+        return new String(new char[size]).replace("\0", "a");
     }
 
     /**
@@ -212,6 +237,14 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 
     public static interface NotNullColumn extends Entity
     {
+        @NotNull
+        @StringLength(StringLength.UNLIMITED)
+        String getText();
+
+        void setText(String text);
+    }
+
+    public static interface LargeTextColumn extends Entity {
         @NotNull
         @StringLength(StringLength.UNLIMITED)
         String getText();
