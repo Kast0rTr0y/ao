@@ -222,7 +222,7 @@ public final class TypeManager
             addMapping(stringType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(StringType.DEFAULT_LENGTH));
             addMapping(stringType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(Integer.MAX_VALUE));
 
             addMapping(enumType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(StringType.DEFAULT_LENGTH));
@@ -230,12 +230,12 @@ public final class TypeManager
             addMapping(uriType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(uriType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(Integer.MAX_VALUE));
 
             addMapping(urlType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(urlType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(Integer.MAX_VALUE));
 
             return this;
         }
