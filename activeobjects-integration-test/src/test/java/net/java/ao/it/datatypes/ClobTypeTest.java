@@ -33,15 +33,15 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * Tests that we can insert a string of length greather than 2^16 characters in length.
+     * Tests that we can insert a string of greather than 2^16 characters in length.
      * see https://ecosystem.atlassian.net/browse/AO-396 for details.
      */
     @Test
-    public void testUnlimitedLengthText() throws Exception
+    public void testUnlimitedLengthFieldCanStoreStringWithLengthGreaterThan64k() throws Exception
     {
         entityManager.migrate(LargeTextColumn.class);
         final HashMap<String, Object> params = new HashMap<String, Object>();
-        final int size = 2^17;
+        final int size = (int) Math.pow(2, 17);
         params.put(getFieldName(LargeTextColumn.class, "getText"), createString(size));
         LargeTextColumn entity = entityManager.create(LargeTextColumn.class, params);
         entity.save();
