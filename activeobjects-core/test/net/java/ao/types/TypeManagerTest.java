@@ -1,15 +1,15 @@
 /*
  * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
+ *
+ *	    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -38,10 +38,10 @@ public final class TypeManagerTest
     private static final TypeQualifiers LENGTH_127 = qualifiers().stringLength(127);
     private static final TypeQualifiers LENGTH_STRING_DEFAULT = qualifiers().stringLength(StringType.DEFAULT_LENGTH);
     private static final TypeQualifiers LENGTH_URL_DEFAULT = qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH);
-    private static final TypeQualifiers UNLIMITED = qualifiers().stringLength(UNLIMITED_LENGTH);
-    
+    private static final TypeQualifiers UNLIMITED = qualifiers().stringLength(UNLIMITED_LENGTH).precision(Integer.MAX_VALUE);
+
     private TypeManager typeManager;
-    
+
     @Before
     public final void setUp()
     {
@@ -51,7 +51,7 @@ public final class TypeManagerTest
             .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
             .addMapping(doubleType(), schemaType("DOUBLE"))
             .addMapping(dateType(), schemaType("DATETIME"))
-            .addStringTypes("VARCHAR", "TEXT")
+            .addStringTypes("VARCHAR", "TEXT", Integer.MAX_VALUE)
             .build();
     }
 

@@ -54,6 +54,7 @@ public final class DbUtils
         {
             connection = em.getProvider().getConnection();
             statement = connection.prepareStatement(sql);
+            logger.debug(sql);
             callback.setParameters(statement);
             statement.executeUpdate();
         }
