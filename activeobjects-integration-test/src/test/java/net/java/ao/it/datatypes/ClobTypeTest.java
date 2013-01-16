@@ -45,21 +45,22 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
     @Test
     public void testUnlimitedLengthFieldCanStoreStringWithLengthGreaterThan64k() throws Exception
     {
-        DDLAction createTableAction = new DDLAction(DDLActionType.CREATE);
-        createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), LargeTextColumn.class));
-        Iterable<SQLAction> action = entityManager.getProvider().renderAction(entityManager.getNameConverters(), createTableAction);
-        String sqlStatement = action.iterator().next().getStatement();
 
         if (entityManager.getProvider() instanceof MySQLDatabaseProvider)
         {
-            sqlStatement = sqlStatement.replace("TEXT LONGTEXT NOT NULL", "TEXT TEXT NOT NULL"); //force the DDL to create using the TEXT type when in MySQL so we test the migration
-        }
-        executeUpdate(sqlStatement, new DbUtils.UpdateCallback()
-        {
-            @Override
-            public void setParameters(PreparedStatement statement) throws Exception {}
-        });
+            //force the DDL to create using the TEXT type when in MySQL so we test the migration of TEXT to LONGTEXT
+            DDLAction createTableAction = new DDLAction(DDLActionType.CREATE);
+            createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), LargeTextColumn.class));
+            Iterable<SQLAction> action = entityManager.getProvider().renderAction(entityManager.getNameConverters(), createTableAction);
+            String sqlStatement = action.iterator().next().getStatement();
 
+            sqlStatement = sqlStatement.replace("TEXT LONGTEXT NOT NULL", "TEXT TEXT NOT NULL");
+            executeUpdate(sqlStatement, new DbUtils.UpdateCallback()
+            {
+                @Override
+                public void setParameters(PreparedStatement statement) throws Exception {}
+            });
+        }
         entityManager.migrate(LargeTextColumn.class);
         final HashMap<String, Object> params = new HashMap<String, Object>();
         final int size = (int) Math.pow(2, 17);
