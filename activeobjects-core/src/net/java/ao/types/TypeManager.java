@@ -119,7 +119,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("DOUBLE"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "CLOB")
+                .addStringTypes("VARCHAR", "CLOB", Integer.MAX_VALUE)
                 .build();
     }
 
@@ -132,7 +132,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("DOUBLE"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "LONGVARCHAR")
+                .addStringTypes("VARCHAR", "LONGVARCHAR", 16 * 1024 * 1024)//LONGVARCHAR defaults to 16M
                 .build();
     }
 
@@ -145,7 +145,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("DOUBLE"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "LONGTEXT")
+                .addStringTypes("VARCHAR", "LONGTEXT", Integer.MAX_VALUE)
                 .build();
     }
 
@@ -158,7 +158,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "TEXT")
+                .addStringTypes("VARCHAR", "TEXT", 1024 * 1024 * 1024)//TEXT defaults to 1G
                 .build();
     }
 
@@ -171,7 +171,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "NTEXT")
+                .addStringTypes("VARCHAR", "NTEXT", Integer.MAX_VALUE)
                 .build();
     }
 
@@ -184,7 +184,7 @@ public final class TypeManager
                 .addMapping(doubleType(), schemaType("DOUBLE PRECISION"))
                 .addMapping(integerType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(11))
                 .addMapping(longType(), schemaType("NUMBER").precisionAllowed(true), qualifiers().precision(20))
-                .addStringTypes("VARCHAR", "CLOB")
+                .addStringTypes("VARCHAR", "CLOB", Integer.MAX_VALUE)
                 .build();
     }
 
@@ -217,12 +217,12 @@ public final class TypeManager
             return this;
         }
 
-        public Builder addStringTypes(String limitedStringSqlType, String unlimitedStringSqlType)
+        public Builder addStringTypes(String limitedStringSqlType, String unlimitedStringSqlType, final int precision)
         {
             addMapping(stringType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(StringType.DEFAULT_LENGTH));
             addMapping(stringType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(precision));
 
             addMapping(enumType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(StringType.DEFAULT_LENGTH));
@@ -230,12 +230,12 @@ public final class TypeManager
             addMapping(uriType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(uriType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(precision));
 
             addMapping(urlType(), schemaType(limitedStringSqlType).stringLengthAllowed(true),
                        qualifiers().stringLength(TypeQualifiers.MAX_STRING_LENGTH));
             addMapping(urlType(), schemaType(unlimitedStringSqlType).stringLengthAllowed(true).defaultValueAllowed(false),
-                       qualifiers().stringLength(UNLIMITED_LENGTH));
+                       qualifiers().stringLength(UNLIMITED_LENGTH).precision(precision));
 
             return this;
         }

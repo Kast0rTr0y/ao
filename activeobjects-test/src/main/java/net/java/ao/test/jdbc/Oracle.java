@@ -5,14 +5,29 @@ package net.java.ao.test.jdbc;
  */
 public class Oracle extends AbstractJdbcConfiguration
 {
-    public String getUrl()
+
+    public static final String DEFAULT_SCHEMA = "ao_schema";
+    public static final String DEFAULT_URL = "jdbc:oracle:thin:@localhost:1521:orcl";
+
+    public Oracle(String url, String username, String password, String schema)
     {
-        return "jdbc:oracle:thin:@localhost:1521:orcl";
+        super(url, username, password, schema);
+    }
+
+    public Oracle()
+    {
+        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
     @Override
-    public String getSchema()
+    protected String getDefaultSchema()
     {
-        return "ao_schema";
+        return DEFAULT_SCHEMA;
+    }
+
+    @Override
+    protected String getDefaultUrl()
+    {
+        return DEFAULT_URL;
     }
 }

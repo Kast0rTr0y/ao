@@ -4,8 +4,11 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import net.java.ao.test.ConfigurationProperties;
+import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static net.java.ao.util.StringUtils.isBlank;
 
 /**
  * <p>A JDBC configuration that can be configured through either system properties or a configuration file.</p>
@@ -28,15 +31,33 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 
     private static final String DEFAULT = "hsql";
 
-    private final Supplier<JdbcConfiguration> jdbcSupplier;
+    private static final Supplier<JdbcConfiguration> jdbcSupplier = Suppliers.memoize(new SystemPropertyJdbcConfigurationSupplier());
+
 
     public DynamicJdbcConfiguration()
     {
-        this.jdbcSupplier = Suppliers.memoize(new SystemPropertyJdbcConfigurationSupplier());
+        super(jdbcSupplier.get().getUrl(), jdbcSupplier.get().getUsername(), jdbcSupplier.get().getPassword(), jdbcSupplier.get().getPassword());
+    }
+
+    protected DynamicJdbcConfiguration(String url, String username, String password, String schema)
+    {
+        super(url, username, password, schema);
     }
 
     @Override
     public String getUrl()
+    {
+        return jdbcSupplier.get().getUrl();
+    }
+
+    @Override
+    protected String getDefaultSchema()
+    {
+        return jdbcSupplier.get().getSchema();
+    }
+
+    @Override
+    protected String getDefaultUrl()
     {
         return jdbcSupplier.get().getUrl();
     }
@@ -65,9 +86,53 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
         public JdbcConfiguration get()
         {
             final String db = ConfigurationProperties.get("ao.test.database", DEFAULT);
-            final JdbcConfiguration jdbcConfiguration = CONFIGS.get(db);
+            final JdbcConfiguration jdbcConfiguration = buildJdbcConfiguration(db);
 
             logger.debug("JDBC configuration key is {} and resolved to {}", db, jdbcConfiguration);
+            return jdbcConfiguration;
+        }
+
+        private JdbcConfiguration buildJdbcConfiguration(String db)
+        {
+            JdbcConfiguration jdbcConfiguration = null;
+
+            String username = ConfigurationProperties.get("db.username", null);
+            String password = ConfigurationProperties.get("db.password", null);
+            String dbUrl = ConfigurationProperties.get("db.url", null);
+            String dbSchema = ConfigurationProperties.get("db.schema", null);
+
+
+            if (!isBlank(username) || !isBlank(password) || !isBlank(dbUrl) || !isBlank(dbSchema))
+            {
+                if ("postgres".equals(db))
+                {
+                    jdbcConfiguration =  new Postgres(dbUrl, username, password, dbSchema);
+                }
+                else if ("hsql".equals(db))
+                {
+                    jdbcConfiguration =  new Hsql(dbUrl, username, password, dbSchema);
+                }
+                else if ("mysql".equals(db))
+                {
+                    jdbcConfiguration =  new MySql(dbUrl, username, password, dbSchema);
+                }
+                else if ("oracle".equals(db))
+                {
+                    jdbcConfiguration =  new Oracle(dbUrl, username, password, dbSchema);
+                }
+                else if ("sqlserver".equals(db))
+                {
+                    jdbcConfiguration =  new SqlServer(dbUrl, username, password, dbSchema);
+                }
+                else if ("derby-embedded".equals(db))
+                {
+                    jdbcConfiguration =  new DerbyEmbedded(dbUrl, username, password, dbSchema);
+                }
+            }
+            else
+            {
+                jdbcConfiguration =  CONFIGS.get(db);
+            }
             return jdbcConfiguration;
         }
     }
