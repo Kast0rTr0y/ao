@@ -205,7 +205,10 @@ public final class SchemaGenerator
 		}
 	}
 
-	private static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
+    /**
+     * Not intended for public use.
+     */
+	public static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz)
     {
 		String sqlName = nameConverter.getName(clazz);
 
