@@ -80,7 +80,6 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
 		int limit = query.getLimit();
 		if (limit >= 0) {
-			stmt.setFetchSize(query.getOffset() + limit);
 			stmt.setMaxRows(query.getOffset() + limit);
 		}
 	}
