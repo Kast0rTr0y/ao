@@ -195,7 +195,7 @@ public class EntityManager
 	 * 		primary keys.  Any entities which are non-existent will correspond to a <code>null</code>
 	 * 		value in the resulting array.
 	 */
-	public final <T extends RawEntity<K>, K> T[] get(final Class<T> type, K... keys) throws SQLException
+	public <T extends RawEntity<K>, K> T[] get(final Class<T> type, K... keys) throws SQLException
     {
         final String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
         return getFromCache(type, findByPrimaryKey(type, primaryKeyField), keys);
@@ -627,7 +627,7 @@ public class EntityManager
      * this array <i>must</i> match the number of parameters (denoted by the '?' char) in the <code>criteria</code>.
      * @return An array of entities of the given type which match the specified criteria.
      */
-    public final <T extends RawEntity<K>, K> T[] find(Class<T> type, String criteria, Object... parameters) throws SQLException
+    public <T extends RawEntity<K>, K> T[] find(Class<T> type, String criteria, Object... parameters) throws SQLException
     {
         return find(type, Query.select().where(criteria, parameters));
     }
@@ -684,7 +684,7 @@ public class EntityManager
      * @param query The {@link Query} instance to be used to determine the results.
      * @return An array of entities of the given type which match the specified query.
      */
-    public final <T extends RawEntity<K>, K> T[] find(Class<T> type, Query query) throws SQLException
+    public <T extends RawEntity<K>, K> T[] find(Class<T> type, Query query) throws SQLException
     {
         String selectField = Common.getPrimaryKeyField(type, getFieldNameConverter());
         query.resolveFields(type, getFieldNameConverter());
@@ -711,7 +711,7 @@ public class EntityManager
      * @param query The {@link Query} instance to use in determining the results.
      * @return An array of entities of the given type which match the specified query.
      */
-    public final <T extends RawEntity<K>, K> T[] find(Class<T> type, String field, Query query) throws SQLException
+    public <T extends RawEntity<K>, K> T[] find(Class<T> type, String field, Query query) throws SQLException
     {
         List<T> back = new ArrayList<T>();
 
