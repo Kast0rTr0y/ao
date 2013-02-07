@@ -28,6 +28,7 @@ public final class DelegatingDisposableDataSourceHandler implements InvocationHa
         if (isDisposeMethod(method))
         {
             disposable.dispose();
+            return null;
         }
 
         return delegate(method, args);
