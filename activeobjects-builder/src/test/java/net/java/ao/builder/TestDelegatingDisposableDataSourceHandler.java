@@ -17,24 +17,24 @@ public class TestDelegatingDisposableDataSourceHandler
 {
     private @Mock DataSource datasource;
     private @Mock Disposable disposable;
-    
+
     @Test
     public void testInvokeDispose() throws Exception
     {
         DisposableDataSource disposableDatasource = DelegatingDisposableDataSourceHandler.newInstance(datasource, disposable);
-        
+
         disposableDatasource.dispose();
-        
+
         verify(disposable).dispose();
         verifyNoMoreInteractions(datasource);
     }
-    
+
     @Test
     public void testInvokeDatasourceMethod() throws Exception
     {
         DisposableDataSource disposableDatasource = DelegatingDisposableDataSourceHandler.newInstance(datasource, disposable);
         disposableDatasource.getConnection();
-        
+
         verify(datasource).getConnection();
     }
 }
