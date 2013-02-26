@@ -3,9 +3,12 @@ package net.java.ao;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
+import net.java.ao.test.junit.PostgresIntegrationTest;
+import org.junit.experimental.categories.Category;
 
 import static java.lang.String.format;
 
+@Category(PostgresIntegrationTest.class)
 public final class PostgresQueryTest extends QueryTest
 {
     @Override
@@ -57,9 +60,33 @@ public final class PostgresQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    {
+        return format("SELECT '%s' FROM %s ORDER BY '%s', '%s', '%s'", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    @Override
+    protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders()
+    {
+        return format("SELECT '%s' FROM %s ORDER BY '%s' DESC, '%s' ASC, '%s' ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithOrderClause()
     {
         return format("SELECT COUNT(*) FROM %s ORDER BY '%s' DESC", getExpectedTableName(Person.class), getPersonLastName());
+    }
+
+    @Override
+    protected String getExpectedSqlForCountWithMultipleOrderClauses()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY '%s', '%s', '%s'", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    @Override
+    protected String getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY '%s' DESC, '%s' ASC, '%s' ASC", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
     @Override

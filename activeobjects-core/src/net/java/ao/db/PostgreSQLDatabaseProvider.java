@@ -53,6 +53,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 {
     private static final int MAX_SEQUENCE_LENGTH = 64;
     private static final String SQL_STATE_UNDEFINED_FUNCTION = "42883";
+    private static final Pattern PATTERN_QUOTE_ID = Pattern.compile("(\\*|\\d*?)");
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
@@ -372,7 +373,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 
 	@Override
 	protected boolean shouldQuoteID(String id) {
-        return !"*".equals(id);
+        return !PATTERN_QUOTE_ID.matcher(id).matches();
     }
 
     @Override

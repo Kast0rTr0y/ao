@@ -3,9 +3,12 @@ package net.java.ao;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
+import net.java.ao.test.junit.HsqlIntegrationTest;
+import org.junit.experimental.categories.Category;
 
 import static java.lang.String.format;
 
+@Category(HsqlIntegrationTest.class)
 public final class HsqlQueryTest extends QueryTest
 {
     @Override

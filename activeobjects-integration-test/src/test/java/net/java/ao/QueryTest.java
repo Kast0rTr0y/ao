@@ -15,6 +15,12 @@
  */
 package net.java.ao;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+
+import org.junit.Test;
+
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
@@ -28,14 +34,11 @@ import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import org.junit.Test;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static java.lang.String.format;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Data(DatabaseProcessor.class)
 public abstract class QueryTest extends ActiveObjectsIntegrationTest
@@ -112,9 +115,33 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    public final void testSelectWithMultipleOrderClauses()
+    {
+        assertSelectSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForSelectWithMultipleOrderClauses());
+    }
+
+    @Test
+    public final void testSelectWithMultipleOrderClausesMultipleOrders()
+    {
+        assertSelectSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders());
+    }
+
+    @Test
     public final void testCountWithOrderClause()
     {
         assertCountSqlEquals(getSelectWithOrderClauseQuery(), getExpectedSqlForCountWithOrderClause());
+    }
+
+    @Test
+    public final void testCountWithMultipleOrderClauses()
+    {
+        assertCountSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForCountWithMultipleOrderClauses());
+    }
+
+    @Test
+    public final void testCountWithMultipleOrderClausesMultipleOrders()
+    {
+        assertCountSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders());
     }
 
     private Query getSelectWithOrderClauseQuery()
@@ -122,9 +149,39 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         return Query.select().order(getPersonLastName() + " DESC");
     }
 
+    private Query getSelectWithMultipleOrderClausesQuery()
+    {
+        return Query.select().order(getPersonLastName() + ", " + getPersonAge() + ", " + getPersonId());
+    }
+
+    private Query getSelectWithMultipleOrderClausesMultipleOrdersQuery()
+    {
+        return Query.select().order(getPersonLastName() + " DESC, " + getPersonAge() + " ASC, " + getPersonId() + " ASC");
+    }
+
     protected abstract String getExpectedSqlForSelectWithOrderClause();
 
+    protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders()
+    {
+        return format("SELECT %s FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
+    {
+        return format("SELECT %s FROM %s ORDER BY %s, %s, %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
     protected abstract String getExpectedSqlForCountWithOrderClause();
+
+    protected String getExpectedSqlForCountWithMultipleOrderClauses()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY %s, %s, %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
+
+    protected String getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders()
+    {
+        return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
+    }
 
     @Test
     public final void testSelectWithLimit()

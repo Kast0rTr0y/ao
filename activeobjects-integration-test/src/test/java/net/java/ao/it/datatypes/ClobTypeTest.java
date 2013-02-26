@@ -1,18 +1,25 @@
 package net.java.ao.it.datatypes;
 
-import net.java.ao.test.jdbc.NonTransactional;
-import org.junit.Test;
-
 import net.java.ao.ActiveObjectsConfigurationException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
+import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
+import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.StringLength;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionType;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import java.sql.PreparedStatement;
+import java.util.HashMap;
+
+import static org.junit.Assert.*;
 
 public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 {
@@ -30,6 +37,46 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
             sb.append("0123456789#");
         }
         LARGE_CLOB = sb.append(size).toString();
+    }
+
+    /**
+     * Tests that we can insert a string of greather than 2^16 characters in length.
+     * see https://ecosystem.atlassian.net/browse/AO-396 for details.
+     */
+    @Test
+    public void testUnlimitedLengthFieldCanStoreStringWithLengthGreaterThan64k() throws Exception
+    {
+
+        if (entityManager.getProvider() instanceof MySQLDatabaseProvider)
+        {
+            //force the DDL to create using the TEXT type when in MySQL so we test the migration of TEXT to LONGTEXT
+            DDLAction createTableAction = new DDLAction(DDLActionType.CREATE);
+            createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), LargeTextColumn.class));
+            Iterable<SQLAction> action = entityManager.getProvider().renderAction(entityManager.getNameConverters(), createTableAction);
+            String sqlStatement = action.iterator().next().getStatement();
+
+            sqlStatement = sqlStatement.replace("TEXT LONGTEXT NOT NULL", "TEXT TEXT NOT NULL");
+            executeUpdate(sqlStatement, new DbUtils.UpdateCallback()
+            {
+                @Override
+                public void setParameters(PreparedStatement statement) throws Exception {}
+            });
+        }
+        entityManager.migrate(LargeTextColumn.class);
+        final HashMap<String, Object> params = new HashMap<String, Object>();
+        final int size = (int) Math.pow(2, 17);
+        params.put(getFieldName(LargeTextColumn.class, "getText"), createString(size));
+        LargeTextColumn entity = entityManager.create(LargeTextColumn.class, params);
+        entity.save();
+        entityManager.flushAll();
+        LargeTextColumn[] found = entityManager.find(LargeTextColumn.class);
+        assertEquals("should only have inserted 1 row", 1, found.length);
+        assertEquals("should be " + size + " long", size, found[0].getText().length());
+    }
+
+    private String createString(int size)
+    {
+        return new String(new char[size]).replace("\0", "a");
     }
 
     /**
@@ -222,6 +269,14 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
 
     public static interface NotNullColumn extends Entity
     {
+        @NotNull
+        @StringLength(StringLength.UNLIMITED)
+        String getText();
+
+        void setText(String text);
+    }
+
+    public static interface LargeTextColumn extends Entity {
         @NotNull
         @StringLength(StringLength.UNLIMITED)
         String getText();

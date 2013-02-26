@@ -1,15 +1,15 @@
 /*
  * Copyright 2007 Daniel Spiewak
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- *	    http://www.apache.org/licenses/LICENSE-2.0 
- * 
- * Unless required by applicable law or agreed to in writing, software 
+ *
+ *	    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -22,14 +22,13 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Case;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.helper.DatabaseMetaDataReader;
-import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
-import net.java.ao.schema.helper.Field;
-import net.java.ao.schema.helper.ForeignKey;
-import net.java.ao.schema.helper.Index;
+import net.java.ao.schema.helper.*;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -347,6 +346,13 @@ public final class SchemaReader
                 }
                 else if (!fromField.isPrimaryKey() && (fromField.isUnique() != ontoField.isUnique()))
                 {
+                    actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
+                }
+                else if (fromField.getType().getQualifiers().getStringLength() != null
+                        && fromField.getType().getQualifiers().getStringLength() == TypeQualifiers.UNLIMITED_LENGTH
+                        && !fromField.getType().getQualifiers().getPrecision().equals(ontoField.getType().getQualifiers().getPrecision()))
+                {
+                    //the precision changed even though nothing else did, thus ought to alter table
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
             }

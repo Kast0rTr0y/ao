@@ -2,25 +2,61 @@ package net.java.ao.test.jdbc;
 
 import com.google.common.base.Objects;
 
+import static org.apache.commons.lang.StringUtils.defaultString;
+
 /**
  *
  */
 public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
 {
+    public static final String DEFAULT_USER = "ao_user";
+    public static final String DEFAULT_PASSWORD = "ao_password";
+    private final String url;
+    private final String username;
+    private final String password;
+    private final String schema;
+
+    protected AbstractJdbcConfiguration(String url, String username, String password, String schema)
+    {
+        this.url = defaultString(url, getDefaultUrl());
+        this.username = defaultString(username, getDefaultUsername());
+        this.password = defaultString(password, getDefaultPassword());
+        this.schema = defaultString(schema, getDefaultSchema());
+    }
+
     public String getUsername()
     {
-        return "ao_user";
+        return username;
     }
 
     public String getPassword()
     {
-        return "ao_password";
+        return password;
     }
 
     @Override
     public String getSchema()
     {
-        return null;
+        return schema;
+    }
+
+    public String getUrl()
+    {
+        return url;
+    }
+
+    protected abstract String getDefaultSchema();
+
+    protected abstract String getDefaultUrl();
+
+    protected String getDefaultUsername()
+    {
+        return DEFAULT_USER;
+    }
+
+    protected String getDefaultPassword()
+    {
+        return DEFAULT_PASSWORD;
     }
 
     @Override

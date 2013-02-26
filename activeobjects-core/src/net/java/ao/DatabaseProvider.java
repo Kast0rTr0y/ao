@@ -755,7 +755,22 @@ public abstract class DatabaseProvider
 
     private String processOrderClause(String order)
     {
-        return SqlUtils.ORDER_CLAUSE.matcher(order).replaceFirst(processID("$1"));
+        String[] orderClauses = order.split(",");
+        StringBuilder sb = new StringBuilder();
+        for(String orderClause : orderClauses)
+        {
+            // $1 signifies a RegExp matching group, i.e. group 1, to be used by search and replace.\
+            // So the following will potentially quote the group definition so that the search and replace will replace the identifier with a
+            // potentially quoted version of itself.
+            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst(processID("$1"));
+            if(sb.length() != 0)
+            {
+                sb.append(",");
+            }
+            sb.append(newClause);
+        }
+
+        return sb.toString();
     }
 
     /**
