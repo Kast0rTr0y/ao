@@ -107,7 +107,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
-    @NonTransactional
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(InputStreamBlobColumn.class);
@@ -124,7 +124,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
-    @NonTransactional
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithSet() throws Exception
     {
         entityManager.migrate(InputStreamBlobColumn.class);
@@ -144,7 +144,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test InputStream representation of a blob
      */
     @Test
-    @NonTransactional
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamStore() throws Exception
     {
         entityManager.migrate(InputStreamBlobColumn.class);
@@ -192,7 +192,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test InputStream representation of a blob
      */
     @Test
-    @NonTransactional
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testNotNullInputStreamStore() throws Exception
     {
         entityManager.migrate(InputStreamBlobColumn.class);
