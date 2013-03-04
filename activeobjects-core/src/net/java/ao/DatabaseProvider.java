@@ -108,7 +108,7 @@ import static net.java.ao.Common.*;
  *
  * @author Daniel Spiewak
  */
-public abstract class DatabaseProvider
+public abstract class DatabaseProvider implements Disposable
 {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Logger sqlLogger = LoggerFactory.getLogger("net.java.ao.sql");
@@ -203,10 +203,10 @@ public abstract class DatabaseProvider
      * @see #renderDropTriggers(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
      * @see #renderDropFunctions(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
      * @see #renderDropSequences(net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable)
-     * @see #renderDropTable(DDLTable)
+     * @see #renderDropTableActions(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable)
      * @see #renderAlterTableAddColumn(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderAlterTableChangeColumn(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField)
-     * @see #renderAlterTableDropColumn(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
+     * @see #renderDropColumnActions(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderAlterTableAddKey(DDLForeignKey)
      * @see #renderAlterTableDropKey(DDLForeignKey)
      */
