@@ -47,6 +47,8 @@ public final class DatabaseProcessor implements DatabaseUpdater
         entityManager.migrate(PersonSuit.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class, Authorship.class,
                 Book.class, Magazine.class, PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,
                 Message.class, EmailAddress.class, PostalAddress.class, Select.class, UserBase.class);
+        // tables that are created as a side effect (because these types are referenced by those listed above):
+        // Author.class, Person.class, PersonLegalDefence.class, Company.class, CompanyAddressInfo.class
 
         addData(entityManager);
 
