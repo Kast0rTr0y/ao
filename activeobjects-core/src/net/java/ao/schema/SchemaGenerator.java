@@ -202,7 +202,8 @@ public final class SchemaGenerator
             validateManyToManyAnnotation(method);
             validateOneToOneAnnotation(method);
             validateOneToManyAnnotation(method);
-            if (fieldConverter.getName(method) != null && type != null && !type.equals(clazz) && RawEntity.class.isAssignableFrom(type))
+            if (fieldConverter.getName(method) != null && type != null && !type.equals(clazz) &&
+                RawEntity.class.isAssignableFrom(type) && !individualDeps.contains(type))
             {
                 individualDeps.add((Class<? extends RawEntity<?>>) type);
                 parseDependencies(fieldConverter, deps, roots, (Class<? extends RawEntity<?>>) type);
