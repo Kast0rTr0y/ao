@@ -176,8 +176,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         {
             entityManager = createEntityManager();
             entityManager.migrateAggressively(); // empty the database
-            final DatabaseConfiguration databaseConfiguration = DATABASES.remove(jdbc);
-            databaseConfiguration.getEntityManager().getProvider().dispose();
+            DATABASES.remove(jdbc);
         }
         else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex)
         {
@@ -185,11 +184,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             entityManager.migrateAggressively(); // empty the database
             newInstance(databaseUpdater).update(entityManager);
             dbConfiguration.setEntityManager(entityManager);
-            final DatabaseConfiguration oldConfiguration = DATABASES.put(jdbc, dbConfiguration);
-            if (oldConfiguration != null)
-            {
-                oldConfiguration.getEntityManager().getProvider().dispose();
-            }
+            DATABASES.put(jdbc, dbConfiguration);
         }
         else
         {
