@@ -110,7 +110,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithCreate() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateAggressively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), null));
@@ -127,7 +127,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithSet() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateAggressively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), LARGE_BLOB));
@@ -147,7 +147,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamStore() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateAggressively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class);
@@ -195,7 +195,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testNotNullInputStreamStore() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateAggressively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), new ByteArrayInputStream(LARGE_BLOB)));
