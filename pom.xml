@@ -64,7 +64,7 @@
 
     <issueManagement>
         <system>JIRA</system>
-        <url>https://studio.atlassian.com/browse/AO</url>
+        <url>https://ecosystem.atlassian.net/browse/AO</url>
     </issueManagement>
 
     <modules>
