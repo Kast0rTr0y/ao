@@ -81,10 +81,10 @@ public final class SchemaGenerator
     public static void migrate(DatabaseProvider provider,
                                SchemaConfiguration schemaConfiguration,
                                NameConverters nameConverters,
-                               final boolean aggressive,
+                               final boolean executeDestructiveUpdates,
                                Class<? extends RawEntity<?>>... classes) throws SQLException
     {
-        final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, aggressive, classes);
+        final Iterable<Iterable<SQLAction>> actionGroups = generateImpl(provider, schemaConfiguration, nameConverters, executeDestructiveUpdates, classes);
         final Connection conn = provider.getConnection();
         try
         {
@@ -111,7 +111,7 @@ public final class SchemaGenerator
     private static Iterable<Iterable<SQLAction>> generateImpl(final DatabaseProvider provider,
                                                  final SchemaConfiguration schemaConfiguration,
                                                  final NameConverters nameConverters,
-                                                 final boolean aggressive,
+                                                 final boolean executeDestructiveUpdates,
                                                  Class<? extends RawEntity<?>>... classes) throws SQLException
     {
         final DDLTable[] parsedTables = parseDDL(provider, nameConverters, classes);
@@ -125,7 +125,7 @@ public final class SchemaGenerator
                 switch (input.getActionType()) {
                     case DROP:
                     case ALTER_DROP_COLUMN:
-                        return aggressive;
+                        return executeDestructiveUpdates;
                     default:
                         return true;
                 }

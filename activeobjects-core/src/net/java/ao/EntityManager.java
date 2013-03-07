@@ -129,7 +129,16 @@ public class EntityManager
         SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, false, entities);
     }
 
-    public void migrateAggressively(Class<? extends RawEntity<?>>... entities) throws SQLException
+    /**
+     * Convenience method to create the schema for the specified entities using the current settings (table/field name
+     * converter and database provider). Note that if the given entities do not include the full set of entities, or
+     * those entities have removed any fields, then the corresponding tables or columns will be dropped, and <b>any data
+     * they contained will be lost</b>. Use this at your own risk.
+     *
+     * @param entities the "list" of entity classes to consider for migration.
+     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, NameConverters, boolean, Class[])
+     */
+    public void migrateDestructively(Class<? extends RawEntity<?>>... entities) throws SQLException
     {
         SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, true, entities);
     }
