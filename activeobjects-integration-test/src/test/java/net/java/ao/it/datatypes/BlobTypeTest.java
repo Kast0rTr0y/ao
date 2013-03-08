@@ -6,6 +6,7 @@ import net.java.ao.Entity;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -40,6 +41,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test ByteArray representation of a blob
      */
     @Test
+    @NonTransactional
     public void testByteArrayStore() throws Exception
     {
         entityManager.migrate(ByteArrayBlobColumn.class);
@@ -69,6 +71,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testByteArrayNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(ByteArrayBlobColumn.class);
@@ -85,6 +88,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testByteArrayNullColumnWithSet() throws Exception
     {
         entityManager.migrate(ByteArrayBlobColumn.class);
@@ -103,9 +107,10 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithCreate() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), null));
@@ -119,9 +124,10 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamNullColumnWithSet() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), LARGE_BLOB));
@@ -138,9 +144,10 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test InputStream representation of a blob
      */
     @Test
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testInputStreamStore() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class);
@@ -168,6 +175,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test ByteArray representation of a blob
      */
     @Test
+    @NonTransactional
     public void testNotNullByteArrayStore() throws Exception
     {
         entityManager.migrate(ByteArrayBlobColumn.class);
@@ -184,9 +192,10 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test InputStream representation of a blob
      */
     @Test
+    // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
     public void testNotNullInputStreamStore() throws Exception
     {
-        entityManager.migrate(InputStreamBlobColumn.class);
+        entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
         InputStreamBlobColumn e = entityManager.create(InputStreamBlobColumn.class, new DBParam(getFieldName(InputStreamBlobColumn.class, "getData"), new ByteArrayInputStream(LARGE_BLOB)));
@@ -200,6 +209,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test NotNull blob column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnCreatingWithoutValue() throws Exception
     {
         entityManager.migrate(NotNullByteArrayBlobColumn.class);
@@ -212,6 +222,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test NotNull blob column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnSetNull() throws Exception
     {
         entityManager.migrate(NotNullByteArrayBlobColumn.class);
@@ -227,6 +238,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Default value not supported
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -236,6 +248,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Empty String default value not supported
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -245,6 +258,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      * Test deletion
      */
     @Test
+    @NonTransactional
     public void testDeletion() throws Exception
     {
         entityManager.migrate(ByteArrayBlobColumn.class);

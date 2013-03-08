@@ -122,14 +122,28 @@ public class EntityManager
      * converter and database provider).
      *
      * @param entities the "list" of entity classes to consider for migration.
-     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, NameConverters, Class[])
+     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, NameConverters, boolean, Class[])
      */
     public void migrate(Class<? extends RawEntity<?>>... entities) throws SQLException
     {
-        SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, entities);
+        SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, false, entities);
     }
 
-	/**
+    /**
+     * Convenience method to create the schema for the specified entities using the current settings (table/field name
+     * converter and database provider). Note that if the given entities do not include the full set of entities, or
+     * those entities have removed any fields, then the corresponding tables or columns will be dropped, and <b>any data
+     * they contained will be lost</b>. Use this at your own risk.
+     *
+     * @param entities the "list" of entity classes to consider for migration.
+     * @see SchemaGenerator#migrate(DatabaseProvider, SchemaConfiguration, NameConverters, boolean, Class[])
+     */
+    public void migrateDestructively(Class<? extends RawEntity<?>>... entities) throws SQLException
+    {
+        SchemaGenerator.migrate(provider, schemaConfiguration, nameConverters, true, entities);
+    }
+
+    /**
 	 * Flushes all value caches contained within entities controlled by this <code>EntityManager</code>
 	 * instance. Rather, it simply dumps all of the field values cached within the entities
 	 * themselves (with the exception of the primary key value).  This should be used in the case

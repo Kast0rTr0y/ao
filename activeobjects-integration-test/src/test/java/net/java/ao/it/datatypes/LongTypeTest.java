@@ -10,6 +10,7 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
@@ -26,6 +27,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test AutoIncrement
      */
     @Test
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -41,6 +43,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test simple creation
      */
     @Test
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -55,6 +58,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Null should not be a valid id value
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNullId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -66,6 +70,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test different values for an Long column (ID column in this case)
      */
     @Test
+    @NonTransactional
     public void testSpecialIds() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -83,6 +88,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test a simple Long column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -106,6 +112,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      *           NumberFormatException
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -117,6 +124,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      *           NumberFormatException
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testInvalidDefaultColumn() throws Exception
     {
         entityManager.migrate(InvalidDefaultColumn.class);
@@ -126,6 +134,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test default value
      */
     @Test
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -142,6 +151,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -158,6 +168,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -176,6 +187,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test a not null column
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -192,6 +204,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Creating an entry without specifying a not-null column should fail
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNoValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -204,6 +217,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Null is not a valid not value for a not null column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -217,6 +231,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Primitive column without not null constraint
      */
     @Test
+    @NonTransactional
     public void testPrimitiveColumn() throws Exception
     {
         entityManager.migrate(PrimitiveColumn.class);
@@ -242,6 +257,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Primitive column with not null constraint
      */
     @Test
+    @NonTransactional
     public void testPrimitiveNotNullColumn() throws Exception
     {
         entityManager.migrate(PrimitiveNotNullColumn.class);
@@ -267,6 +283,7 @@ public final class LongTypeTest extends ActiveObjectsIntegrationTest
      * Test deletion
      */
     @Test
+    @NonTransactional
     public void testDeletion() throws Exception
     {
         entityManager.migrate(SimpleId.class);

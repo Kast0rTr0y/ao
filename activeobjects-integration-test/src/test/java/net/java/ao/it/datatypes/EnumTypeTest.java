@@ -12,6 +12,7 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.EntityUtils;
 
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,6 +32,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test AutoIncrement - this must not work on enums
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -40,6 +42,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test simple creation
      */
     @Test
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -54,6 +57,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Null should not be a valid id value
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNullId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -65,6 +69,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test different values for an enum column (ID column in this case)
      */
     @Test
+    @NonTransactional
     public void testSpecialIds() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -81,6 +86,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test a simple enum column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -103,6 +109,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Expected: A ConfigurationException telling that the provided value is invalid for the given field
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -113,6 +120,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Expected: A ConfigurationException telling that the provided value is invalid for the given field
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testInvalidDefaultColumn() throws Exception
     {
         entityManager.migrate(InvalidDefaultColumn.class);
@@ -123,6 +131,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Expected: A ConfigurationException telling that the provided value is invalid for the given field
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testOutOfRangeDefaultColumn() throws Exception
     {
         entityManager.migrate(OutOfRangeDefaultColumn.class);
@@ -133,6 +142,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @Ignore("Parsing of enum values from strings is not yet supported")
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -149,6 +159,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -165,6 +176,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -183,6 +195,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test a not null column
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -199,6 +212,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Creating an entry without specifying a not-null column should fail
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNoValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -211,6 +225,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Null is not a valid value for a not null column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -223,6 +238,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      * Test deletion
      */
     @Test
+    @NonTransactional
     public void testDeletion() throws Exception
     {
         entityManager.migrate(SimpleId.class);

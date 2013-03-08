@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import net.java.ao.*;
@@ -32,6 +33,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test AutoIncrement - not supported
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testAutoIncrement() throws Exception
     {
         entityManager.migrate(AutoIncrementId.class);
@@ -41,12 +43,14 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Date is not allowed as a primary key.
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testSimpleId() throws Exception
     {
         entityManager.migrate(SimpleId.class);
     }
 
     @Test(expected = ActiveObjectsException.class)
+    @NonTransactional
     public void testDateTooFar() throws Exception
     {
         entityManager.migrate(SimpleId.class);
@@ -58,6 +62,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test different values for an Date column
      */
     @Test
+    @NonTransactional
     public void testSpecialIds() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -90,6 +95,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test a simple Date column
      */
     @Test
+    @NonTransactional
     public void testSimpleColumn() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -122,6 +128,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Empty String default value not a valid date
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testEmptyDefaultColumn() throws Exception
     {
         entityManager.migrate(EmptyDefaultColumn.class);
@@ -131,6 +138,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Invalid default value
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
+    @NonTransactional
     public void testInvalidDefaultColumn() throws Exception
     {
         entityManager.migrate(InvalidDefaultColumn.class);
@@ -140,6 +148,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Valid default value
      */
     @Test
+    @NonTransactional
     public void testDefaultColumn() throws Exception
     {
         entityManager.migrate(DefaultColumn.class);
@@ -169,6 +178,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithCreate() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -185,6 +195,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test null value
      */
     @Test
+    @NonTransactional
     public void testNullColumnWithSet() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
@@ -204,6 +215,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test a not null column
      */
     @Test
+    @NonTransactional
     public void testNotNullColumn() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -232,6 +244,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test setting null in not null column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnSetNull() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -247,6 +260,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Creating an entry without specifying a not-null column should fail
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNoValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -259,6 +273,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Null is not a valid value for a not null column
      */
     @Test(expected = IllegalArgumentException.class)
+    @NonTransactional
     public void testNotNullColumnNullValue() throws Exception
     {
         entityManager.migrate(NotNullColumn.class);
@@ -271,6 +286,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      * Test deletion
      */
     @Test
+    @NonTransactional
     public void testDelete() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);

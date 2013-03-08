@@ -7,7 +7,6 @@ import net.java.ao.builder.EntityManagerBuilderWithDatabaseProperties;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.SequenceNameConverter;
-import net.java.ao.schema.Table;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.test.jdbc.Data;
@@ -129,7 +128,9 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     {
         if (!useTransaction(method))
         {
-            DATABASES.remove(jdbc); // make sure that the next test gets a clean database
+            // make sure that the next test gets a clean database
+            final DatabaseConfiguration databaseConfiguration = DATABASES.remove(jdbc);
+            databaseConfiguration.getEntityManager().getProvider().dispose();
         }
         entityManager = null;
         if (withIndex) removeIndexDir();
@@ -174,13 +175,13 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         if (databaseUpdater == NullDatabase.class)
         {
             entityManager = createEntityManager();
-            entityManager.migrate(); // empty the database
+            entityManager.migrateDestructively(); // empty the database
             DATABASES.remove(jdbc);
         }
         else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex)
         {
             entityManager = createEntityManager();
-            entityManager.migrate(); // empty the database
+            entityManager.migrateDestructively(); // empty the database
             newInstance(databaseUpdater).update(entityManager);
             dbConfiguration.setEntityManager(entityManager);
             DATABASES.put(jdbc, dbConfiguration);

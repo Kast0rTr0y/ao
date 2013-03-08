@@ -5,9 +5,7 @@ import net.java.ao.it.model.Company;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.NonTransactional;
-import net.java.ao.test.jdbc.Postgres;
 import org.junit.Test;
 
 import java.net.URL;
@@ -18,7 +16,7 @@ import static org.junit.Assert.assertFalse;
  *
  */
 @Data(DatabaseProcessor.class)
-public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
+public final class ConcurrencyTest extends ActiveObjectsIntegrationTest
 {
     private static final int NUMBER_OF_THREADS = 50;
 
@@ -41,7 +39,7 @@ public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
                     @Override
                     public void run()
                     {
-                        // a fair-few interleved instructions
+                        // a fair-few interleaved instructions
                         try
                         {
                             person.setAge(threadNum);
@@ -85,11 +83,19 @@ public final class ConcurrenyTest extends ActiveObjectsIntegrationTest
                 thread.join();
             }
 
+            int exceptionCount = 0;
             for (Throwable e : exceptions)
             {
                 if (e != null)
                 {
-                    throw e;
+                    exceptionCount++;
+                }
+            }
+            for (Throwable e : exceptions)
+            {
+                if (e != null)
+                {
+                    throw new RuntimeException(exceptionCount + " threads failed. First failure: ", e);
                 }
             }
         }

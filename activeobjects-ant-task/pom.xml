@@ -30,7 +30,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>1.4</version>
                 <configuration>
                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <artifactSet>
@@ -45,6 +44,14 @@
                         <goals><goal>shade</goal></goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <!-- eliminate warnings about duplicate shaded classes when doing incremental builds -->
+                    <forceCreation>true</forceCreation>
+                </configuration>
             </plugin>
         </plugins>
     </build>

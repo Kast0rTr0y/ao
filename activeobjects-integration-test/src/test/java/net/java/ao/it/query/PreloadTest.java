@@ -4,6 +4,7 @@ import net.java.ao.Entity;
 import net.java.ao.Preload;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -17,6 +18,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Test get with listed preload values
      */
     @Test
+    @NonTransactional
     public void testGetPreloadListed() throws Exception
     {
         entityManager.migrate(PreloadListed.class);
@@ -39,6 +41,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Test get with listed preload values
      */
     @Test
+    @NonTransactional
     public void testGetPreloadAll() throws Exception
     {
         entityManager.migrate(PreloadAll.class);
@@ -61,6 +64,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Test find with listed preload
      */
     @Test
+    @NonTransactional
     public void testFindPreloadListed() throws Exception
     {
         entityManager.migrate(PreloadListed.class);
@@ -83,6 +87,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Test find with star preload
      */
     @Test
+    @NonTransactional
     public void testFindPreloadAll() throws Exception
     {
         entityManager.migrate(PreloadAll.class);

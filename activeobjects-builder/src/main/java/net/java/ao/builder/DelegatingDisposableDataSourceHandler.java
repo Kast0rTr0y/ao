@@ -34,11 +34,29 @@ public final class DelegatingDisposableDataSourceHandler implements InvocationHa
         return delegate(method, args);
     }
 
-    private Object delegate(Method method, Object[] args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
+    private Object delegate(Method method, Object[] args) throws Throwable
     {
         final Method m = dataSource.getClass().getMethod(method.getName(), method.getParameterTypes());
         m.setAccessible(true);
-        return m.invoke(dataSource, args);
+        try
+        {
+            return m.invoke(dataSource, args);
+        }
+        catch (IllegalAccessException e)
+        {
+            // avoid UndeclaredThrowableExceptions
+            throw new RuntimeException(e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // avoid UndeclaredThrowableExceptions
+            throw new RuntimeException(e);
+        }
+        catch (InvocationTargetException e)
+        {
+            // avoid UndeclaredThrowableExceptions
+            throw e.getCause();
+        }
     }
 
     public static DisposableDataSource newInstance(DataSource ds, Disposable disposable)

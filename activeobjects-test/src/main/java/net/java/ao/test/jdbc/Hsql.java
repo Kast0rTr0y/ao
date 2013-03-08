@@ -2,14 +2,19 @@ package net.java.ao.test.jdbc;
 
 public class Hsql extends AbstractJdbcConfiguration
 {
-    private static final String DEFAULT_URL = "jdbc:hsqldb:mem:ao_test";
+    private static final String IN_MEMORY_URL = "jdbc:hsqldb:mem:ao_test";
     private static final String DEFAULT_USERNAME = "sa";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
 
     public Hsql()
     {
-        super(DEFAULT_URL, DEFAULT_USERNAME, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
+        this(IN_MEMORY_URL);
+    }
+
+    protected Hsql(String url)
+    {
+        this(url, DEFAULT_USERNAME, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
     public Hsql(String url, String username, String password, String schema)
@@ -38,6 +43,6 @@ public class Hsql extends AbstractJdbcConfiguration
     @Override
     protected String getDefaultUrl()
     {
-        return DEFAULT_URL;
+        return IN_MEMORY_URL;
     }
 }
