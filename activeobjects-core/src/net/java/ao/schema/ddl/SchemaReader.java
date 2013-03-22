@@ -22,16 +22,28 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Case;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.helper.*;
+import net.java.ao.schema.helper.DatabaseMetaDataReader;
+import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
+import net.java.ao.schema.helper.Field;
+import net.java.ao.schema.helper.ForeignKey;
+import net.java.ao.schema.helper.Index;
+import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
-import net.java.ao.types.TypeQualifiers;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -336,7 +348,7 @@ public final class SchemaReader
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
-                else if (!fromField.getType().getLogicalType().equals(ontoField.getType().getLogicalType()))
+                else if (!physicalTypesEqual(fromField.getType(), ontoField.getType()))
                 {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
@@ -346,13 +358,6 @@ public final class SchemaReader
                 }
                 else if (!fromField.isPrimaryKey() && (fromField.isUnique() != ontoField.isUnique()))
                 {
-                    actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                }
-                else if (fromField.getType().getQualifiers().getStringLength() != null
-                        && fromField.getType().getQualifiers().getStringLength() == TypeQualifiers.UNLIMITED_LENGTH
-                        && !fromField.getType().getQualifiers().getPrecision().equals(ontoField.getType().getQualifiers().getPrecision()))
-                {
-                    //the precision changed even though nothing else did, thus ought to alter table
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
             }
@@ -462,6 +467,11 @@ public final class SchemaReader
         }
 
         return actions.toArray(new DDLAction[actions.size()]);
+    }
+
+    private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto)
+    {
+        return from.getQualifiers().isCompatibleOnto(onto.getQualifiers()) && from.getSchemaProperties().equals(onto.getSchemaProperties());
     }
 
     private static boolean equals(String s, String s1, boolean caseSensitive)

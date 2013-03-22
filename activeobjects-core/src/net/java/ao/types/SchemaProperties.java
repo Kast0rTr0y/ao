@@ -167,4 +167,34 @@ public class SchemaProperties
     {
         return defaultValueAllowed;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (!(o instanceof SchemaProperties)) return false;
+
+        SchemaProperties that = (SchemaProperties) o;
+
+        if (defaultValueAllowed != that.defaultValueAllowed) return false;
+        if (precisionAllowed != that.precisionAllowed) return false;
+        if (scaleAllowed != that.scaleAllowed) return false;
+        if (stringLengthAllowed != that.stringLengthAllowed) return false;
+        if (overrideJdbcWriteType != null ? !overrideJdbcWriteType.equals(that.overrideJdbcWriteType) : that.overrideJdbcWriteType != null) return false;
+        if (sqlTypeName != null ? !sqlTypeName.equals(that.sqlTypeName) : that.sqlTypeName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = sqlTypeName != null ? sqlTypeName.hashCode() : 0;
+        result = 31 * result + (overrideJdbcWriteType != null ? overrideJdbcWriteType.hashCode() : 0);
+        result = 31 * result + (precisionAllowed ? 1 : 0);
+        result = 31 * result + (scaleAllowed ? 1 : 0);
+        result = 31 * result + (stringLengthAllowed ? 1 : 0);
+        result = 31 * result + (defaultValueAllowed ? 1 : 0);
+        return result;
+    }
 }

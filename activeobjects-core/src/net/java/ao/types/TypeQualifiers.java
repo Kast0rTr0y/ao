@@ -131,14 +131,32 @@ public class TypeQualifiers
     {
         return ((stringLength != null) && (stringLength == UNLIMITED_LENGTH));
     }
-    
-    public boolean isCompatibleWith(TypeQualifiers other)
+
+    public boolean isStringLengthCompatibleWith(TypeQualifiers other)
     {
         if (hasStringLength())
         {
             return (isUnlimitedLength() == other.isUnlimitedLength());
         }
         return true;
+    }
+
+    /*
+     * Even when the schema hasn't changed, we can get into a mismatch when comparing qualifiers that come from a requested logical type
+     * versus qualifiers that come from an existing column in the database. Therefore this method determines if the mismatch is due to the
+     * ambiguity when going from logical type -> physical type.
+     */
+    public boolean isCompatibleOnto(TypeQualifiers other)
+    {
+        if (hasPrecision() && !Objects.equal(getPrecision(), other.getPrecision()))
+        {
+            return false;
+        }
+        else if (hasScale() && !Objects.equal(getScale(), other.getScale()))
+        {
+            return false;
+        }
+        return isStringLengthCompatibleWith(other);
     }
     
     @Override

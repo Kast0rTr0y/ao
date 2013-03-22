@@ -4,9 +4,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
-
-import static net.java.ao.types.LogicalTypes.enumType;
-
 import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
@@ -93,7 +90,7 @@ public final class TypeManager
         {
             // The preferred type mapping is one that exactly matches the requested type qualifiers
             // (e.g. the mapping for unlimited-length strings is always used if string length == UNLIMITED).
-            // Otherwise we use TypeQualifiers.isCompatibleWith to find the next best match.
+            // Otherwise we use TypeQualifiers.isStringLengthCompatibleWith to find the next best match.
             TypeQualifiers typeQualifiers = type.getQualifiers();
             if (typeQualifiers.equals(qualifiers))
             {
@@ -101,7 +98,7 @@ public final class TypeManager
             }
             else
             {
-                if (typeQualifiers.isCompatibleWith(qualifiers))
+                if (typeQualifiers.isStringLengthCompatibleWith(qualifiers))
                 {
                     acceptableType = type;
                 }
