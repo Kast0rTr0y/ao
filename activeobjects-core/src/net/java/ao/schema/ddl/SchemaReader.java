@@ -29,6 +29,7 @@ import net.java.ao.schema.helper.ForeignKey;
 import net.java.ao.schema.helper.Index;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -471,7 +472,9 @@ public final class SchemaReader
 
     private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto)
     {
-        return from.getQualifiers().isCompatibleOnto(onto.getQualifiers()) && from.getSchemaProperties().equals(onto.getSchemaProperties());
+        // We need to check qualifier compatibility instead of equality because there can be a mismatch between entity annotation derived
+        // qualifiers vs. those derived from table metadata even when the schema hasn't changed.
+        return TypeQualifiers.areCompatible(from.getQualifiers(), onto.getQualifiers()) && from.getSchemaProperties().equals(onto.getSchemaProperties());
     }
 
     private static boolean equals(String s, String s1, boolean caseSensitive)

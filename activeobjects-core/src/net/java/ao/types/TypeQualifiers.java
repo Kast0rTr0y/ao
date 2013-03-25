@@ -145,18 +145,21 @@ public class TypeQualifiers
      * Even when the schema hasn't changed, we can get into a mismatch when comparing qualifiers that come from a requested logical type
      * versus qualifiers that come from an existing column in the database. Therefore this method determines if the mismatch is due to the
      * ambiguity when going from logical type -> physical type.
+     * versus qualifiers that come from an existing column in the database. This method determines if the mismatch is due to the
+     * ambiguity when going from logical type -> physical type, and should be used to compare qualifiers derived from entity annotations
+     * versus those derived from table metadata.
      */
-    public boolean isCompatibleOnto(TypeQualifiers other)
+    public static boolean areCompatible(TypeQualifiers derivedFromEntityAnnotations, TypeQualifiers derivedFromTableMetadata)
     {
-        if (hasPrecision() && !Objects.equal(getPrecision(), other.getPrecision()))
+        if (derivedFromEntityAnnotations.hasPrecision() && !Objects.equal(derivedFromEntityAnnotations.getPrecision(), derivedFromTableMetadata.getPrecision()))
         {
             return false;
         }
-        else if (hasScale() && !Objects.equal(getScale(), other.getScale()))
+        else if (derivedFromEntityAnnotations.hasScale() && !Objects.equal(derivedFromEntityAnnotations.getScale(), derivedFromTableMetadata.getScale()))
         {
             return false;
         }
-        return isStringLengthCompatibleWith(other);
+        return derivedFromEntityAnnotations.isStringLengthCompatibleWith(derivedFromTableMetadata);
     }
     
     @Override
