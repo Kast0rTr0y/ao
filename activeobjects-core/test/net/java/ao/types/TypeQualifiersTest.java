@@ -46,14 +46,14 @@ public class TypeQualifiersTest
     @Test
     public void testStringLengthCompatibility()
     {
-        // INCOMPATIBLE if the entity specifies a length constraint but there's a mismatch where either the entity or database specifies an UNLIMITED length constraint
+        // INCOMPATIBLE if there's a mismatch where either the entity or database specifies an UNLIMITED length constraint
         assertFalse("Expect incompatibility when DB has an unlimited string length and entity has a string length", TypeQualifiers.areCompatible(q.stringLength(100), q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
         assertFalse("Expect incompatibility when DB does not have a string length and entity has an unlimited string length", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q));
         assertFalse("Expect incompatibility when DB has a string length and entity has an unlimited string length", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q.stringLength(100)));
+        assertFalse("Expect incompatibility when DB has an unlimited string length and entity does not have a string length", TypeQualifiers.areCompatible(q, q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
 
         // COMPATIBLE in every other case (even when database returns a string length that's lower than the string length specified by the entity, because MySQL returns a string length
         // of 191 for default VARCHAR, and the default string length we get from the entity is always 255.
-        assertTrue("Expect compatibility when DB has an unlimited string length and entity does not have a string length", TypeQualifiers.areCompatible(q, q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
         assertTrue("Expect compatibility when DB has a greater string length than the entity", TypeQualifiers.areCompatible(q.stringLength(1), q.stringLength(100)));
         assertTrue("Expect compatibility when unlimited string length hasn't changed", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
         assertTrue("Expect compatibility when string length hasn't changed", TypeQualifiers.areCompatible(q.stringLength(100), q.stringLength(100)));

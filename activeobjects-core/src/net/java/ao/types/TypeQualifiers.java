@@ -132,9 +132,9 @@ public class TypeQualifiers
         return ((stringLength != null) && (stringLength == UNLIMITED_LENGTH));
     }
 
-    public boolean isStringLengthCompatibleWith(TypeQualifiers other)
+    public boolean isUnlimitedStringLengthSupportCompatible(TypeQualifiers other)
     {
-        if (hasStringLength())
+        if (hasStringLength() || other.hasStringLength())
         {
             return (isUnlimitedLength() == other.isUnlimitedLength());
         }
@@ -159,7 +159,7 @@ public class TypeQualifiers
         {
             return false;
         }
-        return derivedFromEntityAnnotations.isStringLengthCompatibleWith(derivedFromTableMetadata);
+        return derivedFromEntityAnnotations.isUnlimitedStringLengthSupportCompatible(derivedFromTableMetadata);
     }
     
     @Override

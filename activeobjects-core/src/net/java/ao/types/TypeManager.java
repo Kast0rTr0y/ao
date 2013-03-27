@@ -88,23 +88,25 @@ public final class TypeManager
         TypeInfo<?> acceptableType = null;
         for (TypeInfo<?> type : types)
         {
-            // The preferred type mapping is one that exactly matches the requested type qualifiers
-            // (e.g. the mapping for unlimited-length strings is always used if string length == UNLIMITED).
-            // Otherwise we use TypeQualifiers.isStringLengthCompatibleWith to find the next best match.
             TypeQualifiers typeQualifiers = type.getQualifiers();
             if (typeQualifiers.equals(qualifiers))
             {
+                // The preferred type mapping is one that exactly matches the requested type qualifiers
+                // (e.g. the mapping for unlimited-length strings is always used if string length == UNLIMITED).
                 return type;
             }
             else
             {
-                if (typeQualifiers.isStringLengthCompatibleWith(qualifiers))
+                // Otherwise we should return the next best match, which is any type whose qualifiers can be set
+                // in a way that accommodates the requested qualifiers. The constraint we have is whether the type
+                // supports unlimited string length or not.
+                if (typeQualifiers.isUnlimitedStringLengthSupportCompatible(qualifiers))
                 {
                     acceptableType = type;
                 }
             }
         }
-        return acceptableType.withQualifiers(qualifiers);
+        return acceptableType != null ? acceptableType.withQualifiers(qualifiers) : null;
     }
 
     public static TypeManager derby()
