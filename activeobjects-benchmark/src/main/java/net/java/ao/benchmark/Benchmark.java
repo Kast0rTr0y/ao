@@ -1,11 +1,9 @@
 package net.java.ao.benchmark;
 
+import net.java.ao.EntityStreamCallback;
 import net.java.ao.benchmark.model.Person;
 import net.java.ao.benchmark.model.PersonWithPreload;
-import net.java.ao.benchmark.util.Report;
-import net.java.ao.benchmark.util.ReportPrinter;
-import net.java.ao.benchmark.util.StopWatch;
-import net.java.ao.benchmark.util.WikiReportPrinter;
+import net.java.ao.benchmark.util.*;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.converters.NameConverters;
 import net.java.ao.test.converters.UpperCaseFieldNameConverter;
@@ -32,6 +30,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
     private final StopWatch<Integer> updateStopWatch = new StopWatch<Integer>("Updates");
     private final StopWatch<Integer> findStopWatch = new StopWatch<Integer>("Find");
     private final StopWatch<String> findLoopStopWatch = new StopWatch<String>("Find loop");
+    private final StopWatch<String> streamStopWatch = new StopWatch<String>("Stream");
     private final StopWatch<Integer> deleteStopWatch = new StopWatch<Integer>("Delete");
 
     @Before
@@ -64,6 +63,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
             entityManager.flushAll();
             final List<Integer> pks = insertPersons(personClass);
             updatePersons(personClass, pks);
+            streamPersons(personClass);
             final Person[] all = findPersons(personClass);
             deletePersons(all);
         }
@@ -103,6 +103,26 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
             updatePerson(personClass, i);
         }
         updateStopWatch.stop();
+    }
+
+    private <P extends Person> void streamPersons(Class<P> personClass) throws Exception
+    {
+        streamStopWatch.start();
+        entityManager.stream(personClass, new EntityStreamCallback<P, Integer>()
+        {
+            @Override
+            public void onRowRead(P person)
+            {
+                streamStopWatch.lap(new StringBuilder()
+                        .append(person.getID())
+                        .append("-")
+                        .append(person.getFirstName())
+                        .append("-")
+                        .append(person.getLastName())
+                        .toString());
+            }
+        });
+        streamStopWatch.stop();
     }
 
     private <P extends Person> P[] findPersons(Class<P> personClass) throws Exception
@@ -166,6 +186,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
 
         printer.print(newReport(insertStopWatch));
         printer.print(newReport(updateStopWatch));
+        printer.print(newReport(streamStopWatch));
         printer.print(newReport(findStopWatch));
         printer.print(newReport(findLoopStopWatch));
         printer.print(newReport(deleteStopWatch));
