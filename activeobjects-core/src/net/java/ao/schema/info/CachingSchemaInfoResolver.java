@@ -1,42 +1,38 @@
 package net.java.ao.schema.info;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.NameConverters;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class CachingSchemaInfoResolver extends SchemaInfoResolverWrapper implements SchemaInfoResolver
 {
 
-    private final ConcurrentMap<CacheKey, SchemaInfo> cache = new ConcurrentHashMap<CacheKey, SchemaInfo>();
+    private final Cache<CacheKey, SchemaInfo> cache;
 
     public CachingSchemaInfoResolver()
     {
-        super(new DefaultSchemaInfoResolver());
+        this(new DefaultSchemaInfoResolver());
     }
 
     public CachingSchemaInfoResolver(SchemaInfoResolver delegate)
     {
         super(delegate);
+        cache = CacheBuilder.newBuilder().build(new CacheLoader<CacheKey, SchemaInfo>() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public SchemaInfo load(CacheKey key) throws Exception {
+                return CachingSchemaInfoResolver.super.resolve(key.nameConverters, key.type);
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T extends RawEntity<?>> SchemaInfo<T> resolve(NameConverters nameConverters, Class<T> type)
     {
-        CacheKey key = new CacheKey(nameConverters, type);
-        SchemaInfo<T> schemaInfo = cache.get(key);
-        if (schemaInfo == null)
-        {
-            SchemaInfo<T> created = super.resolve(nameConverters, type);
-            schemaInfo = cache.putIfAbsent(key, created);
-            if (schemaInfo == null)
-            {
-                schemaInfo = created;
-            }
-        }
-        return schemaInfo;
+        return cache.getUnchecked(new CacheKey(nameConverters, type));
     }
 
     private static class CacheKey
