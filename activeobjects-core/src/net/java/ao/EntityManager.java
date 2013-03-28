@@ -19,12 +19,8 @@ import com.google.common.collect.Iterables;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
-import net.java.ao.schema.AutoIncrement;
-import net.java.ao.schema.CachingNameConverters;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.SchemaGenerator;
-import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.*;
+import net.java.ao.schema.info.SchemaInfo;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
 
@@ -814,7 +810,7 @@ public class EntityManager
         {
             closeQuietly(res, stmt, conn);
         }
-        return back.toArray((T[])Array.newInstance(type, back.size()));
+        return back.toArray((T[]) Array.newInstance(type, back.size()));
     }
 
     /**
@@ -920,9 +916,9 @@ public class EntityManager
 
         // the factory caches details about the proxied interface, since reflection calls are expensive
         // inside the stream loop
-        ReadOnlyEntityProxyFactory<T, K> proxyFactory = new ReadOnlyEntityProxyFactory<T, K>(this, type);
+        SchemaInfo<T> schemaInfo = configuration.getSchemaInfoResolver().resolve(nameConverters, type);
 
-        // Execute the query
+        // Execute the` query
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet res = null;
@@ -944,7 +940,7 @@ public class EntityManager
             {
                 K primaryKey = primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field);
                 // use the cached instance information from the factory to build efficient, read-only proxy representations
-                ReadOnlyEntityProxy<T, K> proxy = proxyFactory.build(primaryKey);
+                ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(schemaInfo, primaryKey);
                 T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
 
                 // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
@@ -962,6 +958,11 @@ public class EntityManager
         {
             closeQuietly(res, stmt, conn);
         }
+    }
+
+    private <T extends RawEntity<K>, K> ReadOnlyEntityProxy<T, K> createReadOnlyProxy(SchemaInfo<T> schemaInfo, K primaryKey)
+    {
+        return new ReadOnlyEntityProxy<T, K>(this, schemaInfo, primaryKey);
     }
 
     /**
