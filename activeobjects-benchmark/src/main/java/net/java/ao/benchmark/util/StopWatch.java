@@ -8,7 +8,7 @@ import java.util.TreeMap;
 
 import static com.google.common.base.Preconditions.*;
 
-public final class StopWatch<K>
+public final class StopWatch<K extends Comparable>
 {
     private final SortedMap<K, Long> laps = new TreeMap<K, Long>();
 
@@ -73,29 +73,5 @@ public final class StopWatch<K>
             lapValues.add(e.getValue());
         }
         return lapValues;
-    }
-
-    public void printResults(boolean printLaps)
-    {
-        System.out.printf("%s:\n", name);
-        System.out.printf("\tTotal time: %sms\n", convertToMillis(stop - start));
-        if (!laps.isEmpty())
-        {
-            System.out.printf("\tAverage time: %sms\n", convertToMillis((stop - start) / laps.size()));
-        }
-
-        if (printLaps)
-        {
-            System.out.println("\tLaps:");
-            for (Map.Entry<K, Long> lap : laps.entrySet())
-            {
-                System.out.printf("\t\t%s : %sms\n", lap.getKey(), convertToMillis(lap.getValue()));
-            }
-        }
-    }
-
-    private static double convertToMillis(double valueInNano)
-    {
-        return valueInNano / (1000 * 1000);
     }
 }
