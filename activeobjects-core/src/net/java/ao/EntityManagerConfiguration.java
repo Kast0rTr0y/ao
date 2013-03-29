@@ -1,7 +1,8 @@
 package net.java.ao;
 
-import net.java.ao.schema.info.SchemaInfoResolver;
+import net.java.ao.schema.info.TableInfoResolver;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.info.TableInfoResolverFactory;
 
 /**
  * This represents a configuration for entity manager creation.
@@ -30,10 +31,10 @@ public interface EntityManagerConfiguration
     SchemaConfiguration getSchemaConfiguration();
 
     /**
-     * Gets a SchemaInfo factory to use when parsing the schema configuration annotated on
+     * Gets a TableInfo factory to use when parsing the schema configuration annotated on
      * the {@link RawEntity entity} type
-     * @return a non-{@code null} {@link net.java.ao.schema.info.SchemaInfoResolver SchemaInfo factory}
+     * @return a non-{@code null} {@link net.java.ao.schema.info.TableInfoResolver TableInfo factory}
      */
-    SchemaInfoResolver getSchemaInfoResolver();
+    TableInfoResolverFactory getTableInfoResolverFactory();
 
 }

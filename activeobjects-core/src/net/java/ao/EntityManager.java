@@ -15,21 +15,28 @@
  */
 package net.java.ao;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
 import net.java.ao.schema.*;
-import net.java.ao.schema.info.SchemaInfo;
-import net.java.ao.schema.info.SchemaInfoResolver;
+import net.java.ao.schema.info.FieldInfo;
+import net.java.ao.schema.info.TableInfo;
+import net.java.ao.schema.info.TableInfoResolver;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,9 +51,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.preloadValue;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -64,13 +73,16 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public class EntityManager
 {
+
+    private static final Logger log = LoggerFactory.getLogger(EntityManager.class);
+
     private final DatabaseProvider provider;
     private final EntityManagerConfiguration configuration;
 
     private final SchemaConfiguration schemaConfiguration;
     private final NameConverters nameConverters;
 
-    private final SchemaInfoResolver schemaInfoResolver;
+    private final TableInfoResolver tableInfoResolver;
 
 	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
 
@@ -88,8 +100,7 @@ public class EntityManager
     private PolymorphicTypeMapper typeMapper;
     private final ReadWriteLock typeMapperLock = new ReentrantReadWriteLock(true);
 
-    private Map<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
-    private final ReadWriteLock valGenCacheLock = new ReentrantReadWriteLock(true);
+    private final com.google.common.cache.Cache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified {@link DatabaseProvider}.  This
@@ -107,7 +118,12 @@ public class EntityManager
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
         cache = new RAMCache();
-        valGenCache = new HashMap<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>();
+        valGenCache = CacheBuilder.newBuilder().build(new CacheLoader<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>() {
+            @Override
+            public ValueGenerator<?> load(Class<? extends ValueGenerator<?>> generatorClass) throws Exception {
+                return generatorClass.newInstance();
+            }
+        });
 
         // TODO: move caching out of there!
         nameConverters = new CachingNameConverters(configuration.getNameConverters());
@@ -115,7 +131,7 @@ public class EntityManager
 
         typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
 
-        schemaInfoResolver = checkNotNull(configuration.getSchemaInfoResolver(), "schemaInfoResolver");
+        tableInfoResolver = checkNotNull(configuration.getTableInfoResolverFactory().create(nameConverters, provider.getTypeManager()), "tableInfoResolver");
     }
 
 
@@ -213,7 +229,8 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T[] get(final Class<T> type, K... keys) throws SQLException
     {
-        final String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+        final String primaryKeyField = tableInfo.getPrimaryKey().getName();
         return getFromCache(type, findByPrimaryKey(type, primaryKeyField), keys);
     }
 
@@ -241,13 +258,13 @@ public class EntityManager
         };
     }
 
-    protected <T extends RawEntity<K>, K> T[] peer(final SchemaInfo<T> schemaInfo, K... keys) throws SQLException
+    protected <T extends RawEntity<K>, K> T[] peer(final TableInfo<T, K> tableInfo, K... keys) throws SQLException
     {
-        return getFromCache(schemaInfo.getEntityType(), new Function<T, K>()
+        return getFromCache(tableInfo.getEntityType(), new Function<T, K>()
         {
             public T invoke(K key)
             {
-                return getAndInstantiate(schemaInfo, key);
+                return getAndInstantiate(tableInfo, key);
             }
         }, keys);
     }
@@ -279,14 +296,14 @@ public class EntityManager
      * method should not be repurposed to perform any caching, since ActiveObjects already assumes that the caching has
      * been performed.
      *
-     * @param schemaInfo The type of the entity to create.
+     * @param tableInfo The type of the entity to create.
      * @param key The primary key corresponding to the entity instance required.
      * @return An entity instance of the specified type and primary key.
      */
-    protected <T extends RawEntity<K>, K> T getAndInstantiate(SchemaInfo<T> schemaInfo, K key)
+    protected <T extends RawEntity<K>, K> T getAndInstantiate(TableInfo<T, K> tableInfo, K key)
     {
-        Class<T> type = schemaInfo.getEntityType();
-        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, schemaInfo, key);
+        Class<T> type = tableInfo.getEntityType();
+        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, tableInfo, key);
 
 		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
 		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
@@ -309,9 +326,9 @@ public class EntityManager
         return get(type, toArray(key))[0];
     }
 
-    protected <T extends RawEntity<K>, K> T peer(SchemaInfo<T> schemaInfo, K key) throws SQLException
+    protected <T extends RawEntity<K>, K> T peer(TableInfo<T, K> tableInfo, K key) throws SQLException
     {
-        return peer(schemaInfo, toArray(key))[0];
+        return peer(tableInfo, toArray(key))[0];
     }
 
     @SuppressWarnings("unchecked")
@@ -354,92 +371,73 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
-        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
-		final String table = schemaInfo.getTableName();
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+		final String table = tableInfo.getName();
 
         Set<DBParam> listParams = new HashSet<DBParam>();
         listParams.addAll(Arrays.asList(params));
 
-        for (Method method : MethodFinder.getInstance().findAnnotatedMethods(Generator.class, type))
+        for (FieldInfo fieldInfo : Iterables.filter(tableInfo.getFields(), FieldInfo.HAS_GENERATOR))
         {
-            Generator genAnno = method.getAnnotation(Generator.class);
-            final String field = schemaInfo.getFieldName(method);
-            ValueGenerator<?> generator;
 
-            valGenCacheLock.writeLock().lock();
+            ValueGenerator<?> generator;
             try
             {
-                if (valGenCache.containsKey(genAnno.value()))
-                {
-                    generator = valGenCache.get(genAnno.value());
-                }
-                else
-                {
-                    generator = genAnno.value().newInstance();
-                    valGenCache.put(genAnno.value(), generator);
-                }
+                generator = valGenCache.get(fieldInfo.getGeneratorType());
             }
-            catch (InstantiationException e)
+            catch (ExecutionException e)
             {
-                continue;
-            }
-            catch (IllegalAccessException e)
-            {
-                continue;
-            }
-            finally
-            {
-                valGenCacheLock.writeLock().unlock();
+                throw Throwables.propagate(e.getCause());
             }
 
-            listParams.add(new DBParam(field, generator.generateValue(this)));
+            listParams.add(new DBParam(fieldInfo.getName(), generator.generateValue(this)));
         }
 
-        final Method pkMethod = Common.getPrimaryKeyMethod(type);
-        final String pkField = Common.getPrimaryKeyField(type, getFieldNameConverter());
+        Set<FieldInfo> requiredFields = Sets.newHashSet(Sets.filter(tableInfo.getFields(), FieldInfo.IS_REQUIRED));
 
-        final Set<String> nonNullFields = Common.getNonNullFields(type, nameConverters.getFieldNameConverter());
-        final Set<String> fieldsThatShouldBeSet = Common.getNonNullFieldsWithNoDefaultAndNotGenerated(type, nameConverters.getFieldNameConverter());
-        final Map<String, TypeInfo> valueFields = Common.getValueFields(provider.getTypeManager(), nameConverters.getFieldNameConverter(), type);
-
-        for (DBParam param : params)
+        for (DBParam param : listParams)
         {
-            if (param.getField().equals(pkField))
+            FieldInfo field = tableInfo.getField(param.getField());
+            checkNotNull(field, "Entity %s does not have field %s", type.getName(), param.getField());
+
+            if (field.isPrimary())
             {
-                Common.validatePrimaryKey(provider.getTypeManager(), type, param.getValue());
+                //noinspection unchecked
+                Common.validatePrimaryKey(field, param.getValue());
             }
-            else if (nonNullFields.contains(param.getField()) && param.getValue() == null)
+            else if (!field.isNullable())
             {
-                throw new IllegalArgumentException("Cannot set non-null field " + param.getField() + " to null");
-            }
-            else if (nonNullFields.contains(param.getField()) && param.getValue() instanceof String && StringUtils.isBlank((String)param.getValue()))
-            {
-                throw new IllegalArgumentException("Cannot set non-null String field " + param.getField() + " to ''");
+                checkArgument(param.getValue() != null, "Cannot set non-null field %s to null", param.getField());
+                if (param.getValue() instanceof String)
+                {
+                    checkArgument(!StringUtils.isBlank((String) param.getValue()), "Cannot set non-null String field %s to ''", param.getField());
+                }
             }
 
-            fieldsThatShouldBeSet.remove(param.getField());
+            requiredFields.remove(field);
 
-            final TypeInfo dbType = valueFields.get(param.getField());
+            final TypeInfo dbType = field.getTypeInfo();
             if (dbType != null && param.getValue() != null)
             {
                 dbType.getLogicalType().validate(param.getValue());
             }
         }
 
-        if (!fieldsThatShouldBeSet.isEmpty())
+        if (!requiredFields.isEmpty())
         {
-            throw new IllegalArgumentException("There are some non-null fields that weren't set when trying to create entity '" + type.getName() + "', those fields are: " + nonNullFields);
+            throw new IllegalArgumentException("The follow required fields were not set when trying to create entity '" + type.getName() + "', those fields are: " + Joiner.on(", ").join(requiredFields));
         }
 
         Connection connection = null;
         try
         {
             connection = provider.getConnection();
-            back = peer(schemaInfo, provider.insertReturningKey(this, connection,
+            back = peer(tableInfo, provider.insertReturningKey(this, connection,
                                                           type,
-                                                          Common.getPrimaryKeyClassType(type),
-                                                          Common.getPrimaryKeyField(type, getFieldNameConverter()),
-                                                          pkMethod.getAnnotation(AutoIncrement.class) != null, table, listParams.toArray(new DBParam[listParams.size()])));
+                                                          tableInfo.getPrimaryKey().getJavaType(),
+                                                          tableInfo.getPrimaryKey().getName(),
+                                                          tableInfo.getPrimaryKey().hasAutoIncrement(),
+                                                          table, listParams.toArray(new DBParam[listParams.size()])));
         }
         finally
         {
@@ -520,13 +518,13 @@ public class EntityManager
         try
         {
             conn = provider.getConnection();
-            for (Class<? extends RawEntity<?>> type : organizedEntities.keySet()) {
+            for (Class type : organizedEntities.keySet()) {
+                TableInfo tableInfo = resolveTableInfo(type);
                 List<RawEntity<?>> entityList = organizedEntities.get(type);
 
                 StringBuilder sql = new StringBuilder("DELETE FROM ");
-                sql.append(provider.withSchema(nameConverters.getTableNameConverter().getName(type)));
-                sql.append(" WHERE ").append(provider.processID(
-                        Common.getPrimaryKeyField(type, getFieldNameConverter()))).append(" IN (?");
+                sql.append(provider.withSchema(tableInfo.getName()));
+                sql.append(" WHERE ").append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" IN (?");
 
                 for (int i = 1; i < entityList.size(); i++) {
                     sql.append(",?");
@@ -705,8 +703,10 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> T[] find(Class<T> type, Query query) throws SQLException
     {
-        String selectField = Common.getPrimaryKeyField(type, getFieldNameConverter());
-        query.resolveFields(type, getFieldNameConverter());
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+
+        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
+        String selectField = tableInfo.getPrimaryKey().getName();
 
         Iterable<String> fields = query.getFields();
         if (Iterables.size(fields) == 1)
@@ -734,9 +734,10 @@ public class EntityManager
     {
         List<T> back = new ArrayList<T>();
 
-        query.resolveFields(type, getFieldNameConverter());
 
-        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+
+        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
 
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         if (preloadAnnotation != null)
@@ -791,7 +792,7 @@ public class EntityManager
         try
         {
             conn = provider.getConnection();
-            final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), false);
+            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), false);
 
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             provider.setQueryStatementProperties(stmt, query);
@@ -801,12 +802,12 @@ public class EntityManager
             res = stmt.executeQuery();
             provider.setQueryResultSetProperties(res, query);
 
-            final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
-            final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-            final String[] canonicalFields = query.getCanonicalFields(provider, getFieldNameConverter(), type);
+            final TypeInfo<K> primaryKeyType = tableInfo.getPrimaryKey().getTypeInfo();
+            final Class<K> primaryKeyClassType = tableInfo.getPrimaryKey().getJavaType();
+            final String[] canonicalFields = query.getCanonicalFields(tableInfo);
             while (res.next())
             {
-                final T entity = peer(schemaInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
+                final T entity = peer(tableInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
                 final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
 
                 for (String cacheField : canonicalFields)
@@ -852,7 +853,7 @@ public class EntityManager
     public <T extends RawEntity<K>, K> T[] findWithSQL(Class<T> type, String keyField, String sql, Object... parameters) throws SQLException
     {
         List<T> back = new ArrayList<T>();
-        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
 
         Connection connection = null;
         PreparedStatement stmt = null;
@@ -866,7 +867,7 @@ public class EntityManager
             res = stmt.executeQuery();
             while (res.next())
             {
-                back.add(peer(schemaInfo, Common.getPrimaryKeyType(provider.getTypeManager(), type).getLogicalType().pullFromDatabase(this, res, (Class<K>)type, keyField)));
+                back.add(peer(tableInfo, tableInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, (Class<K>) type, keyField)));
             }
         }
         finally
@@ -876,7 +877,7 @@ public class EntityManager
             closeQuietly(connection);
         }
 
-        return back.toArray((T[])Array.newInstance(type, back.size()));
+        return back.toArray((T[]) Array.newInstance(type, back.size()));
     }
 
     /**
@@ -917,18 +918,20 @@ public class EntityManager
     public <T extends RawEntity<K>, K> void stream(Class<T> type, Query query, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
 
-        query.resolveFields(type, getFieldNameConverter());
 
-        // fetch some information about the fields we're dealing with. These calls are expensive when
-        // executed too often, and since we're always working on the same type of object, we only need them once.
-        final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
-        final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-        final String[] canonicalFields = query.getCanonicalFields(provider, getFieldNameConverter(), type);
-        String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
+//        // fetch some information about the fields we're dealing with. These calls are expensive when
+//        // executed too often, and since we're always working on the same type of object, we only need them once.
+//        final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
+//        final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
+//        String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
 
         // the factory caches details about the proxied interface, since reflection calls are expensive
         // inside the stream loop
-        SchemaInfo<T> schemaInfo = resolveSchemaInfo(type);
+        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+
+        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
+
+        final String[] canonicalFields = query.getCanonicalFields(tableInfo);
 
         // Execute the` query
         Connection conn = null;
@@ -937,7 +940,7 @@ public class EntityManager
         try
         {
             conn = provider.getConnection();
-            final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), false);
+            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), false);
 
             // we're only going over the result set once, so use the slimmest possible cursor type
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -950,9 +953,9 @@ public class EntityManager
 
             while (res.next())
             {
-                K primaryKey = primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field);
+                K primaryKey = tableInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, tableInfo.getPrimaryKey().getJavaType(), tableInfo.getPrimaryKey().getName());
                 // use the cached instance information from the factory to build efficient, read-only proxy representations
-                ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(schemaInfo, primaryKey);
+                ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(tableInfo, primaryKey);
                 T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
 
                 // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
@@ -972,9 +975,9 @@ public class EntityManager
         }
     }
 
-    private <T extends RawEntity<K>, K> ReadOnlyEntityProxy<T, K> createReadOnlyProxy(SchemaInfo<T> schemaInfo, K primaryKey)
+    private <T extends RawEntity<K>, K> ReadOnlyEntityProxy<T, K> createReadOnlyProxy(TableInfo<T, K> tableInfo, K primaryKey)
     {
-        return new ReadOnlyEntityProxy<T, K>(this, schemaInfo, primaryKey);
+        return new ReadOnlyEntityProxy<T, K>(this, tableInfo, primaryKey);
     }
 
     /**
@@ -1014,13 +1017,14 @@ public class EntityManager
      */
     public <K> int count(Class<? extends RawEntity<K>> type, Query query) throws SQLException
     {
+        TableInfo tableInfo = resolveTableInfo(type);
         Connection connection = null;
         PreparedStatement stmt = null;
         ResultSet res = null;
         try
         {
             connection = provider.getConnection();
-            final String sql = query.toSQL(type, provider, getTableNameConverter(), getFieldNameConverter(), true);
+            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), true);
 
             stmt = provider.preparedStatement(connection, sql);
             provider.setQueryStatementProperties(stmt, query);
@@ -1044,8 +1048,8 @@ public class EntityManager
         return nameConverters;
     }
 
-    protected <T extends RawEntity<?>> SchemaInfo<T> resolveSchemaInfo(Class<T> type) {
-        return schemaInfoResolver.resolve(nameConverters, type);
+    protected <T extends RawEntity<K>, K> TableInfo<T, K> resolveTableInfo(Class<T> type) {
+        return tableInfoResolver.resolve(type);
     }
 
     /**

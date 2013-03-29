@@ -17,7 +17,9 @@ package net.java.ao;
 
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.info.SchemaInfoResolver;
+import net.java.ao.schema.info.TableInfoResolver;
+import net.java.ao.schema.info.TableInfoResolverFactory;
+import net.java.ao.types.TypeManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,12 +40,15 @@ public class EntityManagerTest
 {
     @Mock
     private DatabaseProvider databaseProvider;
+    @Mock
+    private TypeManager typeManager;
 
     private EntityManager entityManager;
 
     @Before
     public void setUp()
     {
+        when(databaseProvider.getTypeManager()).thenReturn(typeManager);
         entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration());
     }
 
@@ -63,13 +70,16 @@ public class EntityManagerTest
         final NameConverters nameConverters = mock(NameConverters.class);
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
-        final SchemaInfoResolver schemaInfoResolver = mock(SchemaInfoResolver.class);
+
+        final TableInfoResolverFactory tableInfoResolverFactory = mock(TableInfoResolverFactory.class);
+        final TableInfoResolver tableInfoResolver = mock(TableInfoResolver.class);
+        when(tableInfoResolverFactory.create(isA(NameConverters.class), isA(TypeManager.class))).thenReturn(tableInfoResolver);
 
         final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
         when(configuration.getNameConverters()).thenReturn(nameConverters);
         when(nameConverters.getTableNameConverter()).thenReturn(tableNameConverter);
         when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
-        when(configuration.getSchemaInfoResolver()).thenReturn(schemaInfoResolver);
+        when(configuration.getTableInfoResolverFactory()).thenReturn(tableInfoResolverFactory);
         return configuration;
     }
 }

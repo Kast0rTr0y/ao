@@ -138,7 +138,7 @@ public abstract class DatabaseProvider implements Disposable
         this(dataSource, schema, new TypeManager.Builder().build());
     }
 
-    public final TypeManager getTypeManager()
+    public TypeManager getTypeManager()
     {
         return typeManager;
     }

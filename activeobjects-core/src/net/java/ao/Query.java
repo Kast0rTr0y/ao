@@ -21,6 +21,8 @@ import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.info.FieldInfo;
+import net.java.ao.schema.info.TableInfo;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -110,8 +112,8 @@ public class Query implements Serializable
 		this.fields = builder.toString();
 	}
 	
-	<K> void resolveFields(Class<? extends RawEntity<K>> tableType, FieldNameConverter converter) {
-		fields = fields.replaceAll(PRIMARY_KEY_FIELD, Common.getPrimaryKeyField(tableType, converter));
+	<K> void resolvePrimaryKey(FieldInfo<K> fieldInfo) {
+		fields = fields.replaceAll(PRIMARY_KEY_FIELD, fieldInfo.getName());
 	}
 	
 	public Query distinct() {
@@ -284,15 +286,14 @@ public class Query implements Serializable
 		return type;
 	}
 	
-	public String[] getCanonicalFields(DatabaseProvider provider, FieldNameConverter converter, Class<? extends RawEntity<?>> type) {
+	public String[] getCanonicalFields(TableInfo<?, ?> tableInfo) {
         String[] back = fields.split(",");
                
         List<String> result = new ArrayList<String>();
 		for(String fieldName : back) {
             if (fieldName.trim().equals("*")) {
-
-				for (DDLField field : SchemaGenerator.parseFields(provider, converter, type)) {
-					result.add(field.getName());
+                for (FieldInfo<?> fieldInfo : tableInfo.getFields()) {
+					result.add(fieldInfo.getName());
 				}
 			}  else {
                 result.add(fieldName.trim());
@@ -302,13 +303,12 @@ public class Query implements Serializable
 		return result.toArray(new String[result.size()]);
 	}
 
-	protected <K> String toSQL(Class<? extends RawEntity<K>> tableType, DatabaseProvider provider, TableNameConverter converter, 
-			FieldNameConverter fieldConverter, boolean count) {
+	protected <K> String toSQL(TableInfo<? extends RawEntity<K>, K> tableInfo, DatabaseProvider provider, TableNameConverter converter, boolean count) {
 		if (this.tableType == null && table == null) {
-			this.tableType = tableType;
+			this.tableType = tableInfo.getEntityType();
 		}
 		
-		resolveFields(tableType, fieldConverter);
+		resolvePrimaryKey(tableInfo.getPrimaryKey());
 		
 		return provider.renderQuery(this, converter, count);
 	}

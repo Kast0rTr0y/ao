@@ -44,7 +44,7 @@ import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
-import net.java.ao.schema.info.SchemaInfo;
+import net.java.ao.schema.info.FieldInfo;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
@@ -67,7 +67,7 @@ public final class Common {
 
     public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) throws SQLException
     {
-        return manager.peer(manager.resolveSchemaInfo(type), key);
+        return manager.peer(manager.resolveTableInfo(type), key);
     }
 
 	public static String convertSimpleClassName(String name) {
@@ -145,7 +145,7 @@ public final class Common {
 	 * on the given method (or <code>null</code> if no corresponding method).
 	 * @param converter TODO
 	 */
-	public static Method findCounterpart(FieldNameConverter converter, Method method) {
+	private static Method findCounterpart(FieldNameConverter converter, Method method) {
 		return methodFinder.findCounterPartMethod(converter, method);
 	}
 
@@ -280,56 +280,6 @@ public final class Common {
         return converter.getName(methods.iterator().next());
     }
 
-    public static Set<String> getNonNullFields(final Class<? extends RawEntity<?>> type, final FieldNameConverter converter)
-    {
-        return newHashSet(transform(getNonNullMethods(type), new Function<Method, String>()
-        {
-            @Override
-            public String apply(Method m)
-            {
-                return converter.getName(m);
-            }
-        }));
-    }
-
-    public static Set<String> getNonNullFieldsWithNoDefaultAndNotGenerated(final Class<? extends RawEntity<?>> type, final FieldNameConverter converter)
-    {
-        return newHashSet(transform(filter(getNonNullMethods(type),
-                new Predicate<Method>()
-                {
-                    @Override
-                    public boolean apply(Method m)
-                    {
-                        return !m.isAnnotationPresent(AutoIncrement.class) && !m.isAnnotationPresent(Generator.class) && !m.isAnnotationPresent(Default.class);
-                    }
-                }),
-                new Function<Method, String>()
-                {
-                    @Override
-                    public String apply(Method m)
-                    {
-                        return converter.getName(m);
-                    }
-                }
-        ));
-    }
-
-    public static Iterable<Method> getNonNullMethods(Class<? extends RawEntity<?>> type)
-    {
-        return methodFinder.findAnnotatedMethods(NotNull.class, type);
-    }
-
-
-    public static Method getPrimaryKeyMethod(Class<? extends RawEntity<?>> type)
-    {
-        final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
-        if (Iterables.isEmpty(methods))
-        {
-            throw new RuntimeException("Entity " + type.getSimpleName() + " has no primary key field");
-        }
-        return methods.iterator().next();
-    }
-
     public static <K> TypeInfo<K> getPrimaryKeyType(TypeManager typeManager, Class<? extends RawEntity<K>> type) {
 		return typeManager.getType(getPrimaryKeyClassType(type));
 	}
@@ -363,16 +313,16 @@ public final class Common {
 			return null;
 		}
 	}
-    
-    public static <K> void validatePrimaryKey(TypeManager typeManager, Class<? extends RawEntity<K>> type, Object value)
+
+    public static <K> void validatePrimaryKey(FieldInfo<K> primaryKeyInfo, Object value)
     {
         if(null == value)
         {
             throw new IllegalArgumentException("Cannot set primary key to NULL");
         }
 
-        TypeInfo<K> typeInfo = getPrimaryKeyType(typeManager,type);
-        Class<K> javaTypeClass = getPrimaryKeyClassType(type);
+        TypeInfo<K> typeInfo = primaryKeyInfo.getTypeInfo();
+        Class<K> javaTypeClass = primaryKeyInfo.getJavaType();
 
         if(!typeInfo.isAllowedAsPrimaryKey())
         {
@@ -476,17 +426,6 @@ public final class Common {
                         && !annotations.isAnnotationPresent(ManyToMany.class);
             }
         });
-    }
-
-    public static Map<String, TypeInfo> getValueFields(TypeManager typeManager, final FieldNameConverter converter, final Class<? extends RawEntity<?>> entity)
-    {
-        final Set<Method> methods = getValueFieldsMethods(entity, converter);
-        final Map<String, TypeInfo> map = Maps.newHashMap();
-        for (Method m : methods)
-        {
-            map.put(converter.getName(m), typeManager.getType(getAttributeTypeFromMethod(m)));
-        }
-        return ImmutableMap.copyOf(map);
     }
 
     public static Set<String> getValueFieldsNames(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)

@@ -28,7 +28,7 @@ public final class AnnotationDelegate
 {
     private final Method method1, method2;
 
-    AnnotationDelegate(Method method1, Method method2)
+    public AnnotationDelegate(Method method1, Method method2)
     {
         this.method1 = checkNotNull(method1);
         this.method2 = method2;

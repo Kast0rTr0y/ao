@@ -5,8 +5,7 @@ import net.java.ao.EntityManager;
 import net.java.ao.EntityManagerConfiguration;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.*;
-import net.java.ao.schema.info.DefaultSchemaInfoResolver;
-import net.java.ao.schema.info.SchemaInfoResolver;
+import net.java.ao.schema.info.*;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -101,7 +100,7 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private TriggerNameConverter triggerNameConverter;
         private IndexNameConverter indexNameConverter;
         private UniqueNameConverter uniqueNameConverter;
-        private SchemaInfoResolver schemaInfoResolver;
+        private TableInfoResolverFactory tableInfoResolverFactory;
 
         private boolean useWeakCache = false;
 
@@ -224,19 +223,20 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         }
 
         @Override
-        public SchemaInfoResolver getSchemaInfoResolver()
+        public TableInfoResolverFactory getTableInfoResolverFactory()
         {
-            return schemaInfoResolver != null ? schemaInfoResolver : defaultSchemaInfoResolver();
+            return tableInfoResolverFactory != null ? tableInfoResolverFactory : defaultSchemaInfoResolverFactory();
         }
 
-        public void setSchemaInfoResolver(SchemaInfoResolver schemaInfoResolver)
+        public void setTableInfoResolverFactory(TableInfoResolverFactory tableInfoResolverFactory)
         {
-            this.schemaInfoResolver = schemaInfoResolver;
+            this.tableInfoResolverFactory = tableInfoResolverFactory;
         }
 
-        private static SchemaInfoResolver defaultSchemaInfoResolver()
+        private static TableInfoResolverFactory defaultSchemaInfoResolverFactory()
         {
-            return new DefaultSchemaInfoResolver();
+//            return new SimpleTableInfoResolverFactory();
+            return new CachingTableInfoResolverFactory();
         }
     }
 }
