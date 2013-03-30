@@ -6,6 +6,9 @@ import com.google.common.cache.CacheLoader;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.NameConverters;
 
+/**
+ * A {@code TableInfoResolver} which caches the computed {@link TableInfo} for any type it is given
+ */
 public class CachingTableInfoResolver extends TableInfoResolverWrapper implements TableInfoResolver
 {
 

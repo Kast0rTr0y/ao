@@ -3,6 +3,9 @@ package net.java.ao.schema.info;
 import net.java.ao.RawEntity;
 import net.java.ao.schema.NameConverters;
 
+/**
+ * A {@code TableInfoResolver} which delegates.
+ */
 public abstract class TableInfoResolverWrapper implements TableInfoResolver
 {
 

@@ -12,6 +12,10 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A {@code TableInfoResolver} which creates new {@link TableInfo} instances on every invocation of
+ * {@link #resolve(Class)}
+ */
 public class SimpleTableInfoResolver implements TableInfoResolver
 {
 
