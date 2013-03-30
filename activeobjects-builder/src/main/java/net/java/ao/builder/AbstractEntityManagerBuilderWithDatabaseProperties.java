@@ -235,8 +235,8 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
 
         private static TableInfoResolverFactory defaultSchemaInfoResolverFactory()
         {
-//            return new SimpleTableInfoResolverFactory();
-            return new CachingTableInfoResolverFactory();
+            return new SimpleTableInfoResolverFactory();
+//            return new CachingTableInfoResolverFactory();
         }
     }
 }

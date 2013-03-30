@@ -15,53 +15,27 @@
  */
 package net.java.ao;
 
-import com.google.common.base.Function;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MapMaker;
 import net.java.ao.schema.FieldNameConverter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Map;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 final class MethodFinder
 {
-    private final Map<AnnotatedMethods, Iterable<Method>> annotatedMethodsCache;
-    private final Map<CounterPartMethod, Supplier<Method>> counterpartCache;
-
-    MethodFinder()
-    {
-        this.annotatedMethodsCache = new MapMaker().weakKeys().weakValues().makeComputingMap(new Function<AnnotatedMethods, Iterable<Method>>()
-        {
-            @Override
-            public Iterable<Method> apply(AnnotatedMethods a)
-            {
-                return a.getAnnotatedMethods();
-            }
-        });
-
-        this.counterpartCache = new MapMaker().weakKeys().weakValues().makeComputingMap(new Function<CounterPartMethod, Supplier<Method>>()
-        {
-            @Override
-            public Supplier<Method> apply(CounterPartMethod c)
-            {
-                return Suppliers.ofInstance(c.getCounterPartMethod());
-            }
-        });
-    }
 
     public Iterable<Method> findAnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type)
     {
-        return annotatedMethodsCache.get(new AnnotatedMethods(annotation, type));
+        return new AnnotatedMethods(annotation, type).getAnnotatedMethods();
     }
 
     public Method findCounterPartMethod(FieldNameConverter converter, Method method)
     {
-        return counterpartCache.get(new CounterPartMethod(converter, method)).get();
+        return new CounterPartMethod(converter, method).getCounterPartMethod();
     }
 
     private final static Supplier<MethodFinder> INSTANCE_SUPPLIER = Suppliers.synchronizedSupplier(Suppliers.memoize(new Supplier<MethodFinder>()

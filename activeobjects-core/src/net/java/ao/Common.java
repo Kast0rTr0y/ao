@@ -135,7 +135,10 @@ public final class Common {
 	 * large numbers of {@link AnnotationDelegate} objects.  Need to
 	 * do some research to determine whether or not this is actually
 	 * a problem.
+     *
+     * @deprecated All annotation information should be resolved upfront using {@link net.java.ao.schema.info.TableInfo}
 	 */
+    @Deprecated
 	public static AnnotationDelegate getAnnotationDelegate(FieldNameConverter converter, Method method) {
 		return new AnnotationDelegate(method, findCounterpart(converter, method));
 	}
@@ -251,7 +254,7 @@ public final class Common {
 		return back;
 	}
 
-    public static Method getPrimaryKeyAccessor(Class<? extends RawEntity<?>> type)
+    private static Method getPrimaryKeyAccessor(Class<? extends RawEntity<?>> type)
     {
         final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
         if (Iterables.isEmpty(methods))
