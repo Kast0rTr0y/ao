@@ -15,6 +15,7 @@
  */
 package net.java.ao;
 
+import com.google.common.base.Defaults;
 import com.google.common.collect.Collections2;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
@@ -187,12 +188,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             throw new RuntimeException("Cannot handle method with signature: " + method.toString());
         }
 
-        if (tableInfo.hasAccessor(method)) {
-            return invokeGetter((RawEntity<?>) proxy, getKey(), tableInfo.getField(method).getName(),
-                    fieldInfo.getPolymorphicName(), method.getReturnType(), !fieldInfo.isTransient());
+        if (method.equals(fieldInfo.getAccessor())) {
+            return invokeGetter((RawEntity<?>) proxy, fieldInfo);
 		}
 
-        if (tableInfo.hasMutator(method)) {
+        if (method.equals(fieldInfo.getMutator())) {
             invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], fieldInfo.getPolymorphicName());
 			return Void.TYPE;
 		}
@@ -699,98 +699,90 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		}
 	}
 
-	private <V> V invokeGetter(RawEntity<?> entity, K key, String name, String polyName, Class<V> type, boolean shouldCache) throws Throwable {
-		V back = null;
-		CacheLayer cacheLayer = getCacheLayer(entity);
-		
-		shouldCache = shouldCache && getTypeManager().getType(type).getLogicalType().shouldCache(type);
-		
-		getLock(name).writeLock().lock();
-		try {
-			if (!shouldCache && cacheLayer.dirtyContains(name)) {
-				return handleNullReturn(null, type);
-			} else if (shouldCache && cacheLayer.contains(name)) {
-				Object value = cacheLayer.get(name);
-	
-				if (instanceOf(value, type)) {
-					return handleNullReturn((V) value, type);
+    private <V> V invokeGetter(RawEntity<?> entity, FieldInfo<V> fieldInfo) throws Throwable {
+        CacheLayer cacheLayer = getCacheLayer(entity);
+
+        Class<V> type = fieldInfo.getJavaType();
+        String name = fieldInfo.getName();
+
+        boolean shouldCache = !fieldInfo.isTransient() && getTypeManager().getType(type).getLogicalType().shouldCache(type);
+
+        getLock(name).writeLock().lock();
+        try {
+            if (!shouldCache && cacheLayer.dirtyContains(name)) {
+                return handleNullReturn(null, type);
+            } else if (shouldCache && cacheLayer.contains(name)) {
+                Object value = cacheLayer.get(name);
+
+                if (instanceOf(value, type)) {
+                    //noinspection unchecked
+                    return handleNullReturn((V) value, type);
                 } else if (isBigDecimal(value, type)) { // Oracle for example returns BigDecimal when we expect doubles
+                    //noinspection unchecked
                     return (V) handleBigDecimal(value, type);
-				} else if (RawEntity.class.isAssignableFrom(type)
-						&& instanceOf(value, tableInfo.getPrimaryKey().getJavaType())) {
-                    value = manager.peer(manager.resolveTableInfo((Class<? extends RawEntity>) type), value);
+                } else if (RawEntity.class.isAssignableFrom(type)) {
+                    //noinspection unchecked
+                    TableInfo<? extends RawEntity, Object> remoteTableInfo = manager.resolveTableInfo((Class<? extends RawEntity>) type);
+                    if (instanceOf(value, remoteTableInfo.getPrimaryKey().getJavaType())) {
+                        value = manager.peer(remoteTableInfo, value);
 
-					cacheLayer.put(name, value);
-					return handleNullReturn((V) value, type);
-				} else {
-					cacheLayer.remove(name); // invalid cached value
-				}
-			}
-
-            final DatabaseProvider provider = manager.getProvider();
-            Connection conn = null;
-            PreparedStatement stmt = null;
-            ResultSet res = null;
-            try {
-                conn = provider.getConnection();
-				StringBuilder sql = new StringBuilder("SELECT ");
-				
-				sql.append(provider.processID(name));
-				if (polyName != null) {
-					sql.append(',').append(provider.processID(polyName));
-				}
-	
-				sql.append(" FROM ").append(provider.withSchema(tableInfo.getName())).append(" WHERE ");
-				sql.append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" = ?");
-
-				stmt = provider.preparedStatement(conn, sql);
-				TypeInfo<K> pkType = tableInfo.getPrimaryKey().getTypeInfo();
-                pkType.getLogicalType().putToDatabase(manager, stmt, 1, key, pkType.getJdbcWriteType());
-	
-				res = stmt.executeQuery();
-				if (res.next()) {
-					back = convertValue(res, provider.shorten(name), provider.shorten(polyName), type);
-				}
-			} finally {
-                closeQuietly(res, stmt, conn);
+                        cacheLayer.put(name, value);
+                        //noinspection unchecked
+                        return handleNullReturn((V) value, type);
+                    }
+                }
+                cacheLayer.remove(name); // invalid cached value
             }
-	
-			if (shouldCache) {
-				cacheLayer.put(name, back);
-			}
-	
-			return handleNullReturn(back, type);
-		} finally {
-			getLock(name).writeLock().unlock();
-		}
-	}
 
-	private <V> V handleNullReturn(V back, Class<V> type) {
-		if (back != null) {
-			return back;
-		}
-		
-		if (type.isPrimitive()) {
-			if (type.equals(boolean.class)) {
-				return (V) new Boolean(false);
-			} else if (type.equals(char.class)) {
-				return (V) new Character(' ');
-			} else if (type.equals(int.class)) {
-				return (V) new Integer(0);
-			} else if (type.equals(short.class)) {
-				return (V) new Short("0");
-			} else if (type.equals(long.class)) {
-				return (V) new Long("0");
-			} else if (type.equals(float.class)) {
-				return (V) new Float("0");
-			} else if (type.equals(double.class)) {
-				return (V) new Double("0");
-			} else if (type.equals(byte.class)) {
-				return (V) new Byte("0");
-			}
-		}
+            V back = pullFromDatabase(fieldInfo);
 
-		return null;
+            if (shouldCache) {
+                cacheLayer.put(name, back);
+            }
+
+            return handleNullReturn(back, type);
+        } finally {
+            getLock(name).writeLock().unlock();
+        }
+    }
+
+    private <V> V pullFromDatabase(FieldInfo<V> fieldInfo) throws SQLException {
+        Class<V> type = fieldInfo.getJavaType();
+        String name = fieldInfo.getName();
+        final DatabaseProvider provider = manager.getProvider();
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet res = null;
+        V back = null;
+        try {
+            conn = provider.getConnection();
+            StringBuilder sql = new StringBuilder("SELECT ");
+
+            sql.append(provider.processID(name));
+            String polyName = fieldInfo.getPolymorphicName();
+            if (polyName != null) {
+                sql.append(',').append(provider.processID(polyName));
+            }
+
+            sql.append(" FROM ").append(provider.withSchema(tableInfo.getName())).append(" WHERE ");
+            sql.append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" = ?");
+
+            stmt = provider.preparedStatement(conn, sql);
+            TypeInfo<K> pkType = tableInfo.getPrimaryKey().getTypeInfo();
+            pkType.getLogicalType().putToDatabase(manager, stmt, 1, getKey(), pkType.getJdbcWriteType());
+
+            res = stmt.executeQuery();
+            if (res.next()) {
+                back = convertValue(res, provider.shorten(name), provider.shorten(polyName), type);
+            }
+        } finally {
+            closeQuietly(res, stmt, conn);
+        }
+        return back;
+    }
+
+    private <V> V handleNullReturn(V back, Class<V> type) {
+        return back != null ? back : Defaults.defaultValue(type);
 	}
 
 	private void invokeSetter(T entity, String name, Object value, String polyName) throws Throwable {

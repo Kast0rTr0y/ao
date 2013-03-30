@@ -23,6 +23,7 @@ public interface FieldInfo<T>
 
     /**
      * @return the polymorphic name for the field, if one exists
+     * @see net.java.ao.Polymorphic
      */
     String getPolymorphicName();
 
