@@ -535,8 +535,8 @@ public class EntityManager
 
                 int index = 1;
                 for (RawEntity<?> entity : entityList) {
-                    TypeInfo typeInfo = provider.getTypeManager().getType(entity.getEntityType());
-                    typeInfo.getLogicalType().putToDatabase(this, stmt, index++, entity, typeInfo.getJdbcWriteType());
+                    TypeInfo typeInfo = tableInfo.getPrimaryKey().getTypeInfo();
+                    typeInfo.getLogicalType().putToDatabase(this, stmt, index++, Common.getPrimaryKeyValue(entity), typeInfo.getJdbcWriteType());
                 }
                 stmt.executeUpdate();
             }
@@ -956,7 +956,7 @@ public class EntityManager
                 K primaryKey = tableInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, tableInfo.getPrimaryKey().getJavaType(), tableInfo.getPrimaryKey().getName());
                 // use the cached instance information from the factory to build efficient, read-only proxy representations
                 ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(tableInfo, primaryKey);
-                T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
+                T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type}, proxy));
 
                 // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
                 // it's designated as a read-only snapshot view of the data and thus doesn't need flushing.

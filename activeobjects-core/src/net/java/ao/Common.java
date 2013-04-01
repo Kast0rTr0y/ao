@@ -306,6 +306,9 @@ public final class Common {
     }
 
     public static <K> K getPrimaryKeyValue(RawEntity<K> entity) {
+        if (entity instanceof EntityProxyAccessor) {
+            return (K) ((EntityProxyAccessor) entity).getEntityProxy().getKey();
+        }
 		try {
 			return (K) Common.getPrimaryKeyAccessor(entity.getEntityType()).invoke(entity);
 		} catch (IllegalArgumentException e) {
