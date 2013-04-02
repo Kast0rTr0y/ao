@@ -1,8 +1,8 @@
 package net.java.ao.types;
 
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-
 import net.java.ao.ActiveObjectsConfigurationException;
+
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 /**
  * Describes a mapping between a {@link LogicalType}, with optional qualifiers, and the
