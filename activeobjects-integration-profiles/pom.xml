@@ -100,7 +100,7 @@
             <properties>
                 <ao.test.database>mysql</ao.test.database>
                 <db.system.username>root</db.system.username>
-                <db.system.password></db.system.password>
+                <db.system.password />
             </properties>
             <dependencies>
                 <dependency>
