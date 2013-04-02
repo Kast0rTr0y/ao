@@ -1,16 +1,16 @@
 package net.java.ao.builder;
 
-import static org.mockito.Mockito.*;
-
 import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.sql.DataSource;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TestDelegatingDisposableDataSourceHandler
