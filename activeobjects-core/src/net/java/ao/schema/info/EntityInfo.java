@@ -10,7 +10,7 @@ import java.util.Set;
  * @param <T> the {@link RawEntity entity} interface
  * @param <K> the primary key for the entity
  */
-public interface TableInfo<T extends RawEntity<K>, K>
+public interface EntityInfo<T extends RawEntity<K>, K>
 {
 
     /**

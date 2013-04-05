@@ -10,19 +10,19 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ImmutableTableInfo<T extends RawEntity<K>, K> implements TableInfo<T, K>
+public class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
 {
 
     private final Class<T> entityType;
     private final String tableName;
-    private final FieldInfo primaryKey;
+    private final FieldInfo<K> primaryKey;
     private final Map<String, FieldInfo> fieldByName;
     private final Map<Method, FieldInfo> fieldByMethod;
 
-    protected ImmutableTableInfo(
+    protected ImmutableEntityInfo(
             Class<T> entityType,
             String tableName,
-           Set<FieldInfo> fields)
+            Set<FieldInfo> fields)
     {
         this.entityType = checkNotNull(entityType, "entityType");
         this.tableName = checkNotNull(tableName, "tableName");
@@ -52,53 +52,63 @@ public class ImmutableTableInfo<T extends RawEntity<K>, K> implements TableInfo<
         }
         fieldByName = fieldByNameBuilder.build();
         fieldByMethod = fieldByMethodBuilder.build();
+        //noinspection unchecked
         this.primaryKey = checkNotNull(primaryKey, "primaryKey");
     }
 
     @Override
-    public Class<T> getEntityType() {
+    public Class<T> getEntityType()
+    {
         return entityType;
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return tableName;
     }
 
     @Override
-    public FieldInfo getPrimaryKey() {
+    public FieldInfo<K> getPrimaryKey()
+    {
         return primaryKey;
     }
 
     @Override
-    public Set<FieldInfo> getFields() {
+    public Set<FieldInfo> getFields()
+    {
         return ImmutableSet.copyOf(fieldByName.values());
     }
 
     @Override
-    public FieldInfo getField(Method method) {
+    public FieldInfo getField(Method method)
+    {
         return fieldByMethod.get(method);
     }
 
     @Override
-    public FieldInfo getField(String fieldName) {
+    public FieldInfo getField(String fieldName)
+    {
         return fieldByName.get(fieldName);
     }
 
     @Override
-    public boolean hasAccessor(Method method) {
+    public boolean hasAccessor(Method method)
+    {
         FieldInfo field = fieldByMethod.get(method);
         return field != null && method.equals(field.getAccessor());
     }
 
     @Override
-    public boolean hasMutator(Method method) {
+    public boolean hasMutator(Method method)
+    {
         FieldInfo field = fieldByMethod.get(method);
         return field != null && method.equals(field.getMutator());
     }
 
     @Override
-    public boolean hasField(String fieldName) {
+    public boolean hasField(String fieldName)
+    {
         return fieldByName.containsKey(fieldName);
     }
 
@@ -108,7 +118,7 @@ public class ImmutableTableInfo<T extends RawEntity<K>, K> implements TableInfo<
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ImmutableTableInfo that = (ImmutableTableInfo) o;
+        ImmutableEntityInfo that = (ImmutableEntityInfo) o;
 
         return !(entityType != null ? !entityType.equals(that.entityType) : that.entityType != null);
 

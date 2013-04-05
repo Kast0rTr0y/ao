@@ -87,7 +87,7 @@ class RelatedEntityImpl {
 					continue;
 				}
 				
-				back.add((RelatedEntity<?>) (entityManager).peer(entityManager.resolveTableInfo(type),
+				back.add((RelatedEntity<?>) (entityManager).peer(entityManager.resolveEntityInfo(type),
                         Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().parseDefault(entityKey)));
 			}
 

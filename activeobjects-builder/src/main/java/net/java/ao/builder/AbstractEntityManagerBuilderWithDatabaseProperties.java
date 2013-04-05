@@ -4,8 +4,22 @@ import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.EntityManager;
 import net.java.ao.EntityManagerConfiguration;
 import net.java.ao.SchemaConfiguration;
-import net.java.ao.schema.*;
-import net.java.ao.schema.info.*;
+import net.java.ao.schema.CamelCaseFieldNameConverter;
+import net.java.ao.schema.CamelCaseTableNameConverter;
+import net.java.ao.schema.DefaultIndexNameConverter;
+import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
+import net.java.ao.schema.DefaultUniqueNameConverter;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TableAnnotationTableNameConverter;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
+import net.java.ao.schema.info.CachingEntityInfoResolverFactory;
+import net.java.ao.schema.info.EntityInfoResolverFactory;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -100,7 +114,7 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private TriggerNameConverter triggerNameConverter;
         private IndexNameConverter indexNameConverter;
         private UniqueNameConverter uniqueNameConverter;
-        private TableInfoResolverFactory tableInfoResolverFactory;
+        private EntityInfoResolverFactory entityInfoResolverFactory;
 
         private boolean useWeakCache = false;
 
@@ -223,20 +237,19 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         }
 
         @Override
-        public TableInfoResolverFactory getTableInfoResolverFactory()
+        public EntityInfoResolverFactory getEntityInfoResolverFactory()
         {
-            return tableInfoResolverFactory != null ? tableInfoResolverFactory : defaultSchemaInfoResolverFactory();
+            return entityInfoResolverFactory != null ? entityInfoResolverFactory : defaultSchemaInfoResolverFactory();
         }
 
-        public void setTableInfoResolverFactory(TableInfoResolverFactory tableInfoResolverFactory)
+        public void setEntityInfoResolverFactory(EntityInfoResolverFactory entityInfoResolverFactory)
         {
-            this.tableInfoResolverFactory = tableInfoResolverFactory;
+            this.entityInfoResolverFactory = entityInfoResolverFactory;
         }
 
-        private static TableInfoResolverFactory defaultSchemaInfoResolverFactory()
+        private static EntityInfoResolverFactory defaultSchemaInfoResolverFactory()
         {
-//            return new SimpleTableInfoResolverFactory();
-            return new CachingTableInfoResolverFactory();
+            return new CachingEntityInfoResolverFactory();
         }
     }
 }

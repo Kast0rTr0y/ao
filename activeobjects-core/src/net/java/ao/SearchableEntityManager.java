@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.util.List;
 
-import net.java.ao.schema.info.TableInfo;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.types.TypeInfo;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -90,8 +90,8 @@ public class SearchableEntityManager extends EntityManager {
     }
 
     @Override
-	protected <T extends RawEntity<K>, K> T getAndInstantiate(TableInfo<T, K> tableInfo, K key) {
-		T back = super.getAndInstantiate(tableInfo, key);
+	protected <T extends RawEntity<K>, K> T getAndInstantiate(EntityInfo<T, K> entityInfo, K key) {
+		T back = super.getAndInstantiate(entityInfo, key);
 		back.addPropertyChangeListener(new IndexAppender<T, K>(back));
 
 		return back;
@@ -112,12 +112,12 @@ public class SearchableEntityManager extends EntityManager {
 	@SuppressWarnings("unchecked")
 	public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException, SQLException
     {
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
 		String table = getTableNameConverter().getName(type);
 		List<String> indexFields = Common.getSearchableFields(this, type);
 		String[] searchFields = new String[indexFields.size()];
 		String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
-		TypeInfo dbType = tableInfo.getPrimaryKey().getTypeInfo();
+		TypeInfo dbType = entityInfo.getPrimaryKey().getTypeInfo();
 
 		for (int i = 0; i < searchFields.length; i++) {
 			searchFields[i] = table + '.' + indexFields.get(i);
@@ -135,7 +135,7 @@ public class SearchableEntityManager extends EntityManager {
 		}
 		searcher.close();
 
-		return peer(tableInfo, keys);
+		return peer(entityInfo, keys);
 	}
 
 	@Override

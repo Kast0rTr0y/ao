@@ -26,23 +26,17 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import net.java.ao.schema.AutoIncrement;
-import net.java.ao.schema.Default;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
-import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.schema.info.FieldInfo;
 import net.java.ao.sql.SqlUtils;
@@ -51,7 +45,6 @@ import net.java.ao.types.TypeManager;
 import net.java.ao.util.StringUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Sets.newHashSet;
 
@@ -67,7 +60,7 @@ public final class Common {
 
     public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) throws SQLException
     {
-        return manager.peer(manager.resolveTableInfo(type), key);
+        return manager.peer(manager.resolveEntityInfo(type), key);
     }
 
 	public static String convertSimpleClassName(String name) {
@@ -136,7 +129,7 @@ public final class Common {
 	 * do some research to determine whether or not this is actually
 	 * a problem.
      *
-     * @deprecated All annotation information should be resolved upfront using {@link net.java.ao.schema.info.TableInfo}
+     * @deprecated All annotation information should be resolved upfront using {@link net.java.ao.schema.info.EntityInfo}
 	 */
     @Deprecated
 	public static AnnotationDelegate getAnnotationDelegate(FieldNameConverter converter, Method method) {

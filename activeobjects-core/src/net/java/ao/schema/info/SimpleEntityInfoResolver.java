@@ -13,22 +13,22 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A {@code TableInfoResolver} which creates new {@link TableInfo} instances on every invocation of
+ * A {@code EntityInfoResolver} which creates new {@link EntityInfo} instances on every invocation of
  * {@link #resolve(Class)}
  */
-public class SimpleTableInfoResolver implements TableInfoResolver
+public class SimpleEntityInfoResolver implements EntityInfoResolver
 {
 
     private final NameConverters nameConverters;
     private final TypeManager typeManager;
 
-    public SimpleTableInfoResolver(NameConverters nameConverters, TypeManager typeManager) {
+    public SimpleEntityInfoResolver(NameConverters nameConverters, TypeManager typeManager) {
         this.nameConverters = nameConverters;
         this.typeManager = typeManager;
     }
 
     @Override
-    public <T extends RawEntity<K>, K> TableInfo<T, K> resolve(Class<T> type)
+    public <T extends RawEntity<K>, K> EntityInfo<T, K> resolve(Class<T> type)
     {
         final FieldNameConverter fieldNameConverter = nameConverters.getFieldNameConverter();
 
@@ -80,7 +80,7 @@ public class SimpleTableInfoResolver implements TableInfoResolver
             fields.add(createFieldInfo(fieldName, accessorByFieldName.get(fieldName), mutatorByFieldName.get(fieldName)));
         }
 
-        return new ImmutableTableInfo<T, K>(
+        return new ImmutableEntityInfo<T, K>(
                 type,
                 nameConverters.getTableNameConverter().getName(type),
                 fields

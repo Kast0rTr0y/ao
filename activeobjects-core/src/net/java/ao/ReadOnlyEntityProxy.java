@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
-import net.java.ao.schema.info.TableInfo;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
@@ -23,7 +23,7 @@ import net.java.ao.types.TypeManager;
  * be ignored.</p> 
  * 
  * <p>As much as possible, reflection calls should be kept out of this implementation. If there is information needed about
- * the implemented type, please use {@link net.java.ao.schema.info.TableInfo} to cache them.</p>
+ * the implemented type, please use {@link net.java.ao.schema.info.EntityInfo} to cache them.</p>
  * 
  * <p>TODO There is currently some overlap with {@link EntityProxy}. As soon as this is battle-hardened, these can be refactored
  * into an abstract superclass, for example.</p>
@@ -37,7 +37,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
 {
     private final K key;
     
-    private final TableInfo<T, K> tableInfo;
+    private final EntityInfo<T, K> entityInfo;
 
     private final EntityManager manager;
     
@@ -46,10 +46,10 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
 
     public ReadOnlyEntityProxy(
             EntityManager manager,
-            TableInfo<T, K> tableInfo,
+            EntityInfo<T, K> entityInfo,
             K key) {
         this.manager = manager;
-        this.tableInfo = tableInfo;
+        this.entityInfo = entityInfo;
         this.key = key;
     }
 
@@ -65,7 +65,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         } else if (methodName.equals("save")) {
             // someone tried to call "save" at a read-only instance. We don't simply ignore that but rather throw an
             // exception, so the client knows that the call did not do what he expected.
-            throw new RuntimeException("'save' method called on a read-only entity of type " + tableInfo.getEntityType().getSimpleName());
+            throw new RuntimeException("'save' method called on a read-only entity of type " + entityInfo.getEntityType().getSimpleName());
         } 
 
         if (implementation == null) {
@@ -99,12 +99,12 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
             return null;
         }
         
-        if (tableInfo.hasAccessor(method)) {
-            return invokeGetter((RawEntity<?>) proxy, getKey(), tableInfo.getField(method).getName(), method.getReturnType());
-        } else if (tableInfo.hasMutator(method)) {
+        if (entityInfo.hasAccessor(method)) {
+            return invokeGetter((RawEntity<?>) proxy, getKey(), entityInfo.getField(method).getName(), method.getReturnType());
+        } else if (entityInfo.hasMutator(method)) {
             // someone tried to call "save" at a read-only instance. We don't simply ignore that but rather throw an
             // exception, so the client knows that the call did not do what he expected.
-            throw new RuntimeException("Setter method called on a read-only entity of type " + tableInfo.getEntityType().getSimpleName() + ": " + methodName);
+            throw new RuntimeException("Setter method called on a read-only entity of type " + entityInfo.getEntityType().getSimpleName() + ": " + methodName);
         }
         
         return null;
@@ -112,7 +112,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public void addValue(String fieldName, ResultSet res) throws SQLException {
-        FieldInfo fieldInfo = tableInfo.getField(fieldName);
+        FieldInfo fieldInfo = entityInfo.getField(fieldName);
         Class type = fieldInfo.getJavaType();
         String polyName = fieldInfo.getPolymorphicName();
         
@@ -125,7 +125,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
     }
 
     public int hashCodeImpl() {
-        return (key.hashCode() + tableInfo.hashCode()) % (2 << 15);
+        return (key.hashCode() + entityInfo.hashCode()) % (2 << 15);
     }
 
     public boolean equalsImpl(RawEntity<K> proxy, Object obj) {
@@ -151,7 +151,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
     }
 
     public String toStringImpl() {
-        return tableInfo.getName() + " {" + tableInfo.getPrimaryKey().getName() + " = " + key.toString() + "}";
+        return entityInfo.getName() + " {" + entityInfo.getPrimaryKey().getName() + " = " + key.toString() + "}";
     }
 
     private FieldNameConverter getFieldNameConverter()
@@ -168,7 +168,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
         if (obj instanceof ReadOnlyEntityProxy<?, ?>) {
             ReadOnlyEntityProxy<?, ?> proxy = (ReadOnlyEntityProxy<?, ?>) obj;
 
-            if (proxy.tableInfo.equals(tableInfo) && proxy.key.equals(key)) {
+            if (proxy.entityInfo.equals(entityInfo) && proxy.key.equals(key)) {
                 return true;
             }
         }
@@ -182,7 +182,7 @@ public class ReadOnlyEntityProxy<T extends RawEntity<K>, K> implements Invocatio
     }
 
     Class<T> getType() {
-        return tableInfo.getEntityType();
+        return entityInfo.getEntityType();
     }
 
     private EntityManager getManager() {

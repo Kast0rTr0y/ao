@@ -17,12 +17,9 @@ package net.java.ao;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.SchemaGenerator;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
-import net.java.ao.schema.info.TableInfo;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -286,13 +283,13 @@ public class Query implements Serializable
 		return type;
 	}
 	
-	public String[] getCanonicalFields(TableInfo<?, ?> tableInfo) {
+	public String[] getCanonicalFields(EntityInfo<?, ?> entityInfo) {
         String[] back = fields.split(",");
                
         List<String> result = new ArrayList<String>();
 		for(String fieldName : back) {
             if (fieldName.trim().equals("*")) {
-                for (FieldInfo<?> fieldInfo : tableInfo.getFields()) {
+                for (FieldInfo<?> fieldInfo : entityInfo.getFields()) {
 					result.add(fieldInfo.getName());
 				}
 			}  else {
@@ -303,12 +300,12 @@ public class Query implements Serializable
 		return result.toArray(new String[result.size()]);
 	}
 
-	protected <K> String toSQL(TableInfo<? extends RawEntity<K>, K> tableInfo, DatabaseProvider provider, TableNameConverter converter, boolean count) {
+	protected <K> String toSQL(EntityInfo<? extends RawEntity<K>, K> entityInfo, DatabaseProvider provider, TableNameConverter converter, boolean count) {
 		if (this.tableType == null && table == null) {
-			this.tableType = tableInfo.getEntityType();
+			this.tableType = entityInfo.getEntityType();
 		}
 		
-		resolvePrimaryKey(tableInfo.getPrimaryKey());
+		resolvePrimaryKey(entityInfo.getPrimaryKey());
 		
 		return provider.renderQuery(this, converter, count);
 	}

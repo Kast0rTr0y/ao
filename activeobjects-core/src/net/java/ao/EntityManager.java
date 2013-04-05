@@ -24,10 +24,14 @@ import com.google.common.collect.Sets;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
-import net.java.ao.schema.*;
+import net.java.ao.schema.CachingNameConverters;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.SchemaGenerator;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
-import net.java.ao.schema.info.TableInfo;
-import net.java.ao.schema.info.TableInfoResolver;
+import net.java.ao.schema.info.EntityInfoResolver;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
@@ -82,7 +86,7 @@ public class EntityManager
     private final SchemaConfiguration schemaConfiguration;
     private final NameConverters nameConverters;
 
-    private final TableInfoResolver tableInfoResolver;
+    private final EntityInfoResolver entityInfoResolver;
 
 	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
 
@@ -131,7 +135,7 @@ public class EntityManager
 
         typeMapper = new DefaultPolymorphicTypeMapper(new HashMap<Class<? extends RawEntity<?>>, String>());
 
-        tableInfoResolver = checkNotNull(configuration.getTableInfoResolverFactory().create(nameConverters, provider.getTypeManager()), "tableInfoResolver");
+        entityInfoResolver = checkNotNull(configuration.getEntityInfoResolverFactory().create(nameConverters, provider.getTypeManager()), "entityInfoResolver");
     }
 
 
@@ -229,8 +233,8 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T[] get(final Class<T> type, K... keys) throws SQLException
     {
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
-        final String primaryKeyField = tableInfo.getPrimaryKey().getName();
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
+        final String primaryKeyField = entityInfo.getPrimaryKey().getName();
         return getFromCache(type, findByPrimaryKey(type, primaryKeyField), keys);
     }
 
@@ -258,13 +262,13 @@ public class EntityManager
         };
     }
 
-    protected <T extends RawEntity<K>, K> T[] peer(final TableInfo<T, K> tableInfo, K... keys) throws SQLException
+    protected <T extends RawEntity<K>, K> T[] peer(final EntityInfo<T, K> entityInfo, K... keys) throws SQLException
     {
-        return getFromCache(tableInfo.getEntityType(), new Function<T, K>()
+        return getFromCache(entityInfo.getEntityType(), new Function<T, K>()
         {
             public T invoke(K key)
             {
-                return getAndInstantiate(tableInfo, key);
+                return getAndInstantiate(entityInfo, key);
             }
         }, keys);
     }
@@ -296,14 +300,14 @@ public class EntityManager
      * method should not be repurposed to perform any caching, since ActiveObjects already assumes that the caching has
      * been performed.
      *
-     * @param tableInfo The type of the entity to create.
+     * @param entityInfo The type of the entity to create.
      * @param key The primary key corresponding to the entity instance required.
      * @return An entity instance of the specified type and primary key.
      */
-    protected <T extends RawEntity<K>, K> T getAndInstantiate(TableInfo<T, K> tableInfo, K key)
+    protected <T extends RawEntity<K>, K> T getAndInstantiate(EntityInfo<T, K> entityInfo, K key)
     {
-        Class<T> type = tableInfo.getEntityType();
-        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, tableInfo, key);
+        Class<T> type = entityInfo.getEntityType();
+        EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, entityInfo, key);
 
 		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
 		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
@@ -326,9 +330,9 @@ public class EntityManager
         return get(type, toArray(key))[0];
     }
 
-    protected <T extends RawEntity<K>, K> T peer(TableInfo<T, K> tableInfo, K key) throws SQLException
+    protected <T extends RawEntity<K>, K> T peer(EntityInfo<T, K> entityInfo, K key) throws SQLException
     {
-        return peer(tableInfo, toArray(key))[0];
+        return peer(entityInfo, toArray(key))[0];
     }
 
     @SuppressWarnings("unchecked")
@@ -371,13 +375,13 @@ public class EntityManager
 	 */
 	public <T extends RawEntity<K>, K> T create(Class<T> type, DBParam... params) throws SQLException {
 		T back = null;
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
-		final String table = tableInfo.getName();
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
+		final String table = entityInfo.getName();
 
         Set<DBParam> listParams = new HashSet<DBParam>();
         listParams.addAll(Arrays.asList(params));
 
-        for (FieldInfo fieldInfo : Iterables.filter(tableInfo.getFields(), FieldInfo.HAS_GENERATOR))
+        for (FieldInfo fieldInfo : Iterables.filter(entityInfo.getFields(), FieldInfo.HAS_GENERATOR))
         {
 
             ValueGenerator<?> generator;
@@ -393,11 +397,11 @@ public class EntityManager
             listParams.add(new DBParam(fieldInfo.getName(), generator.generateValue(this)));
         }
 
-        Set<FieldInfo> requiredFields = Sets.newHashSet(Sets.filter(tableInfo.getFields(), FieldInfo.IS_REQUIRED));
+        Set<FieldInfo> requiredFields = Sets.newHashSet(Sets.filter(entityInfo.getFields(), FieldInfo.IS_REQUIRED));
 
         for (DBParam param : listParams)
         {
-            FieldInfo field = tableInfo.getField(param.getField());
+            FieldInfo field = entityInfo.getField(param.getField());
             checkNotNull(field, "Entity %s does not have field %s", type.getName(), param.getField());
 
             if (field.isPrimary())
@@ -432,11 +436,11 @@ public class EntityManager
         try
         {
             connection = provider.getConnection();
-            back = peer(tableInfo, provider.insertReturningKey(this, connection,
+            back = peer(entityInfo, provider.insertReturningKey(this, connection,
                                                           type,
-                                                          tableInfo.getPrimaryKey().getJavaType(),
-                                                          tableInfo.getPrimaryKey().getName(),
-                                                          tableInfo.getPrimaryKey().hasAutoIncrement(),
+                                                          entityInfo.getPrimaryKey().getJavaType(),
+                                                          entityInfo.getPrimaryKey().getName(),
+                                                          entityInfo.getPrimaryKey().hasAutoIncrement(),
                                                           table, listParams.toArray(new DBParam[listParams.size()])));
         }
         finally
@@ -519,12 +523,12 @@ public class EntityManager
         {
             conn = provider.getConnection();
             for (Class type : organizedEntities.keySet()) {
-                TableInfo tableInfo = resolveTableInfo(type);
+                EntityInfo entityInfo = resolveEntityInfo(type);
                 List<RawEntity<?>> entityList = organizedEntities.get(type);
 
                 StringBuilder sql = new StringBuilder("DELETE FROM ");
-                sql.append(provider.withSchema(tableInfo.getName()));
-                sql.append(" WHERE ").append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" IN (?");
+                sql.append(provider.withSchema(entityInfo.getName()));
+                sql.append(" WHERE ").append(provider.processID(entityInfo.getPrimaryKey().getName())).append(" IN (?");
 
                 for (int i = 1; i < entityList.size(); i++) {
                     sql.append(",?");
@@ -535,7 +539,7 @@ public class EntityManager
 
                 int index = 1;
                 for (RawEntity<?> entity : entityList) {
-                    TypeInfo typeInfo = tableInfo.getPrimaryKey().getTypeInfo();
+                    TypeInfo typeInfo = entityInfo.getPrimaryKey().getTypeInfo();
                     typeInfo.getLogicalType().putToDatabase(this, stmt, index++, Common.getPrimaryKeyValue(entity), typeInfo.getJdbcWriteType());
                 }
                 stmt.executeUpdate();
@@ -703,10 +707,10 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> T[] find(Class<T> type, Query query) throws SQLException
     {
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
 
-        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
-        String selectField = tableInfo.getPrimaryKey().getName();
+        query.resolvePrimaryKey(entityInfo.getPrimaryKey());
+        String selectField = entityInfo.getPrimaryKey().getName();
 
         Iterable<String> fields = query.getFields();
         if (Iterables.size(fields) == 1)
@@ -735,9 +739,9 @@ public class EntityManager
         List<T> back = new ArrayList<T>();
 
 
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
 
-        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
+        query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         if (preloadAnnotation != null)
@@ -792,7 +796,7 @@ public class EntityManager
         try
         {
             conn = provider.getConnection();
-            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), false);
+            final String sql = query.toSQL(entityInfo, provider, getTableNameConverter(), false);
 
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             provider.setQueryStatementProperties(stmt, query);
@@ -802,12 +806,12 @@ public class EntityManager
             res = stmt.executeQuery();
             provider.setQueryResultSetProperties(res, query);
 
-            final TypeInfo<K> primaryKeyType = tableInfo.getPrimaryKey().getTypeInfo();
-            final Class<K> primaryKeyClassType = tableInfo.getPrimaryKey().getJavaType();
-            final String[] canonicalFields = query.getCanonicalFields(tableInfo);
+            final TypeInfo<K> primaryKeyType = entityInfo.getPrimaryKey().getTypeInfo();
+            final Class<K> primaryKeyClassType = entityInfo.getPrimaryKey().getJavaType();
+            final String[] canonicalFields = query.getCanonicalFields(entityInfo);
             while (res.next())
             {
-                final T entity = peer(tableInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
+                final T entity = peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
                 final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
 
                 for (String cacheField : canonicalFields)
@@ -853,7 +857,7 @@ public class EntityManager
     public <T extends RawEntity<K>, K> T[] findWithSQL(Class<T> type, String keyField, String sql, Object... parameters) throws SQLException
     {
         List<T> back = new ArrayList<T>();
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
 
         Connection connection = null;
         PreparedStatement stmt = null;
@@ -867,7 +871,7 @@ public class EntityManager
             res = stmt.executeQuery();
             while (res.next())
             {
-                back.add(peer(tableInfo, tableInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, (Class<K>) type, keyField)));
+                back.add(peer(entityInfo, entityInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, (Class<K>) type, keyField)));
             }
         }
         finally
@@ -917,30 +921,20 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, Query query, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
+        EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
 
+        query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
-//        // fetch some information about the fields we're dealing with. These calls are expensive when
-//        // executed too often, and since we're always working on the same type of object, we only need them once.
-//        final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), type);
-//        final Class<K> primaryKeyClassType = Common.getPrimaryKeyClassType(type);
-//        String field = Common.getPrimaryKeyField(type, getFieldNameConverter());
+        final String[] canonicalFields = query.getCanonicalFields(entityInfo);
 
-        // the factory caches details about the proxied interface, since reflection calls are expensive
-        // inside the stream loop
-        TableInfo<T, K> tableInfo = resolveTableInfo(type);
-
-        query.resolvePrimaryKey(tableInfo.getPrimaryKey());
-
-        final String[] canonicalFields = query.getCanonicalFields(tableInfo);
-
-        // Execute the` query
+        // Execute the query
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet res = null;
         try
         {
             conn = provider.getConnection();
-            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), false);
+            final String sql = query.toSQL(entityInfo, provider, getTableNameConverter(), false);
 
             // we're only going over the result set once, so use the slimmest possible cursor type
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -953,9 +947,9 @@ public class EntityManager
 
             while (res.next())
             {
-                K primaryKey = tableInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, tableInfo.getPrimaryKey().getJavaType(), tableInfo.getPrimaryKey().getName());
+                K primaryKey = entityInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, entityInfo.getPrimaryKey().getJavaType(), entityInfo.getPrimaryKey().getName());
                 // use the cached instance information from the factory to build efficient, read-only proxy representations
-                ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(tableInfo, primaryKey);
+                ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(entityInfo, primaryKey);
                 T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type}, proxy));
 
                 // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
@@ -975,9 +969,9 @@ public class EntityManager
         }
     }
 
-    private <T extends RawEntity<K>, K> ReadOnlyEntityProxy<T, K> createReadOnlyProxy(TableInfo<T, K> tableInfo, K primaryKey)
+    private <T extends RawEntity<K>, K> ReadOnlyEntityProxy<T, K> createReadOnlyProxy(EntityInfo<T, K> entityInfo, K primaryKey)
     {
-        return new ReadOnlyEntityProxy<T, K>(this, tableInfo, primaryKey);
+        return new ReadOnlyEntityProxy<T, K>(this, entityInfo, primaryKey);
     }
 
     /**
@@ -1017,14 +1011,14 @@ public class EntityManager
      */
     public <K> int count(Class<? extends RawEntity<K>> type, Query query) throws SQLException
     {
-        TableInfo tableInfo = resolveTableInfo(type);
+        EntityInfo entityInfo = resolveEntityInfo(type);
         Connection connection = null;
         PreparedStatement stmt = null;
         ResultSet res = null;
         try
         {
             connection = provider.getConnection();
-            final String sql = query.toSQL(tableInfo, provider, getTableNameConverter(), true);
+            final String sql = query.toSQL(entityInfo, provider, getTableNameConverter(), true);
 
             stmt = provider.preparedStatement(connection, sql);
             provider.setQueryStatementProperties(stmt, query);
@@ -1048,8 +1042,8 @@ public class EntityManager
         return nameConverters;
     }
 
-    protected <T extends RawEntity<K>, K> TableInfo<T, K> resolveTableInfo(Class<T> type) {
-        return tableInfoResolver.resolve(type);
+    protected <T extends RawEntity<K>, K> EntityInfo<T, K> resolveEntityInfo(Class<T> type) {
+        return entityInfoResolver.resolve(type);
     }
 
     /**

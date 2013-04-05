@@ -19,10 +19,9 @@ import com.google.common.base.Defaults;
 import com.google.common.collect.Collections2;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.NotNull;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.info.FieldInfo;
-import net.java.ao.schema.info.TableInfo;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -59,7 +58,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     static boolean ignorePreload = false;	// hack for testing
 	
 	private final K key;
-	private final TableInfo<T, K> tableInfo;
+	private final EntityInfo<T, K> entityInfo;
 
 	private final EntityManager manager;
 	
@@ -71,9 +70,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	private ImplementationWrapper<T> implementation;
 	private List<PropertyChangeListener> listeners;
 
-	EntityProxy(EntityManager manager, TableInfo<T, K> tableInfo, K key) {
+	EntityProxy(EntityManager manager, EntityInfo<T, K> entityInfo, K key) {
 		this.key = key;
-		this.tableInfo = tableInfo;
+		this.entityInfo = entityInfo;
 		this.manager = manager;
 		
 		locks = new HashMap<String, ReadWriteLock>();
@@ -116,7 +115,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 		}
 
-		if (tableInfo.hasAccessor(method) && tableInfo.getField(method).equals(tableInfo.getPrimaryKey())) {
+		if (entityInfo.hasAccessor(method) && entityInfo.getField(method).equals(entityInfo.getPrimaryKey())) {
 			return getKey();
 		}
         if (methodName.equals("save")) {
@@ -147,7 +146,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			return null;
 		}
 
-        final FieldInfo fieldInfo = tableInfo.getField(method);
+        final FieldInfo fieldInfo = entityInfo.getField(method);
 
         if (fieldInfo != null && !fieldInfo.isNullable() && args != null && args.length > 0) {
             if (args[0] == null) {
@@ -264,7 +263,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
                 if (reversePolymorphicTypeFieldName != null)
                 {
-                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(tableInfo.getEntityType()));
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(entityInfo.getEntityType()));
                 }
                 final TypeInfo<K> primaryKeyType = Common.getPrimaryKeyType(provider.getTypeManager(), (Class<? extends RawEntity<K>>) remoteType);
                 final ResultSet res = stmt.executeQuery();
@@ -272,12 +271,12 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 {
                     while (res.next())
                     {
-                        TableInfo tableInfo = manager.resolveTableInfo((remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))));
+                        EntityInfo entityInfo = manager.resolveEntityInfo((remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))));
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(tableInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
                         }
-                        final RawEntity returnValueEntity = manager.peer(tableInfo, primaryKeyType.getLogicalType().pullFromDatabase(manager, res, throughType, returnField));
+                        final RawEntity returnValueEntity = manager.peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(manager, res, throughType, returnField));
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         returnLayer.put(remotePrimaryKeyField, res.getObject(1));
                         for (final String field : selectFields)
@@ -307,7 +306,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     private RawEntity[] fetchOneToMany(final Method method, final OneToMany annotation) throws SQLException, NoSuchMethodException
     {
         final Class remoteType = method.getReturnType().getComponentType();
-        final TableInfo tableInfo = manager.resolveTableInfo(remoteType);
+        final EntityInfo entityInfo = manager.resolveEntityInfo(remoteType);
         final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
         final String whereClause = where(annotation, getFieldNameConverter());
         final Preload preloadAnnotation = (Preload) remoteType.getAnnotation(Preload.class);
@@ -345,18 +344,18 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 final TypeInfo<K> dbType = getTypeManager().getType(getClass(key));
                 dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
                 if (remotePolymorphicTypeFieldName != null) {
-                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(tableInfo.getEntityType()));
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(entityInfo.getEntityType()));
                 }
                 final ResultSet res = stmt.executeQuery();
                 try {
                     final List<RawEntity<?>> result = new ArrayList<RawEntity<?>>();
                     while (res.next()) {
                         final Object returnValue = Common.getPrimaryKeyType(getTypeManager(), (Class) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class) remoteType, remotePrimaryKeyFieldName);
-                        final RawEntity<?> returnValueEntity = manager.peer(tableInfo, returnValue);
+                        final RawEntity<?> returnValueEntity = manager.peer(entityInfo, returnValue);
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(tableInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
                         }
                         for (final String field : selectFields) {
                             returnLayer.put(field, res.getObject(field));
@@ -385,7 +384,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     private RawEntity fetchOneToOne(final Method method, final OneToOne annotation) throws SQLException, NoSuchMethodException
     {
         final Class remoteType = method.getReturnType();
-        final TableInfo tableInfo = manager.resolveTableInfo(remoteType);
+        final EntityInfo entityInfo = manager.resolveEntityInfo(remoteType);
         final String remotePrimaryKeyFieldName = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
         final String whereClause = Common.where(annotation, getFieldNameConverter());
         final Method remoteMethod = remoteType.getMethod(annotation.reverse());
@@ -434,17 +433,17 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 dbType.getLogicalType().putToDatabase(manager, stmt, 1, key, dbType.getJdbcWriteType());
                 if (remotePolymorphicTypeFieldName != null)
                 {
-                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(tableInfo.getEntityType()));
+                    stmt.setString(2, manager.getPolymorphicTypeMapper().convert(entityInfo.getEntityType()));
                 }
                 final ResultSet res = stmt.executeQuery();
                 try
                 {
                     if (res.next())
                     {
-                        final RawEntity returnValueEntity = manager.peer(tableInfo, Common.getPrimaryKeyType(getTypeManager(), (Class<? extends RawEntity<K>>) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class<K>) remoteType, remotePrimaryKeyFieldName));
+                        final RawEntity returnValueEntity = manager.peer(entityInfo, Common.getPrimaryKeyType(getTypeManager(), (Class<? extends RawEntity<K>>) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class<K>) remoteType, remotePrimaryKeyFieldName));
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(tableInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
                         }
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         for (final String field : selectFields)
@@ -486,7 +485,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 Common.getMappingFields(getFieldNameConverter(),
                         throughType, type), throughType, (Class<? extends RawEntity>) type,
                         Common.where(manyToManyAnnotation, getFieldNameConverter()),
-                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, tableInfo.getEntityType()),
+                        Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, entityInfo.getEntityType()),
                         Common.getPolymorphicFieldNames(getFieldNameConverter(), throughType, type));
     }
 
@@ -500,7 +499,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         return retrieveRelations(proxy, new String[0],
                 new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
                 (Class<? extends RawEntity>) type, where(oneToManyAnnotation, getFieldNameConverter()),
-                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, tableInfo.getEntityType()));
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, entityInfo.getEntityType()));
     }
 
     /**
@@ -513,7 +512,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final RawEntity[] back = retrieveRelations(proxy, new String[0],
                 new String[] { Common.getPrimaryKeyField(type, getFieldNameConverter()) },
                 (Class<? extends RawEntity>) type, Common.where(oneToOneAnnotation, getFieldNameConverter()),
-                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, tableInfo.getEntityType()));
+                Common.getPolymorphicFieldNames(getFieldNameConverter(), type, entityInfo.getEntityType()));
         return back.length == 0 ? null : back[0];
     }
 
@@ -535,7 +534,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			return;
 		}
 
-        String table = tableInfo.getName();
+        String table = entityInfo.getName();
         final DatabaseProvider provider = this.manager.getProvider();
         final TypeManager typeManager = provider.getTypeManager();
         Connection conn = null;
@@ -559,7 +558,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				sql.setLength(sql.length() - 1);
 			}
 
-			sql.append(" WHERE ").append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" = ?");
+			sql.append(" WHERE ").append(provider.processID(entityInfo.getPrimaryKey().getName())).append(" = ?");
 
 			stmt = provider.preparedStatement(conn, sql);
 
@@ -591,7 +590,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 			}
-			TypeInfo pkType = tableInfo.getPrimaryKey().getTypeInfo();
+			TypeInfo pkType = entityInfo.getPrimaryKey().getTypeInfo();
             pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
 			cacheLayer.clearFlush();
 			stmt.executeUpdate();
@@ -619,7 +618,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	}
 
 	public int hashCodeImpl() {
-		return (key.hashCode() + tableInfo.hashCode()) % (2 << 15);
+		return (key.hashCode() + entityInfo.hashCode()) % (2 << 15);
 	}
 
 	public boolean equalsImpl(RawEntity<K> proxy, Object obj) {
@@ -640,7 +639,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	}
 
 	public String toStringImpl() {
-        return tableInfo.getName() + " {" + tableInfo.getPrimaryKey().getName() + " = " + key.toString() + "}";
+        return entityInfo.getName() + " {" + entityInfo.getPrimaryKey().getName() + " = " + key.toString() + "}";
 	}
 
 	@Override
@@ -652,7 +651,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		if (obj instanceof EntityProxy<?, ?>) {
 			EntityProxy<?, ?> proxy = (EntityProxy<?, ?>) obj;
 
-			if (proxy.tableInfo.equals(tableInfo) && proxy.key.equals(key)) {
+			if (proxy.entityInfo.equals(entityInfo) && proxy.key.equals(key)) {
 				return true;
 			}
 		}
@@ -675,7 +674,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 	}
 
 	Class<T> getType() {
-		return tableInfo.getEntityType();
+		return entityInfo.getEntityType();
 	}
 
 	// any dirty fields are kept in the cache, since they have yet to be saved
@@ -722,9 +721,9 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                     return (V) handleBigDecimal(value, type);
                 } else if (RawEntity.class.isAssignableFrom(type)) {
                     //noinspection unchecked
-                    TableInfo<? extends RawEntity, Object> remoteTableInfo = manager.resolveTableInfo((Class<? extends RawEntity>) type);
-                    if (instanceOf(value, remoteTableInfo.getPrimaryKey().getJavaType())) {
-                        value = manager.peer(remoteTableInfo, value);
+                    EntityInfo<? extends RawEntity, Object> remoteEntityInfo = manager.resolveEntityInfo((Class<? extends RawEntity>) type);
+                    if (instanceOf(value, remoteEntityInfo.getPrimaryKey().getJavaType())) {
+                        value = manager.peer(remoteEntityInfo, value);
 
                         cacheLayer.put(name, value);
                         //noinspection unchecked
@@ -764,11 +763,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 sql.append(',').append(provider.processID(polyName));
             }
 
-            sql.append(" FROM ").append(provider.withSchema(tableInfo.getName())).append(" WHERE ");
-            sql.append(provider.processID(tableInfo.getPrimaryKey().getName())).append(" = ?");
+            sql.append(" FROM ").append(provider.withSchema(entityInfo.getName())).append(" WHERE ");
+            sql.append(provider.processID(entityInfo.getPrimaryKey().getName())).append(" = ?");
 
             stmt = provider.preparedStatement(conn, sql);
-            TypeInfo<K> pkType = tableInfo.getPrimaryKey().getTypeInfo();
+            TypeInfo<K> pkType = entityInfo.getPrimaryKey().getTypeInfo();
             pkType.getLogicalType().putToDatabase(manager, stmt, 1, getKey(), pkType.getJdbcWriteType());
 
             res = stmt.executeQuery();
@@ -836,7 +835,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                                                            final String[] thatPolyNames) throws SQLException
     {
 		if (inMapFields == null || inMapFields.length == 0) {
-            inMapFields = Common.getMappingFields(getFieldNameConverter(), type, tableInfo.getEntityType());
+            inMapFields = Common.getMappingFields(getFieldNameConverter(), type, entityInfo.getEntityType());
 		}
 		List<V> back = new ArrayList<V>();
 		List<String> resPolyNames = new ArrayList<String>(thatPolyNames == null ? 0 : thatPolyNames.length);
@@ -1085,7 +1084,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			}
 			
 			int newLength = numParams + (thisPolyNames == null ? 0 : thisPolyNames.length);
-            String typeValue = manager.getPolymorphicTypeMapper().convert(tableInfo.getEntityType());
+            String typeValue = manager.getPolymorphicTypeMapper().convert(entityInfo.getEntityType());
 			for (; index < newLength; index++) {
 				stmt.setString(index + 1, typeValue);
 			}
@@ -1103,10 +1102,10 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 					}
 				}
 				
-				if (backType.equals(tableInfo.getEntityType()) && returnValue.equals(key)) {
+				if (backType.equals(entityInfo.getEntityType()) && returnValue.equals(key)) {
 					continue;
 				}
-                V returnValueEntity = manager.peer(manager.resolveTableInfo(backType), returnValue);
+                V returnValueEntity = manager.peer(manager.resolveEntityInfo(backType), returnValue);
                 CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
 
                 if (selectFields.contains(Preload.ALL))

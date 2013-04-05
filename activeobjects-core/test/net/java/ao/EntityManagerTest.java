@@ -17,8 +17,8 @@ package net.java.ao;
 
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.info.TableInfoResolver;
-import net.java.ao.schema.info.TableInfoResolverFactory;
+import net.java.ao.schema.info.EntityInfoResolver;
+import net.java.ao.schema.info.EntityInfoResolverFactory;
 import net.java.ao.types.TypeManager;
 import org.junit.After;
 import org.junit.Before;
@@ -71,15 +71,15 @@ public class EntityManagerTest
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
 
-        final TableInfoResolverFactory tableInfoResolverFactory = mock(TableInfoResolverFactory.class);
-        final TableInfoResolver tableInfoResolver = mock(TableInfoResolver.class);
-        when(tableInfoResolverFactory.create(isA(NameConverters.class), isA(TypeManager.class))).thenReturn(tableInfoResolver);
+        final EntityInfoResolverFactory entityInfoResolverFactory = mock(EntityInfoResolverFactory.class);
+        final EntityInfoResolver entityInfoResolver = mock(EntityInfoResolver.class);
+        when(entityInfoResolverFactory.create(isA(NameConverters.class), isA(TypeManager.class))).thenReturn(entityInfoResolver);
 
         final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
         when(configuration.getNameConverters()).thenReturn(nameConverters);
         when(nameConverters.getTableNameConverter()).thenReturn(tableNameConverter);
         when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
-        when(configuration.getTableInfoResolverFactory()).thenReturn(tableInfoResolverFactory);
+        when(configuration.getEntityInfoResolverFactory()).thenReturn(entityInfoResolverFactory);
         return configuration;
     }
 }
