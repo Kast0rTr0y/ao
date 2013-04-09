@@ -5,6 +5,7 @@ import net.java.ao.it.model.Address;
 import net.java.ao.it.model.Profession;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -18,71 +19,67 @@ import java.util.concurrent.Callable;
 public class TypeMigrationTest extends ActiveObjectsIntegrationTest
 {
     @Test
+    @NonTransactional
     public void testMigrationWithUnchangedLogicalOrPhysicalTypes() throws Exception
     {
-        if (!DbUtils.isOracle(entityManager))
+        entityManager.migrate(TestTable.class);
+        checkSqlNotExecuted(new Callable<Object>()
         {
-            entityManager.migrate(TestTable.class);
-            checkSqlNotExecuted(new Callable<Object>()
+            @Override
+            public Object call() throws Exception
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    entityManager.migrate(TestTable.class);
-                    return null;
-                }
-            });
-        }
+                entityManager.migrate(TestTable.class);
+                return null;
+            }
+        });
     }
 
     @Test
+    @NonTransactional
     public void testMigrationWithUnchangedPhysicalTypes() throws Exception
     {
-        if (!DbUtils.isOracle(entityManager))
+        entityManager.migrate(TestTable.class);
+        checkSqlNotExecuted(new Callable<Object>()
         {
-            entityManager.migrate(TestTable.class);
-            checkSqlNotExecuted(new Callable<Object>()
+            @Override
+            public Object call() throws Exception
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    entityManager.migrate(EquivalentTable.class);
-                    return null;
-                }
-            });
-            checkSqlNotExecuted(new Callable<Object>()
+                entityManager.migrate(EquivalentTable.class);
+                return null;
+            }
+        });
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    entityManager.migrate(TestTable.class);
-                    return null;
-                }
-            });
-        }
+                entityManager.migrate(TestTable.class);
+                return null;
+            }
+        });
     }
 
     @Test
+    @NonTransactional
     public void testMigrationThatChangesPhysicalTypeForEntityColumn() throws Exception
     {
-        if (!DbUtils.isOracle(entityManager))
+        entityManager.migrate(TestTable.class);
+        checkSqlExecuted(new Callable<Object>()
         {
-            entityManager.migrate(TestTable.class);
-            checkSqlExecuted(new Callable<Object>()
+            @Override
+            public Object call() throws Exception
             {
-                @Override
-                public Object call() throws Exception
-                {
-                    entityManager.migrate(DifferentEntityColumnType.class);
-                    return null;
-                }
-            });
-        }
+                entityManager.migrate(DifferentEntityColumnType.class);
+                return null;
+            }
+        });
     }
 
     @Test
+    @NonTransactional
     public void testMigrationThatChangesPhysicalTypeForEnumColumn() throws Exception
     {
+        // This test fails in Oracle due to https://ecosystem.atlassian.net/browse/AO-373
         if (!DbUtils.isOracle(entityManager))
         {
             entityManager.migrate(TestTable.class);
@@ -98,7 +95,7 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    @Table(value = "TYPE_MIGRATION_TEST_TABLE")
+    @Table(value = "ENTITY")
     private interface TestTable extends Entity
     {
         public Address getEntityVal();
@@ -108,7 +105,7 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         public void setEnumVal(Profession enumVal);
     }
 
-    @Table(value = "TYPE_MIGRATION_TEST_TABLE")
+    @Table(value = "ENTITY")
     private interface EquivalentTable extends Entity
     {
         @Indexed
@@ -122,7 +119,7 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         public void setEnumVal(String enumVal);
     }
 
-    @Table(value = "TYPE_MIGRATION_TEST_TABLE")
+    @Table(value = "ENTITY")
     private interface DifferentEntityColumnType extends Entity
     {
         @Indexed
@@ -136,7 +133,7 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         public void setEnumVal(Profession enumVal);
     }
 
-    @Table(value = "TYPE_MIGRATION_TEST_TABLE")
+    @Table(value = "ENTITY")
     private interface DifferentEnumColumnType extends Entity
     {
         public Address getEntityVal();
