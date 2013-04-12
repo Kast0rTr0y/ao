@@ -196,8 +196,8 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
 
     private static ReportPrinter newReportPrinter()
     {
-        return new PrettyPrintReportPrinter();
-//        return new WikiReportPrinter();
+//        return new PrettyPrintReportPrinter();
+        return new WikiReportPrinter();
     }
 
     private static Report newReport(StopWatch<?> stopWatch)

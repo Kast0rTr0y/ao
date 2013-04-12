@@ -112,7 +112,6 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
                 annotations.isAnnotationPresent(PrimaryKey.class),
                 !annotations.isAnnotationPresent(NotNull.class),
                 annotations.isAnnotationPresent(Transient.class),
-                false,
                 annotations.isAnnotationPresent(AutoIncrement.class),
                 annotations.isAnnotationPresent(Default.class),
                 generatorAnnotation != null ? generatorAnnotation.value() : null

@@ -5,6 +5,8 @@ import net.java.ao.types.TypeManager;
 
 /**
  * A factory capable of currying the required managers for a {@link EntityInfoResolver} to be created
+ * 
+ * @since 0.21
  */
 public interface EntityInfoResolverFactory
 {

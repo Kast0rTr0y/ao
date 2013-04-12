@@ -21,6 +21,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ExecutionError;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import net.java.ao.cache.Cache;
 import net.java.ao.cache.CacheLayer;
 import net.java.ao.cache.RAMCache;
@@ -390,6 +392,14 @@ public class EntityManager
                 generator = valGenCache.get(fieldInfo.getGeneratorType());
             }
             catch (ExecutionException e)
+            {
+                throw Throwables.propagate(e.getCause());
+            }
+            catch (UncheckedExecutionException e)
+            {
+                throw Throwables.propagate(e.getCause());
+            }
+            catch (ExecutionError e)
             {
                 throw Throwables.propagate(e.getCause());
             }

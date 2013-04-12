@@ -5,7 +5,7 @@ import net.java.ao.types.TypeInfo;
 
 import java.lang.reflect.Method;
 
-public class ImmutableFieldInfo<T> implements FieldInfo
+class ImmutableFieldInfo<T> implements FieldInfo
 {
 
     private final String fieldName;
@@ -18,7 +18,6 @@ public class ImmutableFieldInfo<T> implements FieldInfo
     private final boolean nullable;
     private final boolean isTransient;
 
-    private final boolean relational;
     private final boolean autoIncrement;
     private final boolean defaultValue;
 
@@ -26,9 +25,9 @@ public class ImmutableFieldInfo<T> implements FieldInfo
     private final TypeInfo<T> typeInfo;
     private final Class<ValueGenerator<? extends T>> generatorType;
 
-    public ImmutableFieldInfo(String fieldName, String polymorphicName, Method accessor, Method mutator,
+    ImmutableFieldInfo(String fieldName, String polymorphicName, Method accessor, Method mutator,
                               Class<T> fieldType, TypeInfo<T> typeInfo, boolean primary, boolean nullable,
-                              boolean isTransient, boolean relational, boolean autoIncrement, boolean defaultValue,
+                              boolean isTransient, boolean autoIncrement, boolean defaultValue,
                               Class<ValueGenerator<? extends T>> generatorType)
     {
         this.fieldName = fieldName;
@@ -38,7 +37,6 @@ public class ImmutableFieldInfo<T> implements FieldInfo
         this.primary = primary;
         this.nullable = nullable;
         this.isTransient = isTransient;
-        this.relational = relational;
         this.autoIncrement = autoIncrement;
         this.defaultValue = defaultValue;
         this.fieldType = fieldType;
@@ -71,9 +69,9 @@ public class ImmutableFieldInfo<T> implements FieldInfo
     }
 
     @Override
-    public boolean isRelational()
+    public boolean isCacheable()
     {
-        return relational;
+        return !isTransient() && getTypeInfo().getLogicalType().shouldCache(getJavaType());
     }
 
     @Override
@@ -170,7 +168,6 @@ public class ImmutableFieldInfo<T> implements FieldInfo
                 ", mutator=" + mutator +
                 ", primary=" + primary +
                 ", nullable=" + nullable +
-                ", relational=" + relational +
                 ", autoIncrement=" + autoIncrement +
                 ", defaultValue=" + defaultValue +
                 ", fieldType=" + fieldType +

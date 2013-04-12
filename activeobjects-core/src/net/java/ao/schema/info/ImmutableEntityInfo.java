@@ -1,5 +1,6 @@
 package net.java.ao.schema.info;
 
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import net.java.ao.RawEntity;
@@ -10,7 +11,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
+class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
 {
 
     private final Class<T> entityType;
@@ -19,7 +20,7 @@ public class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInf
     private final Map<String, FieldInfo> fieldByName;
     private final Map<Method, FieldInfo> fieldByMethod;
 
-    protected ImmutableEntityInfo(
+    ImmutableEntityInfo(
             Class<T> entityType,
             String tableName,
             Set<FieldInfo> fields)
@@ -78,6 +79,12 @@ public class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInf
     public Set<FieldInfo> getFields()
     {
         return ImmutableSet.copyOf(fieldByName.values());
+    }
+
+    @Override
+    public Set<String> getFieldNames()
+    {
+        return ImmutableSet.copyOf(Collections2.transform(getFields(), FieldInfo.PLUCK_NAME));
     }
 
     @Override

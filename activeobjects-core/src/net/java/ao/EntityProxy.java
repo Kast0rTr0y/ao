@@ -154,6 +154,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             }
         }
 
+        // TODO move this information into EntityInfo and friends
         final OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
         if (oneToOneAnnotation != null && RawEntity.class.isAssignableFrom(method.getReturnType())) {
             if (oneToOneAnnotation.reverse().isEmpty()) {
@@ -163,6 +164,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             }
 		}
 
+        // TODO move this information into EntityInfo and friends
         final OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
         if (oneToManyAnnotation != null && method.getReturnType().isArray()
 				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
@@ -173,6 +175,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             }
 		}
 
+        // TODO move this information into EntityInfo and friends
         final ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
         if (manyToManyAnnotation != null && method.getReturnType().isArray()
 				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
@@ -183,20 +186,20 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
             }
 		}
 
-        if (fieldInfo == null) {
-            throw new RuntimeException("Cannot handle method with signature: " + method.toString());
+        if (fieldInfo != null) {
+
+            if (method.equals(fieldInfo.getAccessor())) {
+                return invokeGetter((RawEntity<?>) proxy, fieldInfo);
+            }
+
+            if (method.equals(fieldInfo.getMutator())) {
+                invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], fieldInfo.getPolymorphicName());
+                return Void.TYPE;
+            }
         }
 
-        if (method.equals(fieldInfo.getAccessor())) {
-            return invokeGetter((RawEntity<?>) proxy, fieldInfo);
-		}
-
-        if (method.equals(fieldInfo.getMutator())) {
-            invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], fieldInfo.getPolymorphicName());
-			return Void.TYPE;
-		}
-
-		throw new RuntimeException("Cannot handle method with signature: " + method.toString());
+		throw new IllegalArgumentException("Cannot handle method. It is not a valid getter or setter and does not have an implementation supplied. " +
+                "Signature: " + method.toString());
 	}
 
     private RawEntity[] fetchManyToMany(final Method method, final ManyToMany annotation) throws SQLException, NoSuchMethodException
@@ -274,7 +277,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         EntityInfo entityInfo = manager.resolveEntityInfo((remotePolymorphicTypeFieldName == null ? remoteType : manager.getPolymorphicTypeMapper().invert(remoteType, res.getString(remotePolymorphicTypeFieldName))));
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(entityInfo.getFieldNames());
                         }
                         final RawEntity returnValueEntity = manager.peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(manager, res, throughType, returnField));
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
@@ -355,7 +358,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(entityInfo.getFieldNames());
                         }
                         for (final String field : selectFields) {
                             returnLayer.put(field, res.getObject(field));
@@ -443,7 +446,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         final RawEntity returnValueEntity = manager.peer(entityInfo, Common.getPrimaryKeyType(getTypeManager(), (Class<? extends RawEntity<K>>) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class<K>) remoteType, remotePrimaryKeyFieldName));
                         if (selectFields.remove(Preload.ALL))
                         {
-                            selectFields.addAll(Collections2.transform(entityInfo.getFields(), FieldInfo.PLUCK_NAME));
+                            selectFields.addAll(entityInfo.getFieldNames());
                         }
                         final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
                         for (final String field : selectFields)
@@ -704,7 +707,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         Class<V> type = fieldInfo.getJavaType();
         String name = fieldInfo.getName();
 
-        boolean shouldCache = !fieldInfo.isTransient() && getTypeManager().getType(type).getLogicalType().shouldCache(type);
+        boolean shouldCache = fieldInfo.isCacheable();
 
         getLock(name).writeLock().lock();
         try {
