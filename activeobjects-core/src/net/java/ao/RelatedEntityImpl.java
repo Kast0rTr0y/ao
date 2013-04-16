@@ -43,15 +43,16 @@ class RelatedEntityImpl {
 	public RelatedEntity<?>[] getRelated() throws IOException, SQLException
     {
 		Class<? extends RawEntity<Object>> type = entity.getEntityType();
-		String table = entity.getEntityManager().getNameConverters().getTableNameConverter().getName(type);
-		List<String> indexFields = Common.getSearchableFields(entity.getEntityManager(), type);
+        EntityManager entityManager = entity.getEntityManager();
+        String table = entityManager.getNameConverters().getTableNameConverter().getName(type);
+		List<String> indexFields = Common.getSearchableFields(entityManager, type);
 		String[] searchFields = new String[indexFields.size()];
 		
 		for (int i = 0; i < searchFields.length; i++) {
 			searchFields[i] = table + '.' + indexFields.get(i);
 		}
 
-		Directory indexDir = ((SearchableEntityManager) entity.getEntityManager()).getIndexDir();
+		Directory indexDir = ((SearchableEntityManager) entityManager).getIndexDir();
 		IndexReader reader = null;
 		
 		try {
@@ -60,10 +61,10 @@ class RelatedEntityImpl {
 
 			MoreLikeThis more = new MoreLikeThis(reader);
 			more.setFieldNames(searchFields);
-			more.setAnalyzer(((SearchableEntityManager) entity.getEntityManager()).getAnalyzer());
+			more.setAnalyzer(((SearchableEntityManager) entityManager).getAnalyzer());
 			
 			int docID = -1;
-			String primaryKeyField = Common.getPrimaryKeyField(entity.getEntityType(), entity.getEntityManager().getNameConverters().getFieldNameConverter());
+			String primaryKeyField = Common.getPrimaryKeyField(type, entityManager.getNameConverters().getFieldNameConverter());
 			Object primaryKeyValue = Common.getPrimaryKeyValue(entity);
 			
 			TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField,
@@ -86,8 +87,8 @@ class RelatedEntityImpl {
 					continue;
 				}
 				
-				back.add((RelatedEntity<?>) entity.getEntityManager().peer(type, 
-				                                                           Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().parseDefault(entityKey)));
+				back.add((RelatedEntity<?>) (entityManager).peer(entityManager.resolveEntityInfo(type),
+                        Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().parseDefault(entityKey)));
 			}
 
 			return back.toArray((RelatedEntity<?>[]) Array.newInstance(type, back.size()));

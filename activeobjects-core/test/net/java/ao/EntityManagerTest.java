@@ -15,9 +15,11 @@
  */
 package net.java.ao;
 
-import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.info.EntityInfoResolver;
+import net.java.ao.schema.info.EntityInfoResolverFactory;
+import net.java.ao.types.TypeManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +27,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Daniel Spiewak
@@ -35,12 +40,15 @@ public class EntityManagerTest
 {
     @Mock
     private DatabaseProvider databaseProvider;
+    @Mock
+    private TypeManager typeManager;
 
     private EntityManager entityManager;
 
     @Before
     public void setUp()
     {
+        when(databaseProvider.getTypeManager()).thenReturn(typeManager);
         entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration());
     }
 
@@ -63,10 +71,15 @@ public class EntityManagerTest
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);
 
+        final EntityInfoResolverFactory entityInfoResolverFactory = mock(EntityInfoResolverFactory.class);
+        final EntityInfoResolver entityInfoResolver = mock(EntityInfoResolver.class);
+        when(entityInfoResolverFactory.create(isA(NameConverters.class), isA(TypeManager.class))).thenReturn(entityInfoResolver);
+
         final EntityManagerConfiguration configuration = mock(EntityManagerConfiguration.class);
         when(configuration.getNameConverters()).thenReturn(nameConverters);
         when(nameConverters.getTableNameConverter()).thenReturn(tableNameConverter);
         when(configuration.getSchemaConfiguration()).thenReturn(schemaConfiguration);
+        when(configuration.getEntityInfoResolverFactory()).thenReturn(entityInfoResolverFactory);
         return configuration;
     }
 }

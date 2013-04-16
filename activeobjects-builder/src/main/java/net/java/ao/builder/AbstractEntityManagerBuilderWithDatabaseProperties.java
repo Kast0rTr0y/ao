@@ -18,6 +18,8 @@ import net.java.ao.schema.TableAnnotationTableNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
+import net.java.ao.schema.info.CachingEntityInfoResolverFactory;
+import net.java.ao.schema.info.EntityInfoResolverFactory;
 
 import static com.google.common.base.Preconditions.*;
 
@@ -112,6 +114,7 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private TriggerNameConverter triggerNameConverter;
         private IndexNameConverter indexNameConverter;
         private UniqueNameConverter uniqueNameConverter;
+        private EntityInfoResolverFactory entityInfoResolverFactory;
 
         private boolean useWeakCache = false;
 
@@ -231,6 +234,22 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         public void setSchemaConfiguration(SchemaConfiguration schemaConfiguration)
         {
             this.schemaConfiguration = schemaConfiguration;
+        }
+
+        @Override
+        public EntityInfoResolverFactory getEntityInfoResolverFactory()
+        {
+            return entityInfoResolverFactory != null ? entityInfoResolverFactory : defaultSchemaInfoResolverFactory();
+        }
+
+        public void setEntityInfoResolverFactory(EntityInfoResolverFactory entityInfoResolverFactory)
+        {
+            this.entityInfoResolverFactory = entityInfoResolverFactory;
+        }
+
+        private static EntityInfoResolverFactory defaultSchemaInfoResolverFactory()
+        {
+            return new CachingEntityInfoResolverFactory();
         }
     }
 }

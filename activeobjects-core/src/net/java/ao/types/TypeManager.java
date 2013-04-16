@@ -24,7 +24,7 @@ import static net.java.ao.types.TypeQualifiers.qualifiers;
  * <p>This container is thread safe and so may be used from within multiple
  * contexts.</p>
  */
-public final class TypeManager
+public class TypeManager
 {
     private static final ImmutableSet<Integer> UNLIMITED_TEXT_TYPES = ImmutableSet.of(CLOB, LONGNVARCHAR, LONGVARCHAR);
 

@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
+import net.java.ao.schema.info.EntityInfo;
 import org.junit.Test;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
@@ -398,7 +399,8 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
 
     private String toSql(DatabaseProvider provider, Query query, boolean count)
     {
-        return query.toSQL(Person.class, provider, entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), count);
+        EntityInfo<Person,Integer> entityInfo = entityManager.resolveEntityInfo(Person.class);
+        return query.toSQL(entityInfo, provider, entityManager.getTableNameConverter(), count);
     }
 
     @Test
