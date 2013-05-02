@@ -1,11 +1,21 @@
 package net.java.ao.schema.info;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import net.java.ao.*;
-import net.java.ao.schema.*;
+import net.java.ao.AnnotationDelegate;
+import net.java.ao.Common;
+import net.java.ao.Generator;
+import net.java.ao.Polymorphic;
+import net.java.ao.RawEntity;
+import net.java.ao.Transient;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.Default;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.Ignore;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.NotNull;
+import net.java.ao.schema.PrimaryKey;
 import net.java.ao.types.TypeManager;
 
 import java.lang.reflect.Method;
@@ -36,42 +46,38 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
         final Map<String, Method> mutatorByFieldName = Maps.newHashMap();
 
         // First find all the methods
-        visitDeclaredMethods(type, new Function<Method, Void>()
+        for (Method method : type.getMethods())
         {
-            public Void apply(Method method)
+            if (method.isAnnotationPresent(Ignore.class))
             {
-                if (method.isAnnotationPresent(Ignore.class))
-                {
-                    return null;
-                }
-
-                if (Common.isAccessor(method))
-                {
-                    String name = fieldNameConverter.getName(method);
-                    if (name != null)
-                    {
-                        if (accessorByFieldName.containsKey(name))
-                        {
-                            method = preferredMethod(method, accessorByFieldName.get(name));
-                        }
-                        accessorByFieldName.put(name, method);
-                    }
-                }
-                else if (Common.isMutator(method))
-                {
-                    String name = fieldNameConverter.getName(method);
-                    if (name != null)
-                    {
-                        if (mutatorByFieldName.containsKey(name))
-                        {
-                            method = preferredMethod(method, mutatorByFieldName.get(name));
-                        }
-                        mutatorByFieldName.put(fieldNameConverter.getName(method), method);
-                    }
-                }
-                return null;
+                continue;
             }
-        });
+
+            if (Common.isAccessor(method))
+            {
+                String name = fieldNameConverter.getName(method);
+                if (name != null)
+                {
+                    if (accessorByFieldName.containsKey(name))
+                    {
+                        throw new IllegalArgumentException(String.format("Invalid Entity definition. Both %s and %s generate the same table name (%s)", method, accessorByFieldName.get(name), name));
+                    }
+                    accessorByFieldName.put(name, method);
+                }
+            }
+            else if (Common.isMutator(method))
+            {
+                String name = fieldNameConverter.getName(method);
+                if (name != null)
+                {
+                    if (mutatorByFieldName.containsKey(name))
+                    {
+                        throw new IllegalArgumentException(String.format("Invalid Entity definition. Both %s and %s generate the same table name (%s)", method, mutatorByFieldName.get(name), name));
+                    }
+                    mutatorByFieldName.put(fieldNameConverter.getName(method), method);
+                }
+            }
+        }
 
         Set<FieldInfo> fields = Sets.newHashSet();
 
@@ -85,13 +91,6 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
                 nameConverters.getTableNameConverter().getName(type),
                 fields
         );
-    }
-
-    private Method preferredMethod(Method methodA, Method methodB)
-    {
-        return methodA.getDeclaringClass().isAssignableFrom(methodB.getDeclaringClass()) ?
-                methodB :
-                methodA;
     }
 
     @SuppressWarnings("unchecked")
@@ -121,36 +120,6 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
     private AnnotationDelegate getAnnotations(Method accessor, Method mutator)
     {
         return accessor != null ? new AnnotationDelegate(accessor, mutator) : new AnnotationDelegate(mutator, accessor);
-    }
-
-    /**
-     * Recursively read the interface hierarchy of the given AO type interface
-     */
-    static void visitDeclaredMethods(Class<?> baseType, final Function<Method, ?> visitor)
-    {
-        visitTypeHierarchy(baseType, new Function<Class<?>, Void>()
-        {
-            public Void apply(Class<?> type)
-            {
-                for (Method method : type.getDeclaredMethods())
-                {
-                    visitor.apply(method);
-                }
-                return null;
-            }
-        });
-    }
-
-    /**
-     * Recursively read the interface hierarchy of the given AO type interface
-     */
-    static void visitTypeHierarchy(Class<?> type, Function<Class<?>, ?> visitor)
-    {
-        visitor.apply(type);
-        for (Class<?> superType : type.getInterfaces())
-        {
-            visitTypeHierarchy(superType, visitor);
-        }
     }
 
 }
