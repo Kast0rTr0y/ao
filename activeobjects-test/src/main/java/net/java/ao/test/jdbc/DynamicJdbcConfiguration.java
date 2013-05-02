@@ -37,7 +37,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 
     public DynamicJdbcConfiguration()
     {
-        super(jdbcSupplier.get().getUrl(), jdbcSupplier.get().getUsername(), jdbcSupplier.get().getPassword(), jdbcSupplier.get().getPassword());
+        super(jdbcSupplier.get().getUrl(), jdbcSupplier.get().getUsername(), jdbcSupplier.get().getPassword(), jdbcSupplier.get().getSchema());
     }
 
     protected DynamicJdbcConfiguration(String url, String username, String password, String schema)
