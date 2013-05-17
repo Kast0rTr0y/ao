@@ -6,6 +6,7 @@ import net.java.ao.ManyToMany;
 import net.java.ao.OneToMany;
 import net.java.ao.OneToOne;
 import net.java.ao.Preload;
+import net.java.ao.schema.Ignore;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,14 +49,14 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         grandparent.setRelated(child);
         grandparent.save();
         Assert.assertNull(grandparent.getParent());
-        Assert.assertSame(parent, grandparent.getChild());
-        Assert.assertSame(child, grandparent.getRelated());
-        Assert.assertSame(grandparent, parent.getParent());
-        Assert.assertSame(child, parent.getChild());
+        Assert.assertEquals(parent, grandparent.getChild());
+        Assert.assertEquals(child, grandparent.getRelated());
+        Assert.assertEquals(grandparent, parent.getParent());
+        Assert.assertEquals(child, parent.getChild());
         Assert.assertNull(parent.getRelated());
-        Assert.assertSame(parent, child.getParent());
+        Assert.assertEquals(parent, child.getParent());
         Assert.assertNull(child.getChild());
-        Assert.assertSame(grandparent, child.getRelated());
+        Assert.assertEquals(grandparent, child.getRelated());
     }
 
     @Preload
@@ -91,14 +92,14 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         grandparent.setRelated(child);
         grandparent.save();
         Assert.assertNull(grandparent.getParent());
-        Assert.assertSame(parent, grandparent.getChild());
-        Assert.assertSame(child, grandparent.getRelated());
-        Assert.assertSame(grandparent, parent.getParent());
-        Assert.assertSame(child, parent.getChild());
+        Assert.assertEquals(parent, grandparent.getChild());
+        Assert.assertEquals(child, grandparent.getRelated());
+        Assert.assertEquals(grandparent, parent.getParent());
+        Assert.assertEquals(child, parent.getChild());
         Assert.assertNull(parent.getRelated());
-        Assert.assertSame(parent, child.getParent());
+        Assert.assertEquals(parent, child.getParent());
         Assert.assertNull(child.getChild());
-        Assert.assertSame(grandparent, child.getRelated());
+        Assert.assertEquals(grandparent, child.getRelated());
     }
 
     public interface Adult extends Entity
