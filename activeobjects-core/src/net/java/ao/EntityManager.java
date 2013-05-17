@@ -158,18 +158,20 @@ public class EntityManager
     }
 
     /**
-	 * @deprecated use {@link #flush(RawEntity[])} instead
-	 */
+     * @deprecated use {@link #flush(RawEntity[])} instead
+     */
     @Deprecated
-	public void flushAll() {
-		// no-op
+    public void flushAll()
+    {
+        // no-op
     }
 
     /**
      * @deprecated use {@link #flush(RawEntity[])} instead
      */
     @Deprecated
-    public void flushEntityCache() {
+    public void flushEntityCache()
+    {
         // no-op
     }
 
