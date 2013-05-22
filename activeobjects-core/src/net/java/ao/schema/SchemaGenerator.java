@@ -512,8 +512,14 @@ public final class SchemaGenerator
 		}
 
 		for (Class<?> superInterface : clazz.getInterfaces()) {
-			if (!superInterface.equals(RawEntity.class) && !superInterface.isAnnotationPresent(Polymorphic.class)) {
-				back.addAll(Arrays.asList(parseIndexes(provider, nameConverter, fieldConverter, (Class<? extends RawEntity<?>>) superInterface)));
+			if (RawEntity.class.isAssignableFrom(superInterface) &&
+                    !(RawEntity.class.equals(superInterface) || superInterface.isAnnotationPresent(Polymorphic.class))) {
+				back.addAll(Arrays.asList(parseIndexes(
+                        provider,
+                        nameConverter,
+                        fieldConverter,
+                        (Class<? extends RawEntity<?>>) superInterface)
+                ));
 			}
 		}
 
