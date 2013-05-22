@@ -417,6 +417,20 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals(unlimited[3].getID(), comments[2].getID());
     }
 
+    @Test
+    public void testLimitOnly() throws Exception
+    {
+        Query query = Query.select().limit(3);
+
+        Comment[] unlimited = entityManager.find(Comment.class);
+        Comment[] comments = entityManager.find(Comment.class, query);
+
+        assertEquals(3, comments.length);
+        assertEquals(unlimited[0].getID(), comments[0].getID());
+        assertEquals(unlimited[1].getID(), comments[1].getID());
+        assertEquals(unlimited[2].getID(), comments[2].getID());
+    }
+
     static class DatabaseProviders
     {
         public static HSQLDatabaseProvider getHsqlDatabaseProvider()
