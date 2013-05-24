@@ -17,6 +17,8 @@ package net.java.ao.schema;
 
 import java.sql.Types;
 
+import net.java.ao.Entity;
+import net.java.ao.RawEntity;
 import org.junit.Test;
 
 import static net.java.ao.types.LogicalTypes.longType;
@@ -34,6 +36,7 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+import org.mockito.verification.VerificationMode;
 
 import static net.java.ao.types.LogicalTypes.integerType;
 import static net.java.ao.types.LogicalTypes.stringType;
@@ -44,6 +47,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Daniel Spiewak
@@ -198,4 +202,30 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
             }
         }
     }
+
+    @Test
+    public void testParseIndexIgnoresUnrelatedInterfaces() throws Exception {
+        TableNameConverter tableNameConverter = spy(entityManager.getTableNameConverter());
+        FieldNameConverter fieldNameConverter = spy(entityManager.getFieldNameConverter());
+        DDLIndex[] indexes = SchemaGenerator.parseIndexes(
+                entityManager.getProvider(),
+                tableNameConverter,
+                fieldNameConverter,
+                AoEntity.class
+        );
+        assertNotNull(indexes);
+        verify(tableNameConverter, never()).getName((Class) RandomInterface.class);
+    }
+
+    public static interface AoEntity extends Entity, OtherAoEntity<Integer>, RandomInterface {
+    }
+
+    public static interface OtherAoEntity<T> extends RawEntity<T> {
+
+    }
+
+    public static interface RandomInterface {
+
+    }
+
 }

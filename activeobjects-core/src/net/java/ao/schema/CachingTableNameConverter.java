@@ -14,7 +14,7 @@ import static com.google.common.base.Preconditions.*;
  *
  * @since 0.9
  */
-public final class CachingTableNameConverter implements TableNameConverter
+public class CachingTableNameConverter implements TableNameConverter
 {
     private final Map<Class<? extends RawEntity<?>>, String> cache;
 
