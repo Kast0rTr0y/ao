@@ -53,7 +53,9 @@ class ImplementationWrapper<T extends RawEntity<?>> {
 		}
 		
 		for (Class<?> sup : clazz.getInterfaces()) {
-			init(instance, (Class<? extends RawEntity<?>>) sup);
+            if (RawEntity.class.isAssignableFrom(sup)) {
+			    init(instance, (Class<? extends RawEntity<?>>) sup);
+            }
 		}
 	}
 	

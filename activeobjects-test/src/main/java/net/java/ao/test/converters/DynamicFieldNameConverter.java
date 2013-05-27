@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 
-public final class DynamicFieldNameConverter implements FieldNameConverter, FieldNameProcessor
+public class DynamicFieldNameConverter implements FieldNameConverter, FieldNameProcessor
 {
     private static final Logger logger = LoggerFactory.getLogger(DynamicFieldNameConverter.class);
 
