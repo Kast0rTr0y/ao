@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -487,7 +488,8 @@ public final class SchemaGenerator
 		return back.toArray(new DDLForeignKey[back.size()]);
 	}
 
-	private static DDLIndex[] parseIndexes(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
+    @VisibleForTesting
+	static DDLIndex[] parseIndexes(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
                                            Class<? extends RawEntity<?>> clazz) {
 		Set<DDLIndex> back = new LinkedHashSet<DDLIndex>();
 		String tableName = nameConverter.getName(clazz);
@@ -512,8 +514,14 @@ public final class SchemaGenerator
 		}
 
 		for (Class<?> superInterface : clazz.getInterfaces()) {
-			if (!superInterface.equals(RawEntity.class) && !superInterface.isAnnotationPresent(Polymorphic.class)) {
-				back.addAll(Arrays.asList(parseIndexes(provider, nameConverter, fieldConverter, (Class<? extends RawEntity<?>>) superInterface)));
+			if (RawEntity.class.isAssignableFrom(superInterface) &&
+                    !(RawEntity.class.equals(superInterface) || superInterface.isAnnotationPresent(Polymorphic.class))) {
+				back.addAll(Arrays.asList(parseIndexes(
+                        provider,
+                        nameConverter,
+                        fieldConverter,
+                        (Class<? extends RawEntity<?>>) superInterface)
+                ));
 			}
 		}
 
