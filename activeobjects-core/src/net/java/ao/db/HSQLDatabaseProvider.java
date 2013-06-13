@@ -208,17 +208,17 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 			case SELECT:
 				sql.append("SELECT ");
 
-				if (query.isDistinct()) {
-					sql.append("DISTINCT ");
-				}
+                int limit = query.getLimit();
+                if (limit >= 0) {
+                    int offset = Math.max(query.getOffset(), 0);
 
-				int limit = query.getLimit();
-				if (limit >= 0) {
-					int offset = Math.max(query.getOffset(), 0);
+                    sql.append("LIMIT ").append(offset).append(' ');
+                    sql.append(limit).append(' ');
+                }
 
-					sql.append("LIMIT ").append(offset).append(' ');
-					sql.append(limit).append(' ');
-				}
+                if (query.isDistinct()) {
+                    sql.append("DISTINCT ");
+                }
 
                 if (count)
                 {
