@@ -206,17 +206,22 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 
 		switch (query.getType()) {
 			case SELECT:
+
+                // Must match this syntax: http://www.hsqldb.org/doc/guide/ch09.html#select-section
+
 				sql.append("SELECT ");
 
                 int limit = query.getLimit();
-                if (limit >= 0) {
+                if (limit >= 0)
+                {
                     int offset = Math.max(query.getOffset(), 0);
 
                     sql.append("LIMIT ").append(offset).append(' ');
                     sql.append(limit).append(' ');
                 }
 
-                if (query.isDistinct()) {
+                if (query.isDistinct())
+                {
                     sql.append("DISTINCT ");
                 }
 
