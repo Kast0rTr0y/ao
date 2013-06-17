@@ -196,14 +196,27 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertCountSqlEquals(getSelectWithLimitQuery(), getExpectedSqlForCountWithLimit());
     }
 
+    @Test
+    public final void testDistinctSelectWithLimit()
+    {
+        assertSelectSqlEquals(getDistinctSelectWithLimitQuery(), getExpectedSqlForDistinctSelectWithLimit());
+    }
+
     private Query getSelectWithLimitQuery()
     {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
     }
 
+    private Query getDistinctSelectWithLimitQuery()
+    {
+        return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
+    }
+
     protected abstract String getExpectedSqlForSelectWithLimit();
 
     protected abstract String getExpectedSqlForCountWithLimit();
+
+    protected abstract String getExpectedSqlForDistinctSelectWithLimit();
 
     @Test
     public final void testSelectWithLimitAndOffset()
@@ -217,14 +230,27 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertCountSqlEquals(getSelectWithLimitAndOffsetQuery(), getExpectedSqlForCountWithLimitAndOffset());
     }
 
+    @Test
+    public final void testDistinctSelectWithLimitAndOffset()
+    {
+        assertSelectSqlEquals(getDistinctSelectWithLimitAndOffsetQuery(), getExpectedSqlForDistinctSelectWithLimitAndOffset());
+    }
+
     private Query getSelectWithLimitAndOffsetQuery()
     {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10).offset(4);
     }
 
+    private Query getDistinctSelectWithLimitAndOffsetQuery()
+    {
+        return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10).offset(4);
+    }
+
     protected abstract String getExpectedSqlForSelectWithLimitAndOffset();
 
     protected abstract String getExpectedSqlForCountWithLimitAndOffset();
+
+    protected abstract String getExpectedSqlForDistinctSelectWithLimitAndOffset();
 
     @Test
     public final void testSelectWithGroupBy()

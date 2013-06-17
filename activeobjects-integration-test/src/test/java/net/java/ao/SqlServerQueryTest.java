@@ -78,15 +78,30 @@ public final class SqlServerQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForDistinctSelectWithLimit()
+    {
+        return format("SELECT DISTINCT TOP 10 %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForSelectWithLimitAndOffset()
     {
+        // Note: The offset is achieved through JDBC instead of within the query
         return format("SELECT TOP 14 %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithLimitAndOffset()
     {
+        // Note: The offset is achieved through JDBC instead of within the query
         return format("SELECT TOP 14 COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithLimitAndOffset()
+    {
+        // Note: The offset is achieved through JDBC instead of within the query
+        return format("SELECT DISTINCT TOP 14 %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
