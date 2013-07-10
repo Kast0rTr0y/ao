@@ -48,21 +48,6 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     }
 
     @Test
-    public void testGetCache() throws Exception
-    {
-        entityManager.get(Person.class, PersonData.getId());
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                entityManager.get(Person.class, PersonData.getId());
-                return null;
-            }
-        });
-    }
-
-    @Test
     public void testReservedGet() throws Exception
     {
         assertNull(entityManager.get(Select.class, 123));

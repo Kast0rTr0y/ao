@@ -90,16 +90,6 @@ public class EntityManager
 
     private final EntityInfoResolver entityInfoResolver;
 
-	private final ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>> entityCache = new ThreadLocal<Map<CacheKey<?>, Reference<RawEntity<?>>>>() {
-
-        @Override
-        protected Map<CacheKey<?>, Reference<RawEntity<?>>> initialValue()
-        {
-            return new LRUMap<CacheKey<?>, Reference<RawEntity<?>>>(500);
-        }
-
-    };
-
     private Cache cache;
     private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
 
@@ -168,29 +158,23 @@ public class EntityManager
     }
 
     /**
-	 * Flushes all value caches contained within entities controlled by this <code>EntityManager</code>
-	 * instance. Rather, it simply dumps all of the field values cached within the entities
-	 * themselves (with the exception of the primary key value).  This should be used in the case
-	 * of a complex process outside AO control which may have changed values in the database.  If
-	 * it is at all possible to determine precisely which rows have been changed, the {@link #flush(RawEntity[])} }
-	 * method should be used instead.
-	 */
-	public void flushAll() {
-		for (final Reference<RawEntity<?>> entityReference : entityCache.get().values()) {
-            final RawEntity<?> entity = entityReference.get();
-            if (entity != null) {
-                ((EntityProxyAccessor) entity).getEntityProxy().flushCache(entity);
-            }
-		}
-
-        entityCache.get().clear();
+     * @deprecated since 0.23. EntityManager now no longer caches entities.
+     * use {@link #flush(RawEntity[])} to flush values for individual entities
+     */
+    @Deprecated
+    public void flushAll()
+    {
+        // no-op
     }
 
     /**
-     * Flush the current thread's entity cache. Should be called after a transaction is committed or rolled back.
+     * @deprecated since 0.23. EntityManager now no longer caches entities.
+     * use {@link #flush(RawEntity[])} to flush values for individual entities
      */
-    public void flushEntityCache() {
-        entityCache.get().clear();
+    @Deprecated
+    public void flushEntityCache()
+    {
+        // no-op
     }
 
 	/**
@@ -278,19 +262,12 @@ public class EntityManager
 
     private <T extends RawEntity<K>, K> T[] getFromCache(Class<T> type, Function<T, K> create, K... keys) throws SQLException
     {
+        //noinspection unchecked
         T[] back = (T[])Array.newInstance(type, keys.length);
         int index = 0;
 
 		for (K key : keys) {
-            Reference<?> reference = entityCache.get().get(new CacheKey<K>(key, type)); // upcast to workaround bug in javac
-            Reference<T> ref = (Reference<T>) reference;
-            T entity = (ref == null ? null : ref.get());
-
-            if (entity != null) {
-                back[index++] = entity;
-            } else {
-                back[index++] = create.invoke(key);
-            }
+            back[index++] = create.invoke(key);
         }
 
         return back;
@@ -312,7 +289,6 @@ public class EntityManager
         EntityProxy<T, K> proxy = new EntityProxy<T, K>(this, entityInfo, key);
 
 		T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type, EntityProxyAccessor.class}, proxy));
-		entityCache.get().put(new CacheKey<K>(key, type), createRef(entity));
 		return entity;
 	}
 
@@ -559,10 +535,6 @@ public class EntityManager
         {
             closeQuietly(stmt);
             closeQuietly(conn);
-        }
-
-        for (RawEntity<?> entity : entities) {
-            entityCache.get().remove(new CacheKey(Common.getPrimaryKeyValue(entity), entity.getEntityType()));
         }
     }
 
