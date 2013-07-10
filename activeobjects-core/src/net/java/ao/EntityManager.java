@@ -158,7 +158,8 @@ public class EntityManager
     }
 
     /**
-     * @deprecated use {@link #flush(RawEntity[])} instead
+     * @deprecated since 0.23. EntityManager now no longer caches entities.
+     * use {@link #flush(RawEntity[])} to flush values for individual entities
      */
     @Deprecated
     public void flushAll()
@@ -167,7 +168,8 @@ public class EntityManager
     }
 
     /**
-     * @deprecated use {@link #flush(RawEntity[])} instead
+     * @deprecated since 0.23. EntityManager now no longer caches entities.
+     * use {@link #flush(RawEntity[])} to flush values for individual entities
      */
     @Deprecated
     public void flushEntityCache()
