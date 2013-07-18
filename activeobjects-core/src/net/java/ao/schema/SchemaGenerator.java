@@ -64,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.addAll;
+import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.types.TypeQualifiers.MAX_STRING_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
@@ -146,46 +147,49 @@ public final class SchemaGenerator
 		final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps = new HashMap<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>>();
 		final Set<Class<? extends RawEntity<?>>> roots = new LinkedHashSet<Class<? extends RawEntity<?>>>();
 
-		for (Class<? extends RawEntity<?>> cls : classes) {
-			try {
-				parseDependencies(nameConverters.getFieldNameConverter(), deps, roots, cls);
-			} catch (StackOverflowError e) {
-				throw new RuntimeException("Circular dependency detected in or below " + cls.getCanonicalName());
-			}
-		}
+        for (Class<? extends RawEntity<?>> cls : classes) {
+            parseDependencies(nameConverters.getFieldNameConverter(), deps, roots, cls);
+        }
 
-		List<DDLTable> parsedTables = new ArrayList<DDLTable>();
+        ArrayList<DDLTable> parsedTables = new ArrayList<DDLTable>();
 
-		while (!roots.isEmpty()) {
-			Class<? extends RawEntity<?>>[] rootsArray = roots.toArray(new Class[roots.size()]);
-			roots.remove(rootsArray[0]);
-
-			Class<? extends RawEntity<?>> clazz = rootsArray[0];
-			if (clazz.getAnnotation(Polymorphic.class) == null) {
-				parsedTables.add(parseInterface(provider, nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
-			}
-
-			List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();
-			Iterator<Class<? extends RawEntity<?>>> depIterator = deps.keySet().iterator();
-			while (depIterator.hasNext()) {
-				Class<? extends RawEntity<?>> depClass = depIterator.next();
-
-				Set<Class<? extends RawEntity<?>>> individualDeps = deps.get(depClass);
-				individualDeps.remove(clazz);
-
-				if (individualDeps.isEmpty()) {
-					roots.add(depClass);
-					toRemove.add(depClass);
-				}
-			}
-
-			for (Class<? extends RawEntity<?>> remove : toRemove) {
-				deps.remove(remove);
-			}
-		}
+        parseDDLRoots(provider, nameConverters, deps, roots, parsedTables);
+        if (!deps.isEmpty()) {
+            throw new RuntimeException("Circular dependency detected");
+        }
 
 		return parsedTables.toArray(new DDLTable[parsedTables.size()]);
 	}
+
+    private static void parseDDLRoots(final DatabaseProvider provider,
+                                      final NameConverters nameConverters,
+                                      final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps,
+                                      final Set<Class<? extends RawEntity<?>>> roots,
+                                      final ArrayList<DDLTable> parsedTables) {
+        while (!roots.isEmpty()) {
+            Class<? extends RawEntity<?>> clazz = roots.iterator().next();
+            roots.remove(clazz);
+
+            if (clazz.getAnnotation(Polymorphic.class) == null) {
+                parsedTables.add(parseInterface(provider, nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
+            }
+
+            List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();
+            for (final Class<? extends RawEntity<?>> depClass : deps.keySet()) {
+                Set<Class<? extends RawEntity<?>>> individualDeps = deps.get(depClass);
+                individualDeps.remove(clazz);
+
+                if (individualDeps.isEmpty()) {
+                    roots.add(depClass);
+                    toRemove.add(depClass);
+                }
+            }
+
+            for (Class<? extends RawEntity<?>> remove : toRemove) {
+                deps.remove(remove);
+            }
+        }
+    }
 
     private static void parseDependencies(
             final FieldNameConverter fieldConverter,
@@ -207,6 +211,7 @@ public final class SchemaGenerator
                 RawEntity.class.isAssignableFrom(type) && !individualDeps.contains(type))
             {
                 individualDeps.add((Class<? extends RawEntity<?>>) type);
+                addDeps(deps, clazz, individualDeps);
                 parseDependencies(fieldConverter, deps, roots, (Class<? extends RawEntity<?>>) type);
             }
         }
@@ -217,6 +222,18 @@ public final class SchemaGenerator
         }
         else
         {
+            addDeps(deps, clazz, individualDeps);
+        }
+    }
+
+    private static void addDeps(final Map<Class<? extends RawEntity<?>>, Set<Class<? extends RawEntity<?>>>> deps,
+                                final Class<? extends RawEntity<?>> clazz,
+                                final Set<Class<? extends RawEntity<?>>> individualDeps)
+    {
+        Set<Class<? extends RawEntity<?>>> classes = deps.get(clazz);
+        if (classes != null) {
+            classes.addAll(individualDeps);
+        } else {
             deps.put(clazz, individualDeps);
         }
     }
