@@ -29,22 +29,16 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.types.LogicalTypes;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.sql.Types;
 
-import static net.java.ao.types.LogicalTypes.integerType;
-import static net.java.ao.types.LogicalTypes.stringType;
-import static net.java.ao.types.LogicalTypes.urlType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static net.java.ao.types.LogicalTypes.*;
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Daniel Spiewak
@@ -52,6 +46,8 @@ import static org.mockito.Mockito.verify;
 @Data(DatabaseProcessor.class)
 public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
 {
+    @Rule public ExpectedException expectedException = ExpectedException.none();
+
     @SuppressWarnings("null")
     @Test
     public void testParseDDL()
@@ -215,16 +211,45 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         verify(tableNameConverter, never()).getName((Class) RandomInterface.class);
     }
 
-    public static interface AoEntity extends Entity, OtherAoEntity<Integer>, RandomInterface
+    @Test
+    public void testParseDDLRejectsUnrelatedFields() throws Exception
+    {
+        expectedException.expect(RuntimeException.class);
+        SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), AoValueHolder.class);
+    }
+
+    @Test
+    public void testParseDDLIgnoresUnrelatedInterfaces() throws Exception
+    {
+        DDLTable[] tables = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(),
+            AoChildEntity.class);
+        assertThat(tables, arrayWithSize(1));
+    }
+
+    public interface AoEntity extends Entity, OtherAoEntity<Integer>, RandomInterface
     {
     }
 
-    public static interface OtherAoEntity<T> extends RawEntity<T>
+    public interface OtherAoEntity<T> extends RawEntity<T>
     {
     }
 
-    public static interface RandomInterface
+    public interface RandomInterface
     {
     }
 
+    public interface AoValueHolder extends Entity
+    {
+        RandomInterface getName();
+    }
+
+    public interface AnotherInterface
+    {
+        String getName();
+    }
+
+    public interface AoChildEntity extends Entity, AnotherInterface
+    {
+        String getDescription();
+    }
 }
