@@ -576,7 +576,7 @@ public class EntityManager
         if (criteria != null)
         {
             sql.append(" WHERE ");
-            sql.append(criteria);
+            sql.append(provider.processWhereClause(criteria));
         }
 
         final Connection connection = provider.getConnection();

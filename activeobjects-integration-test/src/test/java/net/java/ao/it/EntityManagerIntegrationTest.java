@@ -254,6 +254,14 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     }
 
     @Test
+    public void testDeleteWithSQLWithNonEscapedFieldName() throws SQLException
+    {
+        assertEquals(3, entityManager.count(Pen.class));
+        entityManager.deleteWithSQL(Pen.class, "WIDTH > ?", 0.6);
+        assertEquals(2, entityManager.count(Pen.class));
+    }
+
+    @Test
     public void testFindCheckIDs() throws SQLException
     {
         final Company[] coolCompanies = entityManager.find(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true);
