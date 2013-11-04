@@ -17,8 +17,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 enum SupportedDatabase
 {
-    // Note: the order IS important!
+    // Note: The order IS important!
     MYSQL("jdbc:mysql", "com.mysql.jdbc.Driver")
+            {
+                @Override
+                public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
+                {
+                    return new MySQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password));
+                }
+            },
+    // Note: MariaDB's driver can also handle jdbc:mysql URLs, but those will already return the correct provider via
+    // the MYSQL enum entry above so they are not handled separately here (since each urlPrefix must be unique)
+    MARIA_DB("jdbc:mariadb", "org.mariadb.jdbc.Driver")
             {
                 @Override
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
@@ -101,7 +111,7 @@ enum SupportedDatabase
     }
 
     /**
-     * Checks whether the URI starts with the prefix assocoated with the database
+     * Checks whether the URI starts with the prefix associated with the database
      *
      * @param uri the give URI for connecting to the database
      * @return {@code true} if the URI is valid for this instance of data source factory
@@ -126,7 +136,7 @@ enum SupportedDatabase
     @Override
     public String toString()
     {
-        return new StringBuilder().append("Database with prefix ").append(uriPrefix).append(" and driver ").append(driverClassName).toString();
+        return "Database with prefix " + uriPrefix + " and driver " + driverClassName;
     }
 
     static SupportedDatabase fromUri(String uri)

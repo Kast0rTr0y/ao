@@ -7,6 +7,8 @@ import com.google.common.collect.SetMultimap;
 import net.java.ao.Common;
 import net.java.ao.RawEntity;
 
+import java.sql.Types;
+
 import static java.sql.Types.*;
 import static net.java.ao.types.LogicalTypes.*;
 import static net.java.ao.types.SchemaProperties.schemaType;
@@ -137,15 +139,15 @@ public class TypeManager
 
     public static TypeManager mysql()
     {
-        return new TypeManager.Builder()
+        Builder builder = new Builder()
                 .addMapping(blobType(), schemaType("BLOB"))
                 .addMapping(booleanType(), schemaType("BOOLEAN"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("DOUBLE"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("VARCHAR", "LONGTEXT", Integer.MAX_VALUE)
-                .build();
+                .addStringTypes("VARCHAR", "LONGTEXT", Integer.MAX_VALUE);
+        return new MySQLTypeManager(builder);
     }
 
     public static TypeManager postgres()
@@ -237,6 +239,33 @@ public class TypeManager
                        qualifiers().stringLength(UNLIMITED_LENGTH).precision(precision));
 
             return this;
+        }
+    }
+
+    private static class MySQLTypeManager extends TypeManager
+    {
+        private MySQLTypeManager(final Builder builder)
+        {
+            super(builder);
+        }
+
+        @Override
+        public TypeInfo<?> getTypeFromSchema(final int jdbcType, final TypeQualifiers qualifiers)
+        {
+            if (jdbcType == Types.TINYINT && qualifiers.hasPrecision() && qualifiers.getPrecision() == 1)
+            {
+                // AO-485: MySQL does not have a "boolean" or "bit" type. It uses tinyint(1) instead. The JDBC driver
+                // has internal translation for this, but:
+                //   1. It can be turned off using tinyInt1isBit=false on the URL
+                //   2. The MariaDB connector doesn't apply it correctly even when it's on
+                // This simulates that behaviour. It can't be done using the normal TypeManager internals because
+                // the way LogicalType's read types interact with the Builder doesn't allow specifying qualifiers
+                // only on specific read types.
+                //
+                // The MariaDB connector bug is: https://mariadb.atlassian.net/browse/CONJ-72
+                return super.getTypeFromSchema(Types.BIT, qualifiers());
+            }
+            return super.getTypeFromSchema(jdbcType, qualifiers);
         }
     }
 }
