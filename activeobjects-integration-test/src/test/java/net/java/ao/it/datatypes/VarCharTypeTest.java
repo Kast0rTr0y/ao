@@ -5,11 +5,7 @@ import net.java.ao.ActiveObjectsException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
-import net.java.ao.schema.AutoIncrement;
-import net.java.ao.schema.Default;
-import net.java.ao.schema.NotNull;
-import net.java.ao.schema.PrimaryKey;
-import net.java.ao.schema.StringLength;
+import net.java.ao.schema.*;
 import net.java.ao.test.jdbc.NonTransactional;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
@@ -18,6 +14,7 @@ import net.java.ao.test.DbUtils;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -25,6 +22,7 @@ import static org.junit.Assert.*;
 /**
  * VarChar data type specific tests
  */
+@SuppressWarnings("unchecked")
 public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
 {
     /**
@@ -38,7 +36,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     }
 
     /**
-     * @NotNull not required for primary id column
+     * {@code @NotNull} not required for primary id column
      */
     @Test
     @NonTransactional
@@ -98,7 +96,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         for (String value : new String[]{"TABLE", "COLUMN", "NULL", "INDEX", "PRIMARY", "WHERE", "SELECT", "FROM", "@", ",", ";"})
         {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", value));
-            entityManager.flushAll();
             assertEquals(value, e.getId());
             checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", value);
         }
@@ -120,7 +117,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         // set
         e.setName("Test");
         e.save();
-        entityManager.flushAll();
 
         assertEquals("Test", e.getName());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", "Test");
@@ -148,7 +144,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         // create
         DefaultColumn e = entityManager.create(DefaultColumn.class);
 
-        entityManager.flushAll();
         assertEquals("Test", e.getName());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getName", "Test");
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getName2", "NULL");
@@ -169,7 +164,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         // create
         SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getName"), null));
 
-        entityManager.flushAll();
         assertNull(e.getName());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", null);
     }
@@ -188,7 +182,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         e.setName(null);
         e.save();
 
-        entityManager.flushAll();
         assertNull(e.getName());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", null);
     }
@@ -205,7 +198,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         // create
         NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), "Test"));
 
-        entityManager.flushAll();
         assertEquals("Test", e.getName());
         checkFieldValue(NotNullColumn.class, "getID", e.getID(), "getName", "Test");
     }
@@ -219,8 +211,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(NotNullColumn.class);
 
-        // create
-        NotNullColumn e = entityManager.create(NotNullColumn.class);
+        entityManager.create(NotNullColumn.class);
     }
 
     /**
@@ -232,8 +223,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(NotNullColumn.class);
 
-        // create
-        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), null));
+        entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), null));
     }
 
     /**
@@ -246,8 +236,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(NotNullColumn.class);
 
-        // create
-        NotNullColumn e = entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), ""));
+        entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), ""));
     }
 
     /**
@@ -259,13 +248,20 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     {
         entityManager.migrate(ColumnWithAllowableLength.class);
         
-        StringBuilder buf = new StringBuilder();
-        for (int i = 0; i < TypeQualifiers.MAX_STRING_LENGTH; i++)
-        {
-            buf.append("*");
-        }
-        
-        entityManager.create(ColumnWithAllowableLength.class, new DBParam(getFieldName(ColumnWithAllowableLength.class, "getName"), buf.toString()));
+        entityManager.create(ColumnWithAllowableLength.class,
+                new DBParam(getFieldName(ColumnWithAllowableLength.class, "getName"),
+                        StringUtils.repeat("*", TypeQualifiers.MAX_STRING_LENGTH)));
+    }
+
+    @Test
+    @NonTransactional
+    public void testColumnWithAllowableLengthAndIndex() throws Exception
+    {
+        entityManager.migrate(ColumnWithAllowableLengthAndIndex.class);
+
+        entityManager.create(ColumnWithAllowableLengthAndIndex.class,
+                new DBParam(getFieldName(ColumnWithAllowableLengthAndIndex.class, "getName"),
+                        StringUtils.repeat("*", TypeQualifiers.MAX_STRING_LENGTH)));
     }
 
     /**
@@ -357,6 +353,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Default values
      */
+    @SuppressWarnings("unused")
     public static interface DefaultColumn extends Entity
     {
         @Default("Test")
@@ -406,7 +403,16 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         
         public void setName(String name);
     }
-    
+
+    public static interface ColumnWithAllowableLengthAndIndex extends Entity
+    {
+        @Indexed
+        @StringLength(TypeQualifiers.MAX_STRING_LENGTH)
+        public String getName();
+
+        public void setName(String name);
+    }
+
     /**
      * Column with fixed string length annotation that is above the allowable limit
      */
@@ -415,17 +421,6 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         @StringLength(TypeQualifiers.MAX_STRING_LENGTH + 1)
         public String getName();
         
-        public void setName(String name);
-    }
-    
-    /**
-     * Indexed column - not supported
-     */
-    public static interface Indexed extends Entity
-    {
-        @net.java.ao.schema.Indexed
-        public String getName();
-
         public void setName(String name);
     }
 }
