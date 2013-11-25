@@ -5,6 +5,7 @@ import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.test.converters.NameConverters;
 import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.JdbcConfiguration;
@@ -46,6 +47,7 @@ public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
     private final SequenceNameConverter sequenceNameConverter;
     private final TriggerNameConverter triggerNameConverter;
     private final IndexNameConverter indexNameConverter;
+    private final UniqueNameConverter uniqueNameConverter;
 
     public ActiveObjectsJUnitRunner(Class<?> klass) throws InitializationError
     {
@@ -56,6 +58,7 @@ public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
         sequenceNameConverter = sequenceNameConverter(klass);
         triggerNameConverter = triggerNameConverter(klass);
         indexNameConverter = indexNameConverter(klass);
+        uniqueNameConverter = uniqueNameConverter(klass);
         withIndex = withIndex(klass);
     }
 
@@ -63,7 +66,7 @@ public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
     protected List<MethodRule> rules(Object test)
     {
         final LinkedList<MethodRule> methodRules = new LinkedList<MethodRule>(super.rules(test));
-        methodRules.add(new ActiveObjectTransactionMethodRule(test, jdbcConfiguration, withIndex, tableNameConverter, fieldNameConverter, sequenceNameConverter, triggerNameConverter, indexNameConverter));
+        methodRules.add(new ActiveObjectTransactionMethodRule(test, jdbcConfiguration, withIndex, tableNameConverter, fieldNameConverter, sequenceNameConverter, triggerNameConverter, indexNameConverter, uniqueNameConverter));
         return methodRules;
     }
 
@@ -95,6 +98,10 @@ public final class ActiveObjectsJUnitRunner extends BlockJUnit4ClassRunner
     private IndexNameConverter indexNameConverter(Class<?> klass)
     {
         return newInstance(getNameConvertersAnnotation(klass).index());
+    }
+
+    private UniqueNameConverter uniqueNameConverter(Class<?> klass) {
+        return newInstance(getNameConvertersAnnotation(klass).unique());
     }
 
     private NameConverters getNameConvertersAnnotation(Class<?> klass)

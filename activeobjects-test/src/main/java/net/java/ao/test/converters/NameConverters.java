@@ -1,20 +1,21 @@
 package net.java.ao.test.converters;
 
-import net.java.ao.schema.DefaultIndexNameConverter;
-import net.java.ao.schema.DefaultSequenceNameConverter;
-import net.java.ao.schema.DefaultTriggerNameConverter;
-import net.java.ao.schema.FieldNameConverter;
-import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.SequenceNameConverter;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.TriggerNameConverter;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import net.java.ao.EntityManager;
+import net.java.ao.schema.DefaultIndexNameConverter;
+import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
+import net.java.ao.schema.DefaultUniqueNameConverter;
+import net.java.ao.schema.FieldNameConverter;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.SequenceNameConverter;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.NonTransactional;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
@@ -59,4 +60,9 @@ public @interface NameConverters
      * Specifies an implementation of {@link IndexNameConverter}.
      */
     Class<? extends IndexNameConverter> index() default DefaultIndexNameConverter.class;
+
+    /**
+     * Specifies an implementation of {@link UniqueNameConverter}.
+     */
+    Class<? extends UniqueNameConverter> unique() default DefaultUniqueNameConverter.class;
 }
