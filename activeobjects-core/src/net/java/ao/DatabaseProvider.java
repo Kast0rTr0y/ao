@@ -528,12 +528,12 @@ public abstract class DatabaseProvider implements Disposable
      */
     public ResultSet getTables(Connection conn) throws SQLException
     {
-        return conn.getMetaData().getTables(null, schema, "", new String[]{"TABLE"});
+        return conn.getMetaData().getTables(null, schema, "%", new String[]{"TABLE"});
     }
 
     public ResultSet getSequences(Connection conn) throws SQLException
     {
-        return conn.getMetaData().getTables(null, schema, "", new String[]{"SEQUENCE"});
+        return conn.getMetaData().getTables(null, schema, "%", new String[]{"SEQUENCE"});
     }
 
     public ResultSet getIndexes(Connection conn, String tableName) throws SQLException
