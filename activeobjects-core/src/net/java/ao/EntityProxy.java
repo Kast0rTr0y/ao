@@ -55,9 +55,6 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 {
-    // todo: remove
-    static boolean ignorePreload = false;	// hack for testing
-	
 	private final K key;
 	private final EntityInfo<T, K> entityInfo;
 
@@ -221,7 +218,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         if (remotePolymorphicTypeFieldName != null) {
             sql.append(", t.").append(provider.processID(remotePolymorphicTypeFieldName));
         } else {
-            if (preloadAnnotation != null && !ignorePreload) {
+            if (preloadAnnotation != null) {
                 selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
             } else {
                 selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(remoteType), getFieldNameConverter()));
@@ -325,7 +322,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
         selectFields.add(remotePrimaryKeyFieldName);
         if (remotePolymorphicTypeFieldName == null) {
-            if (preloadAnnotation != null && !ignorePreload) {
+            if (preloadAnnotation != null) {
                 selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
             } else {
                 selectFields.addAll(Common.getValueFieldsNames(entityInfo, getFieldNameConverter()));
@@ -407,7 +404,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
         selectFields.add(remotePrimaryKeyFieldName);
         if (remotePolymorphicTypeFieldName == null) {
-            if (preloadAnnotation != null && !ignorePreload) {
+            if (preloadAnnotation != null) {
                 selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
             } else {
                 selectFields.addAll(Common.getValueFieldsNames(entityInfo, getFieldNameConverter()));
