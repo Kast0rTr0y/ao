@@ -55,6 +55,7 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  */
 public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 {
+    // todo: remove
     static boolean ignorePreload = false;	// hack for testing
 	
 	private final K key;
@@ -216,12 +217,15 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final Set<String> selectFields = new LinkedHashSet<String>();
         final DatabaseProvider provider = manager.getProvider();
         final StringBuilder sql = new StringBuilder("SELECT t.").append(provider.processID(returnField));
-        if (remotePolymorphicTypeFieldName != null)
-        {
+
+        if (remotePolymorphicTypeFieldName != null) {
             sql.append(", t.").append(provider.processID(remotePolymorphicTypeFieldName));
-        }
-        if (preloadAnnotation != null && !ignorePreload) {
-            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+        } else {
+            if (preloadAnnotation != null && !ignorePreload) {
+                selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            } else {
+                selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(remoteType), getFieldNameConverter()));
+            }
             if (selectFields.contains(Preload.ALL)) {
                 sql.append(", r.*");
             } else {
@@ -230,23 +234,24 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 }
             }
         }
+
         final String throughTable = provider.withSchema(getTableNameConverter().getName(throughType));
         sql.append(" FROM ").append(throughTable).append(" t ");
         final String remotePrimaryKeyField = Common.getPrimaryKeyField(remoteType, getFieldNameConverter());
-        if (preloadAnnotation != null) {
+        if (!selectFields.isEmpty()) {
             final String remoteTable = provider.withSchema(getTableNameConverter().getName(remoteType));
             sql.append(" INNER JOIN ").append(remoteTable).append(" r ON t.").append(provider.processID(returnField)).append(" = r.").append(provider.processID(remotePrimaryKeyField));
         }
         final String reverseField = provider.processID(getFieldNameConverter().getName(reverseMethod));
         sql.append(" WHERE ");
-        if (preloadAnnotation != null) {
+        if (!selectFields.isEmpty()) {
             sql.append("t.");
         }
         sql.append(reverseField).append(" = ?");
         if (reversePolymorphicTypeFieldName != null)
         {
             sql.append(" AND ");
-            if (preloadAnnotation != null) {
+            if (!selectFields.isEmpty()) {
                 sql.append("t.");
             }
             sql.append(provider.processID(reversePolymorphicTypeFieldName)).append(" = ?");
@@ -317,20 +322,24 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final String remotePolymorphicTypeFieldName = getPolymorphicTypeFieldName(remoteMethod);
         final StringBuilder sql = new StringBuilder("SELECT ");
         final Set<String> selectFields = new LinkedHashSet<String>();
+
         selectFields.add(remotePrimaryKeyFieldName);
-        if (preloadAnnotation != null && !ignorePreload) {
-            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
-            if (selectFields.contains(Preload.ALL)) {
-                sql.append(Preload.ALL);
+        if (remotePolymorphicTypeFieldName == null) {
+            if (preloadAnnotation != null && !ignorePreload) {
+                selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
             } else {
-                for (final String field : selectFields) {
-                    sql.append(manager.getProvider().processID(field)).append(',');
-                }
-                sql.setLength(sql.length() - 1);
+                selectFields.addAll(Common.getValueFieldsNames(entityInfo, getFieldNameConverter()));
             }
-        } else {
-            sql.append(manager.getProvider().processID(remotePrimaryKeyFieldName));
         }
+        if (selectFields.contains(Preload.ALL)) {
+            sql.append(Preload.ALL);
+        } else {
+            for (final String field : selectFields) {
+                sql.append(manager.getProvider().processID(field)).append(',');
+            }
+            sql.setLength(sql.length() - 1);
+        }
+
         sql.append(" FROM ").append(manager.getProvider().withSchema(getTableNameConverter().getName(remoteType)));
         sql.append(" WHERE ").append(manager.getProvider().processID(getFieldNameConverter().getName(remoteMethod))).append(" = ?");
         if (!whereClause.trim().equals("")) {
@@ -395,27 +404,24 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final Preload preloadAnnotation = (Preload) remoteType.getAnnotation(Preload.class);
         final StringBuilder sql = new StringBuilder("SELECT ");
         final Set<String> selectFields = new LinkedHashSet<String>();
+
         selectFields.add(remotePrimaryKeyFieldName);
-        if (preloadAnnotation != null && !ignorePreload)
-        {
-            selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
-            if (selectFields.contains(Preload.ALL))
-            {
-                sql.append(Preload.ALL);
-            }
-            else
-            {
-                for (final String field : selectFields)
-                {
-                    sql.append(manager.getProvider().processID(field)).append(',');
-                }
-                sql.setLength(sql.length() - 1);
+        if (remotePolymorphicTypeFieldName == null) {
+            if (preloadAnnotation != null && !ignorePreload) {
+                selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+            } else {
+                selectFields.addAll(Common.getValueFieldsNames(entityInfo, getFieldNameConverter()));
             }
         }
-        else
-        {
-            sql.append(manager.getProvider().processID(remotePrimaryKeyFieldName));
+        if (selectFields.contains(Preload.ALL)) {
+            sql.append(Preload.ALL);
+        } else {
+            for (final String field : selectFields) {
+                sql.append(manager.getProvider().processID(field)).append(',');
+            }
+            sql.setLength(sql.length() - 1);
         }
+
         sql.append(" FROM ").append(manager.getProvider().withSchema(getTableNameConverter().getName(remoteType)));
         sql.append(" WHERE ").append(manager.getProvider().processID(getFieldNameConverter().getName(remoteMethod))).append(" = ?");
         if (whereClause.trim().length() != 0)
@@ -860,13 +866,17 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			
 			Set<String> selectFields = new LinkedHashSet<String>();
 			
-			if (oneToMany && inMapFields.length == 1 && outMapFields.length == 1 
-					&& preloadAnnotation != null && !ignorePreload) {
-				sql.append("SELECT ");		// one-to-many preload
+			if (oneToMany && inMapFields.length == 1 && outMapFields.length == 1 && (thatPolyNames == null || thatPolyNames.length == 0)) {
+                // one-to-many non polymorphic relation
+				sql.append("SELECT ");
 				
 				selectFields.add(outMapFields[0]);
-				selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
-				
+                if (preloadAnnotation != null) {
+                    selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+                } else {
+                    selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(finalType), getFieldNameConverter()));
+                }
+
 				if (selectFields.contains(Preload.ALL)) {
 					sql.append(Preload.ALL);
 				} else {
@@ -893,8 +903,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				numParams++;
 				returnField = outMapFields[0];
 			}
-            else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1 && preloadAnnotation != null && !ignorePreload) // many-to-many preload
-            {
+            else if (!oneToMany && inMapFields.length == 1 && outMapFields.length == 1 && (thatPolyNames == null || thatPolyNames.length == 0)) {
+                // many-to-many non polymorphic relation
                 final String finalTable = getTableNameConverter().getName(finalType);
                 final String finalTableAlias = "f";
                 final String tableAlias = "t";
@@ -907,12 +917,15 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 String finalPKField = Common.getPrimaryKeyField(finalType, getFieldNameConverter());
 
 				selectFields.add(finalPKField);
-				selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+                if (preloadAnnotation != null) {
+				    selectFields.addAll(preloadValue(preloadAnnotation, getFieldNameConverter()));
+                } else {
+                    selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(finalType), getFieldNameConverter()));
+                }
 
-                if (selectFields.contains(Preload.ALL))
-                {
+                if (selectFields.contains(Preload.ALL)) {
                     selectFields.remove(Preload.ALL);
-                    selectFields.addAll(Common.getValueFieldsNames(finalType, getFieldNameConverter()));
+                    selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(finalType), getFieldNameConverter()));
                 }
 
                 sql.append(finalTableAlias).append('.').append(provider.processID(finalPKField));
@@ -956,7 +969,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 
 				numParams++;
-			} else if (inMapFields.length == 1 && outMapFields.length == 1) {	// 99% case (1-* & *-*)
+			} else if (inMapFields.length == 1 && outMapFields.length == 1) {
+                // one-to-many or many-to-many polymorphic relation
 				sql.append("SELECT ").append(provider.processID(outMapFields[0]));
 				selectFields.add(outMapFields[0]);
 
@@ -1114,7 +1128,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                 if (selectFields.contains(Preload.ALL))
                 {
                     selectFields.remove(Preload.ALL);
-                    selectFields.addAll(Common.getValueFieldsNames(finalType, getFieldNameConverter()));
+                    selectFields.addAll(Common.getValueFieldsNames(manager.resolveEntityInfo(finalType), getFieldNameConverter()));
                 }
                 for (String field : selectFields) {
                     if (!resPolyNames.contains(field)) {
