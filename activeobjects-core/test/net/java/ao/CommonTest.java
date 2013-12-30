@@ -1,20 +1,13 @@
 package net.java.ao;
 
 import net.java.ao.schema.AbstractFieldNameConverter;
-import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.PrimaryKey;
-import net.java.ao.schema.info.EntityInfo;
-import net.java.ao.schema.info.FieldInfo;
-
 import org.junit.Test;
 
 import java.lang.reflect.Method;
-import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public final class CommonTest
 {
@@ -111,30 +104,13 @@ public final class CommonTest
     @Test
     public void testGetValueFieldNames()
     {
-        final Set<FieldInfo> fields = new HashSet<FieldInfo>();
-
-        final FieldInfo valueField = mock(FieldInfo.class);
-        when(valueField.getJavaType()).thenReturn(String.class);
-        final Method valueMethod = String.class.getMethods()[0];
-        when(valueField.getAccessor()).thenReturn(valueMethod);
-        fields.add(valueField);
-
-        final FieldInfo referenceField = mock(FieldInfo.class);
-        when(referenceField.getJavaType()).thenReturn(Entity.class);
-        final Method referenceMethod = String.class.getMethods()[1];
-        when(referenceField.getAccessor()).thenReturn(referenceMethod);
-        fields.add(referenceField);
-
-        final EntityInfo entityInfo = mock(EntityInfo.class);
-        when(entityInfo.getFields()).thenReturn(fields);
-
-        final FieldNameConverter fieldNameConverter = mock(FieldNameConverter.class);
-        when(fieldNameConverter.getName(valueMethod)).thenReturn("valueMethod");
-        when(fieldNameConverter.getName(referenceMethod)).thenReturn("referenceMethod");
-
-        final Set<String> valueFieldsNames = Common.getValueFieldsNames(entityInfo, fieldNameConverter);
-        assertEquals(1, valueFieldsNames.size());
-        assertTrue(valueFieldsNames.contains("valueMethod"));
+        final Set<String> valueFieldsNames = Common.getValueFieldsNames(SomeInterface.class, new TestFieldNameConverter());
+        assertEquals(2, valueFieldsNames.size());
+        assertTrue(valueFieldsNames.contains("PrimaryKey"));
+        assertTrue(valueFieldsNames.contains("Field1"));
+        assertFalse(valueFieldsNames.contains("Relation1"));
+        assertFalse(valueFieldsNames.contains("Relation2"));
+        assertFalse(valueFieldsNames.contains("Relation3"));
     }
 
     @Test
@@ -242,4 +218,13 @@ public final class CommonTest
 
     private static interface OtherInterface extends RawEntity<Object>
     {}
+
+    private static final class TestFieldNameConverter extends AbstractFieldNameConverter
+    {
+        @Override
+        public String convertName(String name)
+        {
+            return name;
+        }
+    }
 }
