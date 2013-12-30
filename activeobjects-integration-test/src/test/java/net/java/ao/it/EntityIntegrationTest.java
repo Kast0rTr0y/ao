@@ -573,6 +573,21 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    public void testOneToOneRetrievalPreload() throws Exception
+    {
+        final Person person = getPerson();
+        final Nose nose = person.getNose();
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            public Void call() throws Exception
+            {
+                nose.getLength();
+                return null;
+            }
+        });
+    }
+
+    @Test
     public void testOneToManyRetrievalIds() throws Exception
     {
         final Person person = getPerson();
@@ -616,15 +631,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-        final Nose nose = person.getNose();
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                nose.getLength();
-                return null;
-            }
-        });
     }
 
     @Test

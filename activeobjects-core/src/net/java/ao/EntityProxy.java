@@ -864,7 +864,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 			Set<String> selectFields = new LinkedHashSet<String>();
 			
 			if (oneToMany && inMapFields.length == 1 && outMapFields.length == 1 && (thatPolyNames == null || thatPolyNames.length == 0)) {
-                // one-to-many non polymorphic relation
+                // one-to-one, one-to-many non polymorphic relation
 				sql.append("SELECT ");
 				
 				selectFields.add(outMapFields[0]);
@@ -958,7 +958,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 				numParams++;
 			} else if (inMapFields.length == 1 && outMapFields.length == 1) {
-                // one-to-many or many-to-many polymorphic relation
+                // one-to-one, one-to-many or many-to-many polymorphic relation
 				sql.append("SELECT ").append(provider.processID(outMapFields[0]));
 				selectFields.add(outMapFields[0]);
 
