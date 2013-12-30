@@ -938,6 +938,15 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
 				sql.setLength(sql.length() - 1);
 
+				if (thatPolyNames != null) {
+					for (String name : thatPolyNames) {
+						String toAppend = table + '.' + name;
+
+						resPolyNames.add(toAppend);
+						sql.append(',').append(provider.processID(toAppend));
+					}
+				}
+
 				sql.append(" FROM ").append(provider.withSchema(table)).append(" ").append(tableAlias).append(" INNER JOIN ");
 				sql.append(provider.withSchema(finalTable)).append(" ").append(finalTableAlias).append(" ON ");
 				sql.append(tableAlias).append('.').append(provider.processID(outMapFields[0]));
