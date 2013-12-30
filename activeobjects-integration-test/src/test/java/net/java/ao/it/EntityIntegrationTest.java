@@ -1,6 +1,7 @@
 package net.java.ao.it;
 
 import net.java.ao.DBParam;
+import net.java.ao.EntityProxyConfigurator;
 import net.java.ao.RawEntity;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
@@ -573,27 +574,35 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testOneToManyRetrievalIds() throws Exception
     {
-        final Person person = getPerson();
-        final Pen[] pens = person.getPens();
-
-        assertEquals(PenData.getIds().length, pens.length);
-
-        for (Pen pen : pens)
+        EntityProxyConfigurator.setIgnorePreload(true);
+        try
         {
-            boolean found = false;
-            for (int id : PenData.getIds())
+            final Person person = getPerson();
+            final Pen[] pens = person.getPens();
+
+            assertEquals(PenData.getIds().length, pens.length);
+
+            for (Pen pen : pens)
             {
-                if (pen.getID() == id)
+                boolean found = false;
+                for (int id : PenData.getIds())
                 {
-                    found = true;
-                    break;
+                    if (pen.getID() == id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    fail("Unable to find id " + pen.getID());
                 }
             }
-
-            if (!found)
-            {
-                fail("Unable to find id " + pen.getID());
-            }
+        }
+        finally
+        {
+            EntityProxyConfigurator.setIgnorePreload(false);
         }
     }
 
@@ -692,27 +701,35 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testManyToManyRetrievalIds() throws Exception
     {
-        final Person person = getPerson();
-        final PersonLegalDefence[] defences = person.getPersonLegalDefences();
-
-        assertEquals(PersonLegalDefenceData.getIds().length, defences.length);
-
-        for (PersonLegalDefence defence : defences)
+        EntityProxyConfigurator.setIgnorePreload(true);
+        try
         {
-            boolean found = false;
-            for (int id : PersonLegalDefenceData.getIds())
+            final Person person = getPerson();
+            final PersonLegalDefence[] defences = person.getPersonLegalDefences();
+
+            assertEquals(PersonLegalDefenceData.getIds().length, defences.length);
+
+            for (PersonLegalDefence defence : defences)
             {
-                if (defence.getID() == id)
+                boolean found = false;
+                for (int id : PersonLegalDefenceData.getIds())
                 {
-                    found = true;
-                    break;
+                    if (defence.getID() == id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    fail("Unable to find id=" + defence.getID());
                 }
             }
-
-            if (!found)
-            {
-                fail("Unable to find id=" + defence.getID());
-            }
+        }
+        finally
+        {
+            EntityProxyConfigurator.setIgnorePreload(false);
         }
     }
 
@@ -850,50 +867,58 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testPolymorphicOneToManyRetrievalIDs() throws Exception
     {
-        final Post post = getPost();
-        final Comment[] postComments = post.getComments();
-
-        assertEquals(PostCommentData.getIds().length, postComments.length);
-
-        for (Comment comment : postComments)
+        EntityProxyConfigurator.setIgnorePreload(true);
+        try
         {
-            boolean found = false;
-            for (int id : PostCommentData.getIds())
+            final Post post = getPost();
+            final Comment[] postComments = post.getComments();
+
+            assertEquals(PostCommentData.getIds().length, postComments.length);
+
+            for (Comment comment : postComments)
             {
-                if (comment.getID() == id)
+                boolean found = false;
+                for (int id : PostCommentData.getIds())
                 {
-                    found = true;
-                    break;
+                    if (comment.getID() == id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    fail("Unable to find id=" + comment.getID());
                 }
             }
 
-            if (!found)
+            final Photo photo = getPhoto();
+            final Comment[] photoComments = photo.getComments();
+
+            assertEquals(PhotoCommentData.getIds().length, photoComments.length);
+
+            for (Comment comment : photoComments)
             {
-                fail("Unable to find id=" + comment.getID());
+                boolean found = false;
+                for (int id : PhotoCommentData.getIds())
+                {
+                    if (comment.getID() == id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    fail("Unable to find id=" + comment.getID());
+                }
             }
         }
-
-        final Photo photo = getPhoto();
-        final Comment[] photoComments = photo.getComments();
-
-        assertEquals(PhotoCommentData.getIds().length, photoComments.length);
-
-        for (Comment comment : photoComments)
+        finally
         {
-            boolean found = false;
-            for (int id : PhotoCommentData.getIds())
-            {
-                if (comment.getID() == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                fail("Unable to find id=" + comment.getID());
-            }
+            EntityProxyConfigurator.setIgnorePreload(false);
         }
     }
 
@@ -973,110 +998,118 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testPolymorphicManyToManyRetrievalIDs() throws Exception
     {
-        for (int i = 0; i < BookData.getIds().length; i++)
+        EntityProxyConfigurator.setIgnorePreload(true);
+        try
         {
-            final Book book = entityManager.get(Book.class, BookData.getIds()[i]);
-            Author[] authors = book.getAuthors();
-
-            assertEquals(BookData.AUTHOR_IDS[i].length, authors.length);
-
-            for (Author author : authors)
+            for (int i = 0; i < BookData.getIds().length; i++)
             {
-                boolean found = false;
-                for (int id : BookData.AUTHOR_IDS[i])
+                final Book book = entityManager.get(Book.class, BookData.getIds()[i]);
+                Author[] authors = book.getAuthors();
+
+                assertEquals(BookData.AUTHOR_IDS[i].length, authors.length);
+
+                for (Author author : authors)
                 {
-                    if (author.getID() == id)
+                    boolean found = false;
+                    for (int id : BookData.AUTHOR_IDS[i])
                     {
-                        found = true;
-                        break;
+                        if (author.getID() == id)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        fail("Unable to find id=" + author.getID());
                     }
                 }
+            }
 
-                if (!found)
+            for (int i = 0; i < MagazineData.getIds().length; i++)
+            {
+                final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[i]);
+                final Author[] authors = magazine.getAuthors();
+
+                assertEquals(MagazineData.AUTHOR_IDS[i].length, authors.length);
+
+                for (Author author : authors)
                 {
-                    fail("Unable to find id=" + author.getID());
+                    boolean found = false;
+                    for (int id : MagazineData.AUTHOR_IDS[i])
+                    {
+                        if (author.getID() == id)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        fail("Unable to find id=" + author.getID());
+                    }
+                }
+            }
+
+            for (int i = 0; i < BookData.getIds().length; i++)
+            {
+                final Book book = entityManager.get(Book.class, BookData.getIds()[i]);
+                final Distribution[] distributions = book.getDistributions();
+
+                assertEquals(BookData.DISTRIBUTION_IDS[i].length, distributions.length);
+
+                for (Distribution distribution : distributions)
+                {
+                    boolean found = false;
+                    for (int j = 0; j < BookData.DISTRIBUTION_IDS[i].length; j++)
+                    {
+                        if (distribution.getID() == BookData.DISTRIBUTION_IDS[i][j] && distribution.getEntityType().equals(BookData.DISTRIBUTION_TYPES[i][j]))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        fail("Unable to find id=" + distribution.getID()
+                                + ", type=" + entityManager.getPolymorphicTypeMapper().convert(distribution.getEntityType()));
+                    }
+                }
+            }
+
+            for (int i = 0; i < MagazineData.getIds().length; i++)
+            {
+                final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[i]);
+                final Distribution[] distributions = magazine.getDistributions();
+
+                assertEquals(MagazineData.DISTRIBUTION_IDS[i].length, distributions.length);
+
+                for (Distribution distribution : distributions)
+                {
+                    boolean found = false;
+                    for (int j = 0; j < MagazineData.DISTRIBUTION_IDS[i].length; j++)
+                    {
+                        if (distribution.getID() == MagazineData.DISTRIBUTION_IDS[i][j] && distribution.getEntityType().equals(MagazineData.DISTRIBUTION_TYPES[i][j]))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        fail("Unable to find id=" + distribution.getID()
+                                + ", type=" + entityManager.getPolymorphicTypeMapper().convert(distribution.getEntityType()));
+                    }
                 }
             }
         }
-
-        for (int i = 0; i < MagazineData.getIds().length; i++)
+        finally
         {
-            final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[i]);
-            final Author[] authors = magazine.getAuthors();
-
-            assertEquals(MagazineData.AUTHOR_IDS[i].length, authors.length);
-
-            for (Author author : authors)
-            {
-                boolean found = false;
-                for (int id : MagazineData.AUTHOR_IDS[i])
-                {
-                    if (author.getID() == id)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    fail("Unable to find id=" + author.getID());
-                }
-            }
-        }
-
-        for (int i = 0; i < BookData.getIds().length; i++)
-        {
-            final Book book = entityManager.get(Book.class, BookData.getIds()[i]);
-            final Distribution[] distributions = book.getDistributions();
-
-            assertEquals(BookData.DISTRIBUTION_IDS[i].length, distributions.length);
-
-            for (Distribution distribution : distributions)
-            {
-                boolean found = false;
-                for (int j = 0; j < BookData.DISTRIBUTION_IDS[i].length; j++)
-                {
-                    if (distribution.getID() == BookData.DISTRIBUTION_IDS[i][j] && distribution.getEntityType().equals(BookData.DISTRIBUTION_TYPES[i][j]))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    fail("Unable to find id=" + distribution.getID()
-                            + ", type=" + entityManager.getPolymorphicTypeMapper().convert(distribution.getEntityType()));
-                }
-            }
-        }
-
-        for (int i = 0; i < MagazineData.getIds().length; i++)
-        {
-            final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[i]);
-            final Distribution[] distributions = magazine.getDistributions();
-
-            assertEquals(MagazineData.DISTRIBUTION_IDS[i].length, distributions.length);
-
-            for (Distribution distribution : distributions)
-            {
-                boolean found = false;
-                for (int j = 0; j < MagazineData.DISTRIBUTION_IDS[i].length; j++)
-                {
-                    if (distribution.getID() == MagazineData.DISTRIBUTION_IDS[i][j] && distribution.getEntityType().equals(MagazineData.DISTRIBUTION_TYPES[i][j]))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    fail("Unable to find id=" + distribution.getID()
-                            + ", type=" + entityManager.getPolymorphicTypeMapper().convert(distribution.getEntityType()));
-                }
-            }
+            EntityProxyConfigurator.setIgnorePreload(false);
         }
     }
 
@@ -1273,27 +1306,35 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     @Test
     public void testMultiPathPolymorphicOneToManyRetrievalIDs() throws Exception
     {
-        final EmailAddress address = entityManager.get(EmailAddress.class, AddressData.getIds()[0]);
-        final Message[] messages = address.getMessages();
-
-        assertEquals(MessageData.getIds().length, messages.length);
-
-        for (Message message : messages)
+        EntityProxyConfigurator.setIgnorePreload(true);
+        try
         {
-            boolean found = false;
-            for (int id : MagazineData.getIds())
+            final EmailAddress address = entityManager.get(EmailAddress.class, AddressData.getIds()[0]);
+            final Message[] messages = address.getMessages();
+
+            assertEquals(MessageData.getIds().length, messages.length);
+
+            for (Message message : messages)
             {
-                if (message.getID() == id)
+                boolean found = false;
+                for (int id : MagazineData.getIds())
                 {
-                    found = true;
-                    break;
+                    if (message.getID() == id)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    fail("Unable to find id=" + message.getID());
                 }
             }
-
-            if (!found)
-            {
-                fail("Unable to find id=" + message.getID());
-            }
+        }
+        finally
+        {
+            EntityProxyConfigurator.setIgnorePreload(false);
         }
     }
 
