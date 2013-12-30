@@ -80,6 +80,9 @@ public interface Person extends Entity {
 	
 	@OneToMany(where="deleted = 'N'")
 	public Pen[] getPens();
+
+    @ManyToMany(PersonChair.class)
+    public Chair[] getChairs();
 	
 	@ManyToMany(value=PersonSuit.class, where="deleted = 'N'")
 	public PersonLegalDefence[] getPersonLegalDefences();

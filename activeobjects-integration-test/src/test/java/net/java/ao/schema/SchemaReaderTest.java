@@ -58,7 +58,7 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
 
         DDLTable[] parsedTables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), new DefaultSchemaConfiguration());
 
-        assertEquals(22, parsedTables.length);
+        assertEquals(24, parsedTables.length);
 
         DDLTable personDDL = null;
         for (DDLTable table : parsedTables)

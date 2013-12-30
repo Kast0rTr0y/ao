@@ -5,6 +5,7 @@ import net.java.ao.RawEntity;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
+import net.java.ao.it.model.Chair;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Commentable;
 import net.java.ao.it.model.Company;
@@ -13,6 +14,7 @@ import net.java.ao.it.model.EmailAddress;
 import net.java.ao.it.model.Magazine;
 import net.java.ao.it.model.Message;
 import net.java.ao.it.model.MotivationGenerator;
+import net.java.ao.it.model.Nose;
 import net.java.ao.it.model.OnlineDistribution;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
@@ -614,6 +616,15 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
+        final Nose nose = person.getNose();
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            public Void call() throws Exception
+            {
+                nose.getLength();
+                return null;
+            }
+        });
     }
 
     @Test
@@ -730,6 +741,18 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 public Void call() throws Exception
                 {
                     defence.getSeverity();
+                    return null;
+                }
+            });
+        }
+
+        for (final Chair chair : person.getChairs())
+        {
+            checkSqlNotExecuted(new Callable<Void>()
+            {
+                public Void call() throws Exception
+                {
+                    chair.getColour();
                     return null;
                 }
             });

@@ -107,6 +107,9 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
 
         void setRelated(PlOneToOneNode related);
 
+        String getName();
+
+        void setName(String name);
     }
 
     /**
@@ -117,16 +120,41 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
     public void testOneToOneWithPreload() throws Exception
     {
         entityManager.migrate(PlOneToOneNode.class);
-        final PlOneToOneNode grandparent = entityManager.create(PlOneToOneNode.class);
-        final PlOneToOneNode parent = entityManager.create(PlOneToOneNode.class, new DBParam("PARENT_ID", grandparent));
-        final PlOneToOneNode child = entityManager.create(PlOneToOneNode.class, new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
+        final PlOneToOneNode grandparent = entityManager.create(PlOneToOneNode.class, new DBParam("NAME", "grandparent"));
+        final PlOneToOneNode parent = entityManager.create(PlOneToOneNode.class, new DBParam("NAME", "parent"), new DBParam("PARENT_ID", grandparent));
+        final PlOneToOneNode child = entityManager.create(PlOneToOneNode.class, new DBParam("NAME", "child"), new DBParam("PARENT_ID", parent), new DBParam("RELATED_ID", grandparent));
         grandparent.setRelated(child);
         grandparent.save();
         Assert.assertNull(grandparent.getParent());
-        Assert.assertEquals(parent, grandparent.getChild());
+        Assert.assertEquals("grandparent", grandparent.getName());
+
+        final PlOneToOneNode retrievedParent = grandparent.getChild();
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                Assert.assertEquals(parent, retrievedParent);
+                Assert.assertEquals("parent", retrievedParent.getName());
+                return null;
+            }
+        });
+
         Assert.assertEquals(child, grandparent.getRelated());
         Assert.assertEquals(grandparent, parent.getParent());
-        Assert.assertEquals(child, parent.getChild());
+
+        final PlOneToOneNode retrievedChild = parent.getChild();
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                Assert.assertEquals(child, retrievedChild);
+                Assert.assertEquals("child", retrievedChild.getName());
+                return null;
+            }
+        });
+
         Assert.assertNull(parent.getRelated());
         Assert.assertEquals(parent, child.getParent());
         Assert.assertNull(child.getChild());
@@ -155,6 +183,9 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
 
         void setTeacher(Adult teacher);
 
+        String getName();
+
+        void setName(String name);
     }
 
     /**
@@ -167,9 +198,21 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         entityManager.migrate(Adult.class, Child.class);
         final Adult parent = entityManager.create(Adult.class);
         final Adult teacher = entityManager.create(Adult.class);
-        final Child child = entityManager.create(Child.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
+        final Child child = entityManager.create(Child.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher), new DBParam("NAME", "Jim"));
         final Child[] children = {child};
-        Assert.assertArrayEquals(children, parent.getChildren());
+
+        final Child[] retrievedChildren = parent.getChildren();
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                Assert.assertArrayEquals(children, retrievedChildren);
+                Assert.assertEquals("Jim", retrievedChildren[0].getName());
+                return null;
+            }
+        });
+
         Assert.assertEquals(0, parent.getStudents().length);
         Assert.assertArrayEquals(children, teacher.getStudents());
         Assert.assertEquals(0, teacher.getChildren().length);
@@ -199,6 +242,9 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
 
         void setTeacher(PlAdult teacher);
 
+        String getName();
+
+        void setName(String name);
     }
 
     /**
@@ -211,9 +257,21 @@ public class TestRelationshipsWhereTargetEntityHasMultiplePropertiesOfSameType e
         entityManager.migrate(PlAdult.class, PlChild.class);
         final PlAdult parent = entityManager.create(PlAdult.class);
         final PlAdult teacher = entityManager.create(PlAdult.class);
-        final PlChild child = entityManager.create(PlChild.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher));
+        final PlChild child = entityManager.create(PlChild.class, new DBParam("PARENT_ID", parent), new DBParam("TEACHER_ID", teacher), new DBParam("NAME", "Jane"));
         final PlChild[] children = {child};
-        Assert.assertArrayEquals(children, parent.getChildren());
+
+        final PlChild[] retrievedChildren = parent.getChildren();
+        checkSqlNotExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                Assert.assertArrayEquals(children, retrievedChildren);
+                Assert.assertEquals("Jane", retrievedChildren[0].getName());
+                return null;
+            }
+        });
+
         Assert.assertEquals(0, parent.getStudents().length);
         Assert.assertArrayEquals(children, teacher.getStudents());
         Assert.assertEquals(0, teacher.getChildren().length);
