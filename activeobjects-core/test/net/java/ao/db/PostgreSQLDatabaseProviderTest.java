@@ -17,7 +17,8 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.util.List;
 
-import static org.hamcrest.Matchers.equalTo;
+import static net.java.ao.db.SqlActionStatementMatcher.hasStatement;
+import static net.java.ao.db.SqlActionStatementMatcher.hasStatementMatching;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
@@ -41,7 +42,7 @@ public class PostgreSQLDatabaseProviderTest
     {
         when(datasource.getConnection()).thenReturn(conn);
         when(conn.getMetaData()).thenReturn(connMetaData);
-        when(connMetaData.getIdentifierQuoteString()).thenReturn("\"");
+        when(connMetaData.getIdentifierQuoteString()).thenReturn("");
 
         table = new DDLTable();
         table.setName("da_table");
@@ -59,9 +60,9 @@ public class PostgreSQLDatabaseProviderTest
         oldField.setUnique(false);
         newField.setUnique(true);
 
-        List<SQLAction> ddl = Lists.newArrayList(provider.renderAlterTableChangeColumn(nameConverters, table, oldField, newField));
-        assertThat(ddl.get(0).getStatement(), equalTo("ALTER TABLE public.\"da_table\" ADD CONSTRAINT U_da_table_teh_field UNIQUE (\"teh_field\")"));
-        assertThat("DDL should only add the constraint and nothing more", ddl, hasSize(1));
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table ADD CONSTRAINT U_da_table_teh_field UNIQUE (teh_field)"));
+        assertThat("should only add the constraint", ddl, hasSize(1));
     }
 
     @Test
@@ -70,9 +71,74 @@ public class PostgreSQLDatabaseProviderTest
         oldField.setUnique(true);
         newField.setUnique(false);
 
-        List<SQLAction> ddl = Lists.newArrayList(provider.renderAlterTableChangeColumn(nameConverters, table, oldField, newField));
-        assertThat(ddl.get(0).getStatement(), equalTo("ALTER TABLE public.\"da_table\" DROP CONSTRAINT U_da_table_teh_field"));
-        assertThat("DDL should only drop the constraint and nothing more", ddl, hasSize(1));
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table DROP CONSTRAINT U_da_table_teh_field"));
+        assertThat("should only drop the constraint", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesRenamedColumn() throws Exception
+    {
+        newField.setName("the_field");
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table RENAME COLUMN teh_field TO the_field"));
+        assertThat("should only rename the column", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesChangedType() throws Exception
+    {
+        oldField.setType(TypeManager.postgres().getType(Integer.class));
+        newField.setType(TypeManager.postgres().getType(Long.class));
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table ALTER COLUMN teh_field TYPE BIGINT"));
+        assertThat("should only change the column type", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesAddedDefaultValue() throws Exception
+    {
+        oldField.setDefaultValue(null);
+        newField.setDefaultValue("empty");
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table ALTER COLUMN teh_field SET DEFAULT 'empty'"));
+        assertThat("should only add the default value", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesRemovedDefaultValue() throws Exception
+    {
+        oldField.setDefaultValue("empty");
+        newField.setDefaultValue(null);
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table ALTER COLUMN teh_field DROP DEFAULT"));
+        assertThat("should only drop the default value", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesAddedNotNullConstraint() throws Exception
+    {
+        oldField.setNotNull(false);
+        newField.setNotNull(true);
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatementMatching(("ALTER TABLE .* ALTER COLUMN .* SET NOT NULL")));
+        assertThat("should only add the constraint", ddl, hasSize(1));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesRemovedNotNullConstraint() throws Exception
+    {
+        oldField.setNotNull(true);
+        newField.setNotNull(false);
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table ALTER COLUMN teh_field DROP NOT NULL"));
+        assertThat("should only drop the constraint", ddl, hasSize(1));
     }
 
     private DDLField createField()
@@ -82,5 +148,10 @@ public class PostgreSQLDatabaseProviderTest
         field.setType(TypeManager.postgres().getType(String.class));
 
         return field;
+    }
+
+    private List<SQLAction> renderAlterTableChangeColumn()
+    {
+        return Lists.newArrayList(provider.renderAlterTableChangeColumn(nameConverters, table, oldField, newField));
     }
 }
