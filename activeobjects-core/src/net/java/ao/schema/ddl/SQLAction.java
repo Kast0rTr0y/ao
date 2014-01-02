@@ -38,4 +38,13 @@ public final class SQLAction
     {
         return undoAction;
     }
+
+    @Override
+    public String toString()
+    {
+        return "SQLAction{" +
+                "statement='" + statement + '\'' +
+                ", undoAction=" + undoAction +
+                '}';
+    }
 }
