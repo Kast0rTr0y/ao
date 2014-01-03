@@ -16,8 +16,6 @@
 package net.java.ao;
 
 import com.google.common.base.Defaults;
-import com.google.common.collect.Collections2;
-import net.java.ao.cache.CacheLayer;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.info.FieldInfo;
@@ -37,13 +35,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static net.java.ao.Common.getAttributeTypeFromMethod;
 import static net.java.ao.Common.preloadValue;
@@ -56,17 +55,16 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
 public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 {
     static boolean ignorePreload = false;	// hack for testing
-	
+
 	private final K key;
 	private final EntityInfo<T, K> entityInfo;
 
 	private final EntityManager manager;
-	
-	private CacheLayer layer;
-	
-	private Map<String, ReadWriteLock> locks;
-	private final ReadWriteLock locksLock = new ReentrantReadWriteLock();
-	
+
+    private final Map<String, Object> values = new HashMap<String, Object>();
+    private final Set<String> dirty = new HashSet<String>();
+    private final Lock lockValuesDirty = new ReentrantLock();
+
 	private ImplementationWrapper<T> implementation;
 	private List<PropertyChangeListener> listeners;
 
@@ -75,7 +73,6 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		this.entityInfo = entityInfo;
 		this.manager = manager;
 		
-		locks = new HashMap<String, ReadWriteLock>();
 		listeners = new LinkedList<PropertyChangeListener>();
 	}
 
@@ -189,11 +186,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         if (fieldInfo != null) {
 
             if (method.equals(fieldInfo.getAccessor())) {
-                return invokeGetter((RawEntity<?>) proxy, fieldInfo);
+                return invokeGetter(fieldInfo);
             }
 
             if (method.equals(fieldInfo.getMutator())) {
-                invokeSetter((T) proxy, getFieldNameConverter().getName(method), args[0], fieldInfo.getPolymorphicName());
+                invokeSetter(getFieldNameConverter().getName(method), args[0], fieldInfo.getPolymorphicName());
                 return Void.TYPE;
             }
         }
@@ -280,11 +277,14 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                             selectFields.addAll(entityInfo.getFieldNames());
                         }
                         final RawEntity returnValueEntity = manager.peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(manager, res, throughType, returnField));
-                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
-                        returnLayer.put(remotePrimaryKeyField, res.getObject(1));
-                        for (final String field : selectFields)
-                        {
-                            returnLayer.put(field, res.getObject(field));
+                        final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
+                        proxy.lockValuesDirty.lock();
+                        try {
+                            for (final String field : selectFields) {
+                                proxy.values.put(field, res.getObject(field));
+                            }
+                        } finally {
+                            proxy.lockValuesDirty.unlock();
                         }
                         back.add(returnValueEntity);
                     }
@@ -355,13 +355,18 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                     while (res.next()) {
                         final Object returnValue = Common.getPrimaryKeyType(getTypeManager(), (Class) remoteType).getLogicalType().pullFromDatabase(manager, res, (Class) remoteType, remotePrimaryKeyFieldName);
                         final RawEntity<?> returnValueEntity = manager.peer(entityInfo, returnValue);
-                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
+                        final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
                         if (selectFields.remove(Preload.ALL))
                         {
                             selectFields.addAll(entityInfo.getFieldNames());
                         }
-                        for (final String field : selectFields) {
-                            returnLayer.put(field, res.getObject(field));
+                        proxy.lockValuesDirty.lock();
+                        try {
+                            for (final String field : selectFields) {
+                                proxy.values.put(field, res.getObject(field));
+                            }
+                        } finally {
+                            proxy.lockValuesDirty.unlock();
                         }
                         result.add(returnValueEntity);
                     }
@@ -448,10 +453,14 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         {
                             selectFields.addAll(entityInfo.getFieldNames());
                         }
-                        final CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
-                        for (final String field : selectFields)
-                        {
-                            returnLayer.put(field, res.getObject(field));
+                        final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
+                        proxy.lockValuesDirty.lock();
+                        try {
+                            for (final String field : selectFields) {
+                                proxy.values.put(field, res.getObject(field));
+                            }
+                        } finally {
+                            proxy.lockValuesDirty.unlock();
                         }
                         return returnValueEntity;
                     }
@@ -530,87 +539,90 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
 	@SuppressWarnings("unchecked")
 	public void save(RawEntity entity) throws SQLException {
-		CacheLayer cacheLayer = getCacheLayer(entity);
-		String[] dirtyFields = cacheLayer.getDirtyFields();
-		
-		if (dirtyFields.length == 0) {
-			return;
-		}
+        lockValuesDirty.lock();
+        try {
+            if (dirty.isEmpty()) {
+                return;
+            }
 
-        String table = entityInfo.getName();
-        final DatabaseProvider provider = this.manager.getProvider();
-        final TypeManager typeManager = provider.getTypeManager();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try
-        {
-            conn = provider.getConnection();
-			StringBuilder sql = new StringBuilder("UPDATE " + provider.withSchema(table) + " SET ");
+            String table = entityInfo.getName();
+            final DatabaseProvider provider = this.manager.getProvider();
+            final TypeManager typeManager = provider.getTypeManager();
+            Connection conn = null;
+            PreparedStatement stmt = null;
+            try
+            {
+                conn = provider.getConnection();
+                StringBuilder sql = new StringBuilder("UPDATE " + provider.withSchema(table) + " SET ");
 
-			for (String field : dirtyFields) {
-				sql.append(provider.processID(field));
+                for (String name : dirty) {
+                    sql.append(provider.processID(name));
 
-				if (cacheLayer.contains(field)) {
-					sql.append(" = ?,");
-				} else {
-					sql.append(" = NULL,");
-				}
-			}
-			
-			if (sql.charAt(sql.length() - 1) == ',') {
-				sql.setLength(sql.length() - 1);
-			}
+                    if (values.containsKey(name)) {
+                        sql.append(" = ?,");
+                    } else {
+                        sql.append(" = NULL,");
+                    }
+                }
 
-			sql.append(" WHERE ").append(provider.processID(entityInfo.getPrimaryKey().getName())).append(" = ?");
+                if (sql.charAt(sql.length() - 1) == ',') {
+                    sql.setLength(sql.length() - 1);
+                }
 
-			stmt = provider.preparedStatement(conn, sql);
+                sql.append(" WHERE ").append(provider.processID(entityInfo.getPrimaryKey().getName())).append(" = ?");
 
-			List<PropertyChangeEvent> events = new LinkedList<PropertyChangeEvent>();
-			int index = 1;
-			for (String field : dirtyFields) {
-				if (!cacheLayer.contains(field)) {
-					continue;
-				}
-				
-				Object value = cacheLayer.get(field);
-				events.add(new PropertyChangeEvent(entity, field, null, value));
-				
-				if (value == null) {
-                    this.manager.getProvider().putNull(stmt, index++);
-				} else {
-					Class javaType = value.getClass();
+                stmt = provider.preparedStatement(conn, sql);
 
-					if (value instanceof RawEntity) {
-						javaType = ((RawEntity) value).getEntityType();
-					}
+                List<PropertyChangeEvent> events = new LinkedList<PropertyChangeEvent>();
+                int index = 1;
+                for (String name : dirty) {
+                    if (!values.containsKey(name)) {
+                        continue;
+                    }
 
-					TypeInfo dbType = typeManager.getType(javaType);
-                    dbType.getLogicalType().validate(value);
-                    dbType.getLogicalType().putToDatabase(this.manager, stmt, index++, value, dbType.getJdbcWriteType());
-					
-					if (!dbType.getLogicalType().shouldCache(javaType)) {
-						cacheLayer.remove(field);
-					}
-				}
-			}
-			TypeInfo pkType = entityInfo.getPrimaryKey().getTypeInfo();
-            pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
-			cacheLayer.clearFlush();
-			stmt.executeUpdate();
+                    Object value = values.get(name);
+                    FieldInfo fieldInfo = entityInfo.getField(name);
 
-			for (PropertyChangeListener l : listeners) {
-				for (PropertyChangeEvent evt : events) {
-					l.propertyChange(evt);
-				}
-			}
-			cacheLayer.clearDirty();
+                    events.add(new PropertyChangeEvent(entity, name, null, value));
+
+                    if (value == null) {
+                        this.manager.getProvider().putNull(stmt, index++);
+                    } else {
+                        Class javaType = value.getClass();
+
+                        if (value instanceof RawEntity) {
+                            javaType = ((RawEntity) value).getEntityType();
+                        }
+
+                        TypeInfo dbType = typeManager.getType(javaType);
+                        dbType.getLogicalType().validate(value);
+                        dbType.getLogicalType().putToDatabase(this.manager, stmt, index++, value, dbType.getJdbcWriteType());
+
+                        if (!fieldInfo.isCacheable()) {
+                            values.remove(name);
+                        }
+                    }
+                }
+                TypeInfo pkType = entityInfo.getPrimaryKey().getTypeInfo();
+                pkType.getLogicalType().putToDatabase(this.manager, stmt, index, key, pkType.getJdbcWriteType());
+                stmt.executeUpdate();
+                dirty.clear();
+
+                for (PropertyChangeListener l : listeners) {
+                    for (PropertyChangeEvent evt : events) {
+                        l.propertyChange(evt);
+                    }
+                }
+            }
+            finally
+            {
+                closeQuietly(stmt);
+                closeQuietly(conn);
+            }
+        } finally {
+            lockValuesDirty.unlock();
         }
-        finally
-        {
-            closeQuietly(stmt);
-            closeQuietly(conn);
-        }
-	}
+    }
 
 	public void addPropertyChangeListener(PropertyChangeListener listener) {
 		listeners.add(listener);
@@ -667,55 +679,37 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 		return hashCodeImpl();
 	}
 
-	CacheLayer getCacheLayer(RawEntity<?> entity) {
-		// not atomic, but throughput is more important in this case
-		if (layer == null) {
-			layer = manager.getCache().createCacheLayer(entity);
-		}
-		
-		return layer;
-	}
+    /**
+     * Thread safely update the values with those provided.
+     * This is only used by {@link net.java.ao.EntityManager#find(Class, String, Query)}, which should really move
+     * the leave the population of this class to itself.
+     *
+     * @param updatedValues mandatory
+     */
+    protected void updateValues(Map<String, Object> updatedValues) {
+        lockValuesDirty.lock();
+        try {
+            for (Map.Entry<String, Object> updatedValue : updatedValues.entrySet()) {
+                values.put(updatedValue.getKey(), updatedValue.getValue());
+            }
+        } finally {
+            lockValuesDirty.unlock();
+        }
+    }
 
 	Class<T> getType() {
 		return entityInfo.getEntityType();
 	}
 
-	// any dirty fields are kept in the cache, since they have yet to be saved
-	void flushCache(RawEntity<?> entity) {
-		getCacheLayer(entity).clear();
-	}
+    private <V> V invokeGetter(FieldInfo<V> fieldInfo) throws Throwable {
+        final Class<V> type = fieldInfo.getJavaType();
+        final String name = fieldInfo.getName();
+        final boolean isCacheable = fieldInfo.isCacheable();
 
-    private ReadWriteLock getLock(String field) {
-		locksLock.writeLock().lock();
-		try {
-			if (locks.containsKey(field)) {
-				return locks.get(field);
-			}
-			
-			ReentrantReadWriteLock back = new ReentrantReadWriteLock();
-			locks.put(field, back);
-			
-			return back;
-		} finally {
-			locksLock.writeLock().unlock();
-		}
-	}
-
-    private <V> V invokeGetter(RawEntity<?> entity, FieldInfo<V> fieldInfo) throws Throwable {
-        CacheLayer cacheLayer = getCacheLayer(entity);
-
-        Class<V> type = fieldInfo.getJavaType();
-        String name = fieldInfo.getName();
-
-        boolean shouldCache = fieldInfo.isCacheable();
-
-        getLock(name).writeLock().lock();
+        lockValuesDirty.lock();
         try {
-            if (!shouldCache && cacheLayer.dirtyContains(name)) {
-                return handleNullReturn(null, type);
-            } else if (shouldCache && cacheLayer.contains(name)) {
-                Object value = cacheLayer.get(name);
-
+            if (values.containsKey(name) && isCacheable) {
+                Object value = values.get(name);
                 if (instanceOf(value, type)) {
                     //noinspection unchecked
                     return handleNullReturn((V) value, type);
@@ -728,23 +722,22 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                     if (instanceOf(value, remoteEntityInfo.getPrimaryKey().getJavaType())) {
                         value = manager.peer(remoteEntityInfo, value);
 
-                        cacheLayer.put(name, value);
+                        values.put(name, value);
                         //noinspection unchecked
                         return handleNullReturn((V) value, type);
                     }
                 }
-                cacheLayer.remove(name); // invalid cached value
             }
 
-            V back = pullFromDatabase(fieldInfo);
+            final V back = pullFromDatabase(fieldInfo);
 
-            if (shouldCache) {
-                cacheLayer.put(name, back);
+            if (isCacheable) {
+                values.put(name, back);
             }
 
             return handleNullReturn(back, type);
         } finally {
-            getLock(name).writeLock().unlock();
+            lockValuesDirty.unlock();
         }
     }
 
@@ -787,33 +780,26 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         return back != null ? back : Defaults.defaultValue(type);
 	}
 
-	private void invokeSetter(T entity, String name, Object value, String polyName) throws Throwable {
-		CacheLayer cacheLayer = getCacheLayer(entity);
-		
-		getLock(name).writeLock().lock();
-		try {
-			if (value instanceof RawEntity<?>) {
-				cacheLayer.markToFlush(((RawEntity<?>) value).getEntityType());
-				cacheLayer.markToFlush(entity.getEntityType());
-			}
+    private void invokeSetter(String name, Object value, String polyName) throws Throwable {
+        lockValuesDirty.lock();
+        try {
+            values.put(name, value);
+            dirty.add(name);
 
-			cacheLayer.markDirty(name);
-			cacheLayer.put(name, value);
-	
-			if (polyName != null) {
-				String strValue = null;
-	
-				if (value != null) {
+            if (polyName != null) {
+                String strValue = null;
+
+                if (value != null) {
                     strValue = manager.getPolymorphicTypeMapper().convert(((RawEntity<?>) value).getEntityType());
-				}
+                }
 
-				cacheLayer.markDirty(polyName);
-				cacheLayer.put(polyName, strValue);
-			}
-		} finally {
-			getLock(name).writeLock().unlock();
-		}
-	}
+                values.put(polyName, strValue);
+                dirty.add(polyName);
+            }
+        } finally {
+            lockValuesDirty.unlock();
+        }
+    }
 
     /**
      * @see <a href="https://studio.atlassian.com/browse/AO-325">AO-325</a>
@@ -1108,20 +1094,24 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				if (backType.equals(entityInfo.getEntityType()) && returnValue.equals(key)) {
 					continue;
 				}
-                V returnValueEntity = manager.peer(manager.resolveEntityInfo(backType), returnValue);
-                CacheLayer returnLayer = manager.getProxyForEntity(returnValueEntity).getCacheLayer(returnValueEntity);
-
+                final V returnValueEntity = manager.peer(manager.resolveEntityInfo(backType), returnValue);
+                final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
                 if (selectFields.contains(Preload.ALL))
                 {
                     selectFields.remove(Preload.ALL);
                     selectFields.addAll(Common.getValueFieldsNames(finalType, getFieldNameConverter()));
                 }
-                for (String field : selectFields) {
-                    if (!resPolyNames.contains(field)) {
-						returnLayer.put(field, res.getObject(field));
-					}
-				}
-				
+                proxy.lockValuesDirty.lock();
+                try {
+                    for (String field : selectFields) {
+                        if (!resPolyNames.contains(field)) {
+                            proxy.values.put(field, res.getObject(field));
+                        }
+                    }
+                } finally {
+                    proxy.lockValuesDirty.unlock();
+                }
+
 				back.add(returnValueEntity);
 			}
 		} finally {

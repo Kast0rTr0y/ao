@@ -23,9 +23,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import net.java.ao.cache.Cache;
-import net.java.ao.cache.CacheLayer;
-import net.java.ao.cache.RAMCache;
 import net.java.ao.schema.CachingNameConverters;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
@@ -55,7 +52,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -90,9 +86,6 @@ public class EntityManager
 
     private final EntityInfoResolver entityInfoResolver;
 
-    private Cache cache;
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
-
     private PolymorphicTypeMapper typeMapper;
     private final ReadWriteLock typeMapperLock = new ReentrantReadWriteLock(true);
 
@@ -113,7 +106,6 @@ public class EntityManager
     {
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
-        cache = new RAMCache();
         valGenCache = CacheBuilder.newBuilder().build(new CacheLoader<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>() {
             @Override
             public ValueGenerator<?> load(Class<? extends ValueGenerator<?>> generatorClass) throws Exception {
@@ -178,21 +170,11 @@ public class EntityManager
     }
 
 	/**
-	 * Flushes the value caches of the specified entities along with all of the relevant
-	 * relations cache entries.  This should be called after a process outside of AO control
-	 * may have modified the values in the specified rows.  This does not actually remove
-	 * the entity instances themselves from the instance cache.  Rather, it just flushes all
-	 * of their internally cached values (with the exception of the primary key).
+     * @deprecated since 0.25. EntityManager now no longer caches.
 	 */
+    @Deprecated
 	public void flush(RawEntity<?>... entities) {
-		Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
-        for (RawEntity<?> entity : entities) {
-            verify(entity);
-            toFlush.put(entity, getProxyForEntity(entity));
-        }
-        for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
-			entry.getValue().flushCache(entry.getKey());
-		}
+        // no-op
 	}
 
 	/**
@@ -794,13 +776,14 @@ public class EntityManager
             while (res.next())
             {
                 final T entity = peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
-                final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
-
-                for (String cacheField : canonicalFields)
-                {
-                    cacheLayer.put(cacheField, res.getObject(cacheField));
+                final Map<String, Object> values = new HashMap<String, Object>();
+                for (String name : canonicalFields) {
+                    values.put(name, res.getObject(name));
                 }
-
+                if (!values.isEmpty()) {
+                    final EntityProxy<?, ?> proxy = getProxyForEntity(entity);
+                    proxy.updateValues(values);
+                }
                 back.add(entity);
             }
         }
@@ -1089,41 +1072,6 @@ public class EntityManager
         finally
         {
             typeMapperLock.readLock().unlock();
-        }
-    }
-
-    /**
-     * Sets the cache implementation to be used by all entities controlled by this manager.  Note that this only affects
-     * <i>new</i> entities that have not yet been instantiated (may pre-exist as rows in the database).  All old
-     * entities will continue to use the prior cache.
-     */
-    public void setCache(Cache cache)
-    {
-        cacheLock.writeLock().lock();
-        try
-        {
-            if (!this.cache.equals(cache))
-            {
-                this.cache.dispose();
-                this.cache = cache;
-            }
-        }
-        finally
-        {
-            cacheLock.writeLock().unlock();
-        }
-    }
-
-    public Cache getCache()
-    {
-        cacheLock.readLock().lock();
-        try
-        {
-            return cache;
-        }
-        finally
-        {
-            cacheLock.readLock().unlock();
         }
     }
 
