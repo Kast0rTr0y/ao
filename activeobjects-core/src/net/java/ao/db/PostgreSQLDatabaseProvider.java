@@ -169,7 +169,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 
         if (!field.isUnique() && oldField.isUnique())
         {
-            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
+            // use oldField here (in case of a renamed column we need the old name)
+            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), oldField.getName()))));
         }
 
         if (field.isUnique() && !oldField.isUnique())
