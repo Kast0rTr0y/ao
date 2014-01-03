@@ -87,6 +87,32 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
+    public void alterTableChangeColumnHandlesRenamedColumnAndRemovedUniqueConstraint() throws Exception
+    {
+        oldField.setUnique(true);
+        newField.setUnique(false);
+        newField.setName("the_field");
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table DROP CONSTRAINT U_da_table_teh_field"));
+        assertThat(ddl.get(1), hasStatement("ALTER TABLE public.da_table RENAME COLUMN teh_field TO the_field"));
+        assertThat(ddl, hasSize(2));
+    }
+
+    @Test
+    public void alterTableChangeColumnHandlesAddedRemovedConstraintAndAddedDefault() throws Exception
+    {
+        oldField.setUnique(true);
+        newField.setUnique(false);
+        newField.setDefaultValue("abc");
+
+        List<SQLAction> ddl = renderAlterTableChangeColumn();
+        assertThat(ddl.get(0), hasStatement("ALTER TABLE public.da_table DROP CONSTRAINT U_da_table_teh_field"));
+        assertThat(ddl.get(1), hasStatement("ALTER TABLE public.da_table ALTER COLUMN teh_field SET DEFAULT 'abc'"));
+        assertThat(ddl, hasSize(2));
+    }
+
+    @Test
     public void alterTableChangeColumnHandlesChangedType() throws Exception
     {
         oldField.setType(TypeManager.postgres().getType(Integer.class));
