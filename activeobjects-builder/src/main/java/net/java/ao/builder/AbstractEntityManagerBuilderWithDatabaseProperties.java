@@ -22,6 +22,7 @@ import net.java.ao.schema.info.CachingEntityInfoResolverFactory;
 import net.java.ao.schema.info.EntityInfoResolverFactory;
 
 import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B extends AbstractEntityManagerBuilderWithDatabaseProperties>
 {
@@ -72,6 +73,12 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
     public B indexNameConverter(IndexNameConverter indexNameConverter)
     {
         configuration.setIndexNameConverter(checkNotNull(indexNameConverter));
+        return cast();
+    }
+
+    public B uniqueNameConverter(UniqueNameConverter uniqueNameConverter)
+    {
+        configuration.setUniqueNameConverter(checkNotNull(uniqueNameConverter));
         return cast();
     }
 
@@ -224,6 +231,11 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         public void setIndexNameConverter(IndexNameConverter indexNameConverter)
         {
             this.indexNameConverter = indexNameConverter;
+        }
+
+        public void setUniqueNameConverter(UniqueNameConverter uniqueNameConverter)
+        {
+            this.uniqueNameConverter = uniqueNameConverter;
         }
 
         public SchemaConfiguration getSchemaConfiguration()
