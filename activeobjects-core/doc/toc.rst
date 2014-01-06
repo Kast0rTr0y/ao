@@ -16,7 +16,6 @@
     * `Queries <concepts/queries.txt>`_
     * `Migrations <concepts/migrations.txt>`_
     * `Types <concepts/types.txt>`_
-    * `Caching <concepts/caching.txt>`_
     * `Lucene Integration <concepts/lucene-integration.txt>`_
 * Cookbook
     * Different Databases
