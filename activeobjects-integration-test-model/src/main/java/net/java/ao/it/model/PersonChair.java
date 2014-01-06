@@ -4,9 +4,9 @@ import net.java.ao.Entity;
 
 public interface PersonChair extends Entity
 {
-    public Person getPerson();
-    public void setPerson(Person person);
+    Person getPerson();
+    void setPerson(Person person);
 
-    public Chair getChair();
-    public void setChair(Chair chair);
+    Chair getChair();
+    void setChair(Chair chair);
 }
