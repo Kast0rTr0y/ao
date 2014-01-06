@@ -10,6 +10,7 @@ import net.java.ao.it.model.Chair;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Commentable;
 import net.java.ao.it.model.Company;
+import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Distribution;
 import net.java.ao.it.model.EmailAddress;
 import net.java.ao.it.model.Magazine;
@@ -44,14 +45,43 @@ import java.sql.SQLException;
  */
 public final class DatabaseProcessor implements DatabaseUpdater
 {
+    // tables explicitly migrated into the schema
+    public static final Class[] EXPLICITLY_MIGRATED_CLASSES = new Class[] {
+            PersonSuit.class,
+            PersonChair.class,
+            Pen.class,
+            Comment.class,
+            Photo.class,
+            Post.class,
+            Nose.class,
+            Authorship.class,
+            Book.class,
+            Magazine.class,
+            PublicationToDistribution.class,
+            PrintDistribution.class,
+            OnlineDistribution.class,
+            Message.class,
+            EmailAddress.class,
+            PostalAddress.class,
+            Select.class,
+            UserBase.class
+    };
+
+    // tables that are created by relationships from EXPLICITLY_MIGRATED_CLASSES
+    public static final Class[] IMPLICITLY_MIGRATED_CLASSES = new Class[] {
+            Author.class,
+            Person.class,
+            PersonLegalDefence.class,
+            Company.class,
+            CompanyAddressInfo.class,
+            Chair.class
+    };
+
+    // creating the schema
     public void update(EntityManager entityManager) throws Exception
     {
-        // creating the schema
-        entityManager.migrate(PersonSuit.class, PersonChair.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class, Authorship.class,
-                Book.class, Magazine.class, PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,
-                Message.class, EmailAddress.class, PostalAddress.class, Select.class, UserBase.class);
-        // tables that are created as a side effect (because these types are referenced by those listed above):
-        // Author.class, Person.class, PersonLegalDefence.class, Company.class, CompanyAddressInfo.class, Chair.class
+        //noinspection unchecked
+        entityManager.migrate(EXPLICITLY_MIGRATED_CLASSES);
 
         addData(entityManager);
 

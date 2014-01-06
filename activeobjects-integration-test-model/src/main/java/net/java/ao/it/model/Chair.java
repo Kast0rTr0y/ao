@@ -4,6 +4,6 @@ import net.java.ao.Entity;
 
 public interface Chair extends Entity
 {
-    public String getColour();
-    public void setColour(String colour);
+    String getColour();
+    void setColour(String colour);
 }
