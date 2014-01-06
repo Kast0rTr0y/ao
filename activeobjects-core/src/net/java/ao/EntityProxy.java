@@ -598,7 +598,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         dbType.getLogicalType().validate(value);
                         dbType.getLogicalType().putToDatabase(this.manager, stmt, index++, value, dbType.getJdbcWriteType());
 
-                        if (!fieldInfo.isCacheable()) {
+                        if (!fieldInfo.isStorable()) {
                             values.remove(name);
                         }
                     }
@@ -704,11 +704,11 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
     private <V> V invokeGetter(FieldInfo<V> fieldInfo) throws Throwable {
         final Class<V> type = fieldInfo.getJavaType();
         final String name = fieldInfo.getName();
-        final boolean isCacheable = fieldInfo.isCacheable();
+        final boolean isStorable = fieldInfo.isStorable();
 
         lockValuesDirty.lock();
         try {
-            if (values.containsKey(name) && isCacheable) {
+            if (values.containsKey(name) && isStorable) {
                 Object value = values.get(name);
                 if (instanceOf(value, type)) {
                     //noinspection unchecked
@@ -731,7 +731,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
             final V back = pullFromDatabase(fieldInfo);
 
-            if (isCacheable) {
+            if (isStorable) {
                 values.put(name, back);
             }
 

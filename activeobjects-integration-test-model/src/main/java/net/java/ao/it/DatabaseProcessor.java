@@ -52,7 +52,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
         addData(entityManager);
 
-        entityManager.flushAll(); // clear all caches
+        entityManager.flushAll();
     }
 
     private void addData(EntityManager entityManager) throws Exception

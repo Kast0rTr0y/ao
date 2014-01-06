@@ -31,7 +31,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
         // change db
         updateEntry(PreloadListed.class, id, 100l, "Tata", 5);
 
-        // ensure we cached the old values
+        // ensure we stored the old values
         assertEquals(1000l, (long) ao.getAge());
         assertEquals("Toto", ao.getName());
         assertEquals(50, (int) ao.getHello());
@@ -54,7 +54,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
         // change db
         updateEntry(PreloadAll.class, id, 100l, "Tata", 5);
 
-        // ensure we cached the old values
+        // ensure we stored the old values
         assertEquals(1000l, (long) ao.getAge());
         assertEquals("Toto", ao.getName());
         assertEquals(50, (int) ao.getHello());
@@ -77,7 +77,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
         // change db
         updateEntry(PreloadListed.class, id, 100l, "Tata", 5);
 
-        // ensure we cached the old values
+        // ensure we stored the old values
         assertEquals(1000l, (long) ao.getAge());
         assertEquals("Toto", ao.getName());
         assertEquals(50, (int) ao.getHello());
@@ -100,7 +100,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
         // change db
         updateEntry(PreloadAll.class, id, 100l, "Tata", 5);
 
-        // ensure we cached the old values
+        // ensure we stored the old values
         assertEquals(1000l, (long) ao.getAge());
         assertEquals("Toto", ao.getName());
         assertEquals(50, (int) ao.getHello());

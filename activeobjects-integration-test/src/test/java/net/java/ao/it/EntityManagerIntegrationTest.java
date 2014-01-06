@@ -337,7 +337,7 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     }
 
     @Test
-    public void testFindCheckDefinedPrecache() throws Exception
+    public void testFindCheckDefinedPrePopulatedValues() throws Exception
     {
         final Person[] people = entityManager.find(Person.class, Query.select(getFieldName(Person.class, "getID") + ", " + getFieldName(Person.class, "getFirstName") + ", " + getFieldName(Person.class, "getLastName")));
 

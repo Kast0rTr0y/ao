@@ -59,11 +59,17 @@ final class BlobType extends AbstractLogicalType<Object>
     {
         return manager.getProvider().handleBlob(res, type, columnName);
     }
-    
+
     @Override
     public boolean shouldCache(Class<?> type)
     {
-        return !InputStream.class.isAssignableFrom(type) && super.shouldCache(type);
+        return shouldStore(type);
+    }
+
+    @Override
+    public boolean shouldStore(Class<?> type)
+    {
+        return !InputStream.class.isAssignableFrom(type) && super.shouldStore(type);
     }
 
     @Override

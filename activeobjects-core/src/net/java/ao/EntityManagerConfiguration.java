@@ -9,10 +9,9 @@ import net.java.ao.schema.info.EntityInfoResolverFactory;
 public interface EntityManagerConfiguration
 {
     /**
-     * Whether or not the {@link net.java.ao.EntityManager} should use weak references for caching
-     *
-     * @return {@code true} if the entity manager should use weak references for caching.
+     * @deprecated since 0.24. EntityManager now no longer caches.
      */
+    @Deprecated
     boolean useWeakCache();
 
     /**
