@@ -1,18 +1,21 @@
 package net.java.ao;
 
-import net.java.ao.schema.AbstractFieldNameConverter;
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
 
-import org.junit.Test;
-
-import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -133,8 +136,7 @@ public final class CommonTest
         when(fieldNameConverter.getName(referenceMethod)).thenReturn("referenceMethod");
 
         final Set<String> valueFieldsNames = Common.getValueFieldsNames(entityInfo, fieldNameConverter);
-        assertEquals(1, valueFieldsNames.size());
-        assertTrue(valueFieldsNames.contains("valueMethod"));
+        assertThat(valueFieldsNames, Matchers.contains("valueMethod"));
     }
 
     @Test
