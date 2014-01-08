@@ -16,6 +16,7 @@
 package net.java.ao.db;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -394,7 +395,13 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 		return back;
 	}
 
-	@Override
+    @Override
+    public void putNull(final PreparedStatement stmt, final int index) throws SQLException
+    {
+        stmt.setNull(index, Types.NULL);
+    }
+
+    @Override
 	protected Set<String> getReservedWords() {
 		return RESERVED_WORDS;
 	}

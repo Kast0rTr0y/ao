@@ -2041,8 +2041,8 @@ public abstract class DatabaseProvider implements Disposable
     /**
      * Stores an SQL <code>NULL</code> value in the database.  This method
      * is required due to the fact that not all JDBC drivers handle NULLs
-     * in the same fashion.  The default implementation calls {@link PreparedStatement#setString(int, String)},
-     * passing <code>null</code> as a value.  Databases which require a
+     * in the same fashion.  The default implementation calls {@link PreparedStatement#setNull(int, int)},
+     * retrieving parameter type from metadata.  Databases which require a
      * different implementation (e.g. PostgreSQL) should override this method.
      *
      * @param stmt The statement in which to store the <code>NULL</code> value.
