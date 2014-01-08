@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,7 @@ import java.util.regex.Matcher;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -435,21 +437,22 @@ public final class Common {
      * @param entityInfo the entity to look up the methods from
      * @return the set of names found
      */
-    public static Set<String> getValueFieldsNames(final EntityInfo<? extends RawEntity<?>, ?> entityInfo, final FieldNameConverter converter)
+    public static ImmutableSet<String> getValueFieldsNames(final EntityInfo<? extends RawEntity<?>, ?> entityInfo, final FieldNameConverter converter)
     {
-        return Sets.newHashSet(Iterables.transform(Sets.filter(entityInfo.getFields(), new Predicate<FieldInfo>()
+        List<String> valueFieldsNames = new ArrayList<String>();
+
+        for (FieldInfo fieldInfo : entityInfo.getFields())
         {
-            public boolean apply(final FieldInfo fieldInfo)
+            // filter out just the value fields - we need to remove any entities from polymorphic relationships
+            if (!Entity.class.isAssignableFrom(fieldInfo.getJavaType()))
             {
-                return !Entity.class.isAssignableFrom(fieldInfo.getJavaType());
+                // apply the name converter
+                String valueFieldName = converter.getName(fieldInfo.getAccessor());
+                valueFieldsNames.add(valueFieldName);
             }
-        }), new Function<FieldInfo, String>()
-        {
-            public String apply(FieldInfo fieldInfo)
-            {
-                return converter.getName(fieldInfo.getAccessor());
-            }
-        }));
+        }
+
+        return ImmutableSet.copyOf(valueFieldsNames);
     }
 
     public static List<String> preloadValue(Preload preload, final FieldNameConverter fnc)
