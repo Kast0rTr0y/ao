@@ -279,11 +279,15 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         final RawEntity returnValueEntity = manager.peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(manager, res, throughType, returnField));
                         final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
                         proxy.lockValuesDirty.lock();
-                        try {
-                            for (final String field : selectFields) {
+                        try
+                        {
+                            for (final String field : selectFields)
+                            {
                                 proxy.values.put(field, res.getObject(field));
                             }
-                        } finally {
+                        }
+                        finally
+                        {
                             proxy.lockValuesDirty.unlock();
                         }
                         back.add(returnValueEntity);
@@ -455,11 +459,15 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         }
                         final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
                         proxy.lockValuesDirty.lock();
-                        try {
-                            for (final String field : selectFields) {
+                        try
+                        {
+                            for (final String field : selectFields)
+                            {
                                 proxy.values.put(field, res.getObject(field));
                             }
-                        } finally {
+                        }
+                        finally
+                        {
                             proxy.lockValuesDirty.unlock();
                         }
                         return returnValueEntity;
@@ -1096,8 +1104,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 				}
                 final V returnValueEntity = manager.peer(manager.resolveEntityInfo(backType), returnValue);
                 final EntityProxy<?, ?> proxy = manager.getProxyForEntity(returnValueEntity);
-                if (selectFields.contains(Preload.ALL))
-                {
+                if (selectFields.contains(Preload.ALL)) {
                     selectFields.remove(Preload.ALL);
                     selectFields.addAll(Common.getValueFieldsNames(finalType, getFieldNameConverter()));
                 }

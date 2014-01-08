@@ -766,10 +766,12 @@ public class EntityManager
             {
                 final T entity = peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
                 final Map<String, Object> values = new HashMap<String, Object>();
-                for (String name : canonicalFields) {
+                for (String name : canonicalFields)
+                {
                     values.put(name, res.getObject(name));
                 }
-                if (!values.isEmpty()) {
+                if (!values.isEmpty())
+                {
                     final EntityProxy<?, ?> proxy = getProxyForEntity(entity);
                     proxy.updateValues(values);
                 }
