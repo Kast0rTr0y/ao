@@ -30,9 +30,8 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
-import net.java.ao.schema.ddl.SQLAction;
-
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -46,6 +45,7 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
@@ -165,13 +165,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 	{
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
 
-        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-        
-        back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
+        final List<SQLAction> back = Lists.newArrayList();
 
         if (!field.isUnique() && oldField.isUnique())
         {
-            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
+            // use oldField here (in case of a renamed column we need the old name)
+            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), oldField.getName()))));
         }
 
         if (field.isUnique() && !oldField.isUnique())
@@ -179,10 +178,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")")));
         }
 
-		boolean foundChange = false;
 		if (!field.getName().equalsIgnoreCase(oldField.getName())) {
-			foundChange = true;
-
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ");
 			str.append(processID(oldField.getName())).append(" TO ").append(processID(field.getName()));
@@ -190,8 +186,6 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 		}
 
 		if (!field.getType().equals(oldField.getType())) {
-			foundChange = true;
-
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" TYPE ");
@@ -208,15 +202,11 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 		if (field.getDefaultValue() == null && oldField.getDefaultValue() == null) {
 			// dummy case
 		} else if (field.getDefaultValue() == null && oldField.getDefaultValue() != null) {
-			foundChange = true;
-
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" DROP DEFAULT");
             back.add(SQLAction.of(str));
 		} else if (!field.getDefaultValue().equals(oldField.getDefaultValue())) {
-			foundChange = true;
-
 			StringBuilder str = new StringBuilder();
 			str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
 			str.append(processID(field.getName())).append(" SET DEFAULT ").append(renderValue(field.getDefaultValue()));
@@ -224,8 +214,6 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 		}
 
 		if (field.isNotNull() != oldField.isNotNull()) {
-			foundChange = true;
-
 			if (field.isNotNull()) {
 				StringBuilder str = new StringBuilder();
 				str.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
@@ -239,17 +227,20 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 			}
 		}
 
-		if (!foundChange) {
-			System.err.println("WARNING: PostgreSQL doesn't fully support CHANGE TABLE statements");
+		// if we don't have any ALTER TABLE DDL by this point then fall back to dropping and re-creating the column
+		if (back.isEmpty()) {
+			System.err.println("WARNING: Unable to modify column '" + table.getName() + "' in place. Going to drop and re-create column.");
 			System.err.println("WARNING: Data contained in column '" + table.getName() + "." + oldField.getName() + "' will be lost");
 
-			back.addAll(renderAlterTableDropColumn(nameConverters, table, oldField));
-			back.addAll(renderAlterTableAddColumn(nameConverters, table, field));
+			Iterables.addAll(back, renderAlterTableDropColumn(nameConverters, table, oldField));
+			Iterables.addAll(back, renderAlterTableAddColumn(nameConverters, table, field));
 		}
-        
-		back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
-        return back.build();
+        return ImmutableList.<SQLAction>builder()
+                .addAll(renderDropAccessoriesForField(nameConverters, table, oldField))
+                .addAll(back)
+                .addAll(renderAccessoriesForField(nameConverters, table, field))
+                .build();
     }
 
 	@Override

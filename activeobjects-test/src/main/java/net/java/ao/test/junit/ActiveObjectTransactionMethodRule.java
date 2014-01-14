@@ -9,6 +9,7 @@ import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.SequenceNameConverter;
 import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.JdbcConfiguration;
@@ -42,6 +43,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
     private final SequenceNameConverter sequenceNameConverter;
     private final TriggerNameConverter triggerNameConverter;
     private final IndexNameConverter indexNameConverter;
+    private final UniqueNameConverter uniqueNameConverter;
 
     private EntityManager entityManager;
     private File indexDirectory;
@@ -53,7 +55,8 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                                              FieldNameConverter fieldNameConverter,
                                              SequenceNameConverter sequenceNameConverter,
                                              TriggerNameConverter triggerNameConverter,
-                                             IndexNameConverter indexNameConverter)
+                                             IndexNameConverter indexNameConverter,
+                                             UniqueNameConverter uniqueNameConverter)
     {
         this.test = test;
         this.jdbc = jdbc;
@@ -63,6 +66,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         this.sequenceNameConverter = sequenceNameConverter;
         this.triggerNameConverter = triggerNameConverter;
         this.indexNameConverter = indexNameConverter;
+        this.uniqueNameConverter = uniqueNameConverter;
     }
 
     public final Statement apply(final Statement base, final FrameworkMethod method, final Object target)
@@ -233,6 +237,11 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         {
             entityManagerBuilder = entityManagerBuilder.indexNameConverter(indexNameConverter);
         }
+        if (uniqueNameConverter != null)
+        {
+            entityManagerBuilder = entityManagerBuilder.uniqueNameConverter(uniqueNameConverter);
+        }
+
         return withIndex ? entityManagerBuilder.withIndex(indexDirectory).build() : entityManagerBuilder.build();
     }
 

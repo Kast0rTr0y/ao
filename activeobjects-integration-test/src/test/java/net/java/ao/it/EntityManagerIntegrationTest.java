@@ -298,12 +298,20 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     }
 
     @Test
-    public void testFindSingleEntity() throws SQLException
+    public void testFindSingleEntity() throws Exception
     {
         final Company company = entityManager.findSingleEntity(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true);
 
-        assertNotNull(company);
-        assertEquals(CompanyData.getIds()[1], company.getCompanyID());
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            public Void call() throws Exception
+            {
+                assertNotNull(company);
+                assertEquals(CompanyData.getIds()[1], company.getCompanyID());
+                assertEquals(CompanyData.NAMES[1], company.getName());
+                return null;
+            }
+        });
     }
 
     @Test
