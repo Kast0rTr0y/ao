@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,7 @@ import java.util.regex.Matcher;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -38,6 +40,7 @@ import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.FieldNameProcessor;
 import net.java.ao.schema.Ignore;
 import net.java.ao.schema.PrimaryKey;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
@@ -46,7 +49,6 @@ import net.java.ao.util.StringUtils;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * WARNING: <strong>Not</strong> part of the public API.  This class is public only
@@ -408,6 +410,8 @@ public final class Common {
     /**
      * Gets all the methods of an entity that correspond to a value field. This means fields that are stored as values
      * in the database as opposed to fields (IDs) that define a relationship to another table in the database.
+     * Note that the values are retrieved based on the relationship annotations, at the field level,
+     * which the user may not have entered.
      * @param entity the entity to look up the methods from
      * @param converter the field name converter currently in use for entities
      * @return the set of method found
@@ -427,15 +431,28 @@ public final class Common {
         });
     }
 
-    public static Set<String> getValueFieldsNames(final Class<? extends RawEntity<?>> entity, final FieldNameConverter converter)
+    /**
+     * Gets all the names of fields of an entity that correspond to a value field. This means fields that are stored as
+     * values in the database as opposed to fields (IDs) that define a relationship to another table in the database.
+     * @param entityInfo the entity to look up the methods from
+     * @return the set of names found
+     */
+    public static ImmutableSet<String> getValueFieldsNames(final EntityInfo<? extends RawEntity<?>, ?> entityInfo, final FieldNameConverter converter)
     {
-        return Sets.newHashSet(Iterables.transform(getValueFieldsMethods(entity, converter), new Function<Method, String>()
+        List<String> valueFieldsNames = new ArrayList<String>();
+
+        for (FieldInfo fieldInfo : entityInfo.getFields())
         {
-            public String apply(Method m)
+            // filter out just the value fields - we need to remove any entities from polymorphic relationships
+            if (!Entity.class.isAssignableFrom(fieldInfo.getJavaType()))
             {
-                return converter.getName(m);
+                // apply the name converter
+                String valueFieldName = converter.getName(fieldInfo.getAccessor());
+                valueFieldsNames.add(valueFieldName);
             }
-        }));
+        }
+
+        return ImmutableSet.copyOf(valueFieldsNames);
     }
 
     public static List<String> preloadValue(Preload preload, final FieldNameConverter fnc)

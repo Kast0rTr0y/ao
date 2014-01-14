@@ -63,6 +63,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.Common.getValueFieldsNames;
 import static net.java.ao.Common.preloadValue;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -770,6 +771,11 @@ public class EntityManager
 
                 query.setFields(newFields.toArray(new String[newFields.size()]));
             }
+        }
+        else
+        {
+            Set<String> fields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
+            query.setFields(fields.toArray(new String[fields.size()]));
         }
 
         Connection conn = null;

@@ -6,9 +6,11 @@ import net.java.ao.it.model.Address;
 import net.java.ao.it.model.Author;
 import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
+import net.java.ao.it.model.Chair;
 import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Commentable;
 import net.java.ao.it.model.Company;
+import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Distribution;
 import net.java.ao.it.model.EmailAddress;
 import net.java.ao.it.model.Magazine;
@@ -17,6 +19,7 @@ import net.java.ao.it.model.Nose;
 import net.java.ao.it.model.OnlineDistribution;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
+import net.java.ao.it.model.PersonChair;
 import net.java.ao.it.model.PersonLegalDefence;
 import net.java.ao.it.model.PersonSuit;
 import net.java.ao.it.model.Photo;
@@ -35,20 +38,50 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.sql.SQLException;
 
 /**
  *
  */
 public final class DatabaseProcessor implements DatabaseUpdater
 {
+    // tables explicitly migrated into the schema
+    public static final Class[] EXPLICITLY_MIGRATED_CLASSES = new Class[] {
+            PersonSuit.class,
+            PersonChair.class,
+            Pen.class,
+            Comment.class,
+            Photo.class,
+            Post.class,
+            Nose.class,
+            Authorship.class,
+            Book.class,
+            Magazine.class,
+            PublicationToDistribution.class,
+            PrintDistribution.class,
+            OnlineDistribution.class,
+            Message.class,
+            EmailAddress.class,
+            PostalAddress.class,
+            Select.class,
+            UserBase.class
+    };
+
+    // tables that are created by relationships from EXPLICITLY_MIGRATED_CLASSES
+    public static final Class[] IMPLICITLY_MIGRATED_CLASSES = new Class[] {
+            Author.class,
+            Person.class,
+            PersonLegalDefence.class,
+            Company.class,
+            CompanyAddressInfo.class,
+            Chair.class
+    };
+
+    // creating the schema
     public void update(EntityManager entityManager) throws Exception
     {
-        // creating the schema
-        entityManager.migrate(PersonSuit.class, Pen.class, Comment.class, Photo.class, Post.class, Nose.class, Authorship.class,
-                Book.class, Magazine.class, PublicationToDistribution.class, PrintDistribution.class, OnlineDistribution.class,
-                Message.class, EmailAddress.class, PostalAddress.class, Select.class, UserBase.class);
-        // tables that are created as a side effect (because these types are referenced by those listed above):
-        // Author.class, Person.class, PersonLegalDefence.class, Company.class, CompanyAddressInfo.class
+        //noinspection unchecked
+        entityManager.migrate(EXPLICITLY_MIGRATED_CLASSES);
 
         addData(entityManager);
 
@@ -59,7 +92,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
     {
         final Company[] companies = addCompanies(entityManager);
         final Person person = addPerson(entityManager, companies[0]);
+        addNose(entityManager, person);
         addPens(entityManager, person);
+        addChairs(entityManager, person);
         addPersonLegalDefences(entityManager, person);
 
         final Post post = addPost(entityManager);
@@ -98,6 +133,19 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return companies;
     }
 
+    public Nose addNose(EntityManager entityManager, Person person) throws SQLException
+    {
+        final Nose nose = entityManager.create(Nose.class);
+        nose.setPerson(person);
+        nose.setLength(NoseData.LENGTH);
+        nose.save();
+
+        // save the id
+        NoseData.id = nose.getID();
+
+        return nose;
+    }
+
     public Person addPerson(EntityManager entityManager, Company company) throws Exception
     {
         final Person person = entityManager.create(Person.class);
@@ -127,6 +175,27 @@ public final class DatabaseProcessor implements DatabaseUpdater
             PenData.ids[i] = pen.getID();
         }
         return pens;
+    }
+
+    private Chair[] addChairs(EntityManager entityManager, Person person) throws Exception
+    {
+        final Chair[] chairs = new Chair[ChairData.ids.length];
+        for (int i = 0; i < ChairData.ids.length; i++)
+        {
+            final Chair chair = entityManager.create(Chair.class);
+            chair.setColour(ChairData.COLOURS[i]);
+            chair.save();
+            ChairData.ids[i] = chair.getID();
+
+            final PersonChair personChair = entityManager.create(PersonChair.class);
+            personChair.setPerson(person);
+            personChair.setChair(chair);
+            personChair.save();
+            PersonChairData.ids[i] = personChair.getID();
+
+            chairs[i] = chair;
+        }
+        return chairs;
     }
 
     private PersonLegalDefence[] addPersonLegalDefences(EntityManager entityManager, Person person) throws Exception
@@ -357,6 +426,17 @@ public final class DatabaseProcessor implements DatabaseUpdater
         }
     }
 
+    public static final class NoseData
+    {
+        static int id = -1;
+        public static final int LENGTH = 123;
+
+        public static int getId()
+        {
+            return id;
+        }
+    }
+
     public static final class PersonData
     {
         static int id = -1;
@@ -386,6 +466,17 @@ public final class DatabaseProcessor implements DatabaseUpdater
     {
         static int[] ids = {-1, -1, -1};
         public static final double[] WIDTHS = {0.3, 0.5, 0.7};
+
+        public static int[] getIds()
+        {
+            return ids;
+        }
+    }
+
+    public static final class ChairData
+    {
+        static int[] ids = { -1, -1, -1 };
+        public static final String[] COLOURS = { "black", "white", "red" };
 
         public static int[] getIds()
         {
@@ -501,6 +592,16 @@ public final class DatabaseProcessor implements DatabaseUpdater
     public static final class AuthorData
     {
         static int[] ids = {-1, -1, -1, -1};
+
+        public static int[] getIds()
+        {
+            return ids;
+        }
+    }
+
+    public static final class PersonChairData
+    {
+        static int[] ids = new int[ChairData.ids.length];
 
         public static int[] getIds()
         {
