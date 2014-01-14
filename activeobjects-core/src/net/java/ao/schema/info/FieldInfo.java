@@ -46,7 +46,7 @@ public interface FieldInfo<T>
     boolean isStorable();
 
     /**
-     * @deprecated since 0.24. Entities and values now no longer cached.
+     * @deprecated since 0.25. Entities and values now no longer cached.
      */
     boolean isCacheable();
 

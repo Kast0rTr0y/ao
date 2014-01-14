@@ -75,7 +75,7 @@ public interface LogicalType<T>
     T pullFromDatabase(EntityManager manager, ResultSet res, Class<T> type, int columnIndex) throws SQLException;
 
     /**
-     * @deprecated since 0.24. Entities and values now no longer cached.
+     * @deprecated since 0.25. Entities and values now no longer cached.
      */
     boolean shouldCache(Class<?> type);
 

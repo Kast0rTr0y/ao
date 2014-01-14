@@ -9,7 +9,7 @@ import net.java.ao.schema.info.EntityInfoResolverFactory;
 public interface EntityManagerConfiguration
 {
     /**
-     * @deprecated since 0.24. EntityManager now no longer caches.
+     * @deprecated since 0.25. EntityManager now no longer caches.
      */
     @Deprecated
     boolean useWeakCache();

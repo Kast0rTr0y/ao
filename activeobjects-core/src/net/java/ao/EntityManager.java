@@ -163,7 +163,7 @@ public class EntityManager
     }
 
     /**
-     * @deprecated since 0.24. Entities and values now no longer cached.
+     * @deprecated since 0.25. Entities and values now no longer cached.
      */
     @Deprecated
 	public void flush(RawEntity<?>... entities) {
