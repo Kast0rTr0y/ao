@@ -69,9 +69,15 @@ class ImmutableFieldInfo<T> implements FieldInfo
     }
 
     @Override
+    public boolean isStorable()
+    {
+        return !isTransient() && getTypeInfo().getLogicalType().shouldStore(getJavaType());
+    }
+
+    @Override
     public boolean isCacheable()
     {
-        return !isTransient() && getTypeInfo().getLogicalType().shouldCache(getJavaType());
+        return isStorable();
     }
 
     @Override

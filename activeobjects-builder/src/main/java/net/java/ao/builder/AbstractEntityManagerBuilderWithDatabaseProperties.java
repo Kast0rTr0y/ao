@@ -88,12 +88,6 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         return cast();
     }
 
-    public B useWeakCache()
-    {
-        configuration.setUseWeakCache(true);
-        return cast();
-    }
-
     final BuilderDatabaseProperties getDatabaseProperties()
     {
         return databaseProperties;
@@ -123,12 +117,10 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private UniqueNameConverter uniqueNameConverter;
         private EntityInfoResolverFactory entityInfoResolverFactory;
 
-        private boolean useWeakCache = false;
-
         @Override
         public boolean useWeakCache()
         {
-            return useWeakCache;
+            return false;
         }
 
         @Override
@@ -201,11 +193,6 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private static CamelCaseFieldNameConverter defaultFieldNameConverter()
         {
             return new CamelCaseFieldNameConverter();
-        }
-
-        public void setUseWeakCache(boolean useWeakCache)
-        {
-            this.useWeakCache = useWeakCache;
         }
 
         public void setTableNameConverter(TableNameConverter tableNameConverter)

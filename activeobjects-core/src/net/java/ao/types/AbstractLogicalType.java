@@ -88,9 +88,14 @@ abstract class AbstractLogicalType<T> implements LogicalType<T>
 
     public boolean shouldCache(Class<?> type)
     {
+        return shouldStore(type);
+    }
+
+    public boolean shouldStore(final Class<?> type)
+    {
         return true;
     }
-    
+
     public T parse(String input) throws IllegalArgumentException
     {
         throw new IllegalArgumentException("Cannot parse a string into type " + getName());

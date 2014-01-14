@@ -34,7 +34,7 @@ import static net.java.ao.it.DatabaseProcessor.*;
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-public class RelationsCacheTest extends ActiveObjectsIntegrationTest
+public class RelationsValueStoreTest extends ActiveObjectsIntegrationTest
 {
     @Test
     public void testOneToManyDestinationCreation() throws Exception

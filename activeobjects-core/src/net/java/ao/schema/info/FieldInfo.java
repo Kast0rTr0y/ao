@@ -41,7 +41,12 @@ public interface FieldInfo<T>
     boolean isNullable();
 
     /**
-     * @return {@code true} if a value corresponding to this field can be cached, {@code false} otherwise
+     * @return {@code true} if a value corresponding to this field may be stored by the entity, {@code false} otherwise
+     */
+    boolean isStorable();
+
+    /**
+     * @deprecated since 0.24. Entities and values now no longer cached.
      */
     boolean isCacheable();
 

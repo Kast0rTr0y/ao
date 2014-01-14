@@ -23,9 +23,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import net.java.ao.cache.Cache;
-import net.java.ao.cache.CacheLayer;
-import net.java.ao.cache.RAMCache;
 import net.java.ao.schema.CachingNameConverters;
 import net.java.ao.schema.FieldNameConverter;
 import net.java.ao.schema.NameConverters;
@@ -39,9 +36,6 @@ import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
@@ -55,7 +49,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -91,21 +84,13 @@ public class EntityManager
 
     private final EntityInfoResolver entityInfoResolver;
 
-    private Cache cache;
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
-
     private PolymorphicTypeMapper typeMapper;
     private final ReadWriteLock typeMapperLock = new ReentrantReadWriteLock(true);
 
     private final com.google.common.cache.Cache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 
     /**
-     * Creates a new instance of <code>EntityManager</code> using the specified {@link DatabaseProvider}.  This
-     * constructor initializes the entity and proxy caches based on the given boolean value.  If <code>true</code>, the
-     * entities will be weakly cached, not maintaining a reference allowing for garbage collection.  If
-     * <code>false</code>, then strong caching will be used, preventing garbage collection and ensuring the cache is
-     * logically complete.  If you are concerned about memory, specify <code>true</code>.  Otherwise, for maximum
-     * performance use <code>false</code> (highly recomended).
+     * Creates a new instance of <code>EntityManager</code> using the specified {@link DatabaseProvider}.
      *
      * @param provider the {@link DatabaseProvider} to use in all database operations.
      * @param configuration the configuration for this entity manager
@@ -114,7 +99,6 @@ public class EntityManager
     {
         this.provider = checkNotNull(provider);
         this.configuration = checkNotNull(configuration);
-        cache = new RAMCache();
         valGenCache = CacheBuilder.newBuilder().build(new CacheLoader<Class<? extends ValueGenerator<?>>, ValueGenerator<?>>() {
             @Override
             public ValueGenerator<?> load(Class<? extends ValueGenerator<?>> generatorClass) throws Exception {
@@ -178,22 +162,12 @@ public class EntityManager
         // no-op
     }
 
-	/**
-	 * Flushes the value caches of the specified entities along with all of the relevant
-	 * relations cache entries.  This should be called after a process outside of AO control
-	 * may have modified the values in the specified rows.  This does not actually remove
-	 * the entity instances themselves from the instance cache.  Rather, it just flushes all
-	 * of their internally cached values (with the exception of the primary key).
-	 */
+    /**
+     * @deprecated since 0.24. Entities and values now no longer cached.
+     */
+    @Deprecated
 	public void flush(RawEntity<?>... entities) {
-		Map<RawEntity<?>, EntityProxy<?, ?>> toFlush = new HashMap<RawEntity<?>, EntityProxy<?, ?>>();
-        for (RawEntity<?> entity : entities) {
-            verify(entity);
-            toFlush.put(entity, getProxyForEntity(entity));
-        }
-        for (Entry<RawEntity<?>, EntityProxy<?, ?>> entry : toFlush.entrySet()) {
-			entry.getValue().flushCache(entry.getKey());
-		}
+        // no-op
 	}
 
 	/**
@@ -222,7 +196,7 @@ public class EntityManager
     {
         EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
         final String primaryKeyField = entityInfo.getPrimaryKey().getName();
-        return getFromCache(type, findByPrimaryKey(type, primaryKeyField), keys);
+        return get(type, findByPrimaryKey(type, primaryKeyField), keys);
     }
 
     private <T extends RawEntity<K>, K> Function<T, K> findByPrimaryKey(final Class<T> type, final String primaryKeyField)
@@ -251,7 +225,7 @@ public class EntityManager
 
     protected <T extends RawEntity<K>, K> T[] peer(final EntityInfo<T, K> entityInfo, K... keys) throws SQLException
     {
-        return getFromCache(entityInfo.getEntityType(), new Function<T, K>()
+        return get(entityInfo.getEntityType(), new Function<T, K>()
         {
             public T invoke(K key)
             {
@@ -261,7 +235,7 @@ public class EntityManager
     }
 
 
-    private <T extends RawEntity<K>, K> T[] getFromCache(Class<T> type, Function<T, K> create, K... keys) throws SQLException
+    private <T extends RawEntity<K>, K> T[] get(Class<T> type, Function<T, K> create, K... keys) throws SQLException
     {
         //noinspection unchecked
         T[] back = (T[])Array.newInstance(type, keys.length);
@@ -276,9 +250,7 @@ public class EntityManager
 
     /**
      * Creates a new instance of the entity of the specified type corresponding to the given primary key.  This is used
-     * by {@link #get(Class, Object[])}} to create the entity if the instance is not found already in the cache.  This
-     * method should not be repurposed to perform any caching, since ActiveObjects already assumes that the caching has
-     * been performed.
+     * by {@link #get(Class, Object[])}} to create the entity.
      *
      * @param entityInfo The type of the entity to create.
      * @param key The primary key corresponding to the entity instance required.
@@ -465,9 +437,8 @@ public class EntityManager
 
     /**
      * <p>Deletes the specified entities from the database.  DELETE statements are called on the rows in the
-     * corresponding tables and the entities are removed from the instance cache.  The entity instances themselves are
-     * not invalidated, but it doesn't even make sense to continue using the instance without a row with which it is
-     * paired.</p>
+     * corresponding tables.  The entity instances themselves are not invalidated, but it doesn't even make sense to
+     * continue using the instance without a row with which it is paired.</p>
      *
      * <p>This method does attempt to group the DELETE statements on a per-type basis.  Thus, if you pass 5 instances of
      * <code>EntityA</code> and two instances of <code>EntityB</code>, the following SQL prepared statements will be
@@ -800,13 +771,16 @@ public class EntityManager
             while (res.next())
             {
                 final T entity = peer(entityInfo, primaryKeyType.getLogicalType().pullFromDatabase(this, res, primaryKeyClassType, field));
-                final CacheLayer cacheLayer = getProxyForEntity(entity).getCacheLayer(entity);
-
-                for (String cacheField : canonicalFields)
+                final Map<String, Object> values = new HashMap<String, Object>();
+                for (String name : canonicalFields)
                 {
-                    cacheLayer.put(cacheField, res.getObject(cacheField));
+                    values.put(name, res.getObject(name));
                 }
-
+                if (!values.isEmpty())
+                {
+                    final EntityProxy<?, ?> proxy = getProxyForEntity(entity);
+                    proxy.updateValues(values);
+                }
                 back.add(entity);
             }
         }
@@ -888,7 +862,7 @@ public class EntityManager
 
     /**
      * <p>Selects all entities of the given type and feeds them to the callback, one by one. The entities are slim,
-     * uncached, read-only representations of the data. They only supports getters or designated {@link Accessor}
+     * read-only representations of the data. They only supports getters or designated {@link Accessor}
      * methods. Calling setters
      * or <pre>save</pre> will
      * result in an exception. Other method calls will be ignored. The proxies do not support lazy-loading of related
@@ -936,11 +910,10 @@ public class EntityManager
             while (res.next())
             {
                 K primaryKey = entityInfo.getPrimaryKey().getTypeInfo().getLogicalType().pullFromDatabase(this, res, entityInfo.getPrimaryKey().getJavaType(), entityInfo.getPrimaryKey().getName());
-                // use the cached instance information from the factory to build efficient, read-only proxy representations
                 ReadOnlyEntityProxy<T, K> proxy = createReadOnlyProxy(entityInfo, primaryKey);
                 T entity = type.cast(Proxy.newProxyInstance(type.getClassLoader(), new Class[]{type}, proxy));
 
-                // transfer the values from the result set into the local proxy cache. We're not caching the proxy itself anywhere, since
+                // transfer the values from the result set into the local proxy value store. We're not caching the proxy itself anywhere, since
                 // it's designated as a read-only snapshot view of the data and thus doesn't need flushing.
                 for (String fieldName : canonicalFields)
                 {
@@ -1099,41 +1072,6 @@ public class EntityManager
     }
 
     /**
-     * Sets the cache implementation to be used by all entities controlled by this manager.  Note that this only affects
-     * <i>new</i> entities that have not yet been instantiated (may pre-exist as rows in the database).  All old
-     * entities will continue to use the prior cache.
-     */
-    public void setCache(Cache cache)
-    {
-        cacheLock.writeLock().lock();
-        try
-        {
-            if (!this.cache.equals(cache))
-            {
-                this.cache.dispose();
-                this.cache = cache;
-            }
-        }
-        finally
-        {
-            cacheLock.writeLock().unlock();
-        }
-    }
-
-    public Cache getCache()
-    {
-        cacheLock.readLock().lock();
-        try
-        {
-            return cache;
-        }
-        finally
-        {
-            cacheLock.readLock().unlock();
-        }
-    }
-
-    /**
      * <p>Retrieves the database provider used by this <code>EntityManager</code> for all database operations.  This
      * method can be used reliably to obtain a database provider and hence a {@link Connection} instance which can be
      * used for JDBC operations outside of ActiveObjects.  Thus:</p>
@@ -1152,16 +1090,6 @@ public class EntityManager
 
     <T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
         return ((EntityProxyAccessor) entity).getEntityProxy();
-    }
-
-    private Reference<RawEntity<?>> createRef(RawEntity<?> entity)
-    {
-        if (configuration.useWeakCache())
-        {
-            return new WeakReference<RawEntity<?>>(entity);
-        }
-
-        return new SoftReference<RawEntity<?>>(entity);
     }
 
     private void verify(RawEntity<?> entity)
@@ -1186,44 +1114,5 @@ public class EntityManager
     private static interface Function<R, F>
     {
         public R invoke(F formals) throws SQLException;
-    }
-
-    private static class CacheKey<T>
-    {
-        private T key;
-        private Class<? extends RawEntity<?>> type;
-
-        public CacheKey(T key, Class<? extends RawEntity<T>> type)
-        {
-            this.key = key;
-            this.type = type;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return (type.hashCode() + key.hashCode()) % (2 << 15);
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (obj == this)
-            {
-                return true;
-            }
-
-            if (obj instanceof CacheKey<?>)
-            {
-                CacheKey<T> keyObj = (CacheKey<T>)obj;
-
-                if (key.equals(keyObj.key) && type.equals(keyObj.type))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 }

@@ -34,84 +34,19 @@ because of its advanced caching mechanisms.
 Lazy Loading
 ============
 
-ActiveObjects performs very well for standard field/record database access.  The
-architecutre is based entirely upon the concept of `lazy loading`_.  Field values
-are not retrieved from the database until first access, after which they are cached
-and quickly retrieved from the cache store.  This allows queries which return
-massive numbers of entities without incurring a severe performance overhead.  For
-example::
-   
-   public interface Person extends Entity {
-      public String getName();
-      public void setName(String name);
-   }
-   
-   // ...
-   Person[] people = manager.find(Person.class);
-   
-One can easily see how this seemingly-innocuous code would cause huge problems
-in an ORM with exclusively eager loading.  Perhaps the ``person`` table contains
-hundreds of thousands of entries.  If field values were eagerly loaded, then a
-``name`` for *every* one of the ``Person`` entities retrieved would have to be
-loaded, converted and then cached within the entity.  This not only imposes
-severe overhead on queries, but it also blows up the memory usage far out of
-proportion.
+Since 0.25, the lazy loading approach has been changed, with a focus more on eager
+loading of value (non relationship) fields.
 
-The active record pattern lends itself very nicely to the lazy loading of fields.
-By ensuring that every field is *only* accessible through the accessor/mutator
-pairs (which are dynamically implemented by the framework), ActiveObjects is
-able to implement this lazy loading without semantic modification such as is
-required in bean-based frameworks like Hibernate.  When it is created, an entity
-is basically a "dumb shell".  It has a primary key value and an empty cache.  As
-the entity is queried, this cache is populated and thus operations on the entity
-become progressively more efficient.
+The default approach:
+* Relationships are lazy-loaded
+* Values are eager-loaded
 
-This is what allows entity creation to be so incredibly efficient in
-ActiveObjects.  Other ORMs must utilize ``List`` or ``Set`` as the return
-type of methods like ``EntityManager#find(...)`` because the query must be paged
-to avoid forcing the load of potentially thousands of entities and their
-associated data.  Conversely, ActiveObjects can make use of the more natural
-data structure: arrays.  Whenever a query is run, *only the primary keys* are 
-retrieved, the remaining data is not even included in the SQL statement.  These 
-primary key values are loaded, converted and then used to create a new entity
-(if a correspondant does not already exist).  As previously mentioned, this
-entity is just a shell, so there is virtually no cost associated with creating
-them in large batches.
+This behaviour may be changed via the ``@Preload`` annotation:
+Value fields and relationships specified via the annotation will be eager fetched,
+with the remainder being lazy fetched.
 
-.. _lazy loading: http://en.wikipedia.org/wiki/Lazy_loading
-
-
-Eager Loading
-=============
-
-Of course, there are many cases when lazy loading is far *less* efficient than
-eager loading.  For instance, if we extend the previous example just slightly::
-   
-   // ...
-   Person[] people = manager.find(Person.class);
-   
-   for (Person person : people) {
-      System.out.println(person.getName());
-   }
-   
-Suddenly this code has become hiddeously inefficient.  This is because
-ActiveObjects will not load the ``name`` value from each row in the ``person``
-table until the ``getName()`` method is called.  Of course, the ``getName()``
-method is being called once for every entity returned.  So rather than running
-just one query which populates all entities, ActiveObjects will run *n + 1*
-queries (where *n* is the number of rows in the query result set).  Obviously,
-even with prepared statements, hitting the database that many times will cause
-massive overhead.
-
-The solution is to allow the developer to override the lazy loading mechanism
-when it is deemed necessary.  In the above example, ActiveObjects has no way of
-knowing that the next three lines of code will repeatedly query ``name`` values.
-Only the developer actually writing the code can make that deduction.  Thus, the
-developer must be empowered to specify when specific fields should be eagerly
-loaded, rather than simply relying on the default.  More details on the syntax
-of this operation can be found in the section on `forcing eager loading`_.
-
-.. _forcing eager loading: cookbook/forcing-eager-loading.html
+Note that the default ``@Preload`` ``ALL`` will eager fetch all relationships and
+value fields.
 
 
 .. _query-gen:

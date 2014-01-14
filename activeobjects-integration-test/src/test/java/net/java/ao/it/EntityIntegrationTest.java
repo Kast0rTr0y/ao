@@ -80,7 +80,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testCachingIsEnabled() throws Exception
+    public void testValueStore() throws Exception
     {
         final Person person = getPerson();
 
@@ -94,7 +94,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
             }
         });
 
-        // second time the caches enters in action, NO sql is (should be) executed
+        // second time they should be retrieved from the value store
         checkSqlNotExecuted(new Callable<Void>()
         {
             public Void call() throws Exception
@@ -106,7 +106,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testUncachableFieldIsNotCached() throws Exception
+    public void testUncachableFieldIsNotInValueStore() throws Exception
     {
         final Company company = getCompany();
         for (int i = 0; i < 2; i++)
@@ -166,7 +166,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testFieldAccessorAreCachedBeforeBeingPersisted() throws Exception
+    public void testFieldAccessorAreInValueStoreBeforeBeingPersisted() throws Exception
     {
         final Company company = entityManager.create(Company.class);
 
@@ -265,7 +265,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testTransientFieldsAreNotCached() throws Exception
+    public void testTransientFieldsNotInValueStore() throws Exception
     {
         final int newAge = 25;
 
@@ -634,10 +634,10 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToManyCacheExpiry() throws Exception
+    public void testOneToManyValueStoreReplacement() throws Exception
     {
         final Person person = getPerson();
-        person.getPens(); // caching
+        person.getPens(); // retrieve into value store
 
         Pen pen = entityManager.create(Pen.class);
         pen.setPerson(person);
@@ -688,7 +688,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToManyCacheInvalidation() throws Exception
+    public void testOneToManyValueStoreInvalidation() throws Exception
     {
         final Person person = entityManager.create(Person.class, new HashMap<String, Object>()
         {{
@@ -766,10 +766,10 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testManyToManyCacheExpiry() throws Exception
+    public void testManyToManyValueStoreReplacement() throws Exception
     {
         final Person person = getPerson();
-        person.getPersonLegalDefences(); // caching
+        person.getPersonLegalDefences(); // retrieve into value store
 
         PersonSuit suit = entityManager.create(PersonSuit.class);
         suit.setPerson(person);
@@ -944,7 +944,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testPolymorphicOneToManyCacheExpiry() throws Exception
+    public void testPolymorphicOneToManyValueStoreReplacement() throws Exception
     {
         final Post post = getPost();
         post.getComments();
@@ -1130,7 +1130,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testPolymorphicManyToManyCacheExpiry() throws Exception
+    public void testPolymorphicManyToManyValueStoreReplacement() throws Exception
     {
         final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[0]);
         magazine.getAuthors();
