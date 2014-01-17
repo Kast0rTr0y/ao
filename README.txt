@@ -13,3 +13,6 @@ The active objects project uses maven for its build. To build:
 4. That's it! You will find the active objects library under ${basedir}/activeobjects/target/activeobject-<version>.jar
 
 test
+
+Atlassian AO+Plugin Doc:
+https://ecosystem.atlassian.net/wiki/display/AO/Home
