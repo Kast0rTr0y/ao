@@ -21,6 +21,10 @@ The active objects project uses maven for its build. To build:
 
 ## Atlassian Developer?
 
+### Internal Documentation
+
+[Development and maintenance documentation](https://ecosystem.atlassian.net/wiki/display/AO/Home)
+
 ### Committing Guidelines
 
 Please see [the following guide](https://extranet.atlassian.com/x/Uouvdg) for committing to this module.
