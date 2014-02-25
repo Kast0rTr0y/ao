@@ -157,7 +157,7 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
         final ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
         final boolean isManyToMany = manyToManyAnnotation != null && method.getReturnType().isArray() && RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType());
         if (isOneToOne || isOneToMany || isManyToMany) {
-            Object ret = null;
+            final Object ret;
             lockValuesDirty.lock();
             try {
                 if (values.containsKey(methodName)) {
@@ -183,6 +183,8 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
                         ret = fetchManyToMany(method, manyToManyAnnotation);
                     }
                     values.put(methodName, ret);
+                } else {
+                    ret = null;
                 }
             } finally {
                 lockValuesDirty.unlock();
