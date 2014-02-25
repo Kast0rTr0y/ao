@@ -120,7 +120,7 @@ public final class SchemaGenerator
         final DDLTable[] readTables = SchemaReader.readSchema(provider, nameConverters, schemaConfiguration);
 
         final DDLAction[] actions = SchemaReader.sortTopologically(SchemaReader.diffSchema(provider.getTypeManager(), parsedTables, readTables, provider.isCaseSensitive()));
-        return Iterables.transform(Iterables.filter(ImmutableList.of(actions), new Predicate<DDLAction>() {
+        return Iterables.transform(Iterables.filter(ImmutableList.copyOf(actions), new Predicate<DDLAction>() {
 
             @Override
             public boolean apply(final DDLAction input) {

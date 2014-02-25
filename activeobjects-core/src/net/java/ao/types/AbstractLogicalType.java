@@ -19,9 +19,9 @@ abstract class AbstractLogicalType<T> implements LogicalType<T>
     protected AbstractLogicalType(String name, Class<?>[] types, int defaultJdbcWriteType, Integer[] jdbcReadTypes)
     {
         this.name = name;
-        this.types = ImmutableSet.of(types);
+        this.types = ImmutableSet.copyOf(types);
         this.defaultJdbcWriteType = defaultJdbcWriteType;
-        this.jdbcReadTypes = ImmutableSet.of(jdbcReadTypes);
+        this.jdbcReadTypes = ImmutableSet.copyOf(jdbcReadTypes);
     }
     
     public String getName()

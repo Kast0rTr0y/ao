@@ -151,35 +151,46 @@ public class EntityProxy<T extends RawEntity<K>, K> implements InvocationHandler
 
         // TODO move this information into EntityInfo and friends
         final OneToOne oneToOneAnnotation = method.getAnnotation(OneToOne.class);
-        if (oneToOneAnnotation != null && RawEntity.class.isAssignableFrom(method.getReturnType())) {
-            if (oneToOneAnnotation.reverse().isEmpty()) {
-                return legacyFetchOneToOne((RawEntity<K>) proxy, method, oneToOneAnnotation);
-            } else {
-                return fetchOneToOne(method, oneToOneAnnotation);
-            }
-		}
-
-        // TODO move this information into EntityInfo and friends
+        final boolean isOneToOne = oneToOneAnnotation != null && RawEntity.class.isAssignableFrom(method.getReturnType());
         final OneToMany oneToManyAnnotation = method.getAnnotation(OneToMany.class);
-        if (oneToManyAnnotation != null && method.getReturnType().isArray()
-				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
-            if (oneToManyAnnotation.reverse().isEmpty()) {
-                return legacyFetchOneToMany((RawEntity<K>) proxy, method, oneToManyAnnotation);
-            } else {
-                return fetchOneToMany(method, oneToManyAnnotation);
-            }
-		}
-
-        // TODO move this information into EntityInfo and friends
+        final boolean isOneToMany = oneToManyAnnotation != null && method.getReturnType().isArray() && RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType());
         final ManyToMany manyToManyAnnotation = method.getAnnotation(ManyToMany.class);
-        if (manyToManyAnnotation != null && method.getReturnType().isArray()
-				&& RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType())) {
-            if (manyToManyAnnotation.reverse().isEmpty() || manyToManyAnnotation.through().isEmpty()) {
-                return legacyFetchManyToMany((RawEntity<K>) proxy, method, manyToManyAnnotation);
-            } else {
-                return fetchManyToMany(method, manyToManyAnnotation);
+        final boolean isManyToMany = manyToManyAnnotation != null && method.getReturnType().isArray() && RawEntity.class.isAssignableFrom(method.getReturnType().getComponentType());
+        if (isOneToOne || isOneToMany || isManyToMany) {
+            final Object ret;
+            lockValuesDirty.lock();
+            try {
+                if (values.containsKey(methodName)) {
+                    ret = values.get(methodName);
+                } else if (isOneToOne) {
+                    if (oneToOneAnnotation.reverse().isEmpty()) {
+                        ret = legacyFetchOneToOne((RawEntity<K>) proxy, method, oneToOneAnnotation);
+                    } else {
+                        ret = fetchOneToOne(method, oneToOneAnnotation);
+                    }
+                    values.put(methodName, ret);
+                } else if (isOneToMany) {
+                    if (oneToManyAnnotation.reverse().isEmpty()) {
+                        ret = legacyFetchOneToMany((RawEntity<K>) proxy, method, oneToManyAnnotation);
+                    } else {
+                        ret = fetchOneToMany(method, oneToManyAnnotation);
+                    }
+                    values.put(methodName, ret);
+                } else if (isManyToMany) {
+                    if (manyToManyAnnotation.reverse().isEmpty() || manyToManyAnnotation.through().isEmpty()) {
+                        ret = legacyFetchManyToMany((RawEntity<K>) proxy, method, manyToManyAnnotation);
+                    } else {
+                        ret = fetchManyToMany(method, manyToManyAnnotation);
+                    }
+                    values.put(methodName, ret);
+                } else {
+                    ret = null;
+                }
+            } finally {
+                lockValuesDirty.unlock();
             }
-		}
+            return ret;
+        }
 
         if (fieldInfo != null) {
 
