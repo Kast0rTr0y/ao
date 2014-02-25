@@ -1,9 +1,20 @@
 package net.java.ao.it;
 
-import net.java.ao.DBParam;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.Test;
+
 import net.java.ao.RawEntity;
 import net.java.ao.it.model.Author;
-import net.java.ao.it.model.Authorship;
 import net.java.ao.it.model.Book;
 import net.java.ao.it.model.Chair;
 import net.java.ao.it.model.Comment;
@@ -15,38 +26,37 @@ import net.java.ao.it.model.Magazine;
 import net.java.ao.it.model.Message;
 import net.java.ao.it.model.MotivationGenerator;
 import net.java.ao.it.model.Nose;
-import net.java.ao.it.model.OnlineDistribution;
 import net.java.ao.it.model.Pen;
 import net.java.ao.it.model.Person;
 import net.java.ao.it.model.PersonImpl;
 import net.java.ao.it.model.PersonLegalDefence;
-import net.java.ao.it.model.PersonSuit;
 import net.java.ao.it.model.Photo;
 import net.java.ao.it.model.Post;
-import net.java.ao.it.model.PrintDistribution;
 import net.java.ao.it.model.Profession;
-import net.java.ao.it.model.PublicationToDistribution;
 import net.java.ao.it.model.Select;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static net.java.ao.it.DatabaseProcessor.*;
-import static org.junit.Assert.*;
+import static net.java.ao.it.DatabaseProcessor.AddressData;
+import static net.java.ao.it.DatabaseProcessor.BookData;
+import static net.java.ao.it.DatabaseProcessor.CompanyData;
+import static net.java.ao.it.DatabaseProcessor.MagazineData;
+import static net.java.ao.it.DatabaseProcessor.MessageData;
+import static net.java.ao.it.DatabaseProcessor.PenData;
+import static net.java.ao.it.DatabaseProcessor.PersonData;
+import static net.java.ao.it.DatabaseProcessor.PersonLegalDefenceData;
+import static net.java.ao.it.DatabaseProcessor.PhotoCommentData;
+import static net.java.ao.it.DatabaseProcessor.PhotoData;
+import static net.java.ao.it.DatabaseProcessor.PostCommentData;
+import static net.java.ao.it.DatabaseProcessor.PostData;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -634,79 +644,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOneToManyValueStoreReplacement() throws Exception
-    {
-        final Person person = getPerson();
-        person.getPens(); // retrieve into value store
-
-        Pen pen = entityManager.create(Pen.class);
-        pen.setPerson(person);
-        pen.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPens();
-                return null;
-            }
-        });
-
-        entityManager.delete(pen);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPens();
-                return null;
-            }
-        });
-
-        pen = entityManager.create(Pen.class, new DBParam(getFieldName(Pen.class, "getPerson"), person));
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPens();
-                return null;
-            }
-        });
-
-        pen.setPerson(null);
-        pen.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPens();
-                return null;
-            }
-        });
-    }
-
-    @Test
-    public void testOneToManyValueStoreInvalidation() throws Exception
-    {
-        final Person person = entityManager.create(Person.class, new HashMap<String, Object>()
-        {{
-                put(getFieldName(Person.class, "getURL"), new URL("http://test-url.example.com"));
-            }});
-
-        final Company company = entityManager.create(Company.class);
-        company.getPeople();
-
-        person.setCompany(company);
-        person.save();
-
-        Person[] people = company.getPeople();
-        assertEquals(people.length, 1);
-        assertEquals(people[0], person);
-    }
-
-    @Test
     public void testManyToManyRetrievalIds() throws Exception
     {
         final Person person = getPerson();
@@ -763,117 +700,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-    }
-
-    @Test
-    public void testManyToManyValueStoreReplacement() throws Exception
-    {
-        final Person person = getPerson();
-        person.getPersonLegalDefences(); // retrieve into value store
-
-        PersonSuit suit = entityManager.create(PersonSuit.class);
-        suit.setPerson(person);
-        suit.setPersonLegalDefence(entityManager.get(PersonLegalDefence.class, PersonLegalDefenceData.getIds()[0]));
-        suit.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        entityManager.delete(suit);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        suit = entityManager.create(PersonSuit.class,
-                new DBParam(getFieldName(PersonSuit.class, "getPerson"), person),
-                new DBParam(getFieldName(PersonSuit.class, "getPersonLegalDefence"), PersonLegalDefenceData.getIds()[1]));
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        suit.setPerson(null);
-        suit.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        suit.setPerson(person);
-        suit.save();
-
-        person.getPersonLegalDefences();
-
-        suit.setPersonLegalDefence(null);
-        suit.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        PersonLegalDefence defence = entityManager.create(PersonLegalDefence.class);
-        suit.setPersonLegalDefence(defence);
-        suit.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        suit.setPersonLegalDefence(null);
-        suit.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
-
-        entityManager.delete(suit);
-        entityManager.delete(defence);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                person.getPersonLegalDefences();
-                return null;
-            }
-        });
     }
 
     @Test
@@ -941,62 +767,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
                 }
             });
         }
-    }
-
-    @Test
-    public void testPolymorphicOneToManyValueStoreReplacement() throws Exception
-    {
-        final Post post = getPost();
-        post.getComments();
-
-        Comment comment = entityManager.create(Comment.class);
-        comment.setCommentable(post);
-        comment.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                post.getComments();
-                return null;
-            }
-        });
-
-        entityManager.delete(comment);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                post.getComments();
-                return null;
-            }
-        });
-
-        comment = entityManager.create(Comment.class,
-                new DBParam(getFieldName(Comment.class, "getCommentable"), post),
-                new DBParam(getPolyFieldName(Comment.class, "getCommentable"), entityManager.getPolymorphicTypeMapper().convert(Post.class)));
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                post.getComments();
-                return null;
-            }
-        });
-
-        comment.setCommentable(null);
-        comment.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                post.getComments();
-                return null;
-            }
-        });
     }
 
     @Test
@@ -1130,176 +900,6 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testPolymorphicManyToManyValueStoreReplacement() throws Exception
-    {
-        final Magazine magazine = entityManager.get(Magazine.class, MagazineData.getIds()[0]);
-        magazine.getAuthors();
-
-        Authorship authorship = entityManager.create(Authorship.class);
-        authorship.setPublication(magazine);
-        authorship.setAuthor(entityManager.get(Author.class, MagazineData.AUTHOR_IDS[0][0]));
-        authorship.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        entityManager.delete(authorship);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        authorship = entityManager.create(Authorship.class,
-                new DBParam(getFieldName(Authorship.class, "getPublication"), magazine),
-                new DBParam(getPolyFieldName(Authorship.class, "getPublication"), entityManager.getPolymorphicTypeMapper().convert(Magazine.class)),
-                new DBParam(getFieldName(Authorship.class, "getAuthor"), BookData.AUTHOR_IDS[0][1]));
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        authorship.setAuthor(null);
-        authorship.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        authorship.setPublication(magazine);
-        authorship.save();
-
-        magazine.getAuthors();
-
-        Author author = entityManager.create(Author.class);
-
-        authorship.setAuthor(author);
-        authorship.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        entityManager.delete(authorship);
-        entityManager.delete(author);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getAuthors();
-                return null;
-            }
-        });
-
-        magazine.getDistributions();
-
-        PublicationToDistribution mapping = entityManager.create(PublicationToDistribution.class);
-        mapping.setPublication(magazine);
-        mapping.setDistribution(entityManager.get(OnlineDistribution.class, MagazineData.DISTRIBUTION_IDS[0][1]));
-        mapping.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-
-        entityManager.delete(mapping);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-
-        mapping = entityManager.create(PublicationToDistribution.class);
-        mapping.setPublication(magazine);
-        mapping.setDistribution(entityManager.get(OnlineDistribution.class, MagazineData.DISTRIBUTION_IDS[0][1]));
-        mapping.save();
-
-        magazine.getDistributions();
-
-        mapping.setDistribution(null);
-        mapping.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-
-        mapping.setDistribution(entityManager.get(PrintDistribution.class, MagazineData.DISTRIBUTION_IDS[0][0]));
-        mapping.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-
-        mapping.setPublication(null);
-        mapping.save();
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-
-        entityManager.delete(mapping);
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                magazine.getDistributions();
-                return null;
-            }
-        });
-    }
-
-    @Test
     public void testMultiPathPolymorphicOneToManyRetrievalIDs() throws Exception
     {
         final EmailAddress address = entityManager.get(EmailAddress.class, AddressData.getIds()[0]);
@@ -1326,6 +926,97 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
+    // ensure that ManyToOne child entities are retained i.e. not wrapped or recreated in a new entity proxy
+    @Test
+    public void testManyToOneNotReProxied() throws Exception
+    {
+        final Person person = getPerson();
+        final Company company1 = person.getCompany();
+        final Company company2 = person.getCompany();
+
+        // explicitly use double equals here so that we test that the objects returned are the same
+        assertTrue("ManyToOne relationship returned re-proxied entity", company1 == company2);
+
+        // ensure that we aren't repopulating the same object
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                person.getCompany();
+                return null;
+            }
+        });
+    }
+
+    // ensure that OneToOne child entities are retained i.e. not wrapped or recreated in a new entity proxy
+    @Test
+    public void testOneToOneNotReProxied() throws Exception
+    {
+        final Person person = getPerson();
+        final Nose nose1 = person.getNose();
+        final Nose nose2 = person.getNose();
+
+        // explicitly use double equals here so that we test that the objects returned are the same
+        assertTrue("OneToOne relationship returned re-proxied entity", nose1 == nose2);
+
+        // ensure that we aren't repopulating the same object
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                person.getNose();
+                return null;
+            }
+        });
+    }
+
+    // ensure that OneToMany child entities are retained i.e. not wrapped or recreated in a new entity proxy
+    @Test
+    public void testOneToManyNotReProxied() throws Exception
+    {
+        final Person person = getPerson();
+        final Pen[] pens1 = person.getPens();
+        final Pen[] pens2 = person.getPens();
+
+        // explicitly use double equals here so that we test that the arrays are the same
+        assertTrue("OneToMany relationship returned re-proxied entity", pens1 == pens2);
+
+        // ensure that we aren't repopulating the same objects
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                person.getPens();
+                return null;
+            }
+        });
+    }
+
+    // ensure that ManyToMany child entities are retained i.e. not wrapped or recreated in a new entity proxy
+    @Test
+    public void testManyToManyNotReProxied() throws Exception
+    {
+        final Person person = getPerson();
+        final Chair[] chairs1 = person.getChairs();
+        final Chair[] chairs2 = person.getChairs();
+
+        // explicitly use double equals here so that we test that the arrays are the same
+        assertTrue("ManyToMany relationship returned re-proxied entity", chairs1 == chairs2);
+
+        // ensure that we aren't repopulating the same objects
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                person.getChairs();
+                return null;
+            }
+        });
+    }
 
     private Person getPerson() throws SQLException
     {
