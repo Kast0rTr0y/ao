@@ -55,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -934,8 +935,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         final Company company1 = person.getCompany();
         final Company company2 = person.getCompany();
 
-        // explicitly use double equals here so that we test that the objects returned are the same
-        assertTrue("ManyToOne relationship returned re-proxied entity", company1 == company2);
+        assertSame(company1, company2);
 
         // ensure that we aren't repopulating the same object
         checkSqlNotExecuted(new Callable<Void>()
@@ -957,8 +957,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         final Nose nose1 = person.getNose();
         final Nose nose2 = person.getNose();
 
-        // explicitly use double equals here so that we test that the objects returned are the same
-        assertTrue("OneToOne relationship returned re-proxied entity", nose1 == nose2);
+        assertSame(nose1, nose2);
 
         // ensure that we aren't repopulating the same object
         checkSqlNotExecuted(new Callable<Void>()
@@ -980,8 +979,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         final Pen[] pens1 = person.getPens();
         final Pen[] pens2 = person.getPens();
 
-        // explicitly use double equals here so that we test that the arrays are the same
-        assertTrue("OneToMany relationship returned re-proxied entity", pens1 == pens2);
+        assertSame(pens1, pens2);
 
         // ensure that we aren't repopulating the same objects
         checkSqlNotExecuted(new Callable<Void>()
@@ -1003,8 +1001,7 @@ public final class EntityIntegrationTest extends ActiveObjectsIntegrationTest
         final Chair[] chairs1 = person.getChairs();
         final Chair[] chairs2 = person.getChairs();
 
-        // explicitly use double equals here so that we test that the arrays are the same
-        assertTrue("ManyToMany relationship returned re-proxied entity", chairs1 == chairs2);
+        assertSame(chairs1, chairs2);
 
         // ensure that we aren't repopulating the same objects
         checkSqlNotExecuted(new Callable<Void>()
