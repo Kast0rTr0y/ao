@@ -446,9 +446,11 @@ public final class Common {
             // filter out just the value fields - we need to remove any entities from polymorphic relationships
             if (!Entity.class.isAssignableFrom(fieldInfo.getJavaType()))
             {
-                // apply the name converter
-                String valueFieldName = converter.getName(fieldInfo.getAccessor());
-                valueFieldsNames.add(valueFieldName);
+                // apply the name converter if we have a getter
+                if (fieldInfo.hasAccessor())
+                {
+                    valueFieldsNames.add(converter.getName(fieldInfo.getAccessor()));
+                }
             }
         }
 

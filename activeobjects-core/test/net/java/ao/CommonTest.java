@@ -119,12 +119,21 @@ public final class CommonTest
         final FieldInfo valueField = mock(FieldInfo.class);
         when(valueField.getJavaType()).thenReturn(String.class);
         final Method valueMethod = String.class.getMethods()[0];
+        when(valueField.hasAccessor()).thenReturn(true);
         when(valueField.getAccessor()).thenReturn(valueMethod);
         fields.add(valueField);
+
+        final FieldInfo writeOnlyField = mock(FieldInfo.class);
+        when(writeOnlyField.getJavaType()).thenReturn(String.class);
+        when(writeOnlyField.hasAccessor()).thenReturn(false);
+        final Method writeOnlyMethod = String.class.getMethods()[2];
+        when(writeOnlyField.getAccessor()).thenReturn(writeOnlyMethod);
+        fields.add(writeOnlyField);
 
         final FieldInfo referenceField = mock(FieldInfo.class);
         when(referenceField.getJavaType()).thenReturn(Entity.class);
         final Method referenceMethod = String.class.getMethods()[1];
+        when(referenceField.hasAccessor()).thenReturn(true);
         when(referenceField.getAccessor()).thenReturn(referenceMethod);
         fields.add(referenceField);
 
@@ -133,6 +142,7 @@ public final class CommonTest
 
         final FieldNameConverter fieldNameConverter = mock(FieldNameConverter.class);
         when(fieldNameConverter.getName(valueMethod)).thenReturn("valueMethod");
+        when(fieldNameConverter.getName(writeOnlyMethod)).thenReturn("writeOnlyMethod");
         when(fieldNameConverter.getName(referenceMethod)).thenReturn("referenceMethod");
 
         final Set<String> valueFieldsNames = Common.getValueFieldsNames(entityInfo, fieldNameConverter);
