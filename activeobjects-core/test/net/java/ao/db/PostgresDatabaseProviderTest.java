@@ -58,4 +58,18 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
         // PostgreSQL should quote all but wildcards and digits
         return "\"a12345bc\" = 1";
     }
+
+    @Override
+    protected String[] getExpectedOrderClauses() {
+        return new String[] {
+                "\"column1\"",
+                "\"column1\" ASC",
+                "\"column1\" DESC",
+                "table1.\"column1\"",
+                "table1.\"column1\" ASC",
+                "table1.\"column1\" ASC, \"column2\"",
+                "\"column1\", table2.\"column2\" ASC",
+                "table1.\"column1\" ASC, table2.\"column2\" ASC"
+        };
+    }
 }

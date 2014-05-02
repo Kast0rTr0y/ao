@@ -753,7 +753,7 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    private String processOrderClause(String order)
+    public final String processOrderClause(String order)
     {
         String[] orderClauses = order.split(",");
         StringBuilder sb = new StringBuilder();
@@ -762,7 +762,7 @@ public abstract class DatabaseProvider implements Disposable
             // $1 signifies a RegExp matching group, i.e. group 1, to be used by search and replace.\
             // So the following will potentially quote the group definition so that the search and replace will replace the identifier with a
             // potentially quoted version of itself.
-            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst(processID("$1"));
+            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst("$1" + processID("$2"));
             if(sb.length() != 0)
             {
                 sb.append(",");
