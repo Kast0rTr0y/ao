@@ -756,37 +756,32 @@ public abstract class DatabaseProvider implements Disposable
 
     public final String processOrderClause(String order)
     {
-        String[] orderClauses = order.split(",");
-        StringBuilder sb = new StringBuilder();
-        for(String orderClause : orderClauses)
+        final Matcher matcher = SqlUtils.ORDER_CLAUSE.matcher(order);
+        final StringBuffer sql = new StringBuffer();
+        while(matcher.find())
         {
-            // $1 signifies the (optional) table name to potentially quote
-            // $2 signifies the (mandatory) column name to potentially quote
-            String newClause;
-            Matcher matcher = SqlUtils.ORDER_CLAUSE.matcher(orderClause);
-            if (matcher.find()) {
-                StringBuffer sbuf = new StringBuffer();
-                if (matcher.group(1) == null)
-                {
-                    matcher.appendReplacement(sbuf, processID("$2"));
-                }
-                else
-                {
-                    matcher.appendReplacement(sbuf, processID("$1") + "." + processID("$2"));
-                }
-                matcher.appendTail(sbuf);
-                newClause = sbuf.toString();
-            } else {
-                newClause = orderClause;
-            }
-            if(sb.length() != 0)
-            {
-                sb.append(",");
-            }
-            sb.append(newClause);
-        }
+            final StringBuilder repl = new StringBuilder();
 
-        return sb.toString();
+            // $1 signifies the (optional) table name to potentially quote
+            if (matcher.group(1) != null)
+            {
+                repl.append(processID("$1"));
+                repl.append(".");
+            }
+
+            // $2 signifies the (mandatory) column name to potentially quote
+            repl.append(processID("$2"));
+
+            // $3 signifies the (optional) ASC/DESC option
+            if (matcher.group(3) != null)
+            {
+                repl.append(" $3");
+            }
+
+            matcher.appendReplacement(sql, repl.toString());
+        }
+        matcher.appendTail(sql);
+        return sql.toString();
     }
 
     /**
