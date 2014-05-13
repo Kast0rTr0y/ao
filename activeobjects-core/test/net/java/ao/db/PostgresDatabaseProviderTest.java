@@ -1,8 +1,11 @@
 package net.java.ao.db;
 
+import com.google.common.collect.ImmutableList;
 import net.java.ao.DatabaseProvider;
 
-import static net.java.ao.DatabaseProviders.*;
+import java.util.List;
+
+import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
 
 public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
 {
@@ -60,16 +63,17 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Override
-    protected String[] getExpectedOrderClauses() {
-        return new String[] {
+    protected List<String> getExpectedOrderClauses()
+    {
+        return ImmutableList.of(
                 "\"column1\"",
                 "\"column1\" ASC",
                 "\"column1\" DESC",
-                "table1.\"column1\"",
-                "table1.\"column1\" ASC",
-                "table1.\"column1\" ASC, \"column2\"",
-                "\"column1\", table2.\"column2\" ASC",
-                "table1.\"column1\" ASC, table2.\"column2\" ASC"
-        };
+                "\"table1\".\"column1\"",
+                "\"table1\".\"column1\" ASC",
+                "\"table1\".\"column1\" ASC, \"column2\"",
+                "\"column1\", \"table2\".\"column2\" ASC",
+                "\"table1\".\"column1\" ASC, \"table2\".\"column2\" ASC"
+        );
     }
 }

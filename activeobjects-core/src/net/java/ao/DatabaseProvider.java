@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.regex.Matcher;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.transform;
@@ -759,10 +760,25 @@ public abstract class DatabaseProvider implements Disposable
         StringBuilder sb = new StringBuilder();
         for(String orderClause : orderClauses)
         {
-            // $1 signifies a RegExp matching group, i.e. group 1, to be used by search and replace.\
-            // So the following will potentially quote the group definition so that the search and replace will replace the identifier with a
-            // potentially quoted version of itself.
-            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst("$1" + processID("$2"));
+            // $1 signifies the (optional) table name to potentially quote
+            // $2 signifies the (mandatory) column name to potentially quote
+            String newClause;
+            Matcher matcher = SqlUtils.ORDER_CLAUSE.matcher(orderClause);
+            if (matcher.find()) {
+                StringBuffer sbuf = new StringBuffer();
+                if (matcher.group(1) == null)
+                {
+                    matcher.appendReplacement(sbuf, processID("$2"));
+                }
+                else
+                {
+                    matcher.appendReplacement(sbuf, processID("$1") + "." + processID("$2"));
+                }
+                matcher.appendTail(sbuf);
+                newClause = sbuf.toString();
+            } else {
+                newClause = orderClause;
+            }
             if(sb.length() != 0)
             {
                 sb.append(",");

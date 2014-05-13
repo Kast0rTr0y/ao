@@ -15,31 +15,46 @@
  */
 package net.java.ao.db;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.schema.*;
-import net.java.ao.schema.ddl.*;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import test.schema.Company;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.Nullable;
+
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+
+import com.google.common.collect.Lists;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import net.java.ao.DatabaseProvider;
+import net.java.ao.schema.DefaultIndexNameConverter;
+import net.java.ao.schema.DefaultSequenceNameConverter;
+import net.java.ao.schema.DefaultTriggerNameConverter;
+import net.java.ao.schema.DefaultUniqueNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionType;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
+import test.schema.Company;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -200,7 +215,7 @@ public abstract class DatabaseProviderTest
     @Test
     public final void testProcessOrderClause()
     {
-        final String[] orderClauses = {
+        final List<String> orderClauses = ImmutableList.of(
                 "column1",
                 "column1 ASC",
                 "column1 DESC",
@@ -209,15 +224,22 @@ public abstract class DatabaseProviderTest
                 "table1.column1 ASC, column2",
                 "column1, table2.column2 ASC",
                 "table1.column1 ASC, table2.column2 ASC"
-        };
+        );
 
-        for (int i = 0; i < orderClauses.length; i++) {
-            assertEquals(getExpectedOrderClauses()[i], getDatabaseProvider().processOrderClause(orderClauses[i]));
-        }
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClauses()));
     }
 
-    protected String[] getExpectedOrderClauses() {
-        return new String[] {
+    protected List<String> getExpectedOrderClauses() {
+        return ImmutableList.of(
                 "column1",
                 "column1 ASC",
                 "column1 DESC",
@@ -226,7 +248,7 @@ public abstract class DatabaseProviderTest
                 "table1.column1 ASC, column2",
                 "column1, table2.column2 ASC",
                 "table1.column1 ASC, table2.column2 ASC"
-        };
+        );
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
