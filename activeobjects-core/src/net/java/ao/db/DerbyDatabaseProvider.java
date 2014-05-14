@@ -154,7 +154,7 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
 	@Override
 	protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
 	{
-	    return SQLAction.of("DROP INDEX " + processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
+	    return SQLAction.of("DROP INDEX " + processID(getExistingIndexName(indexNameConverter,index)));
 	}
 
 	@Override

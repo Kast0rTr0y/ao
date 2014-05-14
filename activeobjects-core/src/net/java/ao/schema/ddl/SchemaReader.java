@@ -180,6 +180,7 @@ public final class SchemaReader
                 DDLIndex ddl = new DDLIndex();
                 ddl.setTable(tableName);
                 ddl.setField(index.getFieldName());
+                ddl.setIndexName(index.getIndexName());
                 return ddl;
             }
         }));

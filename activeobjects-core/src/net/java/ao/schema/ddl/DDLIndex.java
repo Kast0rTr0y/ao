@@ -15,6 +15,8 @@
  */
 package net.java.ao.schema.ddl;
 
+import org.apache.commons.lang.StringUtils;
+
 import net.java.ao.types.TypeInfo;
 
 /**
@@ -33,8 +35,9 @@ public class DDLIndex {
 	private String table;
 	private String field;
 	private TypeInfo<?> type;
+    private String indexName;
 
-	public String getTable() {
+    public String getTable() {
 		return table;
 	}
 
@@ -58,12 +61,19 @@ public class DDLIndex {
 		this.type = type;
 	}
 
+    public void setIndexName(String indexName)
+    {
+        this.indexName = indexName;
+    }
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof DDLIndex) {
 			DDLIndex index = (DDLIndex) obj;
 			
-			if (index.getTable().equals(table) && index.getField().equals(field)) {
+			if (index.getTable().equals(table)
+                    && index.getField().equals(field)
+                    && StringUtils.equals(indexName, index.indexName)) {
 				return true;
 			}
 			
@@ -87,4 +97,10 @@ public class DDLIndex {
 		
 		return back;
 	}
+
+
+    public String getIndexName()
+    {
+        return indexName;
+    }
 }

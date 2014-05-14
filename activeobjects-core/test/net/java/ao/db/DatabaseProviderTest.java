@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -53,6 +54,7 @@ import static net.java.ao.types.TypeQualifiers.qualifiers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -176,6 +178,21 @@ public abstract class DatabaseProviderTest
     {
         final String where = "a12345bc = 1";
         assertEquals(getExpectedWhereClauseWithAlphaNumeric(), getDatabaseProvider().processWhereClause(where));
+    }
+
+    @Test
+    public final void testDropIndexWithSpecificName() {
+        final DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
+        final DDLIndex index = new DDLIndex();
+        index.setField("field");
+        index.setTable("table");
+        index.setType(getDatabaseProvider().getTypeManager().getType(Long.class));
+        index.setIndexName("indexName");
+        action.setIndex(index);
+        final Iterable<SQLAction> sqlActions = getDatabaseProvider().renderAction(nameConverters, action);
+
+        assertTrue("Should be dropping the existing index by name",
+                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("indexName"));
     }
 
     protected String getExpectedWhereClause()
