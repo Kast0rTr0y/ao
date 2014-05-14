@@ -274,9 +274,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
         }
         else
         {
-            logger.debug("Attempting to drop index {} for table {} failed as index does not exist",
-                         indexName, tableName);
-            return SQLAction.of("");
+            return null;
         }
     }
 
