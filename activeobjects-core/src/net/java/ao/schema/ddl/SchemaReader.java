@@ -385,7 +385,8 @@ public final class SchemaReader
 
             for (DDLForeignKey ontoKey : ontoTable.getForeignKeys())
             {
-                if (containsField(dropFields, ontoKey.getField())) {
+                if (containsField(dropFields, ontoKey.getField()))
+                {
                     dropKeys.add(ontoKey);
                     continue;
                 }

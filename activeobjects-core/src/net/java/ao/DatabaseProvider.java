@@ -1447,10 +1447,14 @@ public abstract class DatabaseProvider implements Disposable
         return hasIndex(index.getTable(),indexName);
     }
 
-    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index) {
-        if (index.getIndexName() != null) {
+    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        if (index.getIndexName() != null)
+        {
             return index.getIndexName();
-        } else {
+        }
+        else
+        {
             return indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
         }
     }
