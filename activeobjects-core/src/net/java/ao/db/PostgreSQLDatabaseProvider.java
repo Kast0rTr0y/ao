@@ -265,10 +265,12 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        if (hasIndex(indexNameConverter, index))
+        final String indexName = getExistingIndexName(indexNameConverter, index);
+        final String tableName = index.getTable();
+        if (hasIndex(tableName,indexName))
         {
             return SQLAction.of(new StringBuilder("DROP INDEX ")
-                    .append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))));
+                    .append(withSchema(indexName)));
         }
         else
         {

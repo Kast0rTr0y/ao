@@ -28,10 +28,6 @@ import java.util.regex.Pattern;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import static com.google.common.collect.Iterables.concat;
-
-import net.java.ao.schema.ddl.SQLAction;
-
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -47,9 +43,11 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
+import static com.google.common.collect.Iterables.concat;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
@@ -406,7 +404,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        String indexName = getExistingIndexName(indexNameConverter, index);
         return SQLAction.of(new StringBuilder("DROP INDEX ")
                 .append(withSchema(indexName))
                 .append(" IF EXISTS"));

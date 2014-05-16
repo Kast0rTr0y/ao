@@ -1,14 +1,15 @@
 package net.java.ao.schema;
 
+import java.util.concurrent.Callable;
+
+import org.junit.Test;
+
 import net.java.ao.Entity;
 import net.java.ao.it.model.Address;
 import net.java.ao.it.model.Profession;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.junit.Test;
-
-import java.util.concurrent.Callable;
 
 /**
  * Ensure that SQL is run to migrate column types when the DB physical type has changed,
@@ -95,6 +96,22 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
+    @Test
+    @NonTransactional
+    public void testMigrationThatDropsColumnWithForeignKey() throws Exception
+    {
+        entityManager.migrate(ColumnForeignKey.class,DropColumnRemoteEntity.class);
+        checkSqlExecuted(new Callable<Object>()
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                entityManager.migrateDestructively(DropColumnForeignKey.class);
+                return null;
+            }
+        });
+    }
+
     @Table(value = "ENTITY")
     private interface TestTable extends Entity
     {
@@ -142,5 +159,22 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
         @StringLength(value = StringLength.UNLIMITED)
         public String getEnumVal();
         public void setEnumVal(String enumVal);
+    }
+
+    @Table(value = "REMOTE_ENTITY")
+    private interface DropColumnRemoteEntity extends Entity
+    {
+
+    }
+
+    @Table(value = "ENTITY")
+    private interface ColumnForeignKey extends Entity
+    {
+        public DropColumnRemoteEntity getRemoteEntity();
+    }
+
+    @Table(value = "ENTITY")
+    private interface DropColumnForeignKey extends Entity
+    {
     }
 }

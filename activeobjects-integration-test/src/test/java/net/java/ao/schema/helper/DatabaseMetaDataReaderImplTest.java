@@ -1,8 +1,16 @@
 package net.java.ao.schema.helper;
 
+import java.lang.reflect.Field;
+import java.sql.Connection;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+
+import org.apache.commons.lang.StringUtils;
+import org.junit.Before;
+import org.junit.Test;
+
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
@@ -10,15 +18,12 @@ import net.java.ao.schema.Indexed;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
-import org.junit.Before;
-import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.sql.Connection;
-
-import static com.google.common.collect.Iterables.*;
+import static com.google.common.collect.Iterables.any;
+import static com.google.common.collect.Iterables.contains;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
 public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrationTest
@@ -101,6 +106,7 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             {
                 final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
                 assertTrue(containsIndex(indexes, tableName, getFieldName(Simple.class, "getName")));
+                assertTrue(indexesAreNamed(indexes));
             }
         });
     }
@@ -113,6 +119,18 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             public boolean apply(Index i)
             {
                 return i.getTableName().equals(tableName) && i.getFieldName().equals(columnName);
+            }
+        });
+    }
+
+    private boolean indexesAreNamed(Iterable<? extends Index> indexes)
+    {
+        return Iterables.all(indexes, new Predicate<Index>()
+        {
+            @Override
+            public boolean apply(Index i)
+            {
+                return !StringUtils.isBlank(i.getIndexName());
             }
         });
     }

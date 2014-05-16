@@ -1428,10 +1428,12 @@ public abstract class DatabaseProvider implements Disposable
      */
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        if (hasIndex(indexNameConverter, index))
+        final String indexName = getExistingIndexName(indexNameConverter, index);
+        final String tableName = index.getTable();
+
+        if (hasIndex(tableName,indexName))
         {
-            return SQLAction.of("DROP INDEX " + withSchema(indexName) + " ON " + withSchema(index.getTable()));
+            return SQLAction.of("DROP INDEX " + withSchema(indexName) + " ON " + withSchema(tableName));
         }
         else
         {
@@ -1442,11 +1444,28 @@ public abstract class DatabaseProvider implements Disposable
     protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
         final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        return hasIndex(index.getTable(),indexName);
+    }
+
+    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        if (index.getIndexName() != null)
+        {
+            return index.getIndexName();
+        }
+        else
+        {
+            return indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        }
+    }
+
+    protected boolean hasIndex(String tableName, String indexName)
+    {
         Connection connection = null;
         try
         {
             connection = getConnection();
-            ResultSet indexes = getIndexes(connection, index.getTable());
+            ResultSet indexes = getIndexes(connection, tableName);
             while (indexes.next())
             {
                 if (indexName.equalsIgnoreCase(indexes.getString("INDEX_NAME")))

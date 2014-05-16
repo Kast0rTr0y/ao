@@ -1,14 +1,5 @@
 package net.java.ao.schema.helper;
 
-import net.java.ao.DatabaseProvider;
-import net.java.ao.Query;
-import net.java.ao.SchemaConfiguration;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.sql.AbstractCloseableResultSetMetaData;
-import net.java.ao.sql.CloseableResultSetMetaData;
-import net.java.ao.types.TypeInfo;
-import net.java.ao.types.TypeManager;
-
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,15 +12,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.java.ao.types.TypeQualifiers.qualifiers;
-
+import net.java.ao.DatabaseProvider;
+import net.java.ao.Query;
+import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.sql.AbstractCloseableResultSetMetaData;
+import net.java.ao.sql.CloseableResultSetMetaData;
+import net.java.ao.types.TypeInfo;
+import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.util.StringUtils;
 
-import static com.google.common.collect.Lists.*;
+import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
-import static net.java.ao.sql.SqlUtils.*;
+import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
 
 public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 {
@@ -349,7 +347,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private Index newIndex(ResultSet rs, String tableName) throws SQLException
     {
-        return new IndexImpl(tableName, parseStringValue(rs, "COLUMN_NAME"));
+        return new IndexImpl(tableName, parseStringValue(rs, "COLUMN_NAME"), parseStringValue(rs, "INDEX_NAME"));
     }
 
     private String parseStringValue(ResultSet rs, String columnName) throws SQLException
@@ -488,12 +486,13 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private static final class IndexImpl implements Index
     {
-        private final String tableName, fieldName;
+        private final String tableName, fieldName, indexName;
 
-        public IndexImpl(String tableName, String fieldName)
+        public IndexImpl(String tableName, String fieldName, String indexName)
         {
             this.tableName = tableName;
             this.fieldName = fieldName;
+            this.indexName = indexName;
         }
 
         public String getTableName()
@@ -504,6 +503,12 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         public String getFieldName()
         {
             return fieldName;
+        }
+
+        @Override
+        public String getIndexName()
+        {
+            return indexName;
         }
     }
 }
