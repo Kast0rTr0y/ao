@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.regex.Matcher;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.transform;
@@ -753,24 +754,34 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    private String processOrderClause(String order)
+    public final String processOrderClause(String order)
     {
-        String[] orderClauses = order.split(",");
-        StringBuilder sb = new StringBuilder();
-        for(String orderClause : orderClauses)
+        final Matcher matcher = SqlUtils.ORDER_CLAUSE.matcher(order);
+        final StringBuffer sql = new StringBuffer();
+        while(matcher.find())
         {
-            // $1 signifies a RegExp matching group, i.e. group 1, to be used by search and replace.\
-            // So the following will potentially quote the group definition so that the search and replace will replace the identifier with a
-            // potentially quoted version of itself.
-            String newClause = SqlUtils.ORDER_CLAUSE.matcher(orderClause).replaceFirst(processID("$1"));
-            if(sb.length() != 0)
-            {
-                sb.append(",");
-            }
-            sb.append(newClause);
-        }
+            final StringBuilder repl = new StringBuilder();
 
-        return sb.toString();
+            // $1 signifies the (optional) table name to potentially quote
+            if (matcher.group(1) != null)
+            {
+                repl.append(processID("$1"));
+                repl.append(".");
+            }
+
+            // $2 signifies the (mandatory) column name to potentially quote
+            repl.append(processID("$2"));
+
+            // $3 signifies the (optional) ASC/DESC option
+            if (matcher.group(3) != null)
+            {
+                repl.append(" $3");
+            }
+
+            matcher.appendReplacement(sql, repl.toString());
+        }
+        matcher.appendTail(sql);
+        return sql.toString();
     }
 
     /**
