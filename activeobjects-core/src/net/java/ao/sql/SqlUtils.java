@@ -15,8 +15,8 @@ public final class SqlUtils
 {
     public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*((=|!=|>|<|<>|<=|>=|(?<!(NOT\\s{1,10}))LIKE|(?<!(NOT\\s{1,10}))like|(?<!(NOT\\s{1,10}))BETWEEN|(?<!(NOT\\s{1,10}))between|IS|is|(?<!((IS|AND)\\s{1,10}))NOT|(?<!(NOT\\s{1,10}))IN|(?<!(is\\s{1,10}))not|(?<!(not\\s{1,10}))in)(\\s|\\()))");
     public static final Pattern ON_CLAUSE = Pattern.compile("(?:(\\w+)\\.)?(?:(\\w+)\\.)?(\\w+)(\\s*=\\s*)(?:(\\w+)\\.)?(?:(\\w+)\\.)?(\\w+)");
-    public static final Pattern ORDER_CLAUSE = Pattern.compile("(\\w+)(?=\\s*(ASC|DESC))?");
-    public static final Pattern GROUP_BY_CLAUSE = Pattern.compile("(\\w+\\.)?(\\w+)");
+    public static final Pattern ORDER_CLAUSE = Pattern.compile("(?:(\\w+)\\.)?(\\w+)(?:\\s*(ASC|DESC))?");
+    public static final Pattern GROUP_BY_CLAUSE = Pattern.compile("(?:(\\w+)\\.)?(\\w+)");
 
     private SqlUtils()
     {
@@ -72,23 +72,25 @@ public final class SqlUtils
     public static String processGroupByClause(String groupBy, Function<String, String> processor)
     {
         final Matcher matcher = GROUP_BY_CLAUSE.matcher(groupBy);
-        final StringBuffer sb = new StringBuffer();
-        while (matcher.find())
+        final StringBuffer sql = new StringBuffer();
+        while(matcher.find())
         {
-            final String group = matcher.group();
-            if (group.contains("."))
-            {
-                final int dotIndexAlmost = group.lastIndexOf(".") + 1;
-                matcher.appendReplacement(sb, group.substring(0, dotIndexAlmost) + processor.apply(group.substring(dotIndexAlmost, group.length())));
-            }
-            else
-            {
-                matcher.appendReplacement(sb, processor.apply(group));
-            }
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
+            final StringBuilder repl = new StringBuilder();
 
+            // $1 signifies the (optional) table name to potentially quote
+            if (matcher.group(1) != null)
+            {
+                repl.append(processor.apply("$1"));
+                repl.append(".");
+            }
+
+            // $2 signifies the (mandatory) column name to potentially quote
+            repl.append(processor.apply("$2"));
+
+            matcher.appendReplacement(sql, repl.toString());
+        }
+        matcher.appendTail(sql);
+        return sql.toString();
     }
 
     @Deprecated

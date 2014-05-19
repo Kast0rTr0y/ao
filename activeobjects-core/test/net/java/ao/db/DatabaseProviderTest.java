@@ -21,10 +21,12 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
+import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +54,7 @@ import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -207,6 +210,45 @@ public abstract class DatabaseProviderTest
     protected String getExpectedWhereClauseWithAlphaNumeric()
     {
         return "a12345bc = 1";
+    }
+
+    @Test
+    public final void testProcessOrderClause()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "column1",
+                "column1 ASC",
+                "column1 DESC",
+                "table1.column1",
+                "table1.column1 ASC",
+                "table1.column1 ASC, column2",
+                "column1, table2.column2 ASC",
+                "table1.column1 ASC, table2.column2 ASC"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClauses()));
+    }
+
+    protected List<String> getExpectedOrderClauses() {
+        return ImmutableList.of(
+                "column1",
+                "column1 ASC",
+                "column1 DESC",
+                "table1.column1",
+                "table1.column1 ASC",
+                "table1.column1 ASC, column2",
+                "column1, table2.column2 ASC",
+                "table1.column1 ASC, table2.column2 ASC"
+        );
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()

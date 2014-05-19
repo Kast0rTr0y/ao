@@ -157,7 +157,7 @@ public final class SqlUtilsTest
     public void testProcessGroupByClause()
     {
         assertEquals("*id*,*otherId*", SqlUtils.processGroupByClause("id,otherId", TEST_ID_PROCESSOR));
-        assertEquals("a.*id*,b.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
+        assertEquals("*a*.*id*,*b*.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
     }
 
     private static class TestIdProcessor implements Function<String, String>
