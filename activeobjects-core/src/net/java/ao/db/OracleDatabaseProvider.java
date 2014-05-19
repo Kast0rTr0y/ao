@@ -224,7 +224,8 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        return SQLAction.of(new StringBuilder().append("DROP INDEX ").append(withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))));
+        final String name = getExistingIndexName(indexNameConverter, index);
+        return SQLAction.of(new StringBuilder().append("DROP INDEX ").append(withSchema(name)));
     }
 
     @Override

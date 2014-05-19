@@ -214,12 +214,14 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
     {
-        if (hasIndex(indexNameConverter, index))
+        final String indexName = getExistingIndexName(indexNameConverter, index);
+        final String tableName = index.getTable();
+        if (hasIndex(tableName, indexName))
         {
             return SQLAction.of(new StringBuilder().append("DROP INDEX ")
-                    .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                    .append(processID(indexName))
                     .append(" ON ")
-                    .append(withSchema(index.getTable())));
+                    .append(withSchema(tableName)));
         }
         else
         {

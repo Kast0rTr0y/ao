@@ -1,5 +1,9 @@
 package net.java.ao;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
@@ -9,11 +13,8 @@ import net.java.ao.db.SQLServerDatabaseProvider;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.ddl.DDLIndex;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DatabaseProviders
 {
@@ -28,6 +29,12 @@ public class DatabaseProviders
         {
             @Override
             protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+
+            @Override
+            protected boolean hasIndex(String table, String index)
             {
                 return true;
             }
@@ -48,6 +55,12 @@ public class DatabaseProviders
             {
                 return true;
             }
+
+            @Override
+            protected boolean hasIndex(String table, String index)
+            {
+                return true;
+            }
         };
     }
 
@@ -57,6 +70,12 @@ public class DatabaseProviders
         {
             @Override
             protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+
+            @Override
+            protected boolean hasIndex(String table, String index)
             {
                 return true;
             }

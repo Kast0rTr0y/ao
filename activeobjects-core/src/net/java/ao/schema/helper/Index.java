@@ -5,4 +5,6 @@ public interface Index
     String getTableName();
 
     String getFieldName();
+
+    String getIndexName();
 }

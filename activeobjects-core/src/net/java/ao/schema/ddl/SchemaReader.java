@@ -15,22 +15,6 @@
  */
 package net.java.ao.schema.ddl;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import net.java.ao.Common;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.SchemaConfiguration;
-import net.java.ao.schema.Case;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.helper.DatabaseMetaDataReader;
-import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
-import net.java.ao.schema.helper.Field;
-import net.java.ao.schema.helper.ForeignKey;
-import net.java.ao.schema.helper.Index;
-import net.java.ao.types.TypeInfo;
-import net.java.ao.types.TypeManager;
-import net.java.ao.types.TypeQualifiers;
-
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -45,6 +29,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+
+import net.java.ao.Common;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.Case;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.helper.DatabaseMetaDataReader;
+import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
+import net.java.ao.schema.helper.Field;
+import net.java.ao.schema.helper.ForeignKey;
+import net.java.ao.schema.helper.Index;
+import net.java.ao.types.TypeInfo;
+import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -178,6 +180,7 @@ public final class SchemaReader
                 DDLIndex ddl = new DDLIndex();
                 ddl.setTable(tableName);
                 ddl.setField(index.getFieldName());
+                ddl.setIndexName(index.getIndexName());
                 return ddl;
             }
         }));
@@ -382,6 +385,12 @@ public final class SchemaReader
 
             for (DDLForeignKey ontoKey : ontoTable.getForeignKeys())
             {
+                if (containsField(dropFields, ontoKey.getField()))
+                {
+                    dropKeys.add(ontoKey);
+                    continue;
+                }
+
                 for (DDLForeignKey fromKey : fromTable.getForeignKeys())
                 {
                     if (!(ontoKey.getTable().equalsIgnoreCase(fromKey.getTable())
@@ -854,6 +863,19 @@ public final class SchemaReader
                 deps.put(action, dependencies);
             }
         }
+
+
+    }
+
+    private static boolean containsField(Iterable<DDLField> fields, final String fieldName) {
+        return Iterables.tryFind(fields, new Predicate<DDLField>()
+        {
+            @Override
+            public boolean apply(DDLField field)
+            {
+                return field.getName().equalsIgnoreCase(fieldName);
+            }
+        }).isPresent();
     }
 
     private static DDLAction createColumnAlterAction(DDLTable table, DDLField oldField, DDLField field)
