@@ -56,8 +56,6 @@ import static com.google.common.collect.Sets.newHashSet;
  */
 public final class Common {
 
-    private static final MethodFinder methodFinder = MethodFinder.getInstance();
-
     public static <T extends RawEntity<K>, K> T createPeer(EntityManager manager, Class<T> type, K key) throws SQLException
     {
         return manager.peer(manager.resolveEntityInfo(type), key);
@@ -142,7 +140,7 @@ public final class Common {
 	 * @param converter TODO
 	 */
 	private static Method findCounterpart(FieldNameConverter converter, Method method) {
-		return methodFinder.findCounterPartMethod(converter, method);
+        return MethodFinder.getInstance().findCounterPartMethod(converter, method);
 	}
 
     public static boolean isMutator(Method method)
@@ -249,7 +247,7 @@ public final class Common {
 
     private static Method getPrimaryKeyAccessor(Class<? extends RawEntity<?>> type)
     {
-        final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
+        final Iterable<Method> methods = MethodFinder.getInstance().findAnnotatedMethods(PrimaryKey.class, type);
         if (Iterables.isEmpty(methods))
         {
             throw new RuntimeException("Entity " + type.getSimpleName() + " has no primary key field");
@@ -268,7 +266,7 @@ public final class Common {
 
     public static String getPrimaryKeyField(Class<? extends RawEntity<?>> type, FieldNameConverter converter)
     {
-        final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
+        final Iterable<Method> methods = MethodFinder.getInstance().findAnnotatedMethods(PrimaryKey.class, type);
         if (Iterables.isEmpty(methods))
         {
             throw new RuntimeException("Entity " + type.getSimpleName() + " has no primary key field");
@@ -282,7 +280,7 @@ public final class Common {
 
     public static <K> Class<K> getPrimaryKeyClassType(Class<? extends RawEntity<K>> type)
     {
-        final Iterable<Method> methods = methodFinder.findAnnotatedMethods(PrimaryKey.class, type);
+        final Iterable<Method> methods = MethodFinder.getInstance().findAnnotatedMethods(PrimaryKey.class, type);
         if (Iterables.isEmpty(methods))
         {
             throw new RuntimeException("Entity " + type.getSimpleName() + " has no primary key field");
