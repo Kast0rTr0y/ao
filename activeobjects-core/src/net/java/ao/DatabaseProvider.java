@@ -74,6 +74,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.transform;
@@ -124,6 +125,9 @@ public abstract class DatabaseProvider implements Disposable
 
     private String quote;
 
+    private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
+    private final Pattern ORDER_CLAUSE_PATTERN;
+
     protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager)
     {
         this.dataSource = checkNotNull(dataSource);
@@ -132,6 +136,14 @@ public abstract class DatabaseProvider implements Disposable
         this.sqlListeners = new CopyOnWriteArraySet<SqlListener>();
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
         loadQuoteString();
+
+        // Exclude quote strings around table / column names in order by - some plugins like put the quote string in themselves.
+        String identifierQuoteStringPattern = "";
+        if (quote != null && !quote.isEmpty())
+        {
+            identifierQuoteStringPattern = "(?:" + Pattern.quote(quote) + ")?";
+        }
+        ORDER_CLAUSE_PATTERN = Pattern.compile(ORDER_CLAUSE_STRING.replaceAll("IDENTIFIER_QUOTE_STRING", Matcher.quoteReplacement(identifierQuoteStringPattern)));
     }
 
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
@@ -756,7 +768,7 @@ public abstract class DatabaseProvider implements Disposable
 
     public final String processOrderClause(String order)
     {
-        final Matcher matcher = SqlUtils.ORDER_CLAUSE.matcher(order);
+        final Matcher matcher = ORDER_CLAUSE_PATTERN.matcher(order);
         final StringBuffer sql = new StringBuffer();
         while(matcher.find())
         {
