@@ -137,9 +137,9 @@ public abstract class DatabaseProvider implements Disposable
         this.sqlListeners.add(new LoggingSqlListener(sqlLogger));
         loadQuoteString();
 
-        // exclude quote strings around table / column names in order by - some plugins like put the quote string in themselves.
+        // Exclude quote strings around table / column names in order by - some plugins like put the quote string in themselves.
         String identifierQuoteStringPattern = "";
-        if (quote != null && !" ".equals(quote) && !quote.isEmpty())
+        if (quote != null && !quote.isEmpty())
         {
             identifierQuoteStringPattern = "(?:" + quote + ")?";
         }
