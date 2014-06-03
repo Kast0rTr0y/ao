@@ -234,8 +234,8 @@ public abstract class DatabaseProviderTest
     {
         final List<String> orderClauses = ImmutableList.of(
                 "column1",
-                "column1 ASC",
-                "column1 DESC",
+                "column1 Asc",
+                "column1 Desc",
                 "table1.column1",
                 "table1.column1 ASC",
                 "table1.column1 ASC, column2",
@@ -258,8 +258,8 @@ public abstract class DatabaseProviderTest
     protected List<String> getExpectedOrderClauses() {
         return ImmutableList.of(
                 "column1",
-                "column1 ASC",
-                "column1 DESC",
+                "column1 Asc",
+                "column1 Desc",
                 "table1.column1",
                 "table1.column1 ASC",
                 "table1.column1 ASC, column2",
