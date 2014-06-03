@@ -141,9 +141,9 @@ public abstract class DatabaseProvider implements Disposable
         String identifierQuoteStringPattern = "";
         if (quote != null && !quote.isEmpty())
         {
-            identifierQuoteStringPattern = "(?:" + quote + ")?";
+            identifierQuoteStringPattern = "(?:" + Pattern.quote(quote) + ")?";
         }
-        ORDER_CLAUSE_PATTERN = Pattern.compile(ORDER_CLAUSE_STRING.replaceAll("IDENTIFIER_QUOTE_STRING", identifierQuoteStringPattern));
+        ORDER_CLAUSE_PATTERN = Pattern.compile(ORDER_CLAUSE_STRING.replaceAll("IDENTIFIER_QUOTE_STRING", Matcher.quoteReplacement(identifierQuoteStringPattern)));
     }
 
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
