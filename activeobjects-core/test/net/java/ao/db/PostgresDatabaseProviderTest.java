@@ -1,14 +1,43 @@
 package net.java.ao.db;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import net.java.ao.DatabaseProvider;
+import org.junit.Test;
 
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
 {
+    @Test
+    public final void testProcessOrderClauseQuoted()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "\"column1\"",
+                "\"column1\" ASC",
+                "\"table1\".\"column1\"",
+                "\"table1\".\"column1\" ASC"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+        assertThat(processedOrderClauses, is(orderClauses));
+    }
+
     @Override
     protected String getDatabase()
     {
