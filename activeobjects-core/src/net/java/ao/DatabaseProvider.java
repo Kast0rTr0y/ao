@@ -165,11 +165,6 @@ public abstract class DatabaseProvider implements Disposable
 
     private void loadQuoteString()
     {
-        if (quoteRef.get() != null)
-        {
-            return;
-        }
-
         Connection conn = null;
         try
         {
@@ -2244,7 +2239,6 @@ public abstract class DatabaseProvider implements Disposable
     {
         if (shouldQuoteID(id))
         {
-            loadQuoteString();
             String quote = quoteRef.get();
             return quote + id + quote;
         }
