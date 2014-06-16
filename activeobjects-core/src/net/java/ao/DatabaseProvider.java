@@ -168,7 +168,7 @@ public abstract class DatabaseProvider implements Disposable
         Connection conn = null;
         try
         {
-            conn = getConnection();
+            conn = dataSource.getConnection();
             if (conn == null)
             {
                 throw new IllegalStateException("Could not get connection to load quote String");
