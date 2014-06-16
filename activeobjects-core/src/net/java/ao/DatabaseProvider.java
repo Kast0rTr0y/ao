@@ -75,6 +75,7 @@ import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Iterables.transform;
@@ -123,7 +124,7 @@ public abstract class DatabaseProvider implements Disposable
 
     private final String schema;
 
-    private String quote;
+    private AtomicReference<String> quoteRef = new AtomicReference<String>();
 
     private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
     private final Pattern ORDER_CLAUSE_PATTERN;
@@ -139,6 +140,7 @@ public abstract class DatabaseProvider implements Disposable
 
         // Exclude quote strings around table / column names in order by - some plugins like put the quote string in themselves.
         String identifierQuoteStringPattern = "";
+        String quote = quoteRef.get();
         if (quote != null && !quote.isEmpty())
         {
             identifierQuoteStringPattern = "(?:" + Pattern.quote(quote) + ")?";
@@ -161,9 +163,9 @@ public abstract class DatabaseProvider implements Disposable
         return schema;
     }
 
-    private synchronized void loadQuoteString()
+    private void loadQuoteString()
     {
-        if (quote != null)
+        if (quoteRef.get() != null)
         {
             return;
         }
@@ -176,7 +178,7 @@ public abstract class DatabaseProvider implements Disposable
             {
                 throw new IllegalStateException("Could not get connection to load quote String");
             }
-            quote = conn.getMetaData().getIdentifierQuoteString().trim();
+            quoteRef.set(conn.getMetaData().getIdentifierQuoteString().trim());
         }
         catch (SQLException e)
         {
@@ -2243,6 +2245,7 @@ public abstract class DatabaseProvider implements Disposable
         if (shouldQuoteID(id))
         {
             loadQuoteString();
+            String quote = quoteRef.get();
             return quote + id + quote;
         }
 
