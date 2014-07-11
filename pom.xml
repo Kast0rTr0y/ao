@@ -29,7 +29,20 @@
             <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
-
+    <repositories>
+        <repository>
+          <id>repository</id>
+          <name>repository</name>
+          <releases>
+              <enabled>true</enabled>
+              <checksumPolicy>ignore</checksumPolicy>
+          </releases>
+          <snapshots>
+              <enabled>false</enabled>
+          </snapshots>
+          <url>file://${project.basedir}/repository</url>
+        </repository>
+    </repositories>
     <scm>
         <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
         <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
