@@ -4,5 +4,8 @@ target
 *.ipr
 *.iws
 .idea/
+.classpath
+.project
+.settings/
 *.log
 bin

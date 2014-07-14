@@ -121,6 +121,10 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 {
                     jdbcConfiguration =  new MySql(dbUrl, username, password, dbSchema);
                 }
+                else if ("nuodb".equals(db))
+                {
+                	jdbcConfiguration = new NuoDB(dbUrl, username, password, dbSchema);
+                }
                 else if ("oracle".equals(db))
                 {
                     jdbcConfiguration =  new Oracle(dbUrl, username, password, dbSchema);

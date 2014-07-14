@@ -20,11 +20,13 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import net.java.ao.schema.info.EntityInfo;
+
 import org.junit.Test;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
+import net.java.ao.db.NuoDBDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
@@ -35,7 +37,6 @@ import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -477,6 +478,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         public static MySQLDatabaseProvider getMySqlDatabaseProvider()
         {
             return new MySQLDatabaseProvider(newDataSource(""));
+        }
+        
+        public static NuoDBDatabaseProvider getNuoDBDatabaseProvider()
+        {
+        	return new NuoDBDatabaseProvider(newDataSource(""));
         }
 
         public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()
