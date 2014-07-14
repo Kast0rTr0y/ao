@@ -29,6 +29,8 @@
             <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
+    <!-- If you have not installed the libraries in the repository directory, uncomment the following section
+         to add them to the runtime repository for this project.
     <repositories>
         <repository>
           <id>repository</id>
@@ -43,6 +45,7 @@
           <url>file://${project.basedir}/repository</url>
         </repository>
     </repositories>
+    End local repository reference. -->
     <scm>
         <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
         <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
