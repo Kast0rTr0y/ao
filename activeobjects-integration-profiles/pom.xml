@@ -167,9 +167,9 @@
                         <artifactId>database-maven-plugin</artifactId>
                         <dependencies>
                             <dependency>
-                                <groupId>mysql</groupId>
-                                <artifactId>mysql-connector-java</artifactId>
-                                <version>${mysql.version}</version>
+                                <groupId>com.nuodb.jdbc</groupId>
+                                <artifactId>nuodb-jdbc</artifactId>
+                                <version>${nuodb.version}</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
