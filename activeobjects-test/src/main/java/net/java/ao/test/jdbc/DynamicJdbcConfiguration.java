@@ -28,6 +28,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             .put("oracle", new Oracle())
             .put("sqlserver", new SqlServer())
             .put("derby-embedded", new DerbyEmbedded())
+            .put("nuodb", new NuoDB())
             .build();
 
     private static final String DEFAULT = "hsql";
@@ -136,6 +137,11 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 else if ("derby-embedded".equals(db))
                 {
                     jdbcConfiguration =  new DerbyEmbedded(dbUrl, username, password, dbSchema);
+                }
+                else if ("nuodb".equals(db))
+                {
+                    jdbcConfiguration =  new NuoDB(dbUrl, username, password, dbSchema);
+                    throw new IllegalStateException("blargh!");
                 }
             }
             else

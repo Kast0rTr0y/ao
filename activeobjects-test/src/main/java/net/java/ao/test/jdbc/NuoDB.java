@@ -7,10 +7,11 @@ public class NuoDB extends AbstractJdbcConfiguration
 {
 
     public static final String DEFAULT_URL = "jdbc:com.nuodb://localhost/ao_test";
+    public static final String DEFAULT_SCHEMA = "ao_schema";
 
     public NuoDB()
     {
-        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, null);
+        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
     public NuoDB(String url, String username, String password, String schema)
@@ -21,7 +22,7 @@ public class NuoDB extends AbstractJdbcConfiguration
     @Override
     protected String getDefaultSchema()
     {
-        return null;
+        return DEFAULT_SCHEMA;
     }
 
     @Override

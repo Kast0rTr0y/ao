@@ -147,10 +147,8 @@
         <profile>
             <id>nuodb</id>
             <properties>
-                <ao.test.database></ao.test.database>
-                <db.skip>false</db.skip>
-                <db.system.username>domain</db.system.username>
-                <db.system.password>bird</db.system.password>
+                <ao.test.database>nuodb</ao.test.database>
+                <db.skip>true</db.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -162,18 +160,6 @@
             </dependencies>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.nuodb.jdbc</groupId>
-                                <artifactId>nuodb-jdbc</artifactId>
-                                <version>${nuodb.version}</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
