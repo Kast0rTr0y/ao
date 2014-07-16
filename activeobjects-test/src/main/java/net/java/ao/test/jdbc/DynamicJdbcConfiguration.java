@@ -141,7 +141,6 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 else if ("nuodb".equals(db))
                 {
                     jdbcConfiguration =  new NuoDB(dbUrl, username, password, dbSchema);
-                    throw new IllegalStateException("blargh!");
                 }
             }
             else
