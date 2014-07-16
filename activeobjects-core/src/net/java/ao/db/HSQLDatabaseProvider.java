@@ -229,7 +229,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
                 }
                 else
                 {
-                    sql.append(querySelectFields(query));
+                    sql.append(querySelectFields(query, converter));
                 }
                 sql.append(" FROM ").append(queryTableName(query, converter));
 			break;
