@@ -146,7 +146,7 @@ public final class DerbyQueryTest extends QueryTest
     protected String getExpectedSqlForSelectWithDefaultJoin()
     {
         return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL", 
-                entityManager.getTableNameConverter().getName(Person.class) + "." + getPersonId(), 
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(), 
                 getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
