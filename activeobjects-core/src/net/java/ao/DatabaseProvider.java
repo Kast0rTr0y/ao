@@ -629,15 +629,14 @@ public abstract class DatabaseProvider implements Disposable
     private String withAlias(Query query, String field, final TableNameConverter converter)
     {
         final StringBuilder withAlias = new StringBuilder();
-        String table = "";
         if (query.getAlias(query.getTableType()) != null)
         {
-            table = query.getAlias(query.getTableType()) + ".";
-        } else if (!query.getJoins().isEmpty()) {
+            withAlias.append(query.getAlias(query.getTableType())).append(".");
+        } else if (!query.getJoins().isEmpty())
+        {
             String queryTable = query.getTable();
-            table = (queryTable != null ? queryTable : converter.getName(query.getTableType())) + ".";
+            withAlias.append((queryTable != null ? queryTable : converter.getName(query.getTableType()))).append(".");
         }
-        withAlias.append(table);
         return withAlias.append(processID(field)).toString();
     }
 
