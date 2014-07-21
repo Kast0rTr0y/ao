@@ -117,7 +117,8 @@ public final class HsqlQueryTest extends QueryTest
     protected String getExpectedSqlForSelectWithExplicitJoin()
     {
         return format("SELECT %s FROM %s JOIN %s ON %s.%s = %s.%s WHERE %s IS NULL AND %s = 3 GROUP BY %s",
-                getPersonId(), getExpectedTableName(Person.class),
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(), 
+                getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
                 getExpectedTableName(Person.class), getPersonCompany(),
                 getExpectedTableName(Company.class), getCompanyId(),
@@ -138,7 +139,9 @@ public final class HsqlQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithDefaultJoin()
     {
-        return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
+        return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL", 
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(), 
+                getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
