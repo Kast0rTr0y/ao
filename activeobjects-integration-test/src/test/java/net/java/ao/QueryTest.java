@@ -367,6 +367,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         final String tableName = entityManager.getTableNameConverter().getName(clazz);
         return schema == null ? tableName : schema + "." + tableName;
     }
+    
+    protected final String getExpectedTableNameWithoutSchema(Class<? extends RawEntity<?>> clazz) 
+    {
+        return entityManager.getTableNameConverter().getName(clazz);
+    }
 
     protected final String getExpectedTableName(Class<? extends RawEntity<?>> clazz)
     {

@@ -270,7 +270,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
 				if (count) {
 					sql.append("COUNT(*)");
 				} else {
-                    sql.append(querySelectFields(query));
+                    sql.append(querySelectFields(query, converter));
 				}
                 sql.append(" FROM ").append(queryTableName(query, converter));
 			break;
