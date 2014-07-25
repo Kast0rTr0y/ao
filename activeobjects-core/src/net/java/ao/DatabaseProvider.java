@@ -124,7 +124,7 @@ public abstract class DatabaseProvider implements Disposable
 
     private final String schema;
 
-    private AtomicReference<String> quoteRef = new AtomicReference<String>();
+    protected AtomicReference<String> quoteRef = new AtomicReference<String>();
 
     private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
     private final Pattern ORDER_CLAUSE_PATTERN;
@@ -163,7 +163,7 @@ public abstract class DatabaseProvider implements Disposable
         return schema;
     }
 
-    private void loadQuoteString()
+    protected void loadQuoteString()
     {
         Connection conn = null;
         try
