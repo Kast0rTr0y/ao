@@ -1,1 +1,1 @@
-ALTER TABLE person DROP FOREIGN KEY fk_person_companyid
+ALTER TABLE person DROP FOREIGN KEY (companyID) REFERENCES company
