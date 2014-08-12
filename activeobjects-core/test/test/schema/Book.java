@@ -21,4 +21,7 @@ package test.schema;
 public interface Book extends Publication {
 	public boolean isHardcover();
 	public void setHardcover(boolean hardcover);
+
+    public String getMerge();
+    public void setMerge(String merge);
 }
