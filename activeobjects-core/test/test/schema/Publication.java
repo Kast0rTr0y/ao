@@ -32,7 +32,4 @@ public interface Publication extends Entity {
 	
 	@ManyToMany(PublicationToDistribution.class)
 	public Distribution[] getDistributions();
-
-    public String getMerge();
-    public void setMerge(String merge);
 }
