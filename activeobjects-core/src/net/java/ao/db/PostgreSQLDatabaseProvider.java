@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +56,8 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     private static final int MAX_SEQUENCE_LENGTH = 64;
     private static final String SQL_STATE_UNDEFINED_FUNCTION = "42883";
     private static final Pattern PATTERN_QUOTE_ID = Pattern.compile("(\\*|\\d*?)");
+
+    private final Lock pkNextvalLock = new ReentrantLock();
 
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
@@ -279,36 +283,49 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+    public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
             Class<T> entityType, Class<K> pkType,
             String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
     {
         K back = null;
-		for (DBParam param : params) {
-			if (param.getField().trim().equalsIgnoreCase(pkField)) {
-				back = (K) param.getValue();
-				break;
-			}
-		}
 
-		if (back == null) {
-			final String sql = "SELECT NEXTVAL('" + withSchema(sequenceName(pkField, table)) + "')";
+        pkNextvalLock.lock();
+        try
+        {
+            for (DBParam param : params)
+            {
+                if (param.getField().trim().equalsIgnoreCase(pkField))
+                {
+                    back = (K) param.getValue();
+                    break;
+                }
+            }
 
-			final PreparedStatement stmt = preparedStatement(conn, sql);
+            if (back == null)
+            {
+                final String sql = "SELECT NEXTVAL('" + withSchema(sequenceName(pkField, table)) + "')";
 
-			ResultSet res = stmt.executeQuery();
-			if (res.next()) {
-				 back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
-			}
-			res.close();
-			stmt.close();
+                final PreparedStatement stmt = preparedStatement(conn, sql);
 
-			List<DBParam> newParams = new ArrayList<DBParam>();
-			newParams.addAll(Arrays.asList(params));
+                ResultSet res = stmt.executeQuery();
+                if (res.next())
+                {
+                    back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
+                }
+                res.close();
+                stmt.close();
 
-			newParams.add(new DBParam(pkField, back));
-			params = newParams.toArray(new DBParam[newParams.size()]);
-		}
+                List<DBParam> newParams = new ArrayList<DBParam>();
+                newParams.addAll(Arrays.asList(params));
+
+                newParams.add(new DBParam(pkField, back));
+                params = newParams.toArray(new DBParam[newParams.size()]);
+            }
+        }
+        finally
+        {
+            pkNextvalLock.unlock();
+        }
 
 		super.insertReturningKey(manager, conn, entityType, pkType, pkField, pkIdentity, table, params);
 
