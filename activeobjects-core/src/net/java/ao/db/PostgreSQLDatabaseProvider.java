@@ -57,8 +57,6 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     private static final String SQL_STATE_UNDEFINED_FUNCTION = "42883";
     private static final Pattern PATTERN_QUOTE_ID = Pattern.compile("(\\*|\\d*?)");
 
-    private final Lock pkNextvalLock = new ReentrantLock();
-
     public PostgreSQLDatabaseProvider(DisposableDataSource dataSource)
     {
         this(dataSource, "public");
@@ -289,42 +287,34 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     {
         K back = null;
 
-        pkNextvalLock.lock();
-        try
+        for (DBParam param : params)
         {
-            for (DBParam param : params)
+            if (param.getField().trim().equalsIgnoreCase(pkField))
             {
-                if (param.getField().trim().equalsIgnoreCase(pkField))
-                {
-                    back = (K) param.getValue();
-                    break;
-                }
-            }
-
-            if (back == null)
-            {
-                final String sql = "SELECT NEXTVAL('" + withSchema(sequenceName(pkField, table)) + "')";
-
-                final PreparedStatement stmt = preparedStatement(conn, sql);
-
-                ResultSet res = stmt.executeQuery();
-                if (res.next())
-                {
-                    back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
-                }
-                res.close();
-                stmt.close();
-
-                List<DBParam> newParams = new ArrayList<DBParam>();
-                newParams.addAll(Arrays.asList(params));
-
-                newParams.add(new DBParam(pkField, back));
-                params = newParams.toArray(new DBParam[newParams.size()]);
+                back = (K) param.getValue();
+                break;
             }
         }
-        finally
+
+        if (back == null)
         {
-            pkNextvalLock.unlock();
+            final String sql = "SELECT NEXTVAL('" + withSchema(sequenceName(pkField, table)) + "')";
+
+            final PreparedStatement stmt = preparedStatement(conn, sql);
+
+            ResultSet res = stmt.executeQuery();
+            if (res.next())
+            {
+                back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
+            }
+            res.close();
+            stmt.close();
+
+            List<DBParam> newParams = new ArrayList<DBParam>();
+            newParams.addAll(Arrays.asList(params));
+
+            newParams.add(new DBParam(pkField, back));
+            params = newParams.toArray(new DBParam[newParams.size()]);
         }
 
 		super.insertReturningKey(manager, conn, entityType, pkType, pkField, pkIdentity, table, params);
