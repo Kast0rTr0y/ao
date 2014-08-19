@@ -71,9 +71,14 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
 
         back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
         
-        //Store if the field wants ot be auto-increment, but turn it off.  NuoDB does not support adding auto-increment on existing columns.
+        //Store if the field wants to be auto-increment, but turn it off.  NuoDB does not support adding auto-increment on existing columns.
         boolean needsAutoIncrement = field.isAutoIncrement();
         field.setAutoIncrement(false);
+        
+        //If we are changing the JDBC Type, we need to drop the primary index
+        if(oldField.isPrimaryKey() && oldField.getJdbcType() != field.getJdbcType()) {
+        	back.add(findAndRenderDropUniqueIndex(nameConverters, table, field, true));
+        }
         
         //Add alter statements for everything but unique.
         back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, new RenderFieldOptions(false, true, true)));
@@ -89,17 +94,8 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
         }
         
         if(oldField.isUnique() && !field.isUnique()) {
-        	// SchemaReader filters out unique indices; so use the expected name patterns to try to find it.
-        	String indexName = findUniqueIndex(table.getName(), field.getName());
-    		if(indexName == null || indexName.isEmpty()) {
-    			logger.error("Unable to find unique index for field {} in table {}", field.getName(), table.getName());
-    		}
-        
-        	DDLIndex index = new DDLIndex();
-        	index.setField(field.getName());
-        	index.setTable(table.getName());
-        	index.setIndexName(indexName);
-        	back.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
+        	// SchemaReader filters out unique indices; so use the expected name patterns to try to find it, and drop it
+        	back.add(findAndRenderDropUniqueIndex(nameConverters, table, field, false));
         }
         
         if(!oldField.isUnique() && field.isUnique()){
@@ -109,13 +105,61 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
         	index.setType(field.getType());
         	back.add(renderUniqueIndex(nameConverters.getIndexNameConverter(), index));
         }
+        
+        if(field.isPrimaryKey() && oldField.getJdbcType() != field.getJdbcType()) {
+        	//If the type changed, and this field is the primary key, we need to redefine it.
+        	//alter table AO_000000_ENTITY add primary key (id) ;
+        	back.add(SQLAction.of("ALTER TABLE " + withSchema(table.getName()) + " ADD PRIMARY KEY (" + field.getName() + ")"));
+        }
 
         back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }
     
-    private String findUniqueIndex(String table, String field) {
+    @Override
+    protected Iterable<SQLAction> renderDropAccessoriesForField(
+    		NameConverters nameConverters, DDLTable table, DDLField field) {
+    	//Drop indices on field being altered.
+    	final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+    	for(DDLIndex index : table.getIndexes()) {
+    		if(index.getField().equalsIgnoreCase(field.getName())) {
+    			back.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
+    		}
+    	}
+    	return back.build();
+    }
+    
+    @Override
+    protected Iterable<SQLAction> renderAccessoriesForField(
+    		NameConverters nameConverters, DDLTable table, DDLField field) {
+    	//Create indices on field being altered.
+    	final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+    	for(DDLIndex index : table.getIndexes()) {
+    		if(index.getField().equalsIgnoreCase(field.getName())) {
+    			back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
+    		}
+    	}
+    	return back.build();
+    }
+
+	private SQLAction findAndRenderDropUniqueIndex(
+			NameConverters nameConverters, DDLTable table, DDLField field,
+			boolean isPrimary) {
+		String indexName = findUniqueIndex(table.getName(), field.getName(), isPrimary);
+		if(indexName == null || indexName.isEmpty()) {
+			logger.error("Unable to find unique index for field {} in table {}", field.getName(), table.getName());
+		}
+      
+		DDLIndex index = new DDLIndex();
+		index.setField(field.getName());
+		index.setTable(table.getName());
+		index.setIndexName(indexName);
+		SQLAction renderDropIndex = renderDropIndex(nameConverters.getIndexNameConverter(), index);
+		return renderDropIndex;
+	}
+    
+    private String findUniqueIndex(String table, String field, boolean returnPrimary) {
 
         Connection connection = null;
         try
@@ -126,7 +170,10 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
             {
                 if (field.equalsIgnoreCase(indexes.getString("COLUMN_NAME")))
                 {
-                    return indexes.getString("INDEX_NAME");
+                	String name = indexes.getString("INDEX_NAME");
+                	if(returnPrimary == name.contains("PRIMARY")) {
+                		return indexes.getString("INDEX_NAME");
+                	}
                 }
             }
             return null;
@@ -161,7 +208,7 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
 
         if (hasIndex(tableName,indexName))
         {
-            return SQLAction.of("DROP INDEX " + withSchema(indexName));
+            return SQLAction.of("DROP INDEX " + withSchema("\"" + indexName + "\""));
         }
         else
         {
