@@ -279,7 +279,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+    public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
             Class<T> entityType, Class<K> pkType,
             String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
     {
