@@ -592,7 +592,7 @@ public abstract class DatabaseProvider implements Disposable
                 }
                 else
                 {
-                    sql.append(querySelectFields(query));
+                    sql.append(querySelectFields(query, converter));
                 }
                 sql.append(" FROM ").append(queryTableName(query, converter));
                 break;
@@ -614,24 +614,28 @@ public abstract class DatabaseProvider implements Disposable
         return queryTableName.toString();
     }
 
-    protected final String querySelectFields(final Query query)
+    protected final String querySelectFields(final Query query, final TableNameConverter converter)
     {
         return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>()
         {
             @Override
             public String apply(String fieldName)
             {
-                return withAlias(query, fieldName);
+                return withAlias(query, fieldName, converter);
             }
         }));
     }
 
-    private String withAlias(Query query, String field)
+    private String withAlias(Query query, String field, final TableNameConverter converter)
     {
         final StringBuilder withAlias = new StringBuilder();
         if (query.getAlias(query.getTableType()) != null)
         {
             withAlias.append(query.getAlias(query.getTableType())).append(".");
+        } else if (!query.getJoins().isEmpty())
+        {
+            String queryTable = query.getTable();
+            withAlias.append((queryTable != null ? queryTable : converter.getName(query.getTableType()))).append(".");
         }
         return withAlias.append(processID(field)).toString();
     }
