@@ -115,7 +115,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         assertNull(e.getName());
 
         // set
-        final String russian = "Вы все получите вкус суки Puddin '!";
+        final String russian = "Теперь вы все получите вкус!";
         e.setName(russian);
         e.save();
         e = entityManager.get(SimpleColumn.class, e.getID());
@@ -123,14 +123,14 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", russian);
 
         // set
-        final String chinese = "你們都得到了婊子布丁“的味道！";
+        final String chinese = "現在大家拿到的味道！";
         e.setName(chinese);
         e.save();
         e = entityManager.get(SimpleColumn.class, e.getID());
         assertEquals(chinese, e.getName());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", chinese);
 
-        final String hebrew = "כל מה שאתה מקבל את טעם של פשטידת הכלבה '!";
+        final String hebrew = "עכשיו כל מה שאתה מקבל טעם!";
         e.setName(hebrew);
         e.save();
         e = entityManager.get(SimpleColumn.class, e.getID());
