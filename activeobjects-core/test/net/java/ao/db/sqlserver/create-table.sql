@@ -3,7 +3,7 @@ CREATE TABLE dbo.person (
     firstName NVARCHAR(255) NOT NULL,
     lastName NTEXT,
     age INTEGER,
-    url NVARCHAR(767) CONSTRAINT U_person_url UNIQUE NOT NULL,
+    url NVARCHAR(450) CONSTRAINT U_person_url UNIQUE NOT NULL,
     height FLOAT CONSTRAINT df_person_height DEFAULT 62.3,
     companyID BIGINT,
     cool BIT CONSTRAINT df_person_cool DEFAULT 1,
