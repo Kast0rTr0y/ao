@@ -212,12 +212,30 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 				sql.append("SELECT ");
 
                 int limit = query.getLimit();
-                if (limit >= 0)
+                int offset = query.getOffset();
+                if (limit >= 0 || offset > 0)
                 {
-                    int offset = Math.max(query.getOffset(), 0);
+                    sql.append("LIMIT ");
 
-                    sql.append("LIMIT ").append(offset).append(' ');
-                    sql.append(limit).append(' ');
+                    if (offset > 0)
+                    {
+                        sql.append(offset);
+                    }
+                    else
+                    {
+                        sql.append(0);
+                    }
+                    sql.append(" ");
+
+                    if (limit >= 0)
+                    {
+                        sql.append(limit);
+                    }
+                    else
+                    {
+                        sql.append(0);
+                    }
+                    sql.append(" ");
                 }
 
                 if (query.isDistinct())
