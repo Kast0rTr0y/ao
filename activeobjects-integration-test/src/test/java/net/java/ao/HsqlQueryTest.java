@@ -72,15 +72,33 @@ public final class HsqlQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        return format("SELECT LIMIT 4 0 %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithLimit()
     {
         return format("SELECT LIMIT 0 10 COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        return format("SELECT LIMIT 4 0 COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
         return format("SELECT LIMIT 0 10 DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
+    {
+        return format("SELECT LIMIT 4 0 DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
