@@ -68,7 +68,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider
     {
         StringBuilder sql = new StringBuilder();
 
-        // use the "LIMIT [<OFFSET>, ] <LIMIT>" style
+        // use the "LIMIT [<OFFSET>, ] <LIMIT>" style, with (2^64-1) meaning "unlimited"
         int offset = query.getOffset();
         int limit = query.getLimit();
 
@@ -83,7 +83,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider
             }
             else
             {
-                sql.append(Integer.MAX_VALUE);
+                sql.append("18446744073709551615");
             }
         }
         else if (limit >= 0)
