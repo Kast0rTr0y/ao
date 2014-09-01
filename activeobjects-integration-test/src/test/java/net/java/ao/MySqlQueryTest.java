@@ -74,7 +74,7 @@ public final class MySqlQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithOffset()
     {
-        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), Integer.MAX_VALUE);
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, 18446744073709551615", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
@@ -86,7 +86,7 @@ public final class MySqlQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForCountWithOffset()
     {
-        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), Integer.MAX_VALUE);
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, 18446744073709551615", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
@@ -98,7 +98,7 @@ public final class MySqlQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForDistinctSelectWithOffset()
     {
-        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), Integer.MAX_VALUE);
+        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 4, 18446744073709551615", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
