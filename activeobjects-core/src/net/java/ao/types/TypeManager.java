@@ -137,6 +137,19 @@ public class TypeManager
                 .build();
     }
 
+    public static TypeManager h2()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("TIMESTAMP"))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(integerType(), schemaType("INT"))
+                .addMapping(longType(), schemaType("BIGINT"))
+                .addStringTypes("VARCHAR", "CLOB", Integer.MAX_VALUE)
+                .build();
+    }
+
     public static TypeManager mysql()
     {
         Builder builder = new Builder()

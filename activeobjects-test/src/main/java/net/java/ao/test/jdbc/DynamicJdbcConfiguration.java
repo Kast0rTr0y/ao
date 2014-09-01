@@ -22,6 +22,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 
     private static final ImmutableMap<String, JdbcConfiguration> CONFIGS = ImmutableMap.<String, JdbcConfiguration>builder()
             .put("hsql", new Hsql())
+            .put("h2", new H2())
             .put("hsql-file", new HsqlFileStorage())
             .put("mysql", new MySql())
             .put("postgres", new Postgres())
@@ -112,6 +113,10 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 else if ("hsql".equals(db))
                 {
                     jdbcConfiguration =  new Hsql(dbUrl, username, password, dbSchema);
+                }
+                else if ("h2".equals(db))
+                {
+                    jdbcConfiguration = new H2(dbUrl, username, password, dbSchema);
                 }
                 else if ("hsql-file".equals(db))
                 {

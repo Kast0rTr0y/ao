@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
+import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.schema.info.EntityInfo;
 import org.junit.Test;
 
@@ -467,6 +468,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         public static HSQLDatabaseProvider getHsqlDatabaseProvider()
         {
             return new HSQLDatabaseProvider(newDataSource(""));
+        }
+
+        public static H2DatabaseProvider getH2DatabaseProvier()
+        {
+            return new H2DatabaseProvider(newDataSource(""));
         }
 
         public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
