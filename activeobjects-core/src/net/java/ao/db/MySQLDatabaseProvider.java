@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 
 import static com.google.common.collect.Iterables.concat;
 
+import net.java.ao.Query;
 import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.DatabaseProvider;
@@ -60,6 +61,38 @@ public class MySQLDatabaseProvider extends DatabaseProvider
     protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
     {
         return "";
+    }
+
+    @Override
+    protected String renderQueryLimit(final Query query)
+    {
+        StringBuilder sql = new StringBuilder();
+
+        // use the "LIMIT [<OFFSET>, ] <LIMIT>" style, with (2^64-1) meaning "unlimited"
+        int offset = query.getOffset();
+        int limit = query.getLimit();
+
+        if (offset > 0)
+        {
+            sql.append(" LIMIT ");
+            sql.append(offset);
+            sql.append(", ");
+            if (limit >= 0)
+            {
+                sql.append(limit);
+            }
+            else
+            {
+                sql.append("18446744073709551615");
+            }
+        }
+        else if (limit >= 0)
+        {
+            sql.append(" LIMIT ");
+            sql.append(limit);
+        }
+
+        return sql.toString();
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -31,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import net.java.ao.schema.Case;
+import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.Common;
@@ -77,22 +77,6 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
-		int limit = query.getLimit();
-		if (limit >= 0) {
-			stmt.setMaxRows(Math.max(query.getOffset(), 0) + limit);
-		}
-	}
-
-
-	@Override
-	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
-		if (query.getOffset() > 0) {
-			res.absolute(query.getOffset());
-		}
-	}
-
-    @Override
     public ResultSet getTables(Connection conn) throws SQLException
     {
         final DatabaseMetaData metaData = conn.getMetaData();
@@ -125,9 +109,62 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    protected String renderQuerySelect(final Query query, final TableNameConverter converter, final boolean count)
+    {
+        StringBuilder sql = new StringBuilder();
+
+        // see http://www.oracle.com/technetwork/issue-archive/2006/06-sep/o56asktom-086197.html
+
+        if (Query.QueryType.SELECT.equals(query.getType()))
+        {
+            int offset = query.getOffset();
+            int limit = query.getLimit();
+
+            if (offset > 0)
+            {
+                sql.append("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( ");
+            }
+            else if (limit >= 0)
+            {
+                sql.append("SELECT * FROM ( ");
+            }
+        }
+
+        sql.append(super.renderQuerySelect(query, converter, count));
+
+        return sql.toString();
+    }
+
+    @Override
 	protected String renderQueryLimit(Query query) {
-		return "";
-	}
+        StringBuilder sql = new StringBuilder();
+
+        if (Query.QueryType.SELECT.equals(query.getType()))
+        {
+            int offset = query.getOffset();
+            int limit = query.getLimit();
+
+            if (offset > 0 && limit >= 0)
+            {
+                sql.append(" ) QUERY_INNER WHERE ROWNUM <= ");
+                sql.append(offset + limit);
+                sql.append(" ) WHERE ROWNUM_INNER > ");
+                sql.append(offset);
+            }
+            else if (offset > 0)
+            {
+                sql.append(" ) QUERY_INNER ) WHERE ROWNUM_INNER > ");
+                sql.append(offset);
+            }
+            else if (limit >= 0)
+            {
+                sql.append(" ) WHERE ROWNUM <= ");
+                sql.append(limit);
+            }
+        }
+
+        return sql.toString();
+    }
 
 	@Override
 	protected String renderAutoIncrement() {
