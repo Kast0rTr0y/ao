@@ -800,11 +800,12 @@ public abstract class DatabaseProvider implements Disposable
     /**
      * <p>Renders the LIMIT portion of the query in the database-specific SQL
      * dialect.  There is wide variety in database implementations of this
-     * particular SQL clause.  In fact, many database do not support it at all.
-     * If the database in question does not support LIMIT, this method should
-     * be overridden to return an empty String.  For such databases, LIMIT
-     * should be implemented by overriding {@link #setQueryResultSetProperties(ResultSet, Query)}
-     * and {@link #setQueryStatementProperties(Statement, Query)}.</p>
+     * particular SQL clause.  In fact, many database do not support it at all.</p>
+     * <p/>
+     * <p>Unfortunately, we live in the real world of proprietary database
+     * implementations that requires us to use database specific keywords or
+     * semantics to achieve these outcomes. Appropriate methods should be
+     * overridden in such cases.</p>
      * <p/>
      * <p>An example return value: <code>" LIMIT 10,2"</code></p>
      * <p/>
