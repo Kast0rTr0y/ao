@@ -68,55 +68,67 @@ public final class OracleQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithLimit()
     {
-        // Note: The limit is achieved through JDBC instead of within the query
-        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 ) WHERE ROWNUM <= 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER ) WHERE ROWNUM_INNER > 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithLimit()
     {
-        // Note: The limit is achieved through JDBC instead of within the query
-        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 ) WHERE ROWNUM <= 10", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER ) WHERE ROWNUM_INNER > 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
-        // Note: The limit is achieved through JDBC instead of within the query
-        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 ) WHERE ROWNUM <= 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
+    {
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER ) WHERE ROWNUM_INNER > 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithLimitAndOffset()
     {
-        // Note: The limit and offset is achieved through JDBC instead of within the query
-        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER WHERE ROWNUM <= 14 ) WHERE ROWNUM_INNER > 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithLimitAndOffset()
     {
-        // Note: The limit and offset is achieved through JDBC instead of within the query
-        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER WHERE ROWNUM <= 14 ) WHERE ROWNUM_INNER > 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForDistinctSelectWithLimitAndOffset()
     {
-        // Note: The limit and offset is achieved through JDBC instead of within the query
-        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+        return format("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 ) QUERY_INNER WHERE ROWNUM <= 14 ) WHERE ROWNUM_INNER > 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithGroupBy()
     {
-        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
+        return format("SELECT * FROM ( SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s ) WHERE ROWNUM <= 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithGroupBy()
     {
-        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
+        return format("SELECT * FROM ( SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s ) WHERE ROWNUM <= 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override

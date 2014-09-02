@@ -96,15 +96,33 @@ public final class PostgresQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        return format("SELECT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithLimit()
     {
         return format("SELECT COUNT(*) FROM %s WHERE '%s' IS NULL AND '%s' = 3 LIMIT 10", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        return format("SELECT COUNT(*) FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
         return format("SELECT DISTINCT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 LIMIT 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
+    {
+        return format("SELECT DISTINCT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
@@ -186,7 +204,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithAliasedExplicitJoin()
     {
-        return format("SELECT p.'%s' FROM %s p JOIN %s c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY p.'%s'",
+        return format("SELECT p.'%s' FROM %s p JOIN %s c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY 'p'.'%s'",
                 getPersonId(), getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
                 getPersonCompany(), getCompanyId(),
