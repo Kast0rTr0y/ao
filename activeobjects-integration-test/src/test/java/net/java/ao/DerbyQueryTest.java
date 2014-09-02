@@ -74,6 +74,13 @@ public final class DerbyQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        // Note: The limit is achieved through JDBC instead of within the query
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithLimit()
     {
         // Note: The limit is achieved through JDBC instead of within the query
@@ -81,9 +88,23 @@ public final class DerbyQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        // Note: The offset is achieved through JDBC instead of within the query
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
         // Note: The limit is achieved through JDBC instead of within the query
+        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
+    {
+        // Note: The offset is achieved through JDBC instead of within the query
         return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
