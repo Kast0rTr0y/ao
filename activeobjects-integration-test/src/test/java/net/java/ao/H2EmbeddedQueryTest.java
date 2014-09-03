@@ -1,11 +1,36 @@
 package net.java.ao;
 
+import net.java.ao.it.model.Company;
+import net.java.ao.it.model.CompanyAddressInfo;
+import net.java.ao.it.model.Person;
+import net.java.ao.test.jdbc.H2Embedded;
 import net.java.ao.test.junit.H2EmbeddedIntegrationTest;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+
+import java.io.File;
+
+import static java.lang.String.format;
 
 @Category (H2EmbeddedIntegrationTest.class)
 public class H2EmbeddedQueryTest extends QueryTest
 {
+    @SuppressWarnings ("ResultOfMethodCallIgnored")
+    @BeforeClass
+    public static void beforeClass()
+    {
+        final File mvFile = new File(H2Embedded.DEFAULT_FILE_NAME + ".mv.db");
+        if (mvFile.exists())
+        {
+            mvFile.delete();
+        }
+        final File traceFile = new File(H2Embedded.DEFAULT_FILE_NAME + ".trace.db");
+        if (traceFile.exists())
+        {
+            traceFile.delete();
+        }
+    }
+
     @Override
     protected DatabaseProvider getDatabaseProvider()
     {
@@ -15,157 +40,173 @@ public class H2EmbeddedQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSimpleSelect()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s", getPersonId(), getExpectedTableName(Person.class));
     }
 
     @Override
     protected String getExpectedSqlForSimpleCount()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s", getExpectedTableName(Person.class));
     }
 
     @Override
     protected String getExpectSqlForSelectSomeFields()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s,%s,%s FROM %s", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class));
     }
 
     @Override
     protected String getExpectSqlForCountSomeFields()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return getExpectedSqlForSimpleCount();
     }
 
     @Override
     protected String getExpectedSqlForSelectWithWhereClause()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithWhereClause()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithOrderClause()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s ORDER BY %s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
     }
 
     @Override
     protected String getExpectedSqlForCountWithOrderClause()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC", getExpectedTableName(Person.class), getPersonLastName());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithLimit()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT -1 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithLimit()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 LIMIT -1 OFFSET 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForDistinctSelectWithOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT -1 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithLimitAndOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithLimitAndOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10 OFFSET 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForDistinctSelectWithLimitAndOffset()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3 LIMIT 10 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithGroupBy()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s LIMIT 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForCountWithGroupBy()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s LIMIT 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithExplicitJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s JOIN %s ON %s.%s = %s.%s WHERE %s IS NULL AND %s = 3 GROUP BY %s",
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(),
+                getExpectedTableName(Person.class),
+                getExpectedTableName(Company.class),
+                getExpectedTableName(Person.class), getPersonCompany(),
+                getExpectedTableName(Company.class), getCompanyId(),
+                getPersonLastName(), getPersonAge(), getPersonUrl());
     }
 
     @Override
     protected String getExpectedSqlForCountWithExplicitJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s JOIN %s ON %s.%s = %s.%s WHERE %s IS NULL AND %s = 3 GROUP BY %s",
+                getExpectedTableName(Person.class),
+                getExpectedTableName(Company.class),
+                getExpectedTableName(Person.class), getPersonCompany(),
+                getExpectedTableName(Company.class), getCompanyId(),
+                getPersonLastName(), getPersonAge(), getPersonUrl());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithDefaultJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL",
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(),
+                getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForCountWithDefaultJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE %s IS NULL", getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithAliasedJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT p.%s FROM %s p JOIN %s c JOIN %s ca WHERE ca.%s IS NULL", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithAliasedJoinAndSomeFields()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT p.%s,p.%s,p.%s FROM %s p JOIN %s c JOIN %s ca WHERE ca.%s IS NULL", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
     protected String getExpectedSqlForSelectWithAliasedExplicitJoin()
     {
-        throw new UnsupportedOperationException("Not implemented");
+        return format("SELECT p.%s FROM %s p JOIN %s c ON p.%s = c.%s WHERE p.%s IS NULL AND p.%s = 3 GROUP BY p.%s",
+                getPersonId(), getExpectedTableName(Person.class),
+                getExpectedTableName(Company.class),
+                getPersonCompany(), getCompanyId(),
+                getPersonLastName(), getPersonAge(), getPersonUrl());
     }
-
 }
