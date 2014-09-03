@@ -23,7 +23,7 @@ public @interface StringLength {
 	 */
 	int value();
 
-    public static final int MAX_LENGTH = 767;
+    public static final int MAX_LENGTH = 450; // sql server nvarchar limit
 
 	public static final int UNLIMITED = -1;
 }
