@@ -4,7 +4,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import net.java.ao.test.ConfigurationProperties;
-import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +21,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 
     private static final ImmutableMap<String, JdbcConfiguration> CONFIGS = ImmutableMap.<String, JdbcConfiguration>builder()
             .put("hsql", new Hsql())
-            .put("h2", new H2())
+            .put("h2-embedded", new H2Embedded())
             .put("hsql-file", new HsqlFileStorage())
             .put("mysql", new MySql())
             .put("postgres", new Postgres())
@@ -114,9 +113,9 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 {
                     jdbcConfiguration =  new Hsql(dbUrl, username, password, dbSchema);
                 }
-                else if ("h2".equals(db))
+                else if ("h2-embedded".equals(db))
                 {
-                    jdbcConfiguration = new H2(dbUrl, username, password, dbSchema);
+                    jdbcConfiguration = new H2Embedded(dbUrl, username, password, dbSchema);
                 }
                 else if ("hsql-file".equals(db))
                 {

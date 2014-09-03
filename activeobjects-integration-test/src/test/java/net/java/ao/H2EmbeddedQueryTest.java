@@ -1,10 +1,10 @@
 package net.java.ao;
 
-import net.java.ao.test.junit.H2IntegrationTest;
+import net.java.ao.test.junit.H2EmbeddedIntegrationTest;
 import org.junit.experimental.categories.Category;
 
-@Category (H2IntegrationTest.class)
-public class H2QueryTest extends QueryTest
+@Category (H2EmbeddedIntegrationTest.class)
+public class H2EmbeddedQueryTest extends QueryTest
 {
     @Override
     protected DatabaseProvider getDatabaseProvider()
@@ -67,13 +67,31 @@ public class H2QueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithLimit()
     {
         throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
+    {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
     {
         throw new UnsupportedOperationException("Not implemented");
     }
@@ -149,4 +167,5 @@ public class H2QueryTest extends QueryTest
     {
         throw new UnsupportedOperationException("Not implemented");
     }
+
 }
