@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.Query;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
@@ -43,12 +45,21 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderAlterTableChangeColumnStatement(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field, final RenderFieldOptions options)
     {
-        StringBuilder current = new StringBuilder();
+        return SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ")
+                        .append(withSchema(table.getName()))
+                        .append(" ALTER COLUMN ")
+                        .append(renderField(nameConverters, table, field, options))
+        );
+    }
 
-        current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-        current.append(renderField(nameConverters, table, field, options));
-
-        return SQLAction.of(current);
+    @Override
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        return SQLAction.of(new StringBuilder()
+                        .append("DROP INDEX ")
+                        .append(withSchema(getExistingIndexName(indexNameConverter, index)))
+        );
     }
 
     @Override
