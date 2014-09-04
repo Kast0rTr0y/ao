@@ -7,6 +7,7 @@ import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
@@ -50,6 +51,17 @@ public class H2DatabaseProvider extends DatabaseProvider
                         .append(withSchema(table.getName()))
                         .append(" ALTER COLUMN ")
                         .append(renderField(nameConverters, table, field, options))
+        );
+    }
+
+    @Override
+    protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
+    {
+        return SQLAction.of(new StringBuilder()
+                        .append("ALTER TABLE ")
+                        .append(withSchema(key.getDomesticTable()))
+                        .append(" DROP CONSTRAINT ")
+                        .append(processID(key.getFKName()))
         );
     }
 
