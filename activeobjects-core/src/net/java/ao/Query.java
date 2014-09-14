@@ -336,7 +336,24 @@ public class Query implements Serializable
 		return select(PRIMARY_KEY_FIELD);
 	}
 
+    /**
+     * @param fields The fields to select (comma-delimited field names). Must not contain '*'
+     * @return
+     * @throws java.lang.IllegalArgumentException if fields contains '*'
+     */
 	public static Query select(String fields) {
+        validateSelectFields(fields);
 		return new Query(QueryType.SELECT, fields);
 	}
+
+    private static void validateSelectFields(String fields) {
+        if (fields == null) {
+            return;
+        }
+
+        // Assuming we won't have a "legitimate" '*' in a quoted field name
+        if (fields.contains("*")) {
+            throw new IllegalArgumentException("fields must not contain '*' - got '" + fields + "'");
+        }
+    }
 }
