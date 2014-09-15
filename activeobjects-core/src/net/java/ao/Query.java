@@ -337,10 +337,20 @@ public class Query implements Serializable
 	}
 
     /**
-     * @param fields The fields to select (comma-delimited field names). Must not contain '*'
-     * @return
-     * @throws java.lang.IllegalArgumentException if fields contains '*'
+     * Do not use this method: temporary fix for internal use cases which use "*",
+     * now that {@link #select(String)} disallows "*".
+     * TODO: Remove this as part of AO-553 work.
+     * <p>
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause to {@code "*"}.
+     *
+     * @return non-null Query
+     * @deprecated
      */
+    @Deprecated
+    public static Query selectAll() {
+        return new Query(QueryType.SELECT, "*");
+    }
+
 	public static Query select(String fields) {
         validateSelectFields(fields);
 		return new Query(QueryType.SELECT, fields);

@@ -857,7 +857,7 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
-        stream(type, Query.select("*"), streamCallback);
+        stream(type, Query.selectAll(), streamCallback);
     }
 
     /**
