@@ -67,7 +67,7 @@ public class Query implements Serializable
 	private Map<Class<? extends RawEntity<?>>, String> joins;
     private Map<Class<? extends RawEntity<?>>, String> aliases = newHashMap();
 	
-	public Query(QueryType type, String fields) {
+	private Query(QueryType type, String fields) {
 		this.type = type;
 		this.fields = fields;
 		
