@@ -113,21 +113,16 @@ import static net.java.ao.Common.*;
  */
 public abstract class DatabaseProvider implements Disposable
 {
+    private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Logger sqlLogger = LoggerFactory.getLogger("net.java.ao.sql");
-
+    protected final TypeManager typeManager;
     private final Set<SqlListener> sqlListeners;
-
     private final ThreadLocal<Connection> transactionThreadLocal = new ThreadLocal<Connection>();
     private final DisposableDataSource dataSource;
-    protected final TypeManager typeManager;
-
     private final String schema;
-
-    private AtomicReference<String> quoteRef = new AtomicReference<String>();
-
-    private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
     private final Pattern ORDER_CLAUSE_PATTERN;
+    private AtomicReference<String> quoteRef = new AtomicReference<String>();
 
     protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager)
     {
@@ -151,6 +146,23 @@ public abstract class DatabaseProvider implements Disposable
     protected DatabaseProvider(DisposableDataSource dataSource, String schema)
     {
         this(dataSource, schema, new TypeManager.Builder().build());
+    }
+
+    private static boolean isBlank(String str)
+    {
+        int strLen;
+        if (str == null || (strLen = str.length()) == 0)
+        {
+            return true;
+        }
+        for (int i = 0; i < strLen; i++)
+        {
+            if (!Character.isWhitespace(str.charAt(i)))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public TypeManager getTypeManager()
@@ -252,19 +264,19 @@ public abstract class DatabaseProvider implements Disposable
 
             case DROP_INDEX:
                 return ImmutableList.of(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
-                
+
             case INSERT:
                 return ImmutableList.of(renderInsert(action.getTable(), action.getValues()));
         }
         throw new IllegalArgumentException("unknown DDLAction type " + action.getActionType());
     }
-
+    
     private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         ret.add(renderTable(nameConverters, table).withUndoAction(renderDropTableStatement(table)));
-        
+
         ret.addAll(renderAccessories(nameConverters, table));
 
         for (DDLIndex index : table.getIndexes())
@@ -273,14 +285,14 @@ public abstract class DatabaseProvider implements Disposable
             newAction.setIndex(index);
             ret.addAll(renderAction(nameConverters, newAction));
         }
-        
+
         return ret.build();
     }
     
     private Iterable<SQLAction> renderDropTableActions(NameConverters nameConverters, DDLTable table)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         for (DDLIndex index : table.getIndexes())
         {
             final SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
@@ -292,16 +304,16 @@ public abstract class DatabaseProvider implements Disposable
 
         ret.addAll(renderDropAccessories(nameConverters, table));
         ret.add(renderDropTableStatement(table));
-        
+
         return ret.build();
     }
     
     private Iterable<SQLAction> renderAddColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
-        
+
         for (DDLIndex index : table.getIndexes())
         {
             if (index.getField().equals(field.getName()))
@@ -311,14 +323,14 @@ public abstract class DatabaseProvider implements Disposable
                 ret.addAll(renderAction(nameConverters, newAction));
             }
         }
-        
+
         return ret.build();
     }
     
     private Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         for (DDLIndex index : table.getIndexes())
         {
             if (index.getField().equals(field.getName()))
@@ -330,10 +342,10 @@ public abstract class DatabaseProvider implements Disposable
         }
 
         ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
-        
+
         return ret.build();
     }
-    
+
     /**
      * <p>Top level delegating method for rendering a database-agnostic
      * {@link Query} object into its (potentially) database-specific
@@ -616,11 +628,9 @@ public abstract class DatabaseProvider implements Disposable
 
     protected final String querySelectFields(final Query query, final TableNameConverter converter)
     {
-        return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>()
-        {
+        return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>() {
             @Override
-            public String apply(String fieldName)
-            {
+            public String apply(String fieldName) {
                 return withAlias(query, fieldName, converter);
             }
         }));
@@ -730,11 +740,9 @@ public abstract class DatabaseProvider implements Disposable
 
     private String processGroupByClause(String groupBy)
     {
-        return SqlUtils.processGroupByClause(groupBy, new Function<String, String>()
-        {
+        return SqlUtils.processGroupByClause(groupBy, new Function<String, String>() {
             @Override
-            public String apply(String field)
-            {
+            public String apply(String field) {
                 return processID(field);
             }
         });
@@ -783,7 +791,24 @@ public abstract class DatabaseProvider implements Disposable
             }
 
             // $2 signifies the (mandatory) column name to potentially quote
-            repl.append(processID("$2"));
+            //old code
+//            repl.append(processID("$2"));
+
+            //Begin update for issue AO-548
+            //We have to check whether $2 is a reserved keyword by putting actual value, not a placeholder
+            //If it's then use quote from database to append to $2 to quote the column($2)
+            String columnName = Case.UPPER.apply(matcher.group(2));
+            if (getReservedWords().contains(columnName))
+            {
+                    String quote = quoteRef.get();
+                    String keywordWithQuote = quote + "$2" + quote;
+                    repl.append(keywordWithQuote);
+            }
+            else
+            {
+                repl.append(processID("$2"));
+            }
+            //End update issue AO-548 update
 
             // $3 signifies the (optional) ASC/DESC option
             if (matcher.group(3) != null)
@@ -1159,11 +1184,9 @@ public abstract class DatabaseProvider implements Disposable
         return renderFields(
                 table,
                 Predicates.<DDLField>alwaysTrue(),
-                new Function<DDLField, Iterable<SQLAction>>()
-                {
+                new Function<DDLField, Iterable<SQLAction>>() {
                     @Override
-                    public Iterable<SQLAction> apply(DDLField field)
-                    {
+                    public Iterable<SQLAction> apply(DDLField field) {
                         return renderDropAccessoriesForField(nameConverters, table, field);
                     }
                 });
@@ -1184,7 +1207,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return ImmutableList.of();
     }
-
+    
     /**
      * Generates database-specific DDL statements required to drop any functions,
      * sequences, or triggers associated with the given field.  The default implementation
@@ -1198,7 +1221,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return ImmutableList.of();
     }
-    
+
     protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, Iterable<SQLAction>> render)
     {
         final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
@@ -1244,11 +1267,11 @@ public abstract class DatabaseProvider implements Disposable
 
         return back.build();
     }
-
+    
     /**
      * Generates the database-specific DDL statement for adding a column,
      * but not including any corresponding sequences, triggers, etc.
-     * 
+     *
      * @param nameConverters
      * @param table The table which should receive the new column.
      * @param field The column to add to the specified table.
@@ -1259,7 +1282,7 @@ public abstract class DatabaseProvider implements Disposable
         String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true));
         return SQLAction.of(addStmt);
     }
-    
+
     /**
      * <p>Generates the database-specific DDL statements required to change
      * the given column from its old specification to the given DDL value.
@@ -1359,7 +1382,7 @@ public abstract class DatabaseProvider implements Disposable
     protected Iterable<SQLAction> renderAlterTableDropColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-        
+
         for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
         {
             back.add(renderAlterTableDropKey(foreignKey));
@@ -1371,13 +1394,13 @@ public abstract class DatabaseProvider implements Disposable
 
         return back.build();
     }
-
+    
     protected SQLAction renderAlterTableDropColumnStatement(DDLTable table, DDLField field)
     {
         String dropStmt = "ALTER TABLE " + withSchema(table.getName()) + " DROP COLUMN " + processID(field.getName());
         return SQLAction.of(dropStmt);
     }
-    
+
     /**
      * Generates the database-specific DDL statement required to add a
      * foreign key to a table.  For databases which do not support such
@@ -1869,7 +1892,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return null;
     }
-
+    
     /**
      * Renders SQL statement(s) to drop the sequence which corresponds to the
      * specified field, or <code>null</code> if none.
@@ -1878,7 +1901,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return null;
     }
-    
+
     /**
      * <p>Generates an INSERT statement to be used to create a new row in the
      * database, returning the primary key value.  This method also invokes
@@ -2031,14 +2054,14 @@ public abstract class DatabaseProvider implements Disposable
      * if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
-    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn,
                                               Class<T> entityType, Class<K> pkType,
                                               String pkField, String sql, DBParam... params) throws SQLException
     {
         K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
-        
+
         for (int i = 0; i < params.length; i++)
         {
             Object value = params[i].getValue();
@@ -2156,11 +2179,9 @@ public abstract class DatabaseProvider implements Disposable
 
     protected String processOnClause(String on)
     {
-        return SqlUtils.processOnClause(on, new Function<String, String>()
-        {
+        return SqlUtils.processOnClause(on, new Function<String, String>() {
             @Override
-            public String apply(String id)
-            {
+            public String apply(String id) {
                 return processID(id);
             }
         });
@@ -2176,11 +2197,9 @@ public abstract class DatabaseProvider implements Disposable
      */
     public final String processWhereClause(String where)
     {
-        return SqlUtils.processWhereClause(where, new Function<String, String>()
-        {
+        return SqlUtils.processWhereClause(where, new Function<String, String>() {
             @Override
-            public String apply(String id)
-            {
+            public String apply(String id) {
                 return processID(id);
             }
         });
@@ -2356,7 +2375,7 @@ public abstract class DatabaseProvider implements Disposable
             handleUpdateError(sqlString, e);
         }
     }
-
+    
     /**
      * Attempt to execute a list of actions that make up a logical unit (e.g. adding an entire
      * table, or adding a new column to an existing table).  If any action fails, throw an
@@ -2364,7 +2383,7 @@ public abstract class DatabaseProvider implements Disposable
      * list and execute their corresponding undo action, if any.  For instance, if we successfully
      * executed a CREATE TABLE and a CREATE SEQUENCE, but the next statement fails, we will
      * execute DROP SEQUENCE and then DROP TABLE before rethrowing the exception.
-     * 
+     *
      * @param provider
      * @param stmt  A JDBC Statement that will be reused for all updates
      * @param actions  A list of {@link SQLAction}s to execute
@@ -2411,7 +2430,7 @@ public abstract class DatabaseProvider implements Disposable
         }
         return newStatements;
     }
-    
+
     public final Iterable<String> executeUpdateForAction(Statement stmt, SQLAction action, Set<String> completedStatements) throws SQLException
     {
         String sql = action.getStatement().trim();
@@ -2441,23 +2460,6 @@ public abstract class DatabaseProvider implements Disposable
         }
     }
 
-    private static boolean isBlank(String str)
-    {
-        int strLen;
-        if (str == null || (strLen = str.length()) == 0)
-        {
-            return true;
-        }
-        for (int i = 0; i < strLen; i++)
-        {
-            if (!Character.isWhitespace(str.charAt(i)))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     protected Iterable<DDLForeignKey> findForeignKeysForField(DDLTable table, final DDLField field)
     {
         return Iterables.filter(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
@@ -2468,6 +2470,11 @@ public abstract class DatabaseProvider implements Disposable
                 return fk.getField().equals(field.getName());
             }
         });
+    }
+
+    public static interface SqlListener
+    {
+        void onSql(String sql);
     }
 
     protected static class RenderFieldOptions
@@ -2489,11 +2496,6 @@ public abstract class DatabaseProvider implements Disposable
             this.renderNotNull = renderNotNull;
             this.forceNull = forceNull;
         }
-    }
-
-    public static interface SqlListener
-    {
-        void onSql(String sql);
     }
 
     private final static class LoggingSqlListener implements SqlListener
