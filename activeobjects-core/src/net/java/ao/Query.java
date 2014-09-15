@@ -37,6 +37,11 @@ import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.*;
 
 /**
+ * A cross-database representation of a SELECT query, independent of database provider type.
+ * <p>
+ * Use with {@link net.java.ao.DatabaseProvider#renderQuery(Query, net.java.ao.schema.TableNameConverter, boolean)}
+ * to produce the database-specific SQL.
+ *
  * @author Daniel Spiewak
  */
 public class Query implements Serializable
@@ -332,6 +337,11 @@ public class Query implements Serializable
 		}
 	}
 
+    /**
+     * Create a {@link Query} which will select the primary key field of the entity.
+     *
+     * @return non-null Query
+     */
 	public static Query select() {
 		return select(PRIMARY_KEY_FIELD);
 	}
@@ -351,11 +361,21 @@ public class Query implements Serializable
         return new Query(QueryType.SELECT, "*");
     }
 
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @return non-null Query
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
 	public static Query select(String fields) {
         validateSelectFields(fields);
 		return new Query(QueryType.SELECT, fields);
 	}
 
+    /*
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
     private static void validateSelectFields(String fields) {
         if (fields == null) {
             return;
