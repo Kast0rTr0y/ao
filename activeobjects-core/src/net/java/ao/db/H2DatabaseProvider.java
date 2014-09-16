@@ -6,6 +6,7 @@ import net.java.ao.DisposableDataSource;
 import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -58,7 +59,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
+    protected SQLAction renderAlterTableDropKey(final DDLForeignKey key)
     {
         return SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ")
@@ -69,7 +70,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index)
     {
         return SQLAction.of(new StringBuilder()
                         .append("DROP INDEX IF EXISTS ")
@@ -78,18 +79,44 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    public Object parseValue(int type, String value) {
-        if (value == null || value.equals("") || value.equals("NULL")) {
+    protected String renderUnique(final UniqueNameConverter uniqueNameConverter, final DDLTable table, final DDLField field)
+    {
+        return "";
+    }
+
+    @Override
+    protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table)
+    {
+        final StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
+
+        for (final DDLField field : table.getFields())
+        {
+            if (field.isUnique())
+            {
+                back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
+            }
+        }
+
+        return back.toString();
+    }
+
+    @Override
+    public Object parseValue(final int type, String value)
+    {
+        if (value == null || value.equals("") || value.equals("NULL"))
+        {
             return null;
         }
 
-        switch (type) {
+        switch (type)
+        {
             case Types.TIMESTAMP:
             case Types.DATE:
             case Types.TIME:
             case Types.VARCHAR:
                 Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
-                if (matcher.find()) {
+                if (matcher.find())
+                {
                     value = matcher.group(1);
                 }
                 break;
