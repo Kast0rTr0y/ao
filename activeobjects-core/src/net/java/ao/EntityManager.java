@@ -63,8 +63,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.Common.getValueFieldsNames;
 import static net.java.ao.Common.preloadValue;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static org.apache.commons.lang.ArrayUtils.contains;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code> is the source of all {@link
@@ -725,51 +727,36 @@ public class EntityManager
 
         query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
-        final Preload preloadAnnotation = type.getAnnotation(Preload.class);
-        if (preloadAnnotation != null)
+        // legacy support for "*" in the select - to be removed after AO-552 implemented
+        boolean starSelected = false;
+        for (final String selectedField : query.getFields())
         {
-            if (!Iterables.get(query.getFields(), 0).equals("*") && query.getJoins().isEmpty())
+            if ("*".equals(selectedField))
             {
-                Iterable<String> oldFields = query.getFields();
-                List<String> newFields = new ArrayList<String>();
+                // change the field to the PK; not sure how this ever worked, but being safe
+                field = entityInfo.getPrimaryKey().getName();
 
-                for (String newField : preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()))
-                {
-                    newField = newField.trim();
-
-                    int fieldLoc = -1;
-                    for (int i = 0; i < Iterables.size(oldFields); i++)
-                    {
-                        if (Iterables.get(oldFields, i).equals(newField))
-                        {
-                            fieldLoc = i;
-                            break;
-                        }
-                    }
-
-                    if (fieldLoc < 0)
-                    {
-                        newFields.add(newField);
-                    }
-                    else
-                    {
-                        newFields.add(Iterables.get(oldFields, fieldLoc));
-                    }
-                }
-
-                if (!newFields.contains("*"))
-                {
-                    for (String oldField : oldFields)
-                    {
-                        if (!newFields.contains(oldField))
-                        {
-                            newFields.add(oldField);
-                        }
-                    }
-                }
-
-                query.setFields(newFields.toArray(new String[newFields.size()]));
+                starSelected = true;
+                break;
             }
+        }
+
+        final Preload preloadAnnotation = type.getAnnotation(Preload.class);
+        if (starSelected || preloadAnnotation != null && contains(preloadAnnotation.value(), Preload.ALL))
+        {
+            // select all fields from the table - "*" is selected or the user has asked for all
+            final Set<String> selectedFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
+            query.setFields(selectedFields.toArray(new String[selectedFields.size()]));
+        }
+        else if (preloadAnnotation != null)
+        {
+            // select user's selection, as well as any specific preloads
+            final Set<String> selectedFields = new HashSet<String>(preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()));
+            for (String existingField : query.getFields())
+            {
+                selectedFields.add(existingField);
+            }
+            query.setFields(selectedFields.toArray(new String[selectedFields.size()]));
         }
 
         Connection conn = null;
