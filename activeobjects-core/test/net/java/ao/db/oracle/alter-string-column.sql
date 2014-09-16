@@ -4,4 +4,4 @@ UPDATE company SET eman = name
 
 ALTER TABLE company DROP COLUMN name
 
-ALTER TABLE company RENAME eman TO name
+ALTER TABLE company RENAME COLUMN eman TO name
