@@ -847,7 +847,7 @@ public class EntityManager
     }
 
     /**
-     * <p>Opitimsed read for large datasets. This method will stream all rows for the given type to the given
+     * <p>Optimised read for large datasets. This method will stream all rows for the given type to the given
      * callback.</p>
      *
      * <p>Please see {@link #stream(Class, Query, EntityStreamCallback)} for details / limitations.
@@ -857,7 +857,7 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
-        stream(type, Query.select("*"), streamCallback);
+        stream(type, Query.selectAll(), streamCallback);
     }
 
     /**

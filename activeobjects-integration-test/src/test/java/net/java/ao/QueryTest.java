@@ -509,6 +509,18 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals(unlimited[unlimited.length - 4].getID(), comments[1].getID());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testSelectStarForbidden()
+    {
+        Query.select("*");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSelectStarWithFieldnamesForbidden()
+    {
+        Query.select("fieldname1, fieldname2, *");
+    }
+
     static class DatabaseProviders
     {
         public static HSQLDatabaseProvider getHsqlDatabaseProvider()
