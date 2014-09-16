@@ -13,7 +13,10 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
 
+import java.sql.Types;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class H2DatabaseProvider extends DatabaseProvider
 {
@@ -72,6 +75,27 @@ public class H2DatabaseProvider extends DatabaseProvider
                         .append("DROP INDEX IF EXISTS ")
                         .append(withSchema(getExistingIndexName(indexNameConverter, index)))
         );
+    }
+
+    @Override
+    public Object parseValue(int type, String value) {
+        if (value == null || value.equals("") || value.equals("NULL")) {
+            return null;
+        }
+
+        switch (type) {
+            case Types.TIMESTAMP:
+            case Types.DATE:
+            case Types.TIME:
+            case Types.VARCHAR:
+                Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
+                if (matcher.find()) {
+                    value = matcher.group(1);
+                }
+                break;
+        }
+
+        return super.parseValue(type, value);
     }
 
     @Override
