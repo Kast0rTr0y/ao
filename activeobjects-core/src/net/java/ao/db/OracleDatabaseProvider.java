@@ -215,9 +215,13 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
+        if(!oldField.getType().equals(field.getType()))
         {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
+        }
+        else
+        {
+            //if (oldField.getType()
         }
 
         if (oldField.isNotNull() && !field.isNotNull())

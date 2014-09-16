@@ -111,6 +111,12 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
+    public void testRenderActionAlternumericColumn() throws IOException
+    {
+        testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
+    }
+
+    @Test
     public void testRenderActionDropColumn() throws IOException
     {
         testRenderAction("drop-column.sql", createActionDropColumn, getDatabaseProvider());
@@ -503,6 +509,33 @@ public abstract class DatabaseProviderTest
             DDLField field = new DDLField();
             field.setName("name");
             field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("person");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("age");
+            oldField.setType(db.getTypeManager().getType(Integer.class));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("age");
+            field.setType(db.getTypeManager().getType(Long.class));
             field.setNotNull(true);
 
             DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);

@@ -32,7 +32,7 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     }
     @Test
     @NonTransactional
-    public void testmigration() throws Exception
+    public void testMigration() throws Exception
     {
         entityManager.migrate(VarcharColumn.class);
 

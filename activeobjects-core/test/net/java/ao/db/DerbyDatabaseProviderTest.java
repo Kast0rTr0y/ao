@@ -34,6 +34,13 @@ public final class DerbyDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Test
+    public void testRenderActionAlternumericColumn() throws IOException
+    {
+        testRenderAction(new String[0], createActionAlterNumericColumn, getDatabaseProvider());
+    }
+
+
+    @Test
     public void testRenderActionDropColumn() throws IOException
     {
         testRenderAction(new String[0], createActionDropColumn, getDatabaseProvider());

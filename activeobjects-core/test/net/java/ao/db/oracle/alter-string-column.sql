@@ -1,3 +1,1 @@
 ALTER TABLE company MODIFY (name CLOB)
-
-ALTER TABLE company MODIFY (name NOT NULL)
