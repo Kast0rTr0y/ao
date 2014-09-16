@@ -3,34 +3,14 @@ package net.java.ao;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
-import net.java.ao.test.jdbc.H2Embedded;
 import net.java.ao.test.junit.H2EmbeddedIntegrationTest;
-import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
-
-import java.io.File;
 
 import static java.lang.String.format;
 
 @Category (H2EmbeddedIntegrationTest.class)
 public class H2EmbeddedQueryTest extends QueryTest
 {
-    @SuppressWarnings ("ResultOfMethodCallIgnored")
-    @BeforeClass
-    public static void beforeClass()
-    {
-        final File mvFile = new File(H2Embedded.DEFAULT_FILE_NAME + ".mv.db");
-        if (mvFile.exists())
-        {
-            mvFile.delete();
-        }
-        final File traceFile = new File(H2Embedded.DEFAULT_FILE_NAME + ".trace.db");
-        if (traceFile.exists())
-        {
-            traceFile.delete();
-        }
-    }
-
     @Override
     protected DatabaseProvider getDatabaseProvider()
     {

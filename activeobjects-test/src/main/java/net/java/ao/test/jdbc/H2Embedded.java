@@ -2,8 +2,7 @@ package net.java.ao.test.jdbc;
 
 public class H2Embedded extends AbstractJdbcConfiguration
 {
-    public static final String DEFAULT_FILE_NAME = "./target/ao";
-    private static final String DEFAULT_URL = "jdbc:h2:file:" + DEFAULT_FILE_NAME + ";MVCC=TRUE";
+    private static final String DEFAULT_URL = "jdbc:h2:file:./target/ao-test";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
