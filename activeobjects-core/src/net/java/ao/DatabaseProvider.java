@@ -801,8 +801,7 @@ public abstract class DatabaseProvider implements Disposable
             if (getReservedWords().contains(columnName))
             {
                     String quote = quoteRef.get();
-                    String keywordWithQuote = quote + "$2" + quote;
-                    repl.append(keywordWithQuote);
+                    repl.append(quote + "$2" + quote);
             }
             else
             {
