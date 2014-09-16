@@ -791,23 +791,19 @@ public abstract class DatabaseProvider implements Disposable
             }
 
             // $2 signifies the (mandatory) column name to potentially quote
-            //old code
-//            repl.append(processID("$2"));
-
-            //Begin update for issue AO-548
-            //We have to check whether $2 is a reserved keyword by putting actual value, not a placeholder
-            //If it's then use quote from database to append to $2 to quote the column($2)
+            //AO-548 : We have to check whether $2 is a reserved keyword by putting actual value,
+            // not a placeholder. If it's then use quote from database to append to $2 to quote the column($2)
             String columnName = Case.UPPER.apply(matcher.group(2));
             if (getReservedWords().contains(columnName))
             {
                     String quote = quoteRef.get();
-                    repl.append(quote + "$2" + quote);
+                    repl.append(quote).append("$2").append(quote);
             }
             else
             {
                 repl.append(processID("$2"));
             }
-            //End update issue AO-548 update
+            //AO-548
 
             // $3 signifies the (optional) ASC/DESC option
             if (matcher.group(3) != null)
