@@ -684,8 +684,6 @@ public class EntityManager
      * iterates through the result set and extracts the specified field, mapping an entity of the given type to each
      * row.  This array of entities is returned.</p>
      *
-     * {@link #find(Class, String, Query)}
-     *
      * @param type The type of the entities to retrieve.
      * @param field The field value to use in the creation of the entities.  This is usually the primary key field of
      * the corresponding table.
