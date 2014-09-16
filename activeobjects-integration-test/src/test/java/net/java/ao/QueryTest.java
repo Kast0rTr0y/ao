@@ -191,9 +191,21 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    public final void testSelectWithOffset()
+    {
+        assertSelectSqlEquals(getSelectWithOffsetQuery(), getExpectedSqlForSelectWithOffset());
+    }
+
+    @Test
     public final void testCountWithLimit()
     {
         assertCountSqlEquals(getSelectWithLimitQuery(), getExpectedSqlForCountWithLimit());
+    }
+
+    @Test
+    public final void testCountWithOffset()
+    {
+        assertCountSqlEquals(getSelectWithOffsetQuery(), getExpectedSqlForCountWithOffset());
     }
 
     @Test
@@ -202,9 +214,20 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertSelectSqlEquals(getDistinctSelectWithLimitQuery(), getExpectedSqlForDistinctSelectWithLimit());
     }
 
+    @Test
+    public final void testDistinctSelectWithOffset()
+    {
+        assertSelectSqlEquals(getDistinctSelectWithOffsetQuery(), getExpectedSqlForDistinctSelectWithOffset());
+    }
+
     private Query getSelectWithLimitQuery()
     {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
+    }
+
+    private Query getSelectWithOffsetQuery()
+    {
+        return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").offset(4);
     }
 
     private Query getDistinctSelectWithLimitQuery()
@@ -212,11 +235,22 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
     }
 
+    private Query getDistinctSelectWithOffsetQuery()
+    {
+        return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").offset(4);
+    }
+
     protected abstract String getExpectedSqlForSelectWithLimit();
+
+    protected abstract String getExpectedSqlForSelectWithOffset();
 
     protected abstract String getExpectedSqlForCountWithLimit();
 
+    protected abstract String getExpectedSqlForCountWithOffset();
+
     protected abstract String getExpectedSqlForDistinctSelectWithLimit();
+
+    protected abstract String getExpectedSqlForDistinctSelectWithOffset();
 
     @Test
     public final void testSelectWithLimitAndOffset()
@@ -437,29 +471,42 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     @Test
     public void testLimitOffset() throws SQLException
     {
-        Query query = Query.select().limit(3).offset(1);
+        Query query = Query.select().order("ID DESC").limit(3).offset(1);
 
-        Comment[] unlimited = entityManager.find(Comment.class);
+        Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
         Comment[] comments = entityManager.find(Comment.class, query);
 
         assertEquals(3, comments.length);
-        assertEquals(unlimited[1].getID(), comments[0].getID());
-        assertEquals(unlimited[2].getID(), comments[1].getID());
-        assertEquals(unlimited[3].getID(), comments[2].getID());
+        assertEquals(unlimited[unlimited.length - 2].getID(), comments[0].getID());
+        assertEquals(unlimited[unlimited.length - 3].getID(), comments[1].getID());
+        assertEquals(unlimited[unlimited.length - 4].getID(), comments[2].getID());
     }
 
     @Test
     public void testLimitOnly() throws Exception
     {
-        Query query = Query.select().limit(3);
+        Query query = Query.select().order("ID DESC").limit(3);
 
-        Comment[] unlimited = entityManager.find(Comment.class);
+        Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
         Comment[] comments = entityManager.find(Comment.class, query);
 
         assertEquals(3, comments.length);
-        assertEquals(unlimited[0].getID(), comments[0].getID());
-        assertEquals(unlimited[1].getID(), comments[1].getID());
-        assertEquals(unlimited[2].getID(), comments[2].getID());
+        assertEquals(unlimited[unlimited.length - 1].getID(), comments[0].getID());
+        assertEquals(unlimited[unlimited.length - 2].getID(), comments[1].getID());
+        assertEquals(unlimited[unlimited.length - 3].getID(), comments[2].getID());
+    }
+
+    @Test
+    public void testOffsetOnly() throws Exception
+    {
+        Query query = Query.select().order("ID DESC").offset(2);
+
+        Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
+        Comment[] comments = entityManager.find(Comment.class, query);
+
+        assertEquals(unlimited.length - 2, comments.length);
+        assertEquals(unlimited[unlimited.length - 3].getID(), comments[0].getID());
+        assertEquals(unlimited[unlimited.length - 4].getID(), comments[1].getID());
     }
 
     @Test
