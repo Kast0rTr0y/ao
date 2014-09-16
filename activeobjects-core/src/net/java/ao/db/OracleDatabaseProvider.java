@@ -49,6 +49,7 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -215,15 +216,30 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        if(!oldField.getType().equals(field.getType()))
+        if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
         {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
         }
         else
         {
-            //if (oldField.getType()
-        }
+            if (oldField.getType().getLogicalType().getName().equals("String"))
+            {
+                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(),field.getType().getQualifiers()))
+                {
+                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
+                    {
+                        final String fieldName = processID(field.getName());
+                        final String tempColName = processID(getTempColumnName(field.getName()));
 
+                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" CLOB")));
+                        back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
+                        back.addAll(renderDropColumnActions(nameConverters, table, field));
+                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME ").append(tempColName).append(" TO ").append(fieldName)));
+                    }
+
+                }
+            }
+        }
         if (oldField.isNotNull() && !field.isNotNull())
         {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NULL)")));
@@ -437,6 +453,12 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException
     {
         stmt.setInt(index, value ? 1 : 0);
+    }
+
+    private String getTempColumnName(final String name)
+    {
+        String reversed = new StringBuilder(name).reverse().toString();
+        return reversed.replaceFirst("^[0-9]","");
     }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(
