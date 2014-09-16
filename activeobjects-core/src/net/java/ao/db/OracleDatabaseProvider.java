@@ -458,7 +458,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     private String getTempColumnName(final String name)
     {
         String reversed = new StringBuilder(name).reverse().toString();
-        return reversed.replaceFirst("^[0-9]","");
+        return reversed.replaceFirst("^[^a-zA-Z]+","");
     }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(
