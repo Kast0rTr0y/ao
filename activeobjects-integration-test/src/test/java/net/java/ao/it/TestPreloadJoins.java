@@ -189,12 +189,6 @@ public class TestPreloadJoins extends ActiveObjectsIntegrationTest
         void setValue(String value);
 
         String getValue();
-
-        @OneToMany
-        From[] getFroms();
-
-        @OneToMany
-        From[] getFromPreloads();
     }
 
     public static final class TestPreloadJoinsDatabaseUpdater implements DatabaseUpdater
