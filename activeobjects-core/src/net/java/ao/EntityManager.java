@@ -657,9 +657,10 @@ public class EntityManager
      * <p>This method delegates the call to {@link #find(Class, String, Query)}, passing the primary key field for the
      * given type as the <code>String</code> parameter.</p>
      *
-     * <p>Note that in the case of calling this function with a {@link net.java.ao.Query} with fields specified, the
+     * <p>Note that in the case of calling this function with a {@link net.java.ao.Query} with select fields, the
      * first field will be passed to {@link #find(Class, String, Query)}. If this is not the intention, a direct
-     * call to {@link #find(Class, String, Query)} should be made instead, with the primary key field.</p>
+     * call to {@link #find(Class, String, Query)} should be made instead, with the primary key field specified
+     * and present in the select fields.</p>
      *
      * @param type The type of the entities to retrieve.
      * @param query The {@link Query} instance to be used to determine the results.

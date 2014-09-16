@@ -90,9 +90,7 @@ public class TestPreloadJoins extends ActiveObjectsIntegrationTest
     @Test
     public void joinPreloadSomeRetrievesSpecifiedAndPreloadValues() throws Exception
     {
-        // explicitly select ID here so as not to break EntityManager#find(Class, Query) using the first selected (why????)
-        // field as the field passed to EntityManager#find(Class, String, Query)
-        final Query query = Query.select("ID, OTHER_VALUE")
+        final Query query = Query.select("OTHER_VALUE, ID")
                 .alias(FromPreloadSome.class, "f")
                 .alias(To.class, "t")
                 .join(To.class, "f.TO_ID = t.ID")
@@ -104,7 +102,7 @@ public class TestPreloadJoins extends ActiveObjectsIntegrationTest
             @Override
             public FromPreloadSome[] call() throws Exception
             {
-                return entityManager.find(FromPreloadSome.class, query);
+                return entityManager.find(FromPreloadSome.class, "ID", query);
             }
         });
 
