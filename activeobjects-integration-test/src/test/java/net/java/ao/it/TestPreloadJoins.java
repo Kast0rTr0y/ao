@@ -22,6 +22,39 @@ import static org.junit.Assert.assertTrue;
 public class TestPreloadJoins extends ActiveObjectsIntegrationTest
 {
     @Test
+    public void joinStarRetrieveAllValues() throws Exception
+    {
+        final Query query = Query.select("*")
+                .alias(From.class, "f")
+                .alias(To.class, "t")
+                .join(To.class, "f.TO_ID = t.ID")
+                .where("f.VALUE = ?", FromData.VALUES[0])
+                .limit(1);
+
+        final From[] froms = checkSqlExecuted(new Callable<From[]>()
+        {
+            @Override
+            public From[] call() throws Exception
+            {
+                return entityManager.find(From.class, query);
+            }
+        });
+
+        assertNotNull(froms);
+        assertTrue(froms.length == 1);
+
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                froms[0].getValue();
+                return null;
+            }
+        });
+    }
+
+    @Test
     public void joinRetrievesAllValues() throws Exception
     {
         final Query query = Query.select()
