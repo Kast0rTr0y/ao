@@ -71,8 +71,29 @@ public class Query implements Serializable
 	
 	private Map<Class<? extends RawEntity<?>>, String> joins;
     private Map<Class<? extends RawEntity<?>>, String> aliases = newHashMap();
-	
-	private Query(QueryType type, String fields) {
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
+    public Query(QueryType type, String fields) {
+        this(type, fields, true);
+    }
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK.
+     * @param validateSelectFields if true, fields must not contain {@code "*"}.
+     * @throws java.lang.IllegalArgumentException if validateSelectFields is true and fields contains {@code "*"}
+     */
+    private Query(QueryType type, String fields, boolean validateSelectFields) {
+        if (validateSelectFields) {
+            validateSelectFields(fields);
+        }
+
 		this.type = type;
 		this.fields = fields;
 		
@@ -358,7 +379,7 @@ public class Query implements Serializable
      */
     @Deprecated
     public static Query selectAll() {
-        return new Query(QueryType.SELECT, "*");
+        return new Query(QueryType.SELECT, "*", false);
     }
 
     /**
@@ -369,8 +390,7 @@ public class Query implements Serializable
      * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
      */
 	public static Query select(String fields) {
-        validateSelectFields(fields);
-		return new Query(QueryType.SELECT, fields);
+        return new Query(QueryType.SELECT, fields, true);
 	}
 
     /*
