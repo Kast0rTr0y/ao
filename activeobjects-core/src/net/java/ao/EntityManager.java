@@ -44,6 +44,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -59,6 +60,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.getValueFieldsNames;
 import static net.java.ao.Common.preloadValue;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static org.apache.commons.lang.ArrayUtils.contains;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code> is the source of all {@link
@@ -682,6 +684,8 @@ public class EntityManager
      * iterates through the result set and extracts the specified field, mapping an entity of the given type to each
      * row.  This array of entities is returned.</p>
      *
+     * {@link #find(Class, String, Query)}
+     *
      * @param type The type of the entities to retrieve.
      * @param field The field value to use in the creation of the entities.  This is usually the primary key field of
      * the corresponding table.
@@ -698,56 +702,22 @@ public class EntityManager
         query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
-        if (preloadAnnotation != null)
+        final Set<String> selectedFields;
+        if (preloadAnnotation == null || contains(preloadAnnotation.value(), Preload.ALL))
         {
-            if (!Iterables.get(query.getFields(), 0).equals("*") && query.getJoins().isEmpty())
-            {
-                Iterable<String> oldFields = query.getFields();
-                List<String> newFields = new ArrayList<String>();
-
-                for (String newField : preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()))
-                {
-                    newField = newField.trim();
-
-                    int fieldLoc = -1;
-                    for (int i = 0; i < Iterables.size(oldFields); i++)
-                    {
-                        if (Iterables.get(oldFields, i).equals(newField))
-                        {
-                            fieldLoc = i;
-                            break;
-                        }
-                    }
-
-                    if (fieldLoc < 0)
-                    {
-                        newFields.add(newField);
-                    }
-                    else
-                    {
-                        newFields.add(Iterables.get(oldFields, fieldLoc));
-                    }
-                }
-
-                if (!newFields.contains("*"))
-                {
-                    for (String oldField : oldFields)
-                    {
-                        if (!newFields.contains(oldField))
-                        {
-                            newFields.add(oldField);
-                        }
-                    }
-                }
-
-                query.setFields(newFields.toArray(new String[newFields.size()]));
-            }
+            // select all fields from the table - no preload is specified or the user has asked for all
+            selectedFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
         }
         else
         {
-            Set<String> fields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
-            query.setFields(fields.toArray(new String[fields.size()]));
+            // select user's selection, as well as any specific preloads
+            selectedFields = new HashSet<String>(preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()));
+            for (String existingField : query.getFields())
+            {
+                selectedFields.add(existingField);
+            }
         }
+        query.setFields(selectedFields.toArray(new String[selectedFields.size()]));
 
         Connection conn = null;
         PreparedStatement stmt = null;
