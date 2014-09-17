@@ -783,37 +783,28 @@ public abstract class DatabaseProvider implements Disposable
         {
             final StringBuilder repl = new StringBuilder();
 
+            //AO-548 : pass actual value instead of placeholder to use shorten() and quote() method
             // $1 signifies the (optional) table name to potentially quote
             if (matcher.group(1) != null)
             {
-                repl.append(processID("$1"));
+                repl.append(processID(matcher.group(1)));
                 repl.append(".");
             }
 
             // $2 signifies the (mandatory) column name to potentially quote
-            //AO-548 : We have to check whether $2 is a reserved keyword by putting actual value,
-            // not a placeholder. If it's then use quote from database to append to $2 to quote the column($2)
-            String columnName = Case.UPPER.apply(matcher.group(2));
-            if (getReservedWords().contains(columnName))
-            {
-                    String quote = quoteRef.get();
-                    repl.append(quote).append("$2").append(quote);
-            }
-            else
-            {
-                repl.append(processID("$2"));
-            }
-            //AO-548
+            repl.append(processID(matcher.group(2)));
 
             // $3 signifies the (optional) ASC/DESC option
             if (matcher.group(3) != null)
             {
-                repl.append(" $3");
+                repl.append(" ").append(matcher.group(3));
             }
 
             matcher.appendReplacement(sql, repl.toString());
         }
+
         matcher.appendTail(sql);
+
         return sql.toString();
     }
 

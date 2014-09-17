@@ -105,4 +105,19 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
                 "\"table1\".\"column1\" ASC, \"table2\".\"column2\" ASC"
         );
     }
+
+    @Override
+    protected List<String> getExpectedOrderClausesExcessNameLength() {
+        String excessColumn = "INDEX67890INDEX67890INDEX67890EXTRA_CHARACTER";
+
+        excessColumn = getDatabaseProvider().shorten(excessColumn);
+
+        return ImmutableList.of("\"" + excessColumn + "\"");
+    }
+
+    @Override
+    protected List<String> getExpectedOrderClausesAppendTail()
+    {
+        return ImmutableList.of("\"table1\".\"column1\" ASC, \"table2\".\"column2\" ASC \"EXTRA_CHARACTER\"");
+    }
 }
