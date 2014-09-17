@@ -41,6 +41,7 @@ import net.java.ao.schema.DefaultSequenceNameConverter;
 import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.DefaultUniqueNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.StringLength;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
@@ -101,6 +102,18 @@ public abstract class DatabaseProviderTest
     public void testRenderActionAlterColumn() throws IOException
     {
         testRenderAction("alter-column.sql", createActionAlterColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringColumn() throws IOException
+    {
+        testRenderAction("alter-string-column.sql", createActionAlterStringColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlternumericColumn() throws IOException
+    {
+        testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
     }
 
     @Test
@@ -469,6 +482,60 @@ public abstract class DatabaseProviderTest
             DDLField field = new DDLField();
             field.setName("name");
             field.setType(db.getTypeManager().getType(String.class));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.MAX_LENGTH)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("person");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("age");
+            oldField.setType(db.getTypeManager().getType(Integer.class));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("age");
+            field.setType(db.getTypeManager().getType(Long.class));
             field.setNotNull(true);
 
             DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
