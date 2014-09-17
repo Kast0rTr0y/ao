@@ -41,7 +41,25 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
         e.save();
 
         entityManager.migrate(LargeTextColumn.class);
-        entityManager.flushAll();
+
+        LargeTextColumn retrieved = entityManager.get(LargeTextColumn.class, e.getID());
+        assertEquals("Fred", retrieved.getText());
+
+        retrieved.setText(LARGE_STRING);
+        retrieved.save();
+    }
+
+    @Test
+    @NonTransactional
+    public void testMigrationFromOversizedColumn() throws Exception
+    {
+        entityManager.migrate(OversizedVarcharColumn.class);
+
+        final OversizedVarcharColumn e = entityManager.create(OversizedVarcharColumn.class);
+        e.setText("Fred");
+        e.save();
+
+        entityManager.migrate(LargeTextColumn.class);
 
         LargeTextColumn retrieved = entityManager.get(LargeTextColumn.class, e.getID());
         assertEquals("Fred", retrieved.getText());
@@ -63,6 +81,15 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     public static interface VarcharColumn extends Entity
     {
         @StringLength(StringLength.MAX_LENGTH)
+        public String getText();
+
+        public void setText(String text);
+    }
+
+    @Table("ENTITY")
+    public static interface OversizedVarcharColumn extends Entity
+    {
+        @StringLength(767)
         public String getText();
 
         public void setText(String text);
