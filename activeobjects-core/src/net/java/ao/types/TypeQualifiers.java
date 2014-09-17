@@ -28,17 +28,19 @@ public class TypeQualifiers
     private final Integer precision;
     private final Integer scale;
     private final Integer stringLength;
+    private final Integer reportedStringLength;
     
-    private TypeQualifiers(Integer precision, Integer scale, Integer stringLength)
+    private TypeQualifiers(Integer precision, Integer scale, Integer stringLength, Integer reportedStringLength)
     {
         this.precision = precision;
         this.scale = scale;
         this.stringLength = stringLength;
+        this.reportedStringLength = reportedStringLength;
     }
 
     public static TypeQualifiers qualifiers()
     {
-        return new TypeQualifiers(null, null, null);
+        return new TypeQualifiers(null, null, null, null);
     }
 
     public TypeQualifiers precision(int precision)
@@ -47,7 +49,7 @@ public class TypeQualifiers
         {
             throw new ActiveObjectsConfigurationException("Numeric precision must be greater than zero");
         }
-        return new TypeQualifiers(precision, this.scale, this.stringLength);
+        return new TypeQualifiers(precision, this.scale, this.stringLength, this.reportedStringLength);
     }
     
     public TypeQualifiers scale(int scale)
@@ -56,11 +58,12 @@ public class TypeQualifiers
         {
             throw new ActiveObjectsConfigurationException("Numeric scale must be greater than or equal to zero");
         }
-        return new TypeQualifiers(this.precision, scale, this.stringLength);
+        return new TypeQualifiers(this.precision, scale, this.stringLength, this.reportedStringLength);
     }
     
     public TypeQualifiers stringLength(int stringLength)
     {
+        int reportedStringLength = stringLength;
         if (stringLength != UNLIMITED_LENGTH)
         {
             if (stringLength <= 0)
@@ -78,7 +81,7 @@ public class TypeQualifiers
                 stringLength = UNLIMITED_LENGTH;
             }
         }
-        return new TypeQualifiers(this.precision, this.scale, stringLength);
+        return new TypeQualifiers(this.precision, this.scale, stringLength, reportedStringLength);
     }
 
     public TypeQualifiers withQualifiers(TypeQualifiers overrides)
@@ -87,7 +90,8 @@ public class TypeQualifiers
         {
             return new TypeQualifiers(overrides.hasPrecision() ? overrides.precision : this.precision,
                                       overrides.hasScale() ? overrides.scale : this.scale,
-                                      overrides.hasStringLength() ? overrides.stringLength : this.stringLength);
+                                      overrides.hasStringLength() ? overrides.stringLength : this.stringLength,
+                                      overrides.hasReportedStringLength() ? overrides.reportedStringLength : this.reportedStringLength);
         }
         return this;
     }
@@ -106,7 +110,12 @@ public class TypeQualifiers
     {
         return stringLength;
     }
-    
+
+    public Integer getReportedStringLength()
+    {
+        return reportedStringLength;
+    }
+
     public boolean isDefined()
     {
         return hasPrecision() || hasScale() || hasStringLength();
@@ -126,7 +135,12 @@ public class TypeQualifiers
     {
         return (stringLength != null);
     }
-    
+
+    private  boolean hasReportedStringLength()
+    {
+        return (reportedStringLength != null);
+    }
+
     public boolean isUnlimitedLength()
     {
         return ((stringLength != null) && (stringLength == UNLIMITED_LENGTH));
@@ -170,7 +184,8 @@ public class TypeQualifiers
             TypeQualifiers q = (TypeQualifiers) other;
             return Objects.equal(precision, q.precision)
                 && Objects.equal(scale, q.scale)
-                && Objects.equal(stringLength, q.stringLength);
+                && Objects.equal(stringLength, q.stringLength)
+                && Objects.equal(reportedStringLength, q.reportedStringLength);
         }
         return false;
     }
@@ -178,7 +193,7 @@ public class TypeQualifiers
     @Override
     public int hashCode()
     {
-        return Objects.hashCode(precision, scale, stringLength);
+        return Objects.hashCode(precision, scale, stringLength, reportedStringLength);
     }
     
     @Override

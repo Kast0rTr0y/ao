@@ -1,0 +1,1 @@
+ALTER TABLE dbo.company ALTER COLUMN name NTEXT NOT NULL

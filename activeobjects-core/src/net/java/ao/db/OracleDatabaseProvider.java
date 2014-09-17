@@ -224,7 +224,8 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         {
             if (oldField.getType().getLogicalType().getName().equals("String"))
             {
-                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(),field.getType().getQualifiers()))
+                final Integer reportedStringLength = oldField.getType().getQualifiers().getReportedStringLength();
+                if (reportedStringLength > 0 && reportedStringLength != field.getType().getQualifiers().getReportedStringLength())
                 {
                     if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
                     {
@@ -236,7 +237,10 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                         back.addAll(renderDropColumnActions(nameConverters, table, field));
                         back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
                     }
-
+                    else
+                    {
+                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
+                    }
                 }
             }
         }
