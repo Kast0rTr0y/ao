@@ -315,7 +315,7 @@ public abstract class DatabaseProvider implements Disposable
         return ret.build();
     }
     
-    private Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
         
