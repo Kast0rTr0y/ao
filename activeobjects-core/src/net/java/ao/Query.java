@@ -37,6 +37,11 @@ import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.*;
 
 /**
+ * A cross-database representation of a SELECT query, independent of database provider type.
+ * <p>
+ * Use with {@link net.java.ao.DatabaseProvider#renderQuery(Query, net.java.ao.schema.TableNameConverter, boolean)}
+ * to produce the database-specific SQL.
+ *
  * @author Daniel Spiewak
  */
 public class Query implements Serializable
@@ -66,8 +71,29 @@ public class Query implements Serializable
 	
 	private Map<Class<? extends RawEntity<?>>, String> joins;
     private Map<Class<? extends RawEntity<?>>, String> aliases = newHashMap();
-	
-	public Query(QueryType type, String fields) {
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
+    public Query(QueryType type, String fields) {
+        this(type, fields, true);
+    }
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK.
+     * @param validateSelectFields if true, fields must not contain {@code "*"}.
+     * @throws java.lang.IllegalArgumentException if validateSelectFields is true and fields contains {@code "*"}
+     */
+    private Query(QueryType type, String fields, boolean validateSelectFields) {
+        if (validateSelectFields) {
+            validateSelectFields(fields);
+        }
+
 		this.type = type;
 		this.fields = fields;
 		
@@ -332,11 +358,52 @@ public class Query implements Serializable
 		}
 	}
 
+    /**
+     * Create a {@link Query} which will select the primary key field of the entity.
+     *
+     * @return non-null Query
+     */
 	public static Query select() {
 		return select(PRIMARY_KEY_FIELD);
 	}
 
+    /**
+     * Do not use this method: temporary fix for internal use cases which use "*",
+     * now that {@link #select(String)} disallows "*".
+     * TODO: Remove this as part of AO-553 work.
+     * <p>
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause to {@code "*"}.
+     *
+     * @return non-null Query
+     * @deprecated
+     */
+    @Deprecated
+    public static Query selectAll() {
+        return new Query(QueryType.SELECT, "*", false);
+    }
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @return non-null Query
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
 	public static Query select(String fields) {
-		return new Query(QueryType.SELECT, fields);
+        return new Query(QueryType.SELECT, fields, true);
 	}
+
+    /*
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
+    private static void validateSelectFields(String fields) {
+        if (fields == null) {
+            return;
+        }
+
+        // Assuming we won't have a "legitimate" '*' in a quoted field name
+        if (fields.contains("*")) {
+            throw new IllegalArgumentException("fields must not contain '*' - got '" + fields + "'");
+        }
+    }
 }
