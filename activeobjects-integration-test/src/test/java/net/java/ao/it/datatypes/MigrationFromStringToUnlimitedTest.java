@@ -1,19 +1,20 @@
 package net.java.ao.it.datatypes;
 
+import java.sql.PreparedStatement;
+import net.java.ao.DBParam;
+import net.java.ao.DatabaseProvider;
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
-import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Table;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
-import net.java.ao.types.TypeQualifiers;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsIntegrationTest
 {
@@ -53,24 +54,33 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     @NonTransactional
     public void testMigrationFromOversizedColumn() throws Exception
     {
-        entityManager.migrate(OversizedVarcharColumn.class);
+        DatabaseProvider provider  = entityManager.getProvider();
+        DbUtils.executeUpdate(entityManager,
+                "CREATE TABLE " + getTableName(VarcharColumn.class) + "(" + provider.processID("ID")+" INTEGER PRIMARY KEY, " + provider.processID("TEXT") + " VARCHAR(767))",
+                new DbUtils.UpdateCallback()
+                {
+                    @Override
+                    public void setParameters(final PreparedStatement statement) throws Exception
+                    {
 
-        final OversizedVarcharColumn e = entityManager.create(OversizedVarcharColumn.class);
-        e.setText("Fred");
-        e.save();
-
+                    }
+                });
         entityManager.migrate(LargeTextColumn.class);
+        final LargeTextColumn e = entityManager.create(LargeTextColumn.class,
+                new DBParam("ID", 1), new DBParam("TEXT",LARGE_STRING));
+        final LargeTextColumn retrieved = entityManager.get(LargeTextColumn.class, 1);
 
-        LargeTextColumn retrieved = entityManager.get(LargeTextColumn.class, e.getID());
-        assertEquals("Fred", retrieved.getText());
-
-        retrieved.setText(LARGE_STRING);
-        retrieved.save();
     }
 
     @Table("ENTITY")
-    public static interface LargeTextColumn extends Entity
+    public static interface LargeTextColumn extends RawEntity<Integer>
     {
+        @NotNull
+        @PrimaryKey("ID")
+        public int getID();
+
+        void setId(int id);
+
         @StringLength (StringLength.UNLIMITED)
         String getText();
 
@@ -81,15 +91,6 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     public static interface VarcharColumn extends Entity
     {
         @StringLength(StringLength.MAX_LENGTH)
-        public String getText();
-
-        public void setText(String text);
-    }
-
-    @Table("ENTITY")
-    public static interface OversizedVarcharColumn extends Entity
-    {
-        @StringLength(767)
         public String getText();
 
         public void setText(String text);

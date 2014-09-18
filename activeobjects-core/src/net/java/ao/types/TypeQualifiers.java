@@ -18,6 +18,12 @@ public class TypeQualifiers
      * databases.
      */
     public static final int MAX_STRING_LENGTH = StringLength.MAX_LENGTH;
+
+    /**
+     * String sizes were tuned down due to a SQL server limitation, this has the undesired side effect that
+     * existing tables read with lengths between 450 and 767 are incorrectly seen as clobs
+     */
+    public static final int OLD_STRING_LENGTH_MAX = 767;
     
     /**
      * If {@code stringLength} is set to this constant, the field is an unlimited-length string
@@ -29,7 +35,7 @@ public class TypeQualifiers
     private final Integer scale;
     private final Integer stringLength;
     private final Integer reportedStringLength;
-    
+
     private TypeQualifiers(Integer precision, Integer scale, Integer stringLength, Integer reportedStringLength)
     {
         this.precision = precision;
@@ -79,6 +85,10 @@ public class TypeQualifiers
                 // some databases like to report very large numbers for the length of what is really
                 // an unlimited-length (CLOB) column.
                 stringLength = UNLIMITED_LENGTH;
+                if (reportedStringLength > OLD_STRING_LENGTH_MAX)
+                {
+                    reportedStringLength = UNLIMITED_LENGTH;
+                }
             }
         }
         return new TypeQualifiers(this.precision, this.scale, stringLength, reportedStringLength);
@@ -91,7 +101,7 @@ public class TypeQualifiers
             return new TypeQualifiers(overrides.hasPrecision() ? overrides.precision : this.precision,
                                       overrides.hasScale() ? overrides.scale : this.scale,
                                       overrides.hasStringLength() ? overrides.stringLength : this.stringLength,
-                                      overrides.hasReportedStringLength() ? overrides.reportedStringLength : this.reportedStringLength);
+                                      overrides.hasStringLength() ? overrides.reportedStringLength : this.reportedStringLength);
         }
         return this;
     }
@@ -109,11 +119,6 @@ public class TypeQualifiers
     public Integer getStringLength()
     {
         return stringLength;
-    }
-
-    public Integer getReportedStringLength()
-    {
-        return reportedStringLength;
     }
 
     public boolean isDefined()
@@ -136,14 +141,17 @@ public class TypeQualifiers
         return (stringLength != null);
     }
 
-    private  boolean hasReportedStringLength()
-    {
-        return (reportedStringLength != null);
-    }
-
     public boolean isUnlimitedLength()
     {
         return ((stringLength != null) && (stringLength == UNLIMITED_LENGTH));
+    }
+    /**
+     *  If there is a disparity between reportedLength and the stringLength then the field is incompatible
+     *
+     */
+    public boolean areLengthsCorrect()
+    {
+        return Objects.equal(stringLength, reportedStringLength);
     }
 
     public boolean isUnlimitedStringLengthSupportCompatible(TypeQualifiers other)
@@ -173,7 +181,8 @@ public class TypeQualifiers
         {
             return false;
         }
-        return derivedFromEntityAnnotations.isUnlimitedStringLengthSupportCompatible(derivedFromTableMetadata);
+        return derivedFromEntityAnnotations.isUnlimitedStringLengthSupportCompatible(derivedFromTableMetadata) &&
+                (derivedFromEntityAnnotations.areLengthsCorrect() && derivedFromTableMetadata.areLengthsCorrect());
     }
     
     @Override

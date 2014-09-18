@@ -216,32 +216,24 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
+        if(!oldField.getType().equals(field.getType()))
         {
-            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
-        }
-        else
-        {
-            if (oldField.getType().getLogicalType().getName().equals("String"))
+            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
             {
-                final Integer reportedStringLength = oldField.getType().getQualifiers().getReportedStringLength();
-                if (reportedStringLength > 0 && reportedStringLength != field.getType().getQualifiers().getReportedStringLength())
+                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(), field.getType().getQualifiers()))
                 {
-                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
-                    {
-                        final String fieldName = processID(field.getName());
-                        final String tempColName = processID(getTempColumnName(field.getName()));
+                    final String fieldName = processID(field.getName());
+                    final String tempColName = processID(getTempColumnName(field.getName()));
 
-                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" CLOB")));
-                        back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
-                        back.addAll(renderDropColumnActions(nameConverters, table, field));
-                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
-                    }
-                    else
-                    {
-                        back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
-                    }
+                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" CLOB")));
+                    back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
+                    back.addAll(renderDropColumnActions(nameConverters, table, field));
+                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
                 }
+            }
+            else
+            {
+                back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
             }
         }
         if (oldField.isNotNull() && !field.isNotNull())
