@@ -252,7 +252,7 @@ public abstract class DatabaseProvider implements Disposable
 
             case DROP_INDEX:
                 return ImmutableList.of(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
-
+                
             case INSERT:
                 return ImmutableList.of(renderInsert(action.getTable(), action.getValues()));
         }
@@ -262,9 +262,9 @@ public abstract class DatabaseProvider implements Disposable
     private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
+        
         ret.add(renderTable(nameConverters, table).withUndoAction(renderDropTableStatement(table)));
-
+        
         ret.addAll(renderAccessories(nameConverters, table));
 
         for (DDLIndex index : table.getIndexes())
@@ -273,14 +273,14 @@ public abstract class DatabaseProvider implements Disposable
             newAction.setIndex(index);
             ret.addAll(renderAction(nameConverters, newAction));
         }
-
+        
         return ret.build();
     }
-
+    
     private Iterable<SQLAction> renderDropTableActions(NameConverters nameConverters, DDLTable table)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
+        
         for (DDLIndex index : table.getIndexes())
         {
             final SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
@@ -292,16 +292,16 @@ public abstract class DatabaseProvider implements Disposable
 
         ret.addAll(renderDropAccessories(nameConverters, table));
         ret.add(renderDropTableStatement(table));
-
+        
         return ret.build();
     }
-
+    
     private Iterable<SQLAction> renderAddColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
+        
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
-
+        
         for (DDLIndex index : table.getIndexes())
         {
             if (index.getField().equals(field.getName()))
@@ -311,14 +311,14 @@ public abstract class DatabaseProvider implements Disposable
                 ret.addAll(renderAction(nameConverters, newAction));
             }
         }
-
+        
         return ret.build();
     }
-
+    
     protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
+        
         for (DDLIndex index : table.getIndexes())
         {
             if (index.getField().equals(field.getName()))
@@ -330,10 +330,10 @@ public abstract class DatabaseProvider implements Disposable
         }
 
         ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
-
+        
         return ret.build();
     }
-
+    
     /**
      * <p>Top level delegating method for rendering a database-agnostic
      * {@link Query} object into its (potentially) database-specific
@@ -1204,7 +1204,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return ImmutableList.of();
     }
-
+    
     protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, Iterable<SQLAction>> render)
     {
         final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
@@ -1254,7 +1254,7 @@ public abstract class DatabaseProvider implements Disposable
     /**
      * Generates the database-specific DDL statement for adding a column,
      * but not including any corresponding sequences, triggers, etc.
-     *
+     * 
      * @param nameConverters
      * @param table The table which should receive the new column.
      * @param field The column to add to the specified table.
@@ -1265,7 +1265,7 @@ public abstract class DatabaseProvider implements Disposable
         String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true));
         return SQLAction.of(addStmt);
     }
-
+    
     /**
      * <p>Generates the database-specific DDL statements required to change
      * the given column from its old specification to the given DDL value.
@@ -1365,7 +1365,7 @@ public abstract class DatabaseProvider implements Disposable
     protected Iterable<SQLAction> renderAlterTableDropColumn(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-
+        
         for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
         {
             back.add(renderAlterTableDropKey(foreignKey));
@@ -1383,7 +1383,7 @@ public abstract class DatabaseProvider implements Disposable
         String dropStmt = "ALTER TABLE " + withSchema(table.getName()) + " DROP COLUMN " + processID(field.getName());
         return SQLAction.of(dropStmt);
     }
-
+    
     /**
      * Generates the database-specific DDL statement required to add a
      * foreign key to a table.  For databases which do not support such
@@ -1884,7 +1884,7 @@ public abstract class DatabaseProvider implements Disposable
     {
         return null;
     }
-
+    
     /**
      * <p>Generates an INSERT statement to be used to create a new row in the
      * database, returning the primary key value.  This method also invokes
@@ -2037,14 +2037,14 @@ public abstract class DatabaseProvider implements Disposable
      * if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
-    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn,
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
                                               Class<T> entityType, Class<K> pkType,
                                               String pkField, String sql, DBParam... params) throws SQLException
     {
         K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
-
+        
         for (int i = 0; i < params.length; i++)
         {
             Object value = params[i].getValue();
@@ -2370,7 +2370,7 @@ public abstract class DatabaseProvider implements Disposable
      * list and execute their corresponding undo action, if any.  For instance, if we successfully
      * executed a CREATE TABLE and a CREATE SEQUENCE, but the next statement fails, we will
      * execute DROP SEQUENCE and then DROP TABLE before rethrowing the exception.
-     *
+     * 
      * @param provider
      * @param stmt  A JDBC Statement that will be reused for all updates
      * @param actions  A list of {@link SQLAction}s to execute
@@ -2417,7 +2417,7 @@ public abstract class DatabaseProvider implements Disposable
         }
         return newStatements;
     }
-
+    
     public final Iterable<String> executeUpdateForAction(Statement stmt, SQLAction action, Set<String> completedStatements) throws SQLException
     {
         String sql = action.getStatement().trim();
