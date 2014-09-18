@@ -281,6 +281,62 @@ public abstract class DatabaseProviderTest
         );
     }
 
+    @Test
+    public final void testProcessOrderClauseAppendTail()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesAppendTail()));
+    }
+
+    protected List<String> getExpectedOrderClausesAppendTail()
+    {
+        return ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+    }
+
+    @Test
+    public final void testProcessOrderClauseExcessNameLength()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "someNamesThatOverMaximumLengthExtraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesExcessNameLength()));
+    }
+
+    protected List<String> getExpectedOrderClausesExcessNameLength()
+    {
+        String excessColumnTableName = "someNamesThatOverMaximumLengthExtraCharacter";
+
+        excessColumnTableName = getDatabaseProvider().shorten(excessColumnTableName);
+
+        return ImmutableList.of(excessColumnTableName);
+    }
+
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
     {
         public DDLAction apply(DatabaseProvider db)
