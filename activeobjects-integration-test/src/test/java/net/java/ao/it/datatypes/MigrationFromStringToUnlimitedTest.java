@@ -1,6 +1,7 @@
 package net.java.ao.it.datatypes;
 
 import java.sql.PreparedStatement;
+import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.Entity;
@@ -12,6 +13,7 @@ import net.java.ao.schema.Table;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
+import net.java.ao.types.LogicalTypes;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -37,7 +39,8 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     {
         entityManager.migrate(VarcharColumn.class);
 
-        final VarcharColumn e = entityManager.create(VarcharColumn.class);
+        final VarcharColumn e = entityManager.create(VarcharColumn.class,
+                new DBParam("ID", 1));
         e.setText("Fred");
         e.save();
 
@@ -55,8 +58,12 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     public void testMigrationFromOversizedColumn() throws Exception
     {
         DatabaseProvider provider  = entityManager.getProvider();
+        String primaryKeyType = provider.getTypeManager().getType(Common.getPrimaryKeyClassType(VarcharColumn.class)).getSqlTypeIdentifier();
+        String tableName = provider.shorten(entityManager.getTableNameConverter().getName(VarcharColumn.class));
         DbUtils.executeUpdate(entityManager,
-                "CREATE TABLE " + getTableName(VarcharColumn.class) + "(" + provider.processID("ID")+" INTEGER PRIMARY KEY, " + provider.processID("TEXT") + " VARCHAR(767))",
+                "CREATE TABLE " + provider.withSchema(tableName) + "(" + provider.processID("ID")+" " + primaryKeyType +" NOT NULL, "
+                        + provider.processID("TEXT") + " VARCHAR(767)," + "CONSTRAINT " + "pk_" + tableName
+                        + "_ID PRIMARY KEY (" + provider.processID("ID")+ "))",
                 new DbUtils.UpdateCallback()
                 {
                     @Override
@@ -69,7 +76,6 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
         final LargeTextColumn e = entityManager.create(LargeTextColumn.class,
                 new DBParam("ID", 1), new DBParam("TEXT",LARGE_STRING));
         final LargeTextColumn retrieved = entityManager.get(LargeTextColumn.class, 1);
-
     }
 
     @Table("ENTITY")
@@ -88,8 +94,14 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     }
 
     @Table("ENTITY")
-    public static interface VarcharColumn extends Entity
+    public static interface VarcharColumn extends RawEntity<Integer>
     {
+        @NotNull
+        @PrimaryKey("ID")
+        public int getID();
+
+        void setId(int id);
+
         @StringLength(StringLength.MAX_LENGTH)
         public String getText();
 
