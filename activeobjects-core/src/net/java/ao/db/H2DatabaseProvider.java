@@ -35,7 +35,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected String renderQueryLimit(final Query query)
     {
-        StringBuilder sql = new StringBuilder();
+        final StringBuilder sql = new StringBuilder();
 
         // H2 requires a LIMIT when OFFSET is specified; -1 indicates unlimited
         if (query.getLimit() < 0 && query.getOffset() > 0)
@@ -49,9 +49,48 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field)
+    {
+        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+
+        back.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
+
+        if (!field.isPrimaryKey())
+        {
+            if (oldField.isUnique() && !field.isUnique())
+            {
+                final StringBuilder sql = new StringBuilder();
+
+                sql.append("ALTER TABLE ");
+                sql.append(withSchema(table.getName()));
+                sql.append(" DROP CONSTRAINT ");
+                sql.append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()));
+
+                back.add(SQLAction.of(sql));
+            }
+            if (!oldField.isUnique() && field.isUnique())
+            {
+                final StringBuilder sql = new StringBuilder();
+
+                sql.append("ALTER TABLE ");
+                sql.append(withSchema(table.getName()));
+                sql.append(" ADD CONSTRAINT ");
+                sql.append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()));
+                sql.append(" UNIQUE(");
+                sql.append(processID(field.getName()));
+                sql.append(")");
+
+                back.add(SQLAction.of(sql));
+            }
+        }
+
+        return back.build();
+    }
+
+    @Override
     protected SQLAction renderAlterTableChangeColumnStatement(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field, final RenderFieldOptions options)
     {
-        StringBuilder sql = new StringBuilder();
+        final StringBuilder sql = new StringBuilder();
 
         sql.append("ALTER TABLE ");
         sql.append(withSchema(table.getName()));
@@ -69,7 +108,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected String renderFieldDefault(final DDLTable table, final DDLField field)
     {
-        StringBuilder sql = new StringBuilder();
+        final StringBuilder sql = new StringBuilder();
 
         if (field.getDefaultValue() != null)
         {
@@ -82,12 +121,14 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderAlterTableDropKey(final DDLForeignKey key)
     {
-        return SQLAction.of(new StringBuilder()
-                        .append("ALTER TABLE ")
-                        .append(withSchema(key.getDomesticTable()))
-                        .append(" DROP CONSTRAINT ")
-                        .append(processID(key.getFKName()))
-        );
+        final StringBuilder sql = new StringBuilder();
+
+        sql.append("ALTER TABLE ");
+        sql.append(withSchema(key.getDomesticTable()));
+        sql.append(" DROP CONSTRAINT ");
+        sql.append(processID(key.getFKName()));
+
+        return SQLAction.of(sql);
     }
 
     @Override
@@ -108,17 +149,21 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table)
     {
-        final StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
+        final StringBuilder sql = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
 
         for (final DDLField field : table.getFields())
         {
             if (field.isUnique())
             {
-                back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
+                sql.append("    CONSTRAINT ");
+                sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
+                sql.append(" UNIQUE(");
+                sql.append(processID(field.getName()));
+                sql.append("),\n");
             }
         }
 
-        return back.toString();
+        return sql.toString();
     }
 
     @Override
