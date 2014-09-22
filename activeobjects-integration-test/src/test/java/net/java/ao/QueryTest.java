@@ -509,6 +509,15 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals(unlimited[unlimited.length - 4].getID(), comments[1].getID());
     }
 
+    @Test
+    public void testOrderByReservedWord() throws Exception
+    {
+        Comment[] ordered = entityManager.find(Comment.class, Query.select().order("INDEX DESC"));
+        Comment[] unordered = entityManager.find(Comment.class);
+
+        assertEquals(ordered.length, unordered.length);
+    }
+
     static class DatabaseProviders
     {
         public static HSQLDatabaseProvider getHsqlDatabaseProvider()
