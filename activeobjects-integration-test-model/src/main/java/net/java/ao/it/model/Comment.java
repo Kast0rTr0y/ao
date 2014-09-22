@@ -35,4 +35,7 @@ public interface Comment extends Entity {
 	
 	public Commentable getCommentable();
 	public void setCommentable(Commentable commentable);
+
+    public int getIndex();
+    public void setIndex(int index);
 }

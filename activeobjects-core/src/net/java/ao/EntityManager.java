@@ -704,25 +704,11 @@ public class EntityManager
 
         query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
-        // legacy support for "*" in the select - to be removed after AO-552 implemented
-        boolean starSelected = false;
-        for (final String selectedField : query.getFields())
-        {
-            if ("*".equals(selectedField))
-            {
-                // change the field to the PK; not sure how this ever worked, but being safe
-                field = entityInfo.getPrimaryKey().getName();
-
-                starSelected = true;
-                break;
-            }
-        }
-
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
         final Set<String> selectedFields;
-        if (starSelected || preloadAnnotation == null || contains(preloadAnnotation.value(), Preload.ALL))
+        if (preloadAnnotation == null || contains(preloadAnnotation.value(), Preload.ALL))
         {
-            // select all fields from the table - no preload is specified, the user has asked for all or "*" is selected
+            // select all fields from the table - no preload is specified or the user has specified all
             selectedFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
         }
         else

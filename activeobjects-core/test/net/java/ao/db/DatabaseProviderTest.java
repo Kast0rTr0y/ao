@@ -111,7 +111,19 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
-    public void testRenderActionAlternumericColumn() throws IOException
+    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException
+    {
+        testRenderAction("alter-string-length-column.sql", createActionAlterStringLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException
+    {
+        testRenderAction("alter-string-maxlength-column.sql", createActionAlterStringMaxLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterNumericColumn() throws IOException
     {
         testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
     }
@@ -279,6 +291,62 @@ public abstract class DatabaseProviderTest
                 "column1, table2.column2 ASC",
                 "table1.column1 ASC, table2.column2 ASC"
         );
+    }
+
+    @Test
+    public final void testProcessOrderClauseAppendTail()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesAppendTail()));
+    }
+
+    protected List<String> getExpectedOrderClausesAppendTail()
+    {
+        return ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+    }
+
+    @Test
+    public final void testProcessOrderClauseExcessNameLength()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "someNamesThatOverMaximumLengthExtraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesExcessNameLength()));
+    }
+
+    protected List<String> getExpectedOrderClausesExcessNameLength()
+    {
+        String excessColumnTableName = "someNamesThatOverMaximumLengthExtraCharacter";
+
+        excessColumnTableName = getDatabaseProvider().shorten(excessColumnTableName);
+
+        return ImmutableList.of(excessColumnTableName);
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
@@ -519,6 +587,62 @@ public abstract class DatabaseProviderTest
             return back;
         }
     };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(10)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(20)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringMaxLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(767)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
 
     protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
     {
