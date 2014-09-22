@@ -770,6 +770,10 @@ public abstract class DatabaseProvider implements Disposable
     public final String processOrderClause(String order)
     {
         final Matcher matcher = ORDER_CLAUSE_PATTERN.matcher(order);
+        
+        final int ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME = 1;
+        final int ORDER_CLAUSE_PATTERN_GROUP_COL_NAME = 2;
+        final int ORDER_CLAUSE_PATTERN_GROUP_DIRECTION = 3;
 
         final StringBuffer sql = new StringBuffer();
 
@@ -777,21 +781,20 @@ public abstract class DatabaseProvider implements Disposable
         {
             final StringBuilder repl = new StringBuilder();
 
-            //AO-548 : pass actual value instead of placeholder to use shorten() and quote() method
-            // $1 signifies the (optional) table name to potentially quote
-            if (matcher.group(1) != null)
+            // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name to potentially quote
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null)
             {
-                repl.append(processID(matcher.group(1)));
+                repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
                 repl.append(".");
             }
 
-            // $2 signifies the (mandatory) column name to potentially quote
-            repl.append(processID(matcher.group(2)));
+            // ORDER_CLAUSE_PATTERN_GROUP_COL_NAME signifies the (mandatory) column name to potentially quote
+            repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_COL_NAME)));
 
-            // $3 signifies the (optional) ASC/DESC option
-            if (matcher.group(3) != null)
+            // ORDER_CLAUSE_PATTERN_GROUP_DIRECTION signifies the direction option
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION) != null)
             {
-                repl.append(" ").append(matcher.group(3));
+                repl.append(" ").append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION));
             }
 
             matcher.appendReplacement(sql, repl.toString());
