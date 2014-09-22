@@ -236,7 +236,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         final Comment[] comments = new Comment[PostCommentData.ids.length];
         for (int i = 0; i < PostCommentData.ids.length; i++)
         {
-            final Comment comment = createComment(entityManager, post, PostCommentData.TITLES[i], PostCommentData.TEXTS[i]);
+            final Comment comment = createComment(entityManager, post, PostCommentData.TITLES[i], PostCommentData.TEXTS[i], PostCommentData.INDICES[i]);
             PostCommentData.ids[i] = comment.getID();
             comments[i] = comment;
         }
@@ -257,7 +257,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         final Comment[] comments = new Comment[PhotoCommentData.ids.length];
         for (int i = 0; i < PhotoCommentData.ids.length; i++)
         {
-            final Comment comment = createComment(entityManager, photo, PhotoCommentData.TITLES[i], PhotoCommentData.TEXTS[i]);
+            final Comment comment = createComment(entityManager, photo, PhotoCommentData.TITLES[i], PhotoCommentData.TEXTS[i], PostCommentData.INDICES[i]);
             PhotoCommentData.ids[i] = comment.getID();
             comments[i] = comment;
         }
@@ -403,12 +403,13 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return author;
     }
 
-    private Comment createComment(EntityManager entityManager, Commentable commentable, String title, String text) throws Exception
+    private Comment createComment(EntityManager entityManager, Commentable commentable, String title, String text, int index) throws Exception
     {
         Comment comment = entityManager.create(Comment.class);
         comment.setTitle(title);
         comment.setText(text);
         comment.setCommentable(commentable);
+        comment.setIndex(index);
         comment.save();
         return comment;
     }
@@ -519,6 +520,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
                 "Commenting on a post 1",
                 "Commenting on a post 2",
                 "Commenting on a post 3"};
+        public static final int[] INDICES = { 1, 2, 3, 4 };
 
         public static int[] getIds()
         {
