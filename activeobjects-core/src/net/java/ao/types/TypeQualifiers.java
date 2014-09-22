@@ -23,7 +23,7 @@ public class TypeQualifiers
      * String sizes were tuned down due to a SQL server limitation, this has the undesired side effect that
      * existing tables read with lengths between 450 and 767 are incorrectly seen as clobs
      */
-    public static final int OLD_STRING_LENGTH_MAX = 767;
+    public static final int OLD_MAX_STRING_LENGTH = 767;
     
     /**
      * If {@code stringLength} is set to this constant, the field is an unlimited-length string
@@ -85,7 +85,7 @@ public class TypeQualifiers
                 // some databases like to report very large numbers for the length of what is really
                 // an unlimited-length (CLOB) column.
                 stringLength = UNLIMITED_LENGTH;
-                if (reportedStringLength > OLD_STRING_LENGTH_MAX)
+                if (reportedStringLength > OLD_MAX_STRING_LENGTH)
                 {
                     reportedStringLength = UNLIMITED_LENGTH;
                 }
