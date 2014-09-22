@@ -129,14 +129,14 @@ public class H2DatabaseProvider extends DatabaseProvider
         return SQLAction.of(sql);
     }
 
-    @Override
-    protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index)
-    {
-        return SQLAction.of(new StringBuilder()
-                        .append("DROP INDEX IF EXISTS ")
-                        .append(withSchema(getExistingIndexName(indexNameConverter, index)))
-        );
-    }
+//    @Override
+//    protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index)
+//    {
+//        return SQLAction.of(new StringBuilder()
+//                        .append("DROP INDEX IF EXISTS ")
+//                        .append(withSchema(getExistingIndexName(indexNameConverter, index)))
+//        );
+//    }
 
     @Override
     protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table)
