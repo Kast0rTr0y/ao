@@ -791,13 +791,14 @@ public abstract class DatabaseProvider implements Disposable
             // ORDER_CLAUSE_PATTERN_GROUP_COL_NAME signifies the (mandatory) column name to potentially quote
             repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_COL_NAME)));
 
-            // ORDER_CLAUSE_PATTERN_GROUP_DIRECTION signifies the direction option
+            // ORDER_CLAUSE_PATTERN_GROUP_DIRECTION signifies the ASC/DESC option
             if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION) != null)
             {
                 repl.append(" ").append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION));
             }
 
-            matcher.appendReplacement(sql, repl.toString());
+            matcher.appendReplacement(sql, "");
+            sql.append(Matcher.quoteReplacement(repl.toString()));
         }
 
         matcher.appendTail(sql);
