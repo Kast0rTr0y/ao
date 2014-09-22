@@ -73,6 +73,19 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    protected String renderFieldType(final DDLField field)
+    {
+        StringBuilder sql = new StringBuilder(super.renderFieldType(field));
+
+        if (!field.isNotNull())
+        {
+            sql.append(" NULL");
+        }
+
+        return sql.toString();
+    }
+
+    @Override
     protected SQLAction renderAlterTableDropKey(final DDLForeignKey key)
     {
         return SQLAction.of(new StringBuilder()
