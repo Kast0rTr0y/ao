@@ -1,5 +1,6 @@
 package net.java.ao.db;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -56,6 +57,19 @@ public class H2DatabaseProvider extends DatabaseProvider
                         .append(" ALTER COLUMN ")
                         .append(renderField(nameConverters, table, field, options))
         );
+    }
+
+    @Override
+    protected String renderFieldDefault(final DDLTable table, final DDLField field)
+    {
+        StringBuilder sql = new StringBuilder();
+
+        if (field.getDefaultValue() != null)
+        {
+            sql.append(" DEFAULT ").append(renderValue(field.getDefaultValue()));
+        }
+
+        return sql.toString();
     }
 
     @Override
