@@ -708,7 +708,7 @@ public class EntityManager
         final Set<String> selectedFields;
         if (preloadAnnotation == null || contains(preloadAnnotation.value(), Preload.ALL))
         {
-            // select all fields from the table - no preload is specified, the user has asked for all or "*" is selected
+            // select all fields from the table - no preload is specified or the user has specified all
             selectedFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
         }
         else
