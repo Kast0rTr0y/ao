@@ -147,11 +147,9 @@ public class H2DatabaseProvider extends DatabaseProvider
         {
             if (field.isUnique())
             {
-                sql.append("    CONSTRAINT ");
-                sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
-                sql.append(" UNIQUE(");
-                sql.append(processID(field.getName()));
-                sql.append("),\n");
+                sql.append("   ");
+                sql.append(renderUniqueConstraint(uniqueNameConverter, table, field));
+                sql.append(",\n");
             }
         }
 
@@ -240,11 +238,8 @@ public class H2DatabaseProvider extends DatabaseProvider
 
         sql.append("ALTER TABLE ");
         sql.append(withSchema(table.getName()));
-        sql.append(" ADD CONSTRAINT ");
-        sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
-        sql.append(" UNIQUE(");
-        sql.append(processID(field.getName()));
-        sql.append(")");
+        sql.append(" ADD ");
+        sql.append(renderUniqueConstraint(uniqueNameConverter, table, field));
 
         return SQLAction.of(sql);
     }
@@ -259,5 +254,18 @@ public class H2DatabaseProvider extends DatabaseProvider
         sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
 
         return SQLAction.of(sql);
+    }
+
+    private String renderUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        final StringBuilder sql = new StringBuilder();
+
+        sql.append(" CONSTRAINT ");
+        sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
+        sql.append(" UNIQUE(");
+        sql.append(processID(field.getName()));
+        sql.append(")");
+
+        return sql.toString();
     }
 }
