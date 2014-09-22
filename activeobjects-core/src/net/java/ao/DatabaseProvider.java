@@ -797,8 +797,7 @@ public abstract class DatabaseProvider implements Disposable
                 repl.append(" ").append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION));
             }
 
-            matcher.appendReplacement(sql, "");
-            sql.append(Matcher.quoteReplacement(repl.toString()));
+            matcher.appendReplacement(sql, Matcher.quoteReplacement(repl.toString()));
         }
 
         matcher.appendTail(sql);
