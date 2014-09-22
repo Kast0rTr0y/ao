@@ -51,12 +51,19 @@ public class H2DatabaseProvider extends DatabaseProvider
     @Override
     protected SQLAction renderAlterTableChangeColumnStatement(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field, final RenderFieldOptions options)
     {
-        return SQLAction.of(new StringBuilder()
-                        .append("ALTER TABLE ")
-                        .append(withSchema(table.getName()))
-                        .append(" ALTER COLUMN ")
-                        .append(renderField(nameConverters, table, field, options))
-        );
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("ALTER TABLE ");
+        sql.append(withSchema(table.getName()));
+        sql.append(" ALTER COLUMN ");
+        sql.append(renderField(nameConverters, table, field, options));
+
+        if (oldField.isNotNull() && !field.isNotNull())
+        {
+            sql.append(" NULL ");
+        }
+
+        return SQLAction.of(sql);
     }
 
     @Override
@@ -67,19 +74,6 @@ public class H2DatabaseProvider extends DatabaseProvider
         if (field.getDefaultValue() != null)
         {
             sql.append(" DEFAULT ").append(renderValue(field.getDefaultValue()));
-        }
-
-        return sql.toString();
-    }
-
-    @Override
-    protected String renderFieldType(final DDLField field)
-    {
-        StringBuilder sql = new StringBuilder(super.renderFieldType(field));
-
-        if (!field.isNotNull())
-        {
-            sql.append(" NULL");
         }
 
         return sql.toString();
