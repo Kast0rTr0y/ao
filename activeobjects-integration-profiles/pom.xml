@@ -52,7 +52,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
@@ -86,7 +86,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
@@ -102,6 +102,39 @@
             <id>h2-embedded</id>
             <properties>
                 <ao.test.database>h2-embedded</ao.test.database>
+                <db.skip>true</db.skip>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>
+                                net.java.ao.test.junit.HsqlIntegrationTest,
+                                net.java.ao.test.junit.DerbyIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
+                                net.java.ao.test.junit.OracleIntegrationTest,
+                                net.java.ao.test.junit.PostgresIntegrationTest,
+                                net.java.ao.test.junit.SqlServerIntegrationTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2-server</id>
+            <properties>
+                <ao.test.database>h2-server</ao.test.database>
                 <db.skip>true</db.skip>
             </properties>
             <dependencies>
@@ -165,7 +198,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
@@ -211,7 +244,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
@@ -260,7 +293,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
@@ -310,7 +343,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
@@ -360,7 +393,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
@@ -410,7 +443,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
@@ -456,7 +489,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.H2EmbeddedIntegrationTest,
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,

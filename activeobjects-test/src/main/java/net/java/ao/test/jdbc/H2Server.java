@@ -1,18 +1,18 @@
 package net.java.ao.test.jdbc;
 
-public class H2Embedded extends AbstractJdbcConfiguration
+public class H2Server extends AbstractJdbcConfiguration
 {
-    private static final String DEFAULT_URL = "jdbc:h2:file:./target/ao-test;MVCC=TRUE";
+    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/./target/ao-test;MVCC=TRUE";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
 
-    public H2Embedded()
+    public H2Server()
     {
         super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
-    public H2Embedded(String url, String username, String password, String schema)
+    public H2Server(String url, String username, String password, String schema)
     {
         super(url, username, password, schema);
     }

@@ -3,13 +3,13 @@ package net.java.ao;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
-import net.java.ao.test.junit.H2EmbeddedIntegrationTest;
+import net.java.ao.test.junit.H2IntegrationTest;
 import org.junit.experimental.categories.Category;
 
 import static java.lang.String.format;
 
-@Category (H2EmbeddedIntegrationTest.class)
-public class H2EmbeddedQueryTest extends QueryTest
+@Category (H2IntegrationTest.class)
+public class H2QueryTest extends QueryTest
 {
     @Override
     protected DatabaseProvider getDatabaseProvider()
