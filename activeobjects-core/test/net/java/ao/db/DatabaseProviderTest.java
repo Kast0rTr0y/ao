@@ -111,7 +111,19 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
-    public void testRenderActionAlternumericColumn() throws IOException
+    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException
+    {
+        testRenderAction("alter-string-length-column.sql", createActionAlterStringLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException
+    {
+        testRenderAction("alter-string-maxlength-column.sql", createActionAlterStringMaxLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterNumericColumn() throws IOException
     {
         testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
     }
@@ -519,6 +531,62 @@ public abstract class DatabaseProviderTest
             return back;
         }
     };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(10)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(20)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringMaxLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(767)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
 
     protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
     {
