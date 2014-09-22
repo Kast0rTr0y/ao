@@ -20,6 +20,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.collect.Iterables.concat;
+
 public class H2DatabaseProvider extends DatabaseProvider
 {
     public H2DatabaseProvider(final DisposableDataSource dataSource)
@@ -49,6 +51,19 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    protected Iterable<SQLAction> renderAlterTableAddColumn(final NameConverters nameConverters, final DDLTable table, final DDLField field)
+    {
+        final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
+
+        if (field.isUnique())
+        {
+            return concat(back, ImmutableList.of(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field)));
+        }
+
+        return back;
+    }
+
+    @Override
     protected Iterable<SQLAction> renderAlterTableChangeColumn(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field)
     {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
@@ -59,28 +74,11 @@ public class H2DatabaseProvider extends DatabaseProvider
         {
             if (oldField.isUnique() && !field.isUnique())
             {
-                final StringBuilder sql = new StringBuilder();
-
-                sql.append("ALTER TABLE ");
-                sql.append(withSchema(table.getName()));
-                sql.append(" DROP CONSTRAINT ");
-                sql.append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()));
-
-                back.add(SQLAction.of(sql));
+                back.add(renderDropUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
             }
             if (!oldField.isUnique() && field.isUnique())
             {
-                final StringBuilder sql = new StringBuilder();
-
-                sql.append("ALTER TABLE ");
-                sql.append(withSchema(table.getName()));
-                sql.append(" ADD CONSTRAINT ");
-                sql.append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()));
-                sql.append(" UNIQUE(");
-                sql.append(processID(field.getName()));
-                sql.append(")");
-
-                back.add(SQLAction.of(sql));
+                back.add(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
             }
         }
 
@@ -141,12 +139,6 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderUnique(final UniqueNameConverter uniqueNameConverter, final DDLTable table, final DDLField field)
-    {
-        return "";
-    }
-
-    @Override
     protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table)
     {
         final StringBuilder sql = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
@@ -164,6 +156,12 @@ public class H2DatabaseProvider extends DatabaseProvider
         }
 
         return sql.toString();
+    }
+
+    @Override
+    protected String renderUnique(final UniqueNameConverter uniqueNameConverter, final DDLTable table, final DDLField field)
+    {
+        return "";
     }
 
     @Override
@@ -235,4 +233,31 @@ public class H2DatabaseProvider extends DatabaseProvider
             "UNIQUE",
             "WHERE"
     );
+
+    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        final StringBuilder sql = new StringBuilder();
+
+        sql.append("ALTER TABLE ");
+        sql.append(withSchema(table.getName()));
+        sql.append(" ADD CONSTRAINT ");
+        sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
+        sql.append(" UNIQUE(");
+        sql.append(processID(field.getName()));
+        sql.append(")");
+
+        return SQLAction.of(sql);
+    }
+
+    private SQLAction renderDropUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
+    {
+        final StringBuilder sql = new StringBuilder();
+
+        sql.append("ALTER TABLE ");
+        sql.append(withSchema(table.getName()));
+        sql.append(" DROP CONSTRAINT ");
+        sql.append(uniqueNameConverter.getName(table.getName(), field.getName()));
+
+        return SQLAction.of(sql);
+    }
 }
