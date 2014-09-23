@@ -227,6 +227,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" CLOB")));
                     back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
+                    back.add(SQLAction.of("SAVEPOINT values_copied"));
                     back.addAll(renderDropColumnActions(nameConverters, table, field));
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
                 }
