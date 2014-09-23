@@ -3,6 +3,8 @@ package net.java.ao.test.jdbc;
 import org.h2.tools.Server;
 
 import java.sql.SQLException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class H2Server extends AbstractJdbcConfiguration
 {
@@ -12,6 +14,8 @@ public class H2Server extends AbstractJdbcConfiguration
     private static final String DEFAULT_SCHEMA = "PUBLIC";
 
     private static Server h2Server;
+
+    private static Lock h2ServerLock = new ReentrantLock();
 
     public H2Server()
     {
@@ -48,19 +52,27 @@ public class H2Server extends AbstractJdbcConfiguration
     }
 
     @Override
-    public synchronized void init()
+    public void init()
     {
-        if (h2Server == null)
+        h2ServerLock.lock();
+        try
         {
-            // launch an H2 server if there isn't one
-            try
+            if (h2Server == null)
             {
-                h2Server = Server.createTcpServer().start();
+                // launch an H2 server if there isn't one
+                try
+                {
+                    h2Server = Server.createTcpServer().start();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
+        }
+        finally
+        {
+            h2ServerLock.unlock();
         }
     }
 }
