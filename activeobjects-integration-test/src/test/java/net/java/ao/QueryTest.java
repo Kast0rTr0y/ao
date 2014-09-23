@@ -509,16 +509,13 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         assertEquals(unlimited[unlimited.length - 4].getID(), comments[1].getID());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSelectStarForbidden()
+    @Test
+    public void testOrderByReservedWord() throws Exception
     {
-        Query.select("*");
-    }
+        Comment[] ordered = entityManager.find(Comment.class, Query.select().order("INDEX DESC"));
+        Comment[] unordered = entityManager.find(Comment.class);
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSelectStarWithFieldnamesForbidden()
-    {
-        Query.select("fieldname1, fieldname2, *");
+        assertEquals(ordered.length, unordered.length);
     }
 
     static class DatabaseProviders
