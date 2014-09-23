@@ -93,7 +93,7 @@ public final class MigrationFromStringToUnlimitedTest extends ActiveObjectsInteg
     private void insertTextIntoTable(final DatabaseProvider provider, final String tableName) throws Exception
     {
         DbUtils.executeUpdate(entityManager,
-                "INSERT INTO " + tableName + "(" + provider.processID("ID") + ","
+                "INSERT INTO " + provider.withSchema(tableName) + "(" + provider.processID("ID") + ","
                         + provider.processID("TEXT") + " )" + " VALUES (?, ?)",
 
                 new DbUtils.UpdateCallback()
