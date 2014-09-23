@@ -25,9 +25,6 @@
     <profiles>
         <profile>
             <id>hsql</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
@@ -95,6 +92,9 @@
         </profile>
         <profile>
             <id>h2-memory</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <properties>
                 <ao.test.database>h2-memory</ao.test.database>
                 <db.skip>true</db.skip>
