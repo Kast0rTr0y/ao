@@ -30,4 +30,9 @@ public class Oracle extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
+
+    @Override
+    public void init()
+    {
+    }
 }

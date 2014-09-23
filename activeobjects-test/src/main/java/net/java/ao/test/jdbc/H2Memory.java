@@ -40,4 +40,9 @@ public class H2Memory extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
+
+    @Override
+    public void init()
+    {
+    }
 }

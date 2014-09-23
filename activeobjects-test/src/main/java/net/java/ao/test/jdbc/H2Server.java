@@ -1,11 +1,17 @@
 package net.java.ao.test.jdbc;
 
+import org.h2.tools.Server;
+
+import java.sql.SQLException;
+
 public class H2Server extends AbstractJdbcConfiguration
 {
     private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/./target/ao-test;MVCC=TRUE";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
+
+    private static Server h2Server;
 
     public H2Server()
     {
@@ -39,5 +45,22 @@ public class H2Server extends AbstractJdbcConfiguration
     protected String getDefaultUrl()
     {
         return DEFAULT_URL;
+    }
+
+    @Override
+    public synchronized void init()
+    {
+        if (h2Server == null)
+        {
+            // launch an H2 server if there isn't one
+            try
+            {
+                h2Server = Server.createTcpServer().start();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

@@ -83,6 +83,11 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
         return jdbcSupplier.get().getSchema();
     }
 
+    @Override
+    public void init()
+    {
+    }
+
     private static final class SystemPropertyJdbcConfigurationSupplier implements Supplier<JdbcConfiguration>
     {
         @Override
@@ -92,6 +97,9 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             final JdbcConfiguration jdbcConfiguration = buildJdbcConfiguration(db);
 
             logger.debug("JDBC configuration key is {} and resolved to {}", db, jdbcConfiguration);
+
+            jdbcConfiguration.init();
+
             return jdbcConfiguration;
         }
 

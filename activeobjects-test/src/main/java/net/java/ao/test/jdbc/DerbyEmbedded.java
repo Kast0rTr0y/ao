@@ -40,4 +40,9 @@ public class DerbyEmbedded extends AbstractJdbcConfiguration
     {
         return DEFAULT_PASSWORD;
     }
+
+    @Override
+    public void init()
+    {
+    }
 }
