@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.java.dev.activeobjects</groupId>
         <artifactId>activeobjects-integration-profiles</artifactId>
-        <version>0.28.6-SNAPSHOT</version>
+        <version>0.28.6-rc001</version>
         <relativePath>../activeobjects-integration-profiles</relativePath>
     </parent>
 
