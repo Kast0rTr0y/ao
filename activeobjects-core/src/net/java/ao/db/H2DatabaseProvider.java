@@ -26,7 +26,7 @@ public class H2DatabaseProvider extends DatabaseProvider
 {
     public H2DatabaseProvider(final DisposableDataSource dataSource)
     {
-        super(dataSource, "PUBLIC", TypeManager.h2());
+        this(dataSource, "PUBLIC");
     }
 
     public H2DatabaseProvider(final DisposableDataSource dataSource, final String schema)
