@@ -218,15 +218,25 @@ public final class OracleDatabaseProvider extends DatabaseProvider
 
         if(!oldField.getType().equals(field.getType()))
         {
-            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
+            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB") || oldField.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
             {
                 if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(), field.getType().getQualifiers()))
                 {
                     final String fieldName = processID(field.getName());
                     final String tempColName = processID(getTempColumnName(field.getName()));
-
-                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" CLOB")));
+                    String tempColType;
+                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
+                    {
+                        tempColType = "CLOB";
+                    }
+                    else
+                    {
+                        final int stringLength = field.getType().getQualifiers().getStringLength();
+                        tempColType = "VARCHAR("+ stringLength +")";
+                    }
+                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" ").append(tempColType)));
                     back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
+                    back.add(SQLAction.of("SAVEPOINT values_copied"));
                     back.addAll(renderDropColumnActions(nameConverters, table, field));
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
                 }
