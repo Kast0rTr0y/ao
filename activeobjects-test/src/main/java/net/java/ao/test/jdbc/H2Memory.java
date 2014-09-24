@@ -9,7 +9,7 @@ public class H2Memory extends AbstractJdbcConfiguration
 
     public H2Memory()
     {
-        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
+        this(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
     public H2Memory(String url, String username, String password, String schema)

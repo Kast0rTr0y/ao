@@ -1,6 +1,7 @@
 package net.java.ao.test.jdbc;
 
 import org.h2.tools.Server;
+import org.junit.rules.TemporaryFolder;
 
 import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
@@ -8,7 +9,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class H2Server extends AbstractJdbcConfiguration
 {
-    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/./target/ao-test;MVCC=TRUE";
+    private static final TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
+
+    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/" + TEMP_FOLDER + "/ao-test;MVCC=TRUE";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
@@ -19,7 +22,7 @@ public class H2Server extends AbstractJdbcConfiguration
 
     public H2Server()
     {
-        super(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
+        this(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
     public H2Server(String url, String username, String password, String schema)

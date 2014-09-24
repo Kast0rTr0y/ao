@@ -76,7 +76,7 @@ public class H2DatabaseProvider extends DatabaseProvider
             {
                 back.add(renderDropUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
             }
-            if (!oldField.isUnique() && field.isUnique())
+            else if (!oldField.isUnique() && field.isUnique())
             {
                 back.add(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
             }
