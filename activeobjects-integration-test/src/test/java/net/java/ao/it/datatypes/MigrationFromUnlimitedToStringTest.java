@@ -53,8 +53,21 @@ public final class MigrationFromUnlimitedToStringTest extends ActiveObjectsInteg
                 new DBParam("ID", 1));
         e.setText(LARGE_STRING);
         e.save();
-        expectedException.expect(SQLException.class);
+
+        if (!DbUtils.isHsql(entityManager))
+        {
+            // HSQL silently truncates, others vomit
+            expectedException.expect(SQLException.class);
+        }
+
         entityManager.migrate(VarcharColumn.class);
+
+        if (DbUtils.isHsql(entityManager))
+        {
+            // check the truncated migration
+            VarcharColumn retrieved = entityManager.get(VarcharColumn.class, e.getID());
+            assertEquals(MAX_LENGTH_STRING, retrieved.getText());
+        }
     }
 
     @Test
