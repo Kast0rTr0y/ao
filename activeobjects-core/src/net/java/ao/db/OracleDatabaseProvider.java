@@ -225,20 +225,17 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                     final String fieldName = processID(field.getName());
                     final String tempColName = processID(getTempColumnName(field.getName()));
                     String tempColType;
-                    String sourceField;
                     if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
                     {
                         tempColType = "CLOB";
-                        sourceField = fieldName;
                     }
                     else
                     {
                         final int stringLength = field.getType().getQualifiers().getStringLength();
                         tempColType = "VARCHAR("+ stringLength +")";
-                        sourceField = "SUBSTR("+fieldName+",1,"+stringLength+")";
                     }
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" ").append(tempColType)));
-                    back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(sourceField)));
+                    back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
                     back.add(SQLAction.of("SAVEPOINT values_copied"));
                     back.addAll(renderDropColumnActions(nameConverters, table, field));
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));

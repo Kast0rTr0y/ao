@@ -11,9 +11,12 @@ import net.java.ao.schema.Table;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
@@ -37,6 +40,9 @@ public final class MigrationFromUnlimitedToStringTest extends ActiveObjectsInteg
         MAX_LENGTH_STRING = sb.substring(0, StringLength.MAX_LENGTH);
     }
 
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
     @Test
     @NonTransactional
     public void testMigration() throws Exception
@@ -46,6 +52,20 @@ public final class MigrationFromUnlimitedToStringTest extends ActiveObjectsInteg
         final VarcharColumn e = entityManager.create(VarcharColumn.class,
                 new DBParam("ID", 1));
         e.setText(LARGE_STRING);
+        e.save();
+        expectedException.expect(SQLException.class);
+        entityManager.migrate(VarcharColumn.class);
+    }
+
+    @Test
+    @NonTransactional
+    public void testMigrationWithinBounds() throws Exception
+    {
+        entityManager.migrate(LargeTextColumn.class);
+
+        final VarcharColumn e = entityManager.create(VarcharColumn.class,
+                new DBParam("ID", 1));
+        e.setText(MAX_LENGTH_STRING);
         e.save();
 
         entityManager.migrate(VarcharColumn.class);
