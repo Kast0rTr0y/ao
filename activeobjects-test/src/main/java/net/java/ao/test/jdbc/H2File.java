@@ -1,12 +1,14 @@
 package net.java.ao.test.jdbc;
 
-import org.junit.rules.TemporaryFolder;
+import com.google.common.io.Files;
+
+import java.io.File;
 
 public class H2File extends AbstractJdbcConfiguration
 {
-    private static final TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
+    private static final File TEMP_DIR = Files.createTempDir();
 
-    private static final String DEFAULT_URL = "jdbc:h2:file:" + TEMP_FOLDER + "/ao-test;MVCC=TRUE";
+    private static final String DEFAULT_URL = "jdbc:h2:file:" + TEMP_DIR + "/ao-test;MVCC=TRUE";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";

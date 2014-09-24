@@ -1,17 +1,18 @@
 package net.java.ao.test.jdbc;
 
+import com.google.common.io.Files;
 import org.h2.tools.Server;
-import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class H2Server extends AbstractJdbcConfiguration
 {
-    private static final TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
+    private static final File TEMP_DIR = Files.createTempDir();
 
-    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/" + TEMP_FOLDER + "/ao-test;MVCC=TRUE";
+    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/" + TEMP_DIR + "/ao-test;MVCC=TRUE";
     private static final String DEFAULT_USER = "";
     private static final String DEFAULT_PASSWORD = "";
     private static final String DEFAULT_SCHEMA = "PUBLIC";
