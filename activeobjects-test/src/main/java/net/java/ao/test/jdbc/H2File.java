@@ -40,9 +40,4 @@ public class H2File extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
-
-    @Override
-    public void init()
-    {
-    }
 }

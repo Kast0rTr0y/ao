@@ -27,9 +27,4 @@ public class SqlServer extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
-
-    @Override
-    public void init()
-    {
-    }
 }

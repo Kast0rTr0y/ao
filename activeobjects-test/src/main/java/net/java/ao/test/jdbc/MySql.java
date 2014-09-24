@@ -29,9 +29,4 @@ public class MySql extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
-
-    @Override
-    public void init()
-    {
-    }
 }

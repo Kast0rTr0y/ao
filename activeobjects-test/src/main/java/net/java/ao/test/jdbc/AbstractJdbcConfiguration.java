@@ -45,6 +45,11 @@ public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
         return url;
     }
 
+    @Override
+    public void init()
+    {
+    }
+
     protected abstract String getDefaultSchema();
 
     protected abstract String getDefaultUrl();
