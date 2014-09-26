@@ -1,0 +1,1 @@
+ALTER TABLE public."person" ALTER COLUMN "age" TYPE BIGINT
