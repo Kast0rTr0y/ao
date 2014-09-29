@@ -830,7 +830,14 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
-        stream(type, Query.selectAll(), streamCallback);
+        final EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
+
+        final Set<String> valueFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
+
+        final Query query = Query.select();
+        query.setFields(valueFields.toArray(new String[valueFields.size()]));
+
+        stream(type, query, streamCallback);
     }
 
     /**

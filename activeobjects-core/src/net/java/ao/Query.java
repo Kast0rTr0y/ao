@@ -79,20 +79,7 @@ public class Query implements Serializable
      * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
      */
     public Query(QueryType type, String fields) {
-        this(type, fields, true);
-    }
-
-    /**
-     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
-     *
-     * @param fields The fields to select, as comma-delimited field names. Spaces are OK.
-     * @param validateSelectFields if true, fields must not contain {@code "*"}.
-     * @throws java.lang.IllegalArgumentException if validateSelectFields is true and fields contains {@code "*"}
-     */
-    private Query(QueryType type, String fields, boolean validateSelectFields) {
-        if (validateSelectFields) {
-            validateSelectFields(fields);
-        }
+        validateSelectFields(fields);
 
 		this.type = type;
 		this.fields = fields;
@@ -368,21 +355,6 @@ public class Query implements Serializable
 	}
 
     /**
-     * Do not use this method: temporary fix for internal use cases which use "*",
-     * now that {@link #select(String)} disallows "*".
-     * TODO: Remove this as part of AO-553 work.
-     * <p>
-     * Create a {@link Query} and set the field list in the {@code SELECT} clause to {@code "*"}.
-     *
-     * @return non-null Query
-     * @deprecated
-     */
-    @Deprecated
-    public static Query selectAll() {
-        return new Query(QueryType.SELECT, "*", false);
-    }
-
-    /**
      * Create a {@link Query} and set the field list in the {@code SELECT} clause.
      *
      * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
@@ -390,7 +362,7 @@ public class Query implements Serializable
      * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
      */
 	public static Query select(String fields) {
-        return new Query(QueryType.SELECT, fields, true);
+        return new Query(QueryType.SELECT, fields);
 	}
 
     /*
