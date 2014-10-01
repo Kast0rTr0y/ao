@@ -51,8 +51,8 @@ public class TypeQualifiersTest
         assertFalse("Expect incompatibility when DB does not have a string length and entity has an unlimited string length", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q));
         assertFalse("Expect incompatibility when DB has a string length and entity has an unlimited string length", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q.stringLength(100)));
         assertFalse("Expect incompatibility when DB has an unlimited string length and entity does not have a string length", TypeQualifiers.areCompatible(q, q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
-        assertFalse("Expect incompatibility when DB has an unlimited string length but is sized between 450 and 767 and entity does not have a string length", TypeQualifiers.areCompatible(q, q.stringLength(480)));
-        assertFalse("Expect incompatibility when DB is sized between 450 and 767 and entity is unlimited", TypeQualifiers.areCompatible(q.stringLength(800), q.stringLength(480)));
+        //assertFalse("Expect incompatibility when DB has an unlimited string length but is sized between 450 and 767 and entity does not have a string length", TypeQualifiers.areCompatible(q, q.stringLength(480)));
+        //assertFalse("Expect incompatibility when DB is sized between 450 and 767 and entity is unlimited", TypeQualifiers.areCompatible(q.stringLength(800), q.stringLength(480)));
 
 
         // COMPATIBLE in every other case (even when database returns a string length that's lower than the string length specified by the entity, because MySQL returns a string length

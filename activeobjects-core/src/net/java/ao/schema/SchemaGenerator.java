@@ -64,7 +64,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.collect.Iterables.addAll;
-import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.types.TypeQualifiers.MAX_STRING_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
@@ -466,9 +465,17 @@ public final class SchemaGenerator
 		StringLength lengthAnno = annotations.getAnnotation(StringLength.class);
 		if (lengthAnno != null) {
 		    final int length = lengthAnno.value();
-		    if (length > MAX_STRING_LENGTH)
+		    if (length > StringLength.MAX_LENGTH)
 		    {
-		        throw new ActiveObjectsConfigurationException("@StringLength must be <= " + MAX_STRING_LENGTH + " or UNLIMITED").forMethod(method);
+		        if (length > TypeQualifiers.OLD_MAX_STRING_LENGTH)
+                {
+                    throw new ActiveObjectsConfigurationException("@StringLength must be <= " + MAX_STRING_LENGTH + " or UNLIMITED").forMethod(method);
+                }
+                else
+                {
+                    logger.warn("@StringLength is {}. Since 0.28.4 the suggested max string length has been reduced to 450 characters due to a limitation in MS SQL Server."
+                            +" In future releases exceeding this maximum string length will throw an Exception", length);
+                }
 		    }
 		    try {
 		        qualifiers = qualifiers.stringLength(length);

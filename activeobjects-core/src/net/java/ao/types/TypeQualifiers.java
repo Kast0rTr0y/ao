@@ -13,18 +13,18 @@ import net.java.ao.schema.StringLength;
 public class TypeQualifiers
 {
     /**
-     * Maximum string length (for strings of limited length) cannot be set to greater than this
-     * value.  This is the lowest common denominator for maximum string length in all supported
-     * databases.
-     */
-    public static final int MAX_STRING_LENGTH = StringLength.MAX_LENGTH;
-
-    /**
      * String sizes were tuned down due to a SQL server limitation, this has the undesired side effect that
      * existing tables read with lengths between 450 and 767 are incorrectly seen as clobs
      */
     public static final int OLD_MAX_STRING_LENGTH = 767;
-    
+
+    /**
+     * Maximum string length (for strings of limited length) cannot be set to greater than this
+     * value.  This is the lowest common denominator for maximum string length in all supported
+     * databases.
+     */
+    public static final int MAX_STRING_LENGTH = OLD_MAX_STRING_LENGTH;
+
     /**
      * If {@code stringLength} is set to this constant, the field is an unlimited-length string
      * (TEXT, CLOB, or LONG VARCHAR).
