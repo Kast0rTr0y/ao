@@ -172,7 +172,7 @@ public class TypeManager
                 .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("NVARCHAR", "NTEXT", Integer.MAX_VALUE)
+                .addStringTypes("VARCHAR", "NTEXT", Integer.MAX_VALUE)
                 .build();
     }
 
