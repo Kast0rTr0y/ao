@@ -474,7 +474,7 @@ public final class SchemaGenerator
                 else
                 {
                     logger.warn("@StringLength is {}. Since 0.28.4 the suggested max string length has been reduced to 450 characters due to a limitation in MS SQL Server."
-                            +" In future releases exceeding this maximum string length will throw an Exception", length);
+                            +" Starting from 0.29.0 exceeding this maximum string length will throw an Exception", length);
                 }
 		    }
 		    try {

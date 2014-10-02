@@ -38,7 +38,7 @@ public final class SchemaWarningsForFieldsThatAreTooLongTest extends ActiveObjec
             sb.append(s.charAt(r.nextInt(s.length())));
         }
         MAX_LENGTH_STRING = sb.toString();
-        TOO_LONG_STRING = MAX_LENGTH_STRING+"a";
+        TOO_LONG_STRING = MAX_LENGTH_STRING + "a";
     }
 
     @Rule
@@ -70,7 +70,8 @@ public final class SchemaWarningsForFieldsThatAreTooLongTest extends ActiveObjec
     }
 
     private void createAndPopulateNewTable() throws Exception
-    {DatabaseProvider provider  = entityManager.getProvider();
+    {
+        DatabaseProvider provider  = entityManager.getProvider();
         String primaryKeyType = provider.getTypeManager().getType(Common.getPrimaryKeyClassType(LargeTextColumn.class)).getSqlTypeIdentifier();
         String tableName = provider.shorten(entityManager.getTableNameConverter().getName(LargeTextColumn.class));
         createTable(provider, primaryKeyType, tableName);
