@@ -5,6 +5,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
+import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
@@ -21,6 +22,11 @@ public class DatabaseProviders
     public static HSQLDatabaseProvider getHsqlDatabaseProvider()
     {
         return new HSQLDatabaseProvider(newDataSource(""));
+    }
+
+    public static H2DatabaseProvider getH2DatabaseProvider()
+    {
+        return new H2DatabaseProvider(newDataSource(""));
     }
 
     public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
