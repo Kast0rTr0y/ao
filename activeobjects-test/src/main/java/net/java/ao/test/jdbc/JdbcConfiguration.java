@@ -12,4 +12,6 @@ public interface JdbcConfiguration
     String getUsername();
 
     String getPassword();
+
+    void init();
 }

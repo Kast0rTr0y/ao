@@ -1,0 +1,1 @@
+ALTER TABLE PUBLIC.person DROP CONSTRAINT fk_person_companyid

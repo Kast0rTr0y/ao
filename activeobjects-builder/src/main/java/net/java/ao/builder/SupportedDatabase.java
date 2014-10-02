@@ -5,6 +5,7 @@ import net.java.ao.ActiveObjectsException;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.db.ClientDerbyDatabaseProvider;
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
+import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
@@ -90,6 +91,14 @@ enum SupportedDatabase
                 public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
                 {
                     return new HSQLDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
+                }
+            },
+    H2_EMBEDDED("jdbc:h2", "org.h2.Driver")
+            {
+                @Override
+                public DatabaseProvider getDatabaseProvider(final DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema)
+                {
+                    return new H2DatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
                 }
             };
 
