@@ -50,6 +50,7 @@ public final class TestUnmanagedIndex extends ActiveObjectsIntegrationTest
         index.setField(entityManager.getFieldNameConverter().getName(LexoRank.class.getMethods()[0]));
         index.setTable(entityManager.getTableNameConverter().getName(LexoRank.class));
         index.setIndexName(indexName);
+        index.setType(entityManager.getProvider().getTypeManager().getType(Integer.class));
         unmanagedIndexAction.setIndex(index);
 
         NameConverters unmanagedNameCoverters = mock(NameConverters.class);
