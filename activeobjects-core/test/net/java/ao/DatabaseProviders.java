@@ -3,6 +3,7 @@ package net.java.ao;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.Set;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
@@ -90,6 +91,24 @@ public class DatabaseProviders
             protected void setPostConnectionProperties(Connection conn) throws SQLException
             {
                 // nothing
+            }
+        };
+    }
+
+    public static DatabaseProvider getDatabaseProviderWithNoIndex()
+    {
+        return new DatabaseProvider(newDataSource(""), "")
+        {
+            @Override
+            protected Set<String> getReservedWords()
+            {
+                return null;
+            }
+
+            @Override
+            protected boolean hasIndex(String tableName, String indexName)
+            {
+                return false;
             }
         };
     }

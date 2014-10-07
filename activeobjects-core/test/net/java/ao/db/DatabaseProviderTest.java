@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
@@ -52,6 +53,7 @@ import net.java.ao.schema.ddl.SQLAction;
 import test.schema.Company;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static net.java.ao.DatabaseProviders.getDatabaseProviderWithNoIndex;
 import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,6 +61,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -147,6 +150,12 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
+    public final void testRenderActionDropNonExistentIndex() throws IOException
+    {
+         testRenderAction(new String[]{""}, createActionDropNonExistentIndex, getDatabaseProviderWithNoIndex());
+    }
+
+    @Test
     public final void testRenderActionAddKey() throws IOException
     {
         testRenderAction("add-key.sql", createActionAddKey, getDatabaseProvider());
@@ -209,18 +218,19 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
-    public final void testDropIndexWithSpecificName() {
+    public final void testDropIndexWithSpecificName()
+    {
         final DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
         final DDLIndex index = new DDLIndex();
         index.setField("field");
         index.setTable("table");
         index.setType(getDatabaseProvider().getTypeManager().getType(Long.class));
-        index.setIndexName("indexName");
+        index.setIndexName("index_table_field");
         action.setIndex(index);
         final Iterable<SQLAction> sqlActions = getDatabaseProvider().renderAction(nameConverters, action);
 
         assertTrue("Should be dropping the existing index by name",
-                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("indexName"));
+                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("index_table_field"));
     }
 
     protected String getExpectedWhereClause()
@@ -737,6 +747,23 @@ public abstract class DatabaseProviderTest
             index.setField("companyID");
             index.setTable("person");
             index.setType(db.getTypeManager().getType(String.class));
+            index.setIndexName(nameConverters.getIndexNameConverter().getName("person", "companyID"));
+            back.setIndex(index);
+
+            return back;
+        }
+    };
+
+    private Function<DatabaseProvider, DDLAction> createActionDropNonExistentIndex = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
+
+            DDLIndex index = new DDLIndex();
+            index.setField("companyID");
+            index.setTable("person");
+            index.setIndexName("index_non_existent");
             back.setIndex(index);
 
             return back;
