@@ -762,7 +762,9 @@ public class EntityManager
                 for (String name : canonicalFields)
                 {
                     TypeInfo<K> fieldInfo = entityInfo.getField(name).getTypeInfo();
-                    values.put(name, fieldInfo.getLogicalType().pullFromDatabase(this,res,entityInfo.getField(name).getJavaType(), name));
+                    values.put(name, 
+                            fieldInfo.getLogicalType().pullFromDatabase(this,res,entityInfo.getField(name).getJavaType(), 
+                            name));
                 }
                 if (!values.isEmpty())
                 {

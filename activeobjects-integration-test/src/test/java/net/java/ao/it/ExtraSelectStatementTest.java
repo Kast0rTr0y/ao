@@ -1,6 +1,8 @@
 package net.java.ao.it;
 
+import java.net.URI;
 import java.net.URL;
+import java.util.Date;
 import java.util.concurrent.Callable;
 
 import org.junit.Test;
@@ -31,10 +33,17 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
         {
             public Void call() throws Exception
             {
-                lego.getDescription();
-                lego.isExpired();
-                lego.getURL();
-                lego.getName();
+                lego.getClobType();
+                lego.isBooleanType();
+                lego.getURLType();
+                lego.getStringType();
+                lego.getBlobType();
+                lego.getURIType();
+                lego.getDateType();
+                lego.getDoubleType();
+                lego.getEnumType();
+                lego.getIntegerType();
+                lego.getLongType();
 
                 return null;
             }
@@ -43,29 +52,80 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
 
     private interface Lego extends Entity
     {
-        static final String DESCRIPTION = "A Clob type for Oracle and Microsoft SQL Server instead of String";
-        static final String NAME = "Lego name";
+        static final String CLOB_CONTENT = "A Clob type for Oracle and Microsoft SQL Server instead of String";
+        static final String STRING_CONTENT = "Lego name";
+        static final String BLOB_CONTENT = "Image content";
+
+        //ClobType
+        @StringLength(StringLength.UNLIMITED)
+        String getClobType();
 
         @StringLength(StringLength.UNLIMITED)
-        String getDescription();
+        void setClobType(String clobContent);
 
-        @StringLength(StringLength.UNLIMITED)
-        void setDescription(String description);
-
+        //URLType
         @Accessor("url")
-        public URL getURL();
+        public URL getURLType();
 
         @Default("http://www.abc.com")
         @Mutator("url")
-        public void setURL(URL url);
+        public void setURLType(URL url);
 
-        String getName();
+        //URIType
+        @Accessor("uri")
+        public URI getURIType();
 
-        void setName(String name);
+        @Default("ftp://abc.org/resource.txt")
+        @Mutator("uri")
+        public void setURIType(URI uri);
 
-        boolean isExpired();
+        //StringType
+        String getStringType();
 
-        void setExpired(boolean expired);
+        void setStringType(String stringType);
+
+        //BooleanType
+        boolean isBooleanType();
+
+        void setBooleanType(boolean booleanType);
+
+        //BlobType
+        byte[] getBlobType();
+
+        void setBlobType(byte[] blobContent);
+
+        //DateType
+        @Default("2014-10-08 00:00:00")
+        Date getDateType();
+
+        void setDateType(Date dateType);
+
+        //DoubleType
+        Double getDoubleType();
+
+        void setDoubleType(Double doubleType);
+
+        //EnumType
+        Level getEnumType();
+
+        void setEnumType(Level enumType);
+
+        //IntegerType
+        Integer getIntegerType();
+
+        void setIntegerType(Integer integerType);
+
+        //LongType
+        Long getLongType();
+
+        void setLongType(Long longType);
+    }
+
+    public enum Level
+    {
+        HIGH,
+        MEDIUM,
+        LOW
     }
 
     public static final class TestExtraSelectStatementDatabaseUpdater implements DatabaseUpdater
@@ -76,9 +136,14 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
             entityManager.migrate(Lego.class);
 
             final Lego e = entityManager.create(Lego.class);
-            e.setDescription(Lego.DESCRIPTION);
-            e.setExpired(true);
-            e.setName(Lego.NAME);
+            e.setClobType(Lego.CLOB_CONTENT);
+            e.setBooleanType(true);
+            e.setStringType(Lego.STRING_CONTENT);
+            e.setBlobType(Lego.BLOB_CONTENT.getBytes());
+            e.setEnumType(Level.HIGH);
+            e.setIntegerType(Integer.MIN_VALUE);
+            e.setDoubleType(Double.MIN_VALUE);
+            e.setLongType(Long.MIN_VALUE);
 
             e.save();
         }
