@@ -761,7 +761,8 @@ public class EntityManager
                 final Map<String, Object> values = new HashMap<String, Object>();
                 for (String name : canonicalFields)
                 {
-                    values.put(name, res.getObject(name));
+                    TypeInfo<K> fieldInfo = entityInfo.getField(name).getTypeInfo();
+                    values.put(name, fieldInfo.getLogicalType().pullFromDatabase(this,res,entityInfo.getField(name).getJavaType(), name));
                 }
                 if (!values.isEmpty())
                 {

@@ -9,23 +9,23 @@ import net.java.ao.Accessor;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.Mutator;
-import net.java.ao.Query;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 
-@Data(ExtraSelectColumnTest.TestExtraSelectStatementDatabaseUpdater.class)
-public class ExtraSelectColumnTest extends ActiveObjectsIntegrationTest
+@Data(ExtraSelectStatementTest.TestExtraSelectStatementDatabaseUpdater.class)
+public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
 {
     @Test
-    public void testExtraSelectColumn() throws Exception
+    public void testExtraSelectWhenClobTypeInOracleAndSQLServer() throws Exception
     {
-        final Lego lego = entityManager.find(Lego.class, Query
-                .select(getFieldName(Lego.class, "getID") + ", "
-                        + getFieldName(Lego.class, "getDescription") + ", "
-                        + getFieldName(Lego.class, "isExpired")))[0];
+        // Test AO runs extra select statement when :
+        // Oracle database and type = Boolean, Clob
+        // MS SQL Server and type = Clob
+        // Oracle & MS SQL Server and java type = URL
+        final Lego lego = entityManager.find(Lego.class)[0];
 
         checkSqlNotExecuted(new Callable<Void>()
         {
@@ -33,25 +33,7 @@ public class ExtraSelectColumnTest extends ActiveObjectsIntegrationTest
             {
                 lego.getDescription();
                 lego.isExpired();
-
-                return null;
-            }
-        });
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
                 lego.getURL();
-
-                return null;
-            }
-        });
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
                 lego.getName();
 
                 return null;
@@ -73,9 +55,8 @@ public class ExtraSelectColumnTest extends ActiveObjectsIntegrationTest
         @Accessor("url")
         public URL getURL();
 
-        @Default("http://www.google.com")
+        @Default("http://www.abc.com")
         @Mutator("url")
-        @StringLength(255)
         public void setURL(URL url);
 
         String getName();
