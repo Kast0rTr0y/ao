@@ -141,9 +141,9 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
             e.setStringType(Lego.STRING_CONTENT);
             e.setBlobType(Lego.BLOB_CONTENT.getBytes());
             e.setEnumType(Level.HIGH);
-            e.setIntegerType(Integer.MIN_VALUE);
-            e.setDoubleType(Double.MIN_VALUE);
-            e.setLongType(Long.MIN_VALUE);
+            e.setIntegerType(Integer.valueOf("1"));
+            e.setDoubleType(Double.valueOf("1"));
+            e.setLongType(Long.valueOf("1"));
 
             e.save();
         }
