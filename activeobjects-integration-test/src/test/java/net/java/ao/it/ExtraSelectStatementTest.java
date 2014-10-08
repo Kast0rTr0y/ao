@@ -24,7 +24,7 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
         // Test AO runs extra select statement when :
         // Oracle database and type = Boolean, Clob
         // MS SQL Server and type = Clob
-        // Oracle & MS SQL Server and java type = URL
+        // All supported databases and java type = URL
         final Lego lego = entityManager.find(Lego.class)[0];
 
         checkSqlNotExecuted(new Callable<Void>()
