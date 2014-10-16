@@ -345,38 +345,6 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
     }
 
     @Test
-    public void testFindCheckDefinedPrePopulatedValues() throws Exception
-    {
-        final Person[] people = entityManager.find(Person.class, Query.select(getFieldName(Person.class, "getID") + ", " + getFieldName(Person.class, "getFirstName") + ", " + getFieldName(Person.class, "getLastName")));
-
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                for (Person person : people)
-                {
-                    person.getFirstName();
-                    person.getLastName();
-                }
-                return null;
-            }
-        });
-
-        checkSqlExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
-                for (Person person : people)
-                {
-                    person.getURL();
-                    person.getCompany();
-                }
-                return null;
-            }
-        });
-    }
-
-    @Test
     public void testFindWithSQL() throws SQLException
     {
         final String companyTableName = getTableName(Company.class);
