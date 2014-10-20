@@ -395,6 +395,20 @@ public abstract class DatabaseProvider implements Disposable
     }
 
     /**
+     * <p>Hacky override of {@link #renderQuery(Query, net.java.ao.schema.TableNameConverter, boolean)} which sets the
+     * query select to "*". This is not allowed for regular queries, however this is required for
+     * {@link net.java.ao.schema.helper.DatabaseMetaDataReaderImpl#getResultSetMetaData(java.sql.DatabaseMetaData, String)}</p>
+     * <p/>
+     * @see net.java.ao.Query
+     */
+    public String renderQueryWithSelectStar(Query query, TableNameConverter converter, boolean count)
+    {
+        query.setFields(new String[] { "*" });
+
+        return renderQuery(query, converter, count);
+    }
+
+    /**
      * <p>Parses the database-agnostic <code>String</code> value relevant to the specified SQL
      * type in <code>int</code> form (as defined by {@link Types} and returns
      * the Java value which corresponds.  This method is completely database-agnostic, as are

@@ -1,6 +1,7 @@
 package net.java.ao.schema.helper;
 
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -12,8 +13,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.java.ao.DatabaseProvider;
+import net.java.ao.Query;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.sql.AbstractCloseableResultSetMetaData;
 import net.java.ao.sql.CloseableResultSetMetaData;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
@@ -80,41 +83,44 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         CloseableResultSetMetaData rsmd = null;
         try
         {
+            rsmd = getResultSetMetaData(databaseMetaData, tableName);
+            for (int i = 1; i < rsmd.getColumnCount() + 1; i++)
+            {
+                final String fieldName = rsmd.getColumnName(i);
+                final TypeQualifiers qualifiers = getTypeQualifiers(rsmd, i);
+                final int jdbcType = rsmd.getColumnType(i);
+                final TypeInfo<?> databaseType = manager.getTypeFromSchema(jdbcType, qualifiers);
+                if (databaseType == null)
+                {
+                    StringBuilder buf = new StringBuilder();
+                    buf.append("TABLE: " + tableName + ": ");
+                    for (int j = 1; j <= rsmd.getColumnCount(); j++) {
+                        buf.append(rsmd.getColumnName(j)).append(" - ");
+                    }
+                    buf.append("can't find type " + jdbcType + " " + qualifiers + " in field " + fieldName);
+                    throw new IllegalStateException(buf.toString());
+                }
+                final boolean autoIncrement = isAutoIncrement(rsmd, i, sequenceNames, tableName, fieldName);
+                final boolean notNull = isNotNull(rsmd, i);
+                final boolean isUnique = isUnique(uniqueFields, fieldName);
+
+                fields.put(fieldName, newField(fieldName, databaseType, jdbcType, autoIncrement, notNull, isUnique));
+            }
+
             ResultSet rs = null;
             try
             {
                 rs = databaseMetaData.getColumns(null, null, tableName, null);
                 while (rs.next())
                 {
-                    final String fieldName = parseStringValue(rs, "COLUMN_NAME");
-
-                    final TypeQualifiers qualifiers = getTypeQualifiers(rs);
-                    final int jdbcType = rs.getInt("DATA_TYPE");
-                    final TypeInfo<?> databaseType = manager.getTypeFromSchema(jdbcType, qualifiers);
-
-                    boolean autoIncrement = false;
-                    try
+                    final String columnName = parseStringValue(rs, "COLUMN_NAME");
+                    final FieldImpl current = fields.get(columnName);
+                    if (current == null)
                     {
-                        autoIncrement = parseStringValue(rs, "IS_AUTOINCREMENT").equals("YES");
+                        throw new IllegalStateException("Could not find column '" + columnName + "' in previously parsed query!");
                     }
-                    catch (SQLException e)
-                    {
-                        // fuck you JDBC
-                    }
-                    if (!autoIncrement)
-                    {
-                        autoIncrement = isUsingSequence(sequenceNames, tableName, fieldName);
-                    }
-
-                    final boolean notNull = parseStringValue(rs, "IS_NULLABLE").equals("NO");
-                    final boolean isUnique = isUnique(uniqueFields, fieldName);
-
-                    final Object defaultValue = databaseProvider.parseValue(jdbcType, parseStringValue(rs, "COLUMN_DEF"));
-
-                    final FieldImpl fieldImpl = newField(fieldName, databaseType, jdbcType, autoIncrement, notNull, isUnique);
-                    fieldImpl.setDefaultValue(defaultValue);
-
-                    fields.put(fieldName, fieldImpl);
+                    current.setDefaultValue(databaseProvider.parseValue(current.getJdbcType(), parseStringValue(rs, "COLUMN_DEF")));
+                    current.setNotNull(current.isNotNull() || parseStringValue(rs, "IS_NULLABLE").equals("NO"));
                 }
             }
             finally
@@ -232,6 +238,16 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         }
     }
 
+    private boolean isAutoIncrement(ResultSetMetaData rsmd, int i, List<String> sequenceNames, String tableName, String fieldName) throws SQLException
+    {
+        boolean autoIncrement = rsmd.isAutoIncrement(i);
+        if (!autoIncrement)
+        {
+            autoIncrement = isUsingSequence(sequenceNames, tableName, fieldName);
+        }
+        return autoIncrement;
+    }
+
     private boolean isUsingSequence(List<String> sequenceNames, String tableName, String fieldName)
     {
         return sequenceNames.contains(databaseProvider.processID(nameConverters.getSequenceNameConverter().getName(tableName, fieldName)));
@@ -252,31 +268,44 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
         return resultSetMetaData.isNullable(fieldIndex) == ResultSetMetaData.columnNoNulls;
     }
 
-    private TypeQualifiers getTypeQualifiers(ResultSet rs) throws SQLException
+    private TypeQualifiers getTypeQualifiers(ResultSetMetaData rsmd, int fieldIndex) throws SQLException
     {
         TypeQualifiers ret = qualifiers();
-
-        if (rs.getInt("DATA_TYPE") == Types.VARCHAR)
-        {
-            final int length = rs.getInt("COLUMN_SIZE");
+        if (rsmd.getColumnType(fieldIndex) == Types.VARCHAR) {
+            int length = rsmd.getColumnDisplaySize(fieldIndex);
             if (length > 0) {
                 ret = ret.stringLength(length);
             }
         }
-        else
-        {
-            final int precision = rs.getInt("COLUMN_SIZE");
-            final int scale = rs.getInt("DECIMAL_DIGITS");
-            if (precision > 0)
-            {
+        else {
+            int precision = rsmd.getPrecision(fieldIndex);
+            int scale = rsmd.getScale(fieldIndex);
+            if (precision > 0) {
                 ret = ret.precision(precision);
             }
             if (scale > 0) {
                 ret = ret.scale(scale);
             }
         }
-
         return ret;
+    }
+
+    private CloseableResultSetMetaData getResultSetMetaData(DatabaseMetaData metaData, String tableName) throws SQLException
+    {
+        final Query query = Query.select().from(tableName).limit(1);
+        final PreparedStatement stmt = metaData.getConnection().prepareStatement(databaseProvider.renderQueryWithSelectStar(query, null, false));
+
+        databaseProvider.setQueryStatementProperties(stmt, query);
+        final ResultSet rs = stmt.executeQuery();
+
+        return new AbstractCloseableResultSetMetaData(rs.getMetaData())
+        {
+            public void close()
+            {
+                closeQuietly(rs);
+                closeQuietly(stmt);
+            }
+        };
     }
 
     public Iterable<ForeignKey> getForeignKeys(DatabaseMetaData metaData, String tableName)
