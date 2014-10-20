@@ -67,7 +67,12 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
         super(dataSource, schema, TypeManager.sqlServer());
     }
 
-	@Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT TOP 1 * FROM " + withSchema(tableName);
+    }
+
+    @Override
 	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
 		if (query.getOffset() >= 0) {
 			res.absolute(query.getOffset());

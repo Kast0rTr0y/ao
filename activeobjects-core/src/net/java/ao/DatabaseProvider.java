@@ -187,6 +187,14 @@ public abstract class DatabaseProvider implements Disposable
     }
 
     /**
+     * Render "SELECT * FROM <tableName> LIMIT 1" in the database specific dialect
+     */
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * FROM " + withSchema(tableName) + " LIMIT 1";
+    }
+
+    /**
      * <p>Generates the DDL fragment required to specify an INTEGER field as
      * auto-incremented.  For databases which do not support such flags (which
      * is just about every database exception MySQL), <code>""</code> is an
@@ -392,20 +400,6 @@ public abstract class DatabaseProvider implements Disposable
         sql.append(renderQueryLimit(query));
 
         return sql.toString();
-    }
-
-    /**
-     * <p>Hacky override of {@link #renderQuery(Query, net.java.ao.schema.TableNameConverter, boolean)} which sets the
-     * query select to "*". This is not allowed for regular queries, however this is required for
-     * {@link net.java.ao.schema.helper.DatabaseMetaDataReaderImpl#getResultSetMetaData(java.sql.DatabaseMetaData, String)}</p>
-     * <p/>
-     * @see net.java.ao.Query
-     */
-    public String renderQueryWithSelectStar(Query query, TableNameConverter converter, boolean count)
-    {
-        query.setFields(new String[] { "*" });
-
-        return renderQuery(query, converter, count);
     }
 
     /**

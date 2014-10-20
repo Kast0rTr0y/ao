@@ -72,6 +72,12 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * (SELECT * FROM " + withSchema(tableName) + ") WHERE ROWNUM <= 1";
+    }
+
+    @Override
     public String getSchema()
     {
         return isSchemaNotEmpty() ? Case.UPPER.apply(super.getSchema()) : null;
