@@ -31,6 +31,7 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
 import net.java.ao.schema.info.EntityInfoResolver;
+import net.java.ao.types.LogicalType;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
@@ -747,7 +748,11 @@ public class EntityManager
                 final Map<String, Object> values = new HashMap<String, Object>();
                 for (String name : canonicalFields)
                 {
-                    values.put(name, res.getObject(name));
+                    final FieldInfo fieldInfo = entityInfo.getField(name);
+                    final TypeInfo<K> typeInfo = fieldInfo.getTypeInfo();
+                    final LogicalType logicalType = typeInfo.getLogicalType();
+                    
+                    values.put(name, logicalType.pullFromDatabase(this,res,fieldInfo.getJavaType(),name));
                 }
                 if (!values.isEmpty())
                 {

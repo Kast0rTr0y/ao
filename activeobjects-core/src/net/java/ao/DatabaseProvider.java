@@ -17,6 +17,7 @@ package net.java.ao;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -251,12 +252,26 @@ public abstract class DatabaseProvider implements Disposable
                                         .withUndoAction(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex())));
 
             case DROP_INDEX:
-                return ImmutableList.of(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
-                
+                return ImmutableList.of(renderDropForAoManagedIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
+
             case INSERT:
                 return ImmutableList.of(renderInsert(action.getTable(), action.getValues()));
         }
         throw new IllegalArgumentException("unknown DDLAction type " + action.getActionType());
+    }
+
+    private SQLAction renderDropForAoManagedIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        final String aoIndexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        if (aoIndexName.equalsIgnoreCase(index.getIndexName()))
+        {
+            return Optional.fromNullable(renderDropIndex(indexNameConverter, index)).or(SQLAction.of(""));
+        }
+        else
+        {
+            logger.debug("Ignoring Drop index {} as index not managed by AO", index.getIndexName());
+            return SQLAction.of("");
+        }
     }
 
     private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table)
