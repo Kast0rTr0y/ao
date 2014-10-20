@@ -91,7 +91,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
                     final TypeQualifiers qualifiers = getTypeQualifiers(rs);
                     final int jdbcType = rs.getInt("DATA_TYPE");
                     final TypeInfo<?> databaseType = manager.getTypeFromSchema(jdbcType, qualifiers);
-                    boolean autoIncrement = /*parseStringValue(rs, "IS_AUTOINCREMENT").equals("YES") ||*/ isUsingSequence(sequenceNames, tableName, fieldName);
+                    boolean autoIncrement = parseStringValue(rs, "IS_AUTOINCREMENT").equals("YES") || isUsingSequence(sequenceNames, tableName, fieldName);
                     final boolean notNull = parseStringValue(rs, "IS_NULLABLE").equals("NO");
                     final boolean isUnique = isUnique(uniqueFields, fieldName);
 
