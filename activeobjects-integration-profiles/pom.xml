@@ -358,6 +358,12 @@
                     <version>${oracle.version}</version>
                     <scope>runtime</scope>
                 </dependency>
+                <dependency>
+                    <groupId>c3p0</groupId>
+                    <artifactId>c3p0</artifactId>
+                    <version>${c3p0.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
