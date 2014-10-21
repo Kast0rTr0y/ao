@@ -74,7 +74,7 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     @Override
     public String renderMetadataQuery(final String tableName)
     {
-        return "SELECT * (SELECT * FROM " + withSchema(tableName) + ") WHERE ROWNUM <= 1";
+        return "SELECT * FROM (SELECT * FROM " + withSchema(tableName) + ") WHERE ROWNUM <= 1";
     }
 
     @Override
