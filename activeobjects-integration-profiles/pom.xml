@@ -16,7 +16,7 @@
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
-        <oracle.version>11.2.0.7.0</oracle.version>
+        <oracle.version>11.2.0.2.0</oracle.version>
         <db.skip>false</db.skip>
         <db.host>localhost</db.host>
         <db.name>ao_test</db.name>
