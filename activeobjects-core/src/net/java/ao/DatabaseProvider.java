@@ -187,6 +187,14 @@ public abstract class DatabaseProvider implements Disposable
     }
 
     /**
+     * Render "SELECT * FROM <tableName> LIMIT 1" in the database specific dialect
+     */
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * FROM " + withSchema(tableName) + " LIMIT 1";
+    }
+
+    /**
      * <p>Generates the DDL fragment required to specify an INTEGER field as
      * auto-incremented.  For databases which do not support such flags (which
      * is just about every database exception MySQL), <code>""</code> is an

@@ -66,6 +66,12 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT LIMIT 0 1 * FROM " + withSchema(tableName);
+    }
+
+    @Override
 	@SuppressWarnings("unused")
     public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
                                                             Class<T> entityType, Class<K> pkType,
