@@ -183,6 +183,24 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getAge"), 23));
+        newEntity.setAge(null);
+        newEntity.save();
+
+        entityManager.flushAll();
+
+        //Use PullFromDatabase of IntegerType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getAge());
+    }
+
     /**
      * Test a not null column
      */

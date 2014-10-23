@@ -194,6 +194,24 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
         checkFieldData(SimpleColumn.class, "getID", e.getID(), "getData", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), false));
+        newEntity.setData(null);
+        newEntity.save();
+
+        entityManager.flushAll();
+
+        //Use PullFromDatabase of BooleanType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getData());
+    }
+
     /**
      * Column is set to NOT NULL, positive test
      */

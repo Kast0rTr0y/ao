@@ -25,7 +25,9 @@ final class DoubleType extends AbstractLogicalType<Double>
     public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<Double> type, String columnName)
         throws SQLException
     {
-        return res.getDouble(columnName);
+        final Double value = res.getDouble(columnName);
+        
+        return res.wasNull() ? null : value;
     }
     
     @Override

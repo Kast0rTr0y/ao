@@ -192,6 +192,25 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getUrl", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullColumnWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getUrl"),
+                new URL("http://localhost:2990/jira#anchor")));
+        newEntity.setUrl(null);
+        newEntity.save();
+
+        entityManager.flushAll();
+
+        //Use PullFromDatabase of URLType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getUrl());
+    }
+
     /**
      * Test a not null column constraint column
      */
