@@ -194,7 +194,7 @@ public final class URITypeTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testNullColumnWithPullFromDatabase() throws Exception
+    public void testNullValueWithPullFromDatabase() throws Exception
     {
         entityManager.migrate(SimpleColumn.class);
 
