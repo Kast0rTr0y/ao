@@ -37,7 +37,9 @@ final class URLType extends AbstractLogicalType<URL>
     {
         try
         {
-            return new URL(res.getString(columnName));
+            final String url = res.getString(columnName);
+            
+            return url == null ? null : new URL(url);
         }
         catch (MalformedURLException e)
         {

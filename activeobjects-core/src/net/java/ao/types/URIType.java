@@ -37,7 +37,9 @@ final class URIType extends AbstractLogicalType<URI>
     {
         try
         {
-            return new URI(res.getString(columnName));
+            final String uri = res.getString(columnName); 
+            
+            return uri == null ? null : new URI(uri);
         }
         catch (URISyntaxException e)
         {
