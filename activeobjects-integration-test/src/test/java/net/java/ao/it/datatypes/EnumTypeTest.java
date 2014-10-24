@@ -191,6 +191,22 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getData", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getData"), Data.SECOND));
+        newEntity.setData(null);
+        newEntity.save();
+
+        //Use PullFromDatabase of EnumType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getData());
+    }
+
     /**
      * Test a not null column
      */

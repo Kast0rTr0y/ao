@@ -1713,6 +1713,12 @@ public abstract class DatabaseProvider implements Disposable
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
     {
         final Blob blob = res.getBlob(field);
+        
+        if (blob == null) 
+        {
+            return null;    
+        }
+        
         if (type.equals(InputStream.class))
         {
             return blob.getBinaryStream();

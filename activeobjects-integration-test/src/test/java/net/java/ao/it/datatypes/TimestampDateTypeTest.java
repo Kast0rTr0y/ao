@@ -211,6 +211,23 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        Date date = new SimpleDateFormat(DATE_FORMAT).parse("2011-11-11 12:34:56");
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getCreated"), date));
+        newEntity.setCreated(null);
+        newEntity.save();
+
+        //Use PullFromDatabase of TimestampType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getCreated());
+    }
+
     /**
      * Test a not null column
      */
