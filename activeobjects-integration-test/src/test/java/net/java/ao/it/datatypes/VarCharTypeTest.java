@@ -186,6 +186,22 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getName", null);
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getName"), "Test"));
+        newEntity.setName(null);
+        newEntity.save();
+
+        //Use PullFromDatabase of StringType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getName());
+    }
+
     /**
      * Test a not null column constraint column
      */

@@ -103,6 +103,23 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
         // TODO: check how this looks in the db!
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(ByteArrayBlobColumn.class);
+
+        // create
+        ByteArrayBlobColumn newEntity = entityManager.create(ByteArrayBlobColumn.class, new DBParam(getFieldName(ByteArrayBlobColumn.class, 
+                "setData"), LARGE_BLOB));
+        newEntity.setData(null);
+        newEntity.save();
+
+        //Use PullFromDatabase of EnumType
+        ByteArrayBlobColumn loadedEntity = entityManager.get(ByteArrayBlobColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getData());
+    }
+
     /**
      * Test null value
      */
