@@ -204,8 +204,6 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
         newEntity.setUrl(null);
         newEntity.save();
 
-        entityManager.flushAll();
-
         //Use PullFromDatabase of URLType
         SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
         assertNull(loadedEntity.getUrl());

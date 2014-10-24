@@ -205,8 +205,6 @@ public final class BooleanTypeTest extends ActiveObjectsIntegrationTest
         newEntity.setData(null);
         newEntity.save();
 
-        entityManager.flushAll();
-
         //Use PullFromDatabase of BooleanType
         SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
         assertNull(loadedEntity.getData());

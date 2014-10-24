@@ -34,22 +34,13 @@ final class LongType extends AbstractLogicalType<Long>
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<Long> type, int columnIndex) throws SQLException
     {
-        final Long value = res.getLong(columnIndex);
-        
-        return getLong(res, value);
+        return preserveNull(res, res.getLong(columnIndex));
     }
 
     @Override
     public Long pullFromDatabase(EntityManager manager, ResultSet res, Class<Long> type, String columnName) throws SQLException
     {
-        final Long value = res.getLong(columnName);
-        
-        return getLong(res, value);
-    }
-
-    private Long getLong(ResultSet res, Long value) throws SQLException
-    {
-        return res.wasNull() ? null : value;
+        return preserveNull(res, res.getLong(columnName));
     }
 
     @Override

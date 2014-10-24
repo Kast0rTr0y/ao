@@ -34,25 +34,16 @@ final class IntegerType extends AbstractLogicalType<Integer>
     @Override
     public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<Integer> type, int columnIndex) throws SQLException
     {
-        final Integer value = res.getInt(columnIndex);
-        
-        return getInteger(res, value);
+        return preserveNull(res, res.getInt(columnIndex));
     }
 
     @Override
     public Integer pullFromDatabase(EntityManager manager, ResultSet res, Class<Integer> type, String columnName)
             throws SQLException
     {
-        final Integer value = res.getInt(columnName);
-        
-        return getInteger(res, value);
+        return preserveNull(res, res.getInt(columnName));
     }
     
-    private Integer getInteger(ResultSet res, Integer value) throws SQLException
-    {
-        return res.wasNull() ? null : value;
-    }
-
     @Override
     public Integer parse(String input)
     {

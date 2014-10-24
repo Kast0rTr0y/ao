@@ -251,8 +251,6 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         newEntity.setAge(null);
         newEntity.save();
 
-        entityManager.flushAll();
-
         //Use PullFromDatabase of DoubleType
         SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
         assertNull(loadedEntity.getAge());

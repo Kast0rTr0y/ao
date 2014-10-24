@@ -194,8 +194,6 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
         newEntity.setAge(null);
         newEntity.save();
 
-        entityManager.flushAll();
-
         //Use PullFromDatabase of IntegerType
         SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
         assertNull(loadedEntity.getAge());

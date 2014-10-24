@@ -116,6 +116,11 @@ abstract class AbstractLogicalType<T> implements LogicalType<T>
         return String.valueOf(value);
     }
     
+    protected <T> T preserveNull(ResultSet res, T value) throws SQLException
+    {
+        return res.wasNull() ? null : value;
+    }
+    
     @Override
     public boolean equals(Object other)
     {
