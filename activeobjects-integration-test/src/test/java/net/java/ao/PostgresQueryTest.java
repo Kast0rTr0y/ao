@@ -158,7 +158,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithExplicitJoin()
     {
-        return format("SELECT %s.'%s' FROM %s JOIN %s ON %s.'%s' = %s.'%s' WHERE '%s' IS NULL AND '%s' = 3 GROUP BY '%s'",
+        return format("SELECT '%s'.'%s' FROM %s JOIN %s ON %s.'%s' = %s.'%s' WHERE '%s' IS NULL AND '%s' = 3 GROUP BY '%s'",
                 getExpectedTableNameWithoutSchema(Person.class), getPersonId(), 
                 getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
@@ -181,7 +181,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithDefaultJoin()
     {
-        return format("SELECT %s.'%s' FROM %s JOIN %s JOIN %s WHERE '%s' IS NULL", 
+        return format("SELECT '%s'.'%s' FROM %s JOIN %s JOIN %s WHERE '%s' IS NULL",
                 getExpectedTableNameWithoutSchema(Person.class), getPersonId(), 
                 getExpectedTableName(Person.class), 
                 getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
