@@ -650,7 +650,8 @@ public abstract class DatabaseProvider implements Disposable
         } else if (!query.getJoins().isEmpty())
         {
             String queryTable = query.getTable();
-            withAlias.append((queryTable != null ? queryTable : converter.getName(query.getTableType()))).append(".");
+            String tableName = queryTable != null ? queryTable : converter.getName(query.getTableType());
+            withAlias.append(processID(tableName)).append(".");
         }
         return withAlias.append(processID(field)).toString();
     }
