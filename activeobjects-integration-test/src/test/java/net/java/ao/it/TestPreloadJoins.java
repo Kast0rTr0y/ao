@@ -131,6 +131,50 @@ public class TestPreloadJoins extends ActiveObjectsIntegrationTest
         });
     }
 
+    @Test
+    public void joinWithoutAlias() throws Exception
+    {
+        final Query query = Query.select("OTHER_VALUE, ID")
+                .from(FromPreloadSome.class)
+                .alias(To.class, "t")
+                .join(To.class, "TO_ID = t.ID")
+                .where("YET_ANOTHER_VALUE = ?", "yav")
+                .limit(1);
+
+        final FromPreloadSome[] froms = checkSqlExecuted(new Callable<FromPreloadSome[]>()
+        {
+            @Override
+            public FromPreloadSome[] call() throws Exception
+            {
+                return entityManager.find(FromPreloadSome.class, "ID", query);
+            }
+        });
+
+        assertNotNull(froms);
+        assertTrue(froms.length == 1);
+
+        checkSqlNotExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                froms[0].getValue();
+                froms[0].getOtherValue();
+                return null;
+            }
+        });
+
+        checkSqlExecuted(new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                froms[0].getYetAnotherValue();
+                return null;
+            }
+        });
+    }
+
     public static final class FromData
     {
         static final String[] VALUES = { "value1", "value2" };
