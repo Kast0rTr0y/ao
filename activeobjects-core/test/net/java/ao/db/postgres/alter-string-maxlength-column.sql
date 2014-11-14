@@ -1,0 +1,1 @@
+ALTER TABLE public."company" ALTER COLUMN "name" TYPE TEXT
