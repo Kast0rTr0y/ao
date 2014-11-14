@@ -28,6 +28,30 @@ public final class DerbyDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Test
+    public void testRenderActionAlterStringColumn() throws IOException
+    {
+        testRenderAction(new String[0], createActionAlterStringColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException
+    {
+        testRenderAction(new String[0], createActionAlterStringLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException
+    {
+        testRenderAction(new String[0], createActionAlterStringMaxLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterNumericColumn() throws IOException
+    {
+        testRenderAction(new String[0], createActionAlterNumericColumn, getDatabaseProvider());
+    }
+
+    @Test
     public void testRenderActionDropColumn() throws IOException
     {
         testRenderAction(new String[0], createActionDropColumn, getDatabaseProvider());
