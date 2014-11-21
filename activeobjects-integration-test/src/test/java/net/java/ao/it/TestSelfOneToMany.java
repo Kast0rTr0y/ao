@@ -43,7 +43,7 @@ public final class TestSelfOneToMany extends ActiveObjectsIntegrationTest
         assertEquals("Result[0].name", "Parent", c[0].getName());
         assertEquals("Result[1].name", "Child", c[1].getName());
         assertEquals("Result[0].subcompany", child, c[0].getSubCompany());
-        assertNull  ("Result[1].subcompany", c[1].getSubCompany());
+        assertNull("Result[1].subcompany", c[1].getSubCompany());
     }
 
     private Company newCompany(String id, String name, Company child) throws SQLException
