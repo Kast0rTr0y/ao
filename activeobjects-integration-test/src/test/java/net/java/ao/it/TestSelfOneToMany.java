@@ -38,7 +38,7 @@ public final class TestSelfOneToMany extends ActiveObjectsIntegrationTest
         Company child = newCompany("id2", "Child", null);;
         newCompany("id1", "Parent", child);
         
-        Company[] c = entityManager.find(Company.class, Query.select().order("id ASC"));
+        Company[] c = entityManager.find(Company.class, Query.select().order("ID ASC"));
         assertEquals("Result.size", 2, c.length);
         assertEquals("Result[0].name", "Parent", c[0].getName());
         assertEquals("Result[1].name", "Child", c[1].getName());
