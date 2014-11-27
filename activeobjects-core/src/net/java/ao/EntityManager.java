@@ -286,6 +286,10 @@ public class EntityManager
 
     protected <T extends RawEntity<K>, K> T peer(EntityInfo<T, K> entityInfo, K key) throws SQLException
     {
+        if (null == key) {
+            return null;
+        }
+        
         return peer(entityInfo, toArray(key))[0];
     }
 
