@@ -1,37 +1,37 @@
 package net.java.ao.schema;
 
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import net.java.ao.RawEntity;
 
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>A table name converter that simply caches the converted table names.</p>
- * <p>This implementation uses a {@link java.util.concurrent.ConcurrentMap} and is thread safe.</p>
+ * <p>This implementation uses a {@link com.google.common.cache.LoadingCache} and is thread safe.</p>
  *
  * @since 0.9
  */
 public class CachingTableNameConverter implements TableNameConverter
 {
-    private final Map<Class<? extends RawEntity<?>>, String> cache;
+    private final LoadingCache<Class<? extends RawEntity<?>>, String> cache;
 
     public CachingTableNameConverter(final TableNameConverter delegateTableNameConverter)
     {
         checkNotNull(delegateTableNameConverter);
-        this.cache = new MapMaker().makeComputingMap(new Function<Class<? extends RawEntity<?>>, String>()
+        this.cache = CacheBuilder.newBuilder().build(new CacheLoader<Class<? extends RawEntity<?>>, String>()
         {
-            public String apply(Class<? extends RawEntity<?>> entityClass)
+            @Override
+            public String load(final Class<? extends RawEntity<?>> key) throws Exception
             {
-                return delegateTableNameConverter.getName(entityClass);
+                return delegateTableNameConverter.getName(key);
             }
         });
     }
 
     public String getName(Class<? extends RawEntity<?>> entityClass)
     {
-        return cache.get(entityClass);
+        return cache.getUnchecked(entityClass);
     }
 }
