@@ -19,6 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ExecutionError;
@@ -90,7 +91,7 @@ public class EntityManager
     private PolymorphicTypeMapper typeMapper;
     private final ReadWriteLock typeMapperLock = new ReentrantReadWriteLock(true);
 
-    private final com.google.common.cache.Cache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
+    private final LoadingCache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified {@link DatabaseProvider}.
@@ -756,7 +757,7 @@ public class EntityManager
                     final TypeInfo<K> typeInfo = fieldInfo.getTypeInfo();
                     final LogicalType logicalType = typeInfo.getLogicalType();
                     
-                    values.put(name, logicalType.pullFromDatabase(this,res,fieldInfo.getJavaType(),name));
+                    values.put(name, logicalType.pullFromDatabase(this, res, fieldInfo.getJavaType(), name));
                 }
                 if (!values.isEmpty())
                 {

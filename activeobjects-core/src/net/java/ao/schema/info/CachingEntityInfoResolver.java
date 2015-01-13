@@ -1,8 +1,8 @@
 package net.java.ao.schema.info;
 
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import net.java.ao.RawEntity;
 
 /**
@@ -11,7 +11,7 @@ import net.java.ao.RawEntity;
 public class CachingEntityInfoResolver extends EntityInfoResolverWrapper implements EntityInfoResolver
 {
 
-    private final Cache<Class<? extends RawEntity<?>>, EntityInfo> cache;
+    private final LoadingCache<Class<? extends RawEntity<?>>, EntityInfo> cache;
 
     public CachingEntityInfoResolver(EntityInfoResolver delegate)
     {
