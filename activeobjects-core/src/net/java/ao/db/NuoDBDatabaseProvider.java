@@ -13,12 +13,13 @@
  */
 package net.java.ao.db;
 
+import static java.sql.Types.OTHER;
 import static net.java.ao.Common.closeQuietly;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -258,7 +259,19 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
     protected Set<String> getReservedWords() {
         return RESERVED_WORDS;
     }
-    
+
+    /**
+     * The sql type argument is mandatory in JDBC for some reason, but is ignored by NuoDB JDBC,
+     * so any integer value can be used.
+     *
+     * @param stmt  The statement in which to store the <code>NULL</code> value.
+     * @param index The index of the parameter which should be assigned <code>NULL</code>.
+     * @throws SQLException
+     */
+    @Override
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
+        stmt.setNull(index, OTHER);
+    }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(
             "ACCESS", "ACCOUNT", "ACTIVATE", "ADD", "ADMIN", "ADVISE", "AFTER",
