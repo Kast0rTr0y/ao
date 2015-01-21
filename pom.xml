@@ -261,4 +261,12 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>ao-unmanaged</id>
+            <name>AO dependencies that are not present in maven central</name>
+            <url>file:${project.basedir}/repository</url>
+        </repository>
+    </repositories>
 </project>
