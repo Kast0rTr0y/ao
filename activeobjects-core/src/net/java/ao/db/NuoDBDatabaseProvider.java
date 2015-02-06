@@ -13,6 +13,7 @@
  */
 package net.java.ao.db;
 
+import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import static java.sql.Types.OTHER;
 import static net.java.ao.Common.closeQuietly;
 
@@ -29,6 +30,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -38,6 +40,7 @@ import net.java.ao.types.TypeManager;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Philip Stoev
@@ -54,6 +57,24 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
         super(dataSource, schema, TypeManager.nuodb());
     }
 
+    /**
+     * Workaround for DB-7451 transaction isolation level SERIALIZABLE will not show tables created or altered with
+     * auto-commit off.
+     *
+     * @param conn The connection to use in retrieving the database tables.
+     * @return
+     * @throws SQLException
+     */
+    @Override
+    public ResultSet getTables(Connection conn) throws SQLException {
+        int transactionIsolation = conn.getTransactionIsolation();
+        try {
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            return conn.getMetaData().getTables(null, getSchema(), null, new String[]{"TABLE"});
+        } finally {
+            conn.setTransactionIsolation(transactionIsolation);
+        }
+    }
 
     @Override
     protected String renderAutoIncrement() {
@@ -131,18 +152,18 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
     	}
     	return back.build();
     }
-    
+
     @Override
     protected Iterable<SQLAction> renderAccessoriesForField(
-    		NameConverters nameConverters, DDLTable table, DDLField field) {
-    	//Create indices on field being altered.
-    	final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-    	for(DDLIndex index : table.getIndexes()) {
-    		if(index.getField().equalsIgnoreCase(field.getName())) {
-    			back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
-    		}
-    	}
-    	return back.build();
+            NameConverters nameConverters, DDLTable table, DDLField field) {
+        //Create indices on field being altered.
+        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+        for (DDLIndex index : table.getIndexes()) {
+            if (index.getField().equalsIgnoreCase(field.getName())) {
+                back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
+            }
+        }
+        return back.build();
     }
 
 	private SQLAction findAndRenderDropUniqueIndex(
@@ -217,15 +238,44 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
             return null;
         }
     }
-    
+
+    @Override
+    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
+        StringBuilder back = new StringBuilder();
+        for (DDLForeignKey key : table.getForeignKeys()) {
+            back.append("    ").append(renderForeignKey(key));
+            if (!disableForeignKey(key)) {
+                back.append(",");
+            }
+            back.append("\n");
+        }
+        return back.toString();
+    }
+
+    /**
+     * Foreign keys which reference primary table aren't supported because of a open issue and are rendered in
+     * commentary
+     * block.
+     *
+     * @param key The database-agnostic foreign key representation.
+     * @return
+     */
     @Override
     protected String renderForeignKey(DDLForeignKey key) {
-    	StringBuilder back = new StringBuilder();
-
+        StringBuilder back = new StringBuilder();
+        if (disableForeignKey(key)) {
+            back.append("/* DISABLE ");
+        }
         back.append("FOREIGN KEY (").append(processID(key.getField())).append(") REFERENCES ");
         back.append(withSchema(key.getTable())).append('(').append(processID(key.getForeignField())).append(")");
-
+        if (disableForeignKey(key)) {
+            back.append(" */");
+        }
         return back.toString();
+    }
+
+    private boolean disableForeignKey(DDLForeignKey key) {
+        return key.getTable().equals(key.getDomesticTable());
     }
 
     @Override
