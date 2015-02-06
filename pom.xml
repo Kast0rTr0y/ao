@@ -30,10 +30,14 @@
         </license>
     </licenses>
 
+    <ciManagement>
+        <system>Bamboo</system>
+        <url>https://ecosystem-bamboo.internal.atlassian.com/browse/AOLIB</url>
+    </ciManagement>
     <scm>
         <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
         <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
-        <url>https://bitbucket.org/activeobjects/ao/src</url>
+        <url>https://bitbucket.org/activeobjects/ao</url>
       <tag>HEAD</tag>
   </scm>
 
