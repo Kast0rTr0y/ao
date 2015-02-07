@@ -78,7 +78,7 @@ public class NuoDBDisposableDataSourceHandler {
     /**
      * Intercepts <tt>dispose()</tt> and <tt>getConnection()</tt> methods
      */
-    static class DelegatingDisposableDataSourceHandler extends DelegatingInvocationHandler {
+    static class DelegatingDisposableDataSourceHandler extends DelegatingInvocationHandler<DataSource> {
 
         private static final String GET_CONNECTION = "getConnection";
         private static final String DISPOSE = "dispose";
@@ -95,8 +95,10 @@ public class NuoDBDisposableDataSourceHandler {
             String name = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
             Object result = null;
+            // call dispose
             if (name.equals(DISPOSE) && parameterTypes.length == 0 && disposable != null) {
                 disposable.dispose();
+            // proxy getConnection() invocation
             } else if (name.equals(GET_CONNECTION)) {
                 Connection connection = (Connection) delegate(method, args);
                 result = newProxy(new Class[]{Connection.class},
@@ -111,7 +113,7 @@ public class NuoDBDisposableDataSourceHandler {
     /**
      * The handler, where result set type actually forcibly changed to those supported by NuoDB JDBC Driver.
      */
-    static class DelegatingConnectionHandler extends DelegatingInvocationHandler {
+    static class DelegatingConnectionHandler extends DelegatingInvocationHandler<Connection> {
 
         public static final String CREATE_STATEMENT = "createStatement";
         public static final String PREPARE_STATEMENT = "prepareStatement";
@@ -127,6 +129,7 @@ public class NuoDBDisposableDataSourceHandler {
             Class<?>[] parameterTypes = method.getParameterTypes();
             Class<? extends Statement> statement = null;
             Integer resultSetTypeArgIndex = null;
+            // change result set type to java.sql.Types.TYPE_FORWARD_ONLY
             if (name.equals(CREATE_STATEMENT)) {
                 statement = Statement.class;
                 // Statement createStatement(int resultSetType, int resultSetConcurrency);
@@ -159,7 +162,7 @@ public class NuoDBDisposableDataSourceHandler {
         }
     }
 
-    static class DelegatingStatementHandler extends DelegatingInvocationHandler {
+    static class DelegatingStatementHandler extends DelegatingInvocationHandler<Statement> {
 
         private static final String GET_CONNECTION = "getConnection";
         private static final String GET_RESULT_SET = "getResultSet";
@@ -175,12 +178,14 @@ public class NuoDBDisposableDataSourceHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String name = method.getName();
             Object result;
+            // proxy connection
             if (name.equals(GET_CONNECTION)) {
                 result = connection;
+            // proxy result set
             } else if (name.equals(EXECUTE_QUERY) || name.equals(GET_RESULT_SET)) {
                 result = newProxy(new Class[]{ResultSet.class},
-                        new DelegatingResultSetHandler( (Statement) proxy,
-                                (ResultSet)super.invoke(proxy, method, args)));
+                        new DelegatingResultSetHandler((Statement) proxy,
+                                (ResultSet) super.invoke(proxy, method, args)));
             } else {
                 result = super.invoke(proxy, method, args);
             }
@@ -213,14 +218,16 @@ public class NuoDBDisposableDataSourceHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String name = method.getName();
             Object result;
+            // proxy statement
             if (name.equals(GET_STATEMENT)) {
                 result = statement;
+            // change resultSet.getObject() for BIGINT to return resultSet.getLong()
             } else if (name.equals(GET_OBJECT)) {
                 Integer column = null;
                 if (method.getParameterTypes()[0].equals(String.class)) {
                     column = columns.get(args[0]);
                 } else {
-                    column = (Integer)args[0];
+                    column = (Integer) args[0];
                 }
                 // fixes get object for java.sql.Types.BIGINT to return long
                 if (column != null && metaData.getColumnType(column) == BIGINT) {
