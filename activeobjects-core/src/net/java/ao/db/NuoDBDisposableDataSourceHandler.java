@@ -20,11 +20,20 @@ import javax.sql.DataSource;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Maps.newHashMap;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
+import static java.sql.Types.BIGINT;
 
 /**
  * The NuoDB JDBC Driver supports ResultSet.TYPE_FORWARD_ONLY currently. The NuoDB data source handler intercepts
@@ -38,7 +47,10 @@ import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
  *
  * @author Sergey Bushik
  */
+@SuppressWarnings("ALL")
 public class NuoDBDisposableDataSourceHandler {
+
+    private static final ClassLoader CLASS_LOADER = NuoDBDisposableDataSourceHandler.class.getClassLoader();
 
     /**
      * Creates reflection proxy for the specified NuoDB data source
@@ -51,9 +63,14 @@ public class NuoDBDisposableDataSourceHandler {
     }
 
     public static DisposableDataSource newInstance(DataSource dataSource, Disposable disposable) {
-        return (DisposableDataSource) newInstance(
+        return (DisposableDataSource) newProxy(
                 new Class[]{DisposableDataSource.class},
                 new DelegatingDisposableDataSourceHandler(dataSource, disposable));
+    }
+
+    private static Object newProxy(Class<?>[] interfaces, InvocationHandler invocationHandler) {
+        Object proxy = newProxyInstance(CLASS_LOADER, interfaces, invocationHandler);
+        return proxy;
     }
 
     /**
@@ -80,7 +97,7 @@ public class NuoDBDisposableDataSourceHandler {
                 disposable.dispose();
             } else if (name.equals(GET_CONNECTION)) {
                 Connection connection = (Connection) delegate(method, args);
-                result = newInstance(new Class[]{Connection.class}, new DelegatingConnectionHandler(connection));
+                result = newProxy(new Class[]{Connection.class}, new DelegatingConnectionHandler(connection));
             } else {
                 result = delegate(method, args);
             }
@@ -105,32 +122,114 @@ public class NuoDBDisposableDataSourceHandler {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String name = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
-            if (name.equals(CREATE_STATEMENT) && parameterTypes.length == 2) {
+            Class<? extends Statement> statement = null;
+            if (name.equals(CREATE_STATEMENT)) {
+                statement = Statement.class;
                 // Statement createStatement(int resultSetType, int resultSetConcurrency);
-                args[1] = TYPE_FORWARD_ONLY;
-            } else if ((name.equals(PREPARE_STATEMENT) || name.equals(PREPARE_CALL)) && parameterTypes.length == 3) {
+                if (parameterTypes.length == 2) {
+                    args[1] = TYPE_FORWARD_ONLY;
+                }
+            } else if (name.equals(PREPARE_STATEMENT)) {
                 // PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency);
+                statement = PreparedStatement.class;
+                if (parameterTypes.length == 3) {
+                    args[1] = TYPE_FORWARD_ONLY;
+                }
+            } else if (name.equals(PREPARE_CALL)) {
+                statement = CallableStatement.class;
                 // CallableStatement prepareCall(String sql, int resultSetType,  int resultSetConcurrency);
-                args[1] = TYPE_FORWARD_ONLY;
+                if (parameterTypes.length == 3) {
+                    args[1] = TYPE_FORWARD_ONLY;
+                }
             }
-            return super.invoke(proxy, method, args);
+            Object result = super.invoke(proxy, method, args);
+            return statement != null ? newProxy(new Class[]{statement},
+                    new DelegatingStatementHandler((Connection) proxy, (Statement) result)) : result;
         }
     }
 
-    private static Object newInstance(Class<?>[] interfaces, InvocationHandler invocationHandler) {
-        return newProxyInstance(
-                NuoDBDisposableDataSourceHandler.class.getClassLoader(),
-                interfaces, invocationHandler);
+    static class DelegatingStatementHandler extends DelegatingInvocationHandler {
+
+        private static final String GET_CONNECTION = "getConnection";
+        private static final String GET_RESULT_SET = "getResultSet";
+        private static final String EXECUTE_QUERY = "executeQuery";
+        private Connection connection;
+
+        public DelegatingStatementHandler(Connection connection, Statement statement) {
+            super(statement);
+            this.connection = connection;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            String name = method.getName();
+            Object result;
+            if (name.equals(GET_CONNECTION)) {
+                result = connection;
+            } else if (name.equals(EXECUTE_QUERY) || name.equals(GET_RESULT_SET)) {
+                result = newProxy(new Class[]{ResultSet.class},
+                        new DelegatingResultSetHandler( (Statement) proxy,
+                                (ResultSet)super.invoke(proxy, method, args)));
+            } else {
+                result = super.invoke(proxy, method, args);
+            }
+            return result;
+        }
+    }
+
+    static class DelegatingResultSetHandler extends DelegatingInvocationHandler<ResultSet> {
+
+        private static final String GET_STATEMENT = "getStatement";
+        private static final String GET_OBJECT = "getObject";
+        private ResultSetMetaData metaData;
+        private Statement statement;
+        private Map<String, Integer> columns;
+
+        protected DelegatingResultSetHandler(Statement statement, ResultSet resultSet) throws SQLException {
+            super(resultSet);
+            this.statement = statement;
+            this.metaData = target.getMetaData();
+            int count = metaData.getColumnCount();
+            Map<String, Integer> columns = newHashMap();
+            for (int index = 0; index < count; index++) {
+                int column = index + 1;
+                columns.put(metaData.getColumnName(column), column);
+            }
+            this.columns = columns;
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            String name = method.getName();
+            Object result;
+            if (name.equals(GET_STATEMENT)) {
+                result = statement;
+            } else if (name.equals(GET_OBJECT)) {
+                Integer column = null;
+                if (method.getParameterTypes()[0].equals(String.class)) {
+                    column = columns.get(args[0]);
+                }
+                // fixes get object for java.sql.Types.BIGINT to return long
+                if (column != null && metaData.getColumnType(column) == BIGINT) {
+                    result = target.getLong(column);
+                } else {
+                    result = super.invoke(proxy, method, args);
+                }
+            } else {
+                result = super.invoke(proxy, method, args);
+            }
+            return result;
+        }
     }
 
     /**
      * Base delegating invocation handler
      */
-    static class DelegatingInvocationHandler implements InvocationHandler {
+    static class DelegatingInvocationHandler<T> implements InvocationHandler {
 
-        private Object target;
+        protected final T target;
 
-        protected DelegatingInvocationHandler(Object target) {
+        protected DelegatingInvocationHandler(T target) {
             this.target = checkNotNull(target);
         }
 
