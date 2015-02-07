@@ -15,6 +15,7 @@ package net.java.ao.db;
 
 import net.java.ao.Disposable;
 import net.java.ao.DisposableDataSource;
+import org.slf4j.Logger;
 
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationHandler;
@@ -34,6 +35,7 @@ import static com.google.common.collect.Maps.newHashMap;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 import static java.sql.Types.BIGINT;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * The NuoDB JDBC Driver supports ResultSet.TYPE_FORWARD_ONLY currently. The NuoDB data source handler intercepts
@@ -97,7 +99,8 @@ public class NuoDBDisposableDataSourceHandler {
                 disposable.dispose();
             } else if (name.equals(GET_CONNECTION)) {
                 Connection connection = (Connection) delegate(method, args);
-                result = newProxy(new Class[]{Connection.class}, new DelegatingConnectionHandler(connection));
+                result = newProxy(new Class[]{Connection.class},
+                        new DelegatingConnectionHandler(connection));
             } else {
                 result = delegate(method, args);
             }
@@ -123,23 +126,31 @@ public class NuoDBDisposableDataSourceHandler {
             String name = method.getName();
             Class<?>[] parameterTypes = method.getParameterTypes();
             Class<? extends Statement> statement = null;
+            Integer resultSetTypeArgIndex = null;
             if (name.equals(CREATE_STATEMENT)) {
                 statement = Statement.class;
                 // Statement createStatement(int resultSetType, int resultSetConcurrency);
                 if (parameterTypes.length == 2) {
-                    args[1] = TYPE_FORWARD_ONLY;
+                    resultSetTypeArgIndex = 1;
                 }
             } else if (name.equals(PREPARE_STATEMENT)) {
                 // PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency);
                 statement = PreparedStatement.class;
                 if (parameterTypes.length == 3) {
-                    args[1] = TYPE_FORWARD_ONLY;
+                    resultSetTypeArgIndex = 2;
                 }
             } else if (name.equals(PREPARE_CALL)) {
                 statement = CallableStatement.class;
                 // CallableStatement prepareCall(String sql, int resultSetType,  int resultSetConcurrency);
                 if (parameterTypes.length == 3) {
-                    args[1] = TYPE_FORWARD_ONLY;
+                    resultSetTypeArgIndex = 2;
+                }
+            }
+            if (resultSetTypeArgIndex != null &&
+                    ((Integer) args[resultSetTypeArgIndex]) != TYPE_FORWARD_ONLY) {
+                args[resultSetTypeArgIndex] = TYPE_FORWARD_ONLY;
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Result set type changed to forward only");
                 }
             }
             Object result = super.invoke(proxy, method, args);
@@ -208,6 +219,8 @@ public class NuoDBDisposableDataSourceHandler {
                 Integer column = null;
                 if (method.getParameterTypes()[0].equals(String.class)) {
                     column = columns.get(args[0]);
+                } else {
+                    column = (Integer)args[0];
                 }
                 // fixes get object for java.sql.Types.BIGINT to return long
                 if (column != null && metaData.getColumnType(column) == BIGINT) {
@@ -227,6 +240,7 @@ public class NuoDBDisposableDataSourceHandler {
      */
     static class DelegatingInvocationHandler<T> implements InvocationHandler {
 
+        protected final Logger logger = getLogger(getClass());
         protected final T target;
 
         protected DelegatingInvocationHandler(T target) {
