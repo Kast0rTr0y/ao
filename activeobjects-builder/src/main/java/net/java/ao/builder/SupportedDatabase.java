@@ -7,6 +7,7 @@ import net.java.ao.db.ClientDerbyDatabaseProvider;
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
+import net.java.ao.db.NuoDBDisposableDataSourceHandler;
 import net.java.ao.db.NuoDBDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
@@ -96,8 +97,9 @@ enum SupportedDatabase
     NUODB("jdbc:com.nuodb", "com.nuodb.jdbc.Driver")
             {
     	        @Override
-    	        public DatabaseProvider getDatabaseProvider(DataSourceFactory factory, String uri, String username, String password, String schema) {
-    	        	return new NuoDBDatabaseProvider(getDataSource(factory, uri, username, password), schema);
+    	        public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema) {
+                    DisposableDataSource dataSource = getDataSource(dataSourceFactory, uri, username, password);
+                    return new NuoDBDatabaseProvider(NuoDBDisposableDataSourceHandler.newInstance(dataSource), schema);
     	        }
             };
 

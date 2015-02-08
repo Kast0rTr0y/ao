@@ -13,12 +13,14 @@
  */
 package net.java.ao.db;
 
+import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
+import static java.sql.Types.OTHER;
 import static net.java.ao.Common.closeQuietly;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +30,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
@@ -37,6 +40,7 @@ import net.java.ao.types.TypeManager;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Philip Stoev
@@ -51,6 +55,25 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
     public NuoDBDatabaseProvider(DisposableDataSource dataSource, String schema)
     {
         super(dataSource, schema, TypeManager.nuodb());
+    }
+
+    /**
+     * Workaround for DB-7451 transaction isolation level SERIALIZABLE will not show tables created or altered with
+     * auto-commit off.
+     *
+     * @param conn The connection to use in retrieving the database tables.
+     * @return
+     * @throws SQLException
+     */
+    @Override
+    public ResultSet getTables(Connection conn) throws SQLException {
+        int transactionIsolation = conn.getTransactionIsolation();
+        try {
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            return conn.getMetaData().getTables(null, getSchema(), null, new String[]{"TABLE"});
+        } finally {
+            conn.setTransactionIsolation(transactionIsolation);
+        }
     }
 
     @Override
@@ -129,18 +152,18 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
     	}
     	return back.build();
     }
-    
+
     @Override
     protected Iterable<SQLAction> renderAccessoriesForField(
-    		NameConverters nameConverters, DDLTable table, DDLField field) {
-    	//Create indices on field being altered.
-    	final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-    	for(DDLIndex index : table.getIndexes()) {
-    		if(index.getField().equalsIgnoreCase(field.getName())) {
-    			back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
-    		}
-    	}
-    	return back.build();
+            NameConverters nameConverters, DDLTable table, DDLField field) {
+        //Create indices on field being altered.
+        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
+        for (DDLIndex index : table.getIndexes()) {
+            if (index.getField().equalsIgnoreCase(field.getName())) {
+                back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
+            }
+        }
+        return back.build();
     }
 
 	private SQLAction findAndRenderDropUniqueIndex(
@@ -215,15 +238,44 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
             return null;
         }
     }
-    
+
+    @Override
+    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
+        StringBuilder back = new StringBuilder();
+        for (DDLForeignKey key : table.getForeignKeys()) {
+            back.append("    ").append(renderForeignKey(key));
+            if (!disableForeignKey(key)) {
+                back.append(",");
+            }
+            back.append("\n");
+        }
+        return back.toString();
+    }
+
+    /**
+     * Foreign keys which reference primary table aren't supported because of a open issue and are rendered in
+     * commentary
+     * block.
+     *
+     * @param key The database-agnostic foreign key representation.
+     * @return
+     */
     @Override
     protected String renderForeignKey(DDLForeignKey key) {
-    	StringBuilder back = new StringBuilder();
-
+        StringBuilder back = new StringBuilder();
+        if (disableForeignKey(key)) {
+            back.append("/* DISABLE ");
+        }
         back.append("FOREIGN KEY (").append(processID(key.getField())).append(") REFERENCES ");
         back.append(withSchema(key.getTable())).append('(').append(processID(key.getForeignField())).append(")");
-
+        if (disableForeignKey(key)) {
+            back.append(" */");
+        }
         return back.toString();
+    }
+
+    private boolean disableForeignKey(DDLForeignKey key) {
+        return key.getTable().equals(key.getDomesticTable());
     }
 
     @Override
@@ -257,7 +309,19 @@ public class NuoDBDatabaseProvider extends DatabaseProvider
     protected Set<String> getReservedWords() {
         return RESERVED_WORDS;
     }
-    
+
+    /**
+     * The sql type argument is mandatory in JDBC for some reason, but is ignored by NuoDB JDBC,
+     * so any integer value can be used.
+     *
+     * @param stmt  The statement in which to store the <code>NULL</code> value.
+     * @param index The index of the parameter which should be assigned <code>NULL</code>.
+     * @throws SQLException
+     */
+    @Override
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
+        stmt.setNull(index, OTHER);
+    }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(
             "ACCESS", "ACCOUNT", "ACTIVATE", "ADD", "ADMIN", "ADVISE", "AFTER",
