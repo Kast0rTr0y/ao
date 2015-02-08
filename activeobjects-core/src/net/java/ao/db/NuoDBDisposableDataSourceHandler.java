@@ -133,20 +133,26 @@ public class NuoDBDisposableDataSourceHandler {
             if (name.equals(CREATE_STATEMENT)) {
                 statement = Statement.class;
                 // Statement createStatement(int resultSetType, int resultSetConcurrency);
-                if (parameterTypes.length == 2) {
-                    resultSetTypeArgIndex = 1;
+                // Statement createStatement(int resultSetType, int resultSetConcurrency,
+                //    int resultSetHoldability) throws SQLException;
+                if (parameterTypes.length >= 2) {
+                    resultSetTypeArgIndex = 0;
                 }
             } else if (name.equals(PREPARE_STATEMENT)) {
                 // PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency);
+                // PreparedStatement prepareStatement(String sql, int resultSetType,
+                //    int resultSetConcurrency, int resultSetHoldability);
                 statement = PreparedStatement.class;
-                if (parameterTypes.length == 3) {
-                    resultSetTypeArgIndex = 2;
+                if (parameterTypes.length >= 3) {
+                    resultSetTypeArgIndex = 1;
                 }
             } else if (name.equals(PREPARE_CALL)) {
                 statement = CallableStatement.class;
                 // CallableStatement prepareCall(String sql, int resultSetType,  int resultSetConcurrency);
-                if (parameterTypes.length == 3) {
-                    resultSetTypeArgIndex = 2;
+                // CallableStatement prepareCall(String sql, int resultSetType,
+                //    int resultSetConcurrency, int resultSetHoldability) throws SQLException;
+                if (parameterTypes.length >= 3) {
+                    resultSetTypeArgIndex = 1;
                 }
             }
             if (resultSetTypeArgIndex != null &&
