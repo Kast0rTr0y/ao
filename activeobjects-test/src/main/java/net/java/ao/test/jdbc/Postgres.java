@@ -30,5 +30,4 @@ public class Postgres extends AbstractJdbcConfiguration
     {
         return DEFAULT_URL;
     }
-
 }

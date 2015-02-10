@@ -150,6 +150,22 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
         // TODO: check database value
     }
 
+    @Test
+    @NonTransactional
+    public void testNullValueWithPullFromDatabase() throws Exception
+    {
+        entityManager.migrate(SimpleColumn.class);
+
+        // create
+        SimpleColumn newEntity = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(SimpleColumn.class, "getText"), SMALL_CLOB));
+        newEntity.setText(null);
+        newEntity.save();
+
+        //Use PullFromDatabase of EnumType
+        SimpleColumn loadedEntity = entityManager.get(SimpleColumn.class, newEntity.getID());
+        assertNull(loadedEntity.getText());
+    }
+
     /**
      * Test not null column create
      */

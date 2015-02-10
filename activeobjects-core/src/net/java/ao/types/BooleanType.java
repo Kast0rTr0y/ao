@@ -31,7 +31,7 @@ final class BooleanType extends AbstractLogicalType<Boolean>
     public Boolean pullFromDatabase(EntityManager manager, ResultSet res, Class<Boolean> type, String columnName)
         throws SQLException
     {
-        return res.getBoolean(columnName);
+        return preserveNull(res, res.getBoolean(columnName));
     }
     
     @Override

@@ -37,6 +37,11 @@ import static com.google.common.collect.Lists.*;
 import static com.google.common.collect.Maps.*;
 
 /**
+ * A cross-database representation of a SELECT query, independent of database provider type.
+ * <p>
+ * Use with {@link net.java.ao.DatabaseProvider#renderQuery(Query, net.java.ao.schema.TableNameConverter, boolean)}
+ * to produce the database-specific SQL.
+ *
  * @author Daniel Spiewak
  */
 public class Query implements Serializable
@@ -66,8 +71,16 @@ public class Query implements Serializable
 	
 	private Map<Class<? extends RawEntity<?>>, String> joins;
     private Map<Class<? extends RawEntity<?>>, String> aliases = newHashMap();
-	
-	public Query(QueryType type, String fields) {
+
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
+    public Query(QueryType type, String fields) {
+        validateSelectFields(fields);
+
 		this.type = type;
 		this.fields = fields;
 		
@@ -332,11 +345,37 @@ public class Query implements Serializable
 		}
 	}
 
+    /**
+     * Create a {@link Query} which will select the primary key field of the entity.
+     *
+     * @return non-null Query
+     */
 	public static Query select() {
 		return select(PRIMARY_KEY_FIELD);
 	}
 
+    /**
+     * Create a {@link Query} and set the field list in the {@code SELECT} clause.
+     *
+     * @param fields The fields to select, as comma-delimited field names. Spaces are OK. Must not contain {@code "*"}.
+     * @return non-null Query
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
 	public static Query select(String fields) {
-		return new Query(QueryType.SELECT, fields);
+        return new Query(QueryType.SELECT, fields);
 	}
+
+    /*
+     * @throws java.lang.IllegalArgumentException if fields contains {@code "*"}
+     */
+    private static void validateSelectFields(String fields) {
+        if (fields == null) {
+            return;
+        }
+
+        // Assuming we won't have a "legitimate" '*' in a quoted field name
+        if (fields.contains("*")) {
+            throw new IllegalArgumentException("fields must not contain '*' - got '" + fields + "'");
+        }
+    }
 }

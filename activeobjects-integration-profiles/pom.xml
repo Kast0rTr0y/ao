@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.java.dev.activeobjects</groupId>
         <artifactId>activeobjects-parent</artifactId>
-        <version>0.29.0-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>activeobjects-integration-profiles</artifactId>
@@ -16,12 +16,10 @@
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
-        <oracle.version>11.2.0.7.0</oracle.version>
-        <nuodb.version>2.0.4</nuodb.version>
+        <oracle.version>11.2.0.2.0</oracle.version>
         <db.skip>false</db.skip>
         <db.host>localhost</db.host>
         <db.name>ao_test</db.name>
-        <db.sid>orcl</db.sid>
         <db.username>ao_user</db.username>
         <db.password>ao_password</db.password>
         <db.schema>ao_schema</db.schema>
@@ -30,9 +28,6 @@
     <profiles>
         <profile>
             <id>hsql</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
@@ -52,9 +47,9 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
@@ -86,9 +81,117 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
+                                net.java.ao.test.junit.OracleIntegrationTest,
+                                net.java.ao.test.junit.PostgresIntegrationTest,
+                                net.java.ao.test.junit.SqlServerIntegrationTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2-memory</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <ao.test.database>h2-memory</ao.test.database>
+                <db.skip>true</db.skip>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>c3p0</groupId>
+                    <artifactId>c3p0</artifactId>
+                    <version>${c3p0.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>
+                                net.java.ao.test.junit.HsqlIntegrationTest,
+                                net.java.ao.test.junit.DerbyIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
+                                net.java.ao.test.junit.OracleIntegrationTest,
+                                net.java.ao.test.junit.PostgresIntegrationTest,
+                                net.java.ao.test.junit.SqlServerIntegrationTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2-file</id>
+            <properties>
+                <ao.test.database>h2-file</ao.test.database>
+                <db.skip>true</db.skip>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>
+                                net.java.ao.test.junit.HsqlIntegrationTest,
+                                net.java.ao.test.junit.DerbyIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
+                                net.java.ao.test.junit.OracleIntegrationTest,
+                                net.java.ao.test.junit.PostgresIntegrationTest,
+                                net.java.ao.test.junit.SqlServerIntegrationTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>h2-server</id>
+            <properties>
+                <ao.test.database>h2-server</ao.test.database>
+                <db.skip>true</db.skip>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>${h2.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>
+                                net.java.ao.test.junit.HsqlIntegrationTest,
+                                net.java.ao.test.junit.DerbyIntegrationTest,
+                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
@@ -132,43 +235,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
-                                net.java.ao.test.junit.HsqlIntegrationTest,
-                                net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
-                                net.java.ao.test.junit.OracleIntegrationTest,
-                                net.java.ao.test.junit.PostgresIntegrationTest,
-                                net.java.ao.test.junit.SqlServerIntegrationTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>nuodb</id>
-            <properties>
-                <ao.test.database>nuodb</ao.test.database>
-                <db.skip>true</db.skip>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.nuodb.jdbc</groupId>
-                    <artifactId>nuodb-jdbc</artifactId>
-                    <version>${nuodb.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
-                                net.java.ao.test.junit.MySqlIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -211,10 +281,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -260,10 +330,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -276,114 +346,22 @@
             <id>oracle</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
-                <db.system.username>sys</db.system.username>
-                <db.system.password>oracle</db.system.password>
+                <db.url>jdbc:oracle:thin:localhost:1521:XE</db.url>
+                <db.sid>XE</db.sid>
+                <db.system.username>system</db.system.username>
+                <db.system.password>manager</db.system.password>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>com.oracle</groupId>
-                    <artifactId>oracle-jdbc14</artifactId>
-                    <version>10.2.0.4</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <configuration>
-                            <schema>ao_schema</schema>
-                            <sid>${db.sid}</sid>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.oracle</groupId>
-                                <artifactId>oracle-jdbc14</artifactId>
-                                <version>10.2.0.4</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>
-                                net.java.ao.test.junit.HsqlIntegrationTest,
-                                net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
-                                net.java.ao.test.junit.PostgresIntegrationTest,
-                                net.java.ao.test.junit.SqlServerIntegrationTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>oracle5</id>
-            <properties>
-                <ao.test.database>oracle</ao.test.database>
-                <db.username>sys</db.username>
-                <db.password>oracle</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle</groupId>
-                    <artifactId>oracle-jdbc15</artifactId>
+                    <artifactId>ojdbc6</artifactId>
                     <version>${oracle.version}</version>
                     <scope>runtime</scope>
                 </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <configuration>
-                            <schema>ao_schema</schema>
-                            <sid>${db.sid}</sid>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.oracle</groupId>
-                                <artifactId>oracle-jdbc15</artifactId>
-                                <version>${oracle.version}</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>
-                                net.java.ao.test.junit.HsqlIntegrationTest,
-                                net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
-                                net.java.ao.test.junit.PostgresIntegrationTest,
-                                net.java.ao.test.junit.SqlServerIntegrationTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>oracle6</id>
-            <properties>
-                <ao.test.database>oracle</ao.test.database>
-                <db.username>sys</db.username>
-                <db.password>oracle</db.password>
-            </properties>
-            <dependencies>
                 <dependency>
-                    <groupId>com.oracle</groupId>
-                    <artifactId>oracle-jdbc16</artifactId>
-                    <version>${oracle.version}</version>
+                    <groupId>c3p0</groupId>
+                    <artifactId>c3p0</artifactId>
+                    <version>${c3p0.version}</version>
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
@@ -399,8 +377,14 @@
                         <dependencies>
                             <dependency>
                                 <groupId>com.oracle</groupId>
-                                <artifactId>oracle-jdbc16</artifactId>
+                                <artifactId>ojdbc6</artifactId>
                                 <version>${oracle.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                            <dependency>
+                                <groupId>c3p0</groupId>
+                                <artifactId>c3p0</artifactId>
+                                <version>${c3p0.version}</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
@@ -410,10 +394,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest,
                                 net.java.ao.test.junit.SqlServerIntegrationTest
                             </excludedGroups>
@@ -456,10 +440,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
                                 net.java.ao.test.junit.OracleIntegrationTest,
                                 net.java.ao.test.junit.PostgresIntegrationTest
                             </excludedGroups>

@@ -45,4 +45,4 @@ public class Hsql extends AbstractJdbcConfiguration
     {
         return IN_MEMORY_URL;
     }
-}
+ }

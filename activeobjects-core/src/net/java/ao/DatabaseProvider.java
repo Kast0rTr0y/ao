@@ -17,6 +17,7 @@ package net.java.ao;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -186,6 +187,14 @@ public abstract class DatabaseProvider implements Disposable
     }
 
     /**
+     * Render "SELECT * FROM <tableName> LIMIT 1" in the database specific dialect
+     */
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * FROM " + withSchema(tableName) + " LIMIT 1";
+    }
+
+    /**
      * <p>Generates the DDL fragment required to specify an INTEGER field as
      * auto-incremented.  For databases which do not support such flags (which
      * is just about every database exception MySQL), <code>""</code> is an
@@ -251,12 +260,26 @@ public abstract class DatabaseProvider implements Disposable
                                         .withUndoAction(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex())));
 
             case DROP_INDEX:
-                return ImmutableList.of(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
-                
+                return ImmutableList.of(renderDropForAoManagedIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
+
             case INSERT:
                 return ImmutableList.of(renderInsert(action.getTable(), action.getValues()));
         }
         throw new IllegalArgumentException("unknown DDLAction type " + action.getActionType());
+    }
+
+    private SQLAction renderDropForAoManagedIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+    {
+        final String aoIndexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        if (aoIndexName.equalsIgnoreCase(index.getIndexName()))
+        {
+            return Optional.fromNullable(renderDropIndex(indexNameConverter, index)).or(SQLAction.of(""));
+        }
+        else
+        {
+            logger.debug("Ignoring Drop index {} as index not managed by AO", index.getIndexName());
+            return SQLAction.of("");
+        }
     }
 
     private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table)
@@ -315,7 +338,7 @@ public abstract class DatabaseProvider implements Disposable
         return ret.build();
     }
     
-    private Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
+    protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
     {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
         
@@ -635,7 +658,8 @@ public abstract class DatabaseProvider implements Disposable
         } else if (!query.getJoins().isEmpty())
         {
             String queryTable = query.getTable();
-            withAlias.append((queryTable != null ? queryTable : converter.getName(query.getTableType()))).append(".");
+            String tableName = queryTable != null ? queryTable : converter.getName(query.getTableType());
+            withAlias.append(processID(tableName)).append(".");
         }
         return withAlias.append(processID(field)).toString();
     }
@@ -770,41 +794,50 @@ public abstract class DatabaseProvider implements Disposable
     public final String processOrderClause(String order)
     {
         final Matcher matcher = ORDER_CLAUSE_PATTERN.matcher(order);
+        
+        final int ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME = 1;
+        final int ORDER_CLAUSE_PATTERN_GROUP_COL_NAME = 2;
+        final int ORDER_CLAUSE_PATTERN_GROUP_DIRECTION = 3;
+
         final StringBuffer sql = new StringBuffer();
+
         while(matcher.find())
         {
             final StringBuilder repl = new StringBuilder();
 
-            // $1 signifies the (optional) table name to potentially quote
-            if (matcher.group(1) != null)
+            // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name to potentially quote
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null)
             {
-                repl.append(processID("$1"));
+                repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
                 repl.append(".");
             }
 
-            // $2 signifies the (mandatory) column name to potentially quote
-            repl.append(processID("$2"));
+            // ORDER_CLAUSE_PATTERN_GROUP_COL_NAME signifies the (mandatory) column name to potentially quote
+            repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_COL_NAME)));
 
-            // $3 signifies the (optional) ASC/DESC option
-            if (matcher.group(3) != null)
+            // ORDER_CLAUSE_PATTERN_GROUP_DIRECTION signifies the ASC/DESC option
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION) != null)
             {
-                repl.append(" $3");
+                repl.append(" ").append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION));
             }
 
-            matcher.appendReplacement(sql, repl.toString());
+            matcher.appendReplacement(sql, Matcher.quoteReplacement(repl.toString()));
         }
+
         matcher.appendTail(sql);
+
         return sql.toString();
     }
 
     /**
      * <p>Renders the LIMIT portion of the query in the database-specific SQL
      * dialect.  There is wide variety in database implementations of this
-     * particular SQL clause.  In fact, many database do not support it at all.
-     * If the database in question does not support LIMIT, this method should
-     * be overridden to return an empty String.  For such databases, LIMIT
-     * should be implemented by overriding {@link #setQueryResultSetProperties(ResultSet, Query)}
-     * and {@link #setQueryStatementProperties(Statement, Query)}.</p>
+     * particular SQL clause.  In fact, many database do not support it at all.</p>
+     * <p/>
+     * <p>Unfortunately, we live in the real world of proprietary database
+     * implementations that requires us to use database specific keywords or
+     * semantics to achieve these outcomes. Appropriate methods should be
+     * overridden in such cases.</p>
      * <p/>
      * <p>An example return value: <code>" LIMIT 10,2"</code></p>
      * <p/>
@@ -1704,6 +1737,12 @@ public abstract class DatabaseProvider implements Disposable
     public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
     {
         final Blob blob = res.getBlob(field);
+        
+        if (blob == null) 
+        {
+            return null;    
+        }
+        
         if (type.equals(InputStream.class))
         {
             return blob.getBinaryStream();

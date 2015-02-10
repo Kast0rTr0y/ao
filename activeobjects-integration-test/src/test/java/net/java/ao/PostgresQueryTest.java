@@ -96,15 +96,33 @@ public final class PostgresQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOffset()
+    {
+        return format("SELECT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithLimit()
     {
         return format("SELECT COUNT(*) FROM %s WHERE '%s' IS NULL AND '%s' = 3 LIMIT 10", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
+    protected String getExpectedSqlForCountWithOffset()
+    {
+        return format("SELECT COUNT(*) FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
     protected String getExpectedSqlForDistinctSelectWithLimit()
     {
         return format("SELECT DISTINCT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 LIMIT 10", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForDistinctSelectWithOffset()
+    {
+        return format("SELECT DISTINCT '%s' FROM %s WHERE '%s' IS NULL AND '%s' = 3 OFFSET 4", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
@@ -140,7 +158,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithExplicitJoin()
     {
-        return format("SELECT %s.'%s' FROM %s JOIN %s ON %s.'%s' = %s.'%s' WHERE '%s' IS NULL AND '%s' = 3 GROUP BY '%s'",
+        return format("SELECT '%s'.'%s' FROM %s JOIN %s ON %s.'%s' = %s.'%s' WHERE '%s' IS NULL AND '%s' = 3 GROUP BY '%s'",
                 getExpectedTableNameWithoutSchema(Person.class), getPersonId(), 
                 getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
@@ -163,7 +181,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithDefaultJoin()
     {
-        return format("SELECT %s.'%s' FROM %s JOIN %s JOIN %s WHERE '%s' IS NULL", 
+        return format("SELECT '%s'.'%s' FROM %s JOIN %s JOIN %s WHERE '%s' IS NULL",
                 getExpectedTableNameWithoutSchema(Person.class), getPersonId(), 
                 getExpectedTableName(Person.class), 
                 getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());

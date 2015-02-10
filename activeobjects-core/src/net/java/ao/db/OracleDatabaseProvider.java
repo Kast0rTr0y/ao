@@ -20,7 +20,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -31,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import net.java.ao.schema.Case;
+import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.ddl.SQLAction;
 
 import net.java.ao.Common;
@@ -49,6 +49,7 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
 
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -71,26 +72,16 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * FROM (SELECT * FROM " + withSchema(tableName) + ") WHERE ROWNUM <= 1";
+    }
+
+    @Override
     public String getSchema()
     {
         return isSchemaNotEmpty() ? Case.UPPER.apply(super.getSchema()) : null;
     }
-
-    @Override
-	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
-		int limit = query.getLimit();
-		if (limit >= 0) {
-			stmt.setMaxRows(Math.max(query.getOffset(), 0) + limit);
-		}
-	}
-
-
-	@Override
-	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
-		if (query.getOffset() > 0) {
-			res.absolute(query.getOffset());
-		}
-	}
 
     @Override
     public ResultSet getTables(Connection conn) throws SQLException
@@ -125,9 +116,62 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    protected String renderQuerySelect(final Query query, final TableNameConverter converter, final boolean count)
+    {
+        StringBuilder sql = new StringBuilder();
+
+        // see http://www.oracle.com/technetwork/issue-archive/2006/06-sep/o56asktom-086197.html
+
+        if (Query.QueryType.SELECT.equals(query.getType()))
+        {
+            int offset = query.getOffset();
+            int limit = query.getLimit();
+
+            if (offset > 0)
+            {
+                sql.append("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( ");
+            }
+            else if (limit >= 0)
+            {
+                sql.append("SELECT * FROM ( ");
+            }
+        }
+
+        sql.append(super.renderQuerySelect(query, converter, count));
+
+        return sql.toString();
+    }
+
+    @Override
 	protected String renderQueryLimit(Query query) {
-		return "";
-	}
+        StringBuilder sql = new StringBuilder();
+
+        if (Query.QueryType.SELECT.equals(query.getType()))
+        {
+            int offset = query.getOffset();
+            int limit = query.getLimit();
+
+            if (offset > 0 && limit >= 0)
+            {
+                sql.append(" ) QUERY_INNER WHERE ROWNUM <= ");
+                sql.append(offset + limit);
+                sql.append(" ) WHERE ROWNUM_INNER > ");
+                sql.append(offset);
+            }
+            else if (offset > 0)
+            {
+                sql.append(" ) QUERY_INNER ) WHERE ROWNUM_INNER > ");
+                sql.append(offset);
+            }
+            else if (limit >= 0)
+            {
+                sql.append(" ) WHERE ROWNUM <= ");
+                sql.append(limit);
+            }
+        }
+
+        return sql.toString();
+    }
 
 	@Override
 	protected String renderAutoIncrement() {
@@ -178,11 +222,36 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        if(!oldField.getType().getLogicalType().equals(field.getType().getLogicalType()))
+        if(!oldField.getType().equals(field.getType()))
         {
-            back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
+            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB") || oldField.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
+            {
+                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(), field.getType().getQualifiers()))
+                {
+                    final String fieldName = processID(field.getName());
+                    final String tempColName = processID(getTempColumnName(field.getName()));
+                    String tempColType;
+                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
+                    {
+                        tempColType = "CLOB";
+                    }
+                    else
+                    {
+                        final int stringLength = field.getType().getQualifiers().getStringLength();
+                        tempColType = "VARCHAR("+ stringLength +")";
+                    }
+                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" ").append(tempColType)));
+                    back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
+                    back.add(SQLAction.of("SAVEPOINT values_copied"));
+                    back.addAll(renderDropColumnActions(nameConverters, table, field));
+                    back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
+                }
+            }
+            else
+            {
+                back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
+            }
         }
-
         if (oldField.isNotNull() && !field.isNotNull())
         {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NULL)")));
@@ -396,6 +465,12 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException
     {
         stmt.setInt(index, value ? 1 : 0);
+    }
+
+    private String getTempColumnName(final String name)
+    {
+        String reversed = new StringBuilder(name).reverse().toString();
+        return reversed.replaceFirst("^[^a-zA-Z]+","");
     }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(

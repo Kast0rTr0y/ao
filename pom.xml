@@ -11,7 +11,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>0.29.0-SNAPSHOT</version>
+    <version>0.30.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
@@ -29,27 +29,15 @@
             <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
-    <!-- If you have not installed the libraries in the repository directory, uncomment the following section
-         to add them to the runtime repository for this project.
-    <repositories>
-        <repository>
-          <id>repository</id>
-          <name>repository</name>
-          <releases>
-              <enabled>true</enabled>
-              <checksumPolicy>ignore</checksumPolicy>
-          </releases>
-          <snapshots>
-              <enabled>false</enabled>
-          </snapshots>
-          <url>file://${project.basedir}/repository</url>
-        </repository>
-    </repositories>
-    End local repository reference. -->
+
+    <ciManagement>
+        <system>Bamboo</system>
+        <url>https://ecosystem-bamboo.internal.atlassian.com/browse/AOLIB</url>
+    </ciManagement>
     <scm>
         <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
         <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
-        <url>https://bitbucket.org/activeobjects/ao/src</url>
+        <url>https://bitbucket.org/activeobjects/ao</url>
       <tag>HEAD</tag>
   </scm>
 
@@ -105,6 +93,11 @@
         <dbcp.version>1.4</dbcp.version>
         <proxool.version>0.9.1</proxool.version>
         <dbpool.version>4.9.3-jdbc3</dbpool.version>
+        <hsqldb.version>1.8.0.5</hsqldb.version>
+        <h2.version>1.4.181</h2.version>
+        <mysql.version>5.1.13</mysql.version>
+        <postgres.version>8.4-701.jdbc3</postgres.version>
+        <oracle.version>11.2.0.2.0</oracle.version>
     </properties>
 
     <dependencyManagement>
@@ -272,4 +265,12 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>ao-unmanaged</id>
+            <name>AO dependencies that are not present in maven central</name>
+            <url>file:${project.basedir}/repository</url>
+        </repository>
+    </repositories>
 </project>

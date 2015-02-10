@@ -53,6 +53,12 @@ abstract class DerbyDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT * FROM (SELECT * FROM " + withSchema(tableName) + ") WHERE ROWNUM <= 1";
+    }
+
+    @Override
 	public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
 		int limit = query.getLimit();
 		

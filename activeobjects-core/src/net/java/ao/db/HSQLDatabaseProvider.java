@@ -66,6 +66,12 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
+    public String renderMetadataQuery(final String tableName)
+    {
+        return "SELECT LIMIT 0 1 * FROM " + withSchema(tableName);
+    }
+
+    @Override
 	@SuppressWarnings("unused")
     public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
                                                             Class<T> entityType, Class<K> pkType,
@@ -210,12 +216,30 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
 				sql.append("SELECT ");
 
                 int limit = query.getLimit();
-                if (limit >= 0)
+                int offset = query.getOffset();
+                if (limit >= 0 || offset > 0)
                 {
-                    int offset = Math.max(query.getOffset(), 0);
+                    sql.append("LIMIT ");
 
-                    sql.append("LIMIT ").append(offset).append(' ');
-                    sql.append(limit).append(' ');
+                    if (offset > 0)
+                    {
+                        sql.append(offset);
+                    }
+                    else
+                    {
+                        sql.append(0);
+                    }
+                    sql.append(" ");
+
+                    if (limit >= 0)
+                    {
+                        sql.append(limit);
+                    }
+                    else
+                    {
+                        sql.append(0);
+                    }
+                    sql.append(" ");
                 }
 
                 if (query.isDistinct())

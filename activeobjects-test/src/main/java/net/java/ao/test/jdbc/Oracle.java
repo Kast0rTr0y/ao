@@ -7,7 +7,7 @@ public class Oracle extends AbstractJdbcConfiguration
 {
 
     public static final String DEFAULT_SCHEMA = "ao_schema";
-    public static final String DEFAULT_URL = "jdbc:oracle:thin:@localhost:1521:orcl";
+    public static final String DEFAULT_URL = "jdbc:oracle:thin:@localhost:1521:XE";
 
     public Oracle(String url, String username, String password, String schema)
     {

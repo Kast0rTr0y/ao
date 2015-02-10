@@ -292,10 +292,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader
 
     private CloseableResultSetMetaData getResultSetMetaData(DatabaseMetaData metaData, String tableName) throws SQLException
     {
-        final Query query = Query.select("*").from(tableName).limit(1);
-        final PreparedStatement stmt = metaData.getConnection().prepareStatement(databaseProvider.renderQuery(query, null, false));
-
-        databaseProvider.setQueryStatementProperties(stmt, query);
+        final PreparedStatement stmt = metaData.getConnection().prepareStatement(databaseProvider.renderMetadataQuery(tableName));
         final ResultSet rs = stmt.executeQuery();
 
         return new AbstractCloseableResultSetMetaData(rs.getMetaData())

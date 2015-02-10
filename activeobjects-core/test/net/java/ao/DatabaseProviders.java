@@ -3,8 +3,10 @@ package net.java.ao;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.Set;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
+import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.NuoDBDatabaseProvider;
@@ -22,6 +24,11 @@ public class DatabaseProviders
     public static HSQLDatabaseProvider getHsqlDatabaseProvider()
     {
         return new HSQLDatabaseProvider(newDataSource(""));
+    }
+
+    public static H2DatabaseProvider getH2DatabaseProvider()
+    {
+        return new H2DatabaseProvider(newDataSource(""));
     }
 
     public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
@@ -109,6 +116,24 @@ public class DatabaseProviders
             protected void setPostConnectionProperties(Connection conn) throws SQLException
             {
                 // nothing
+            }
+        };
+    }
+
+    public static DatabaseProvider getDatabaseProviderWithNoIndex()
+    {
+        return new DatabaseProvider(newDataSource(""), "")
+        {
+            @Override
+            protected Set<String> getReservedWords()
+            {
+                return null;
+            }
+
+            @Override
+            protected boolean hasIndex(String tableName, String indexName)
+            {
+                return false;
             }
         };
     }

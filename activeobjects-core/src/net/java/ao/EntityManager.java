@@ -19,6 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ExecutionError;
@@ -31,6 +32,7 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.schema.info.FieldInfo;
 import net.java.ao.schema.info.EntityInfoResolver;
+import net.java.ao.types.LogicalType;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
@@ -44,6 +46,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -59,6 +62,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.getValueFieldsNames;
 import static net.java.ao.Common.preloadValue;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static org.apache.commons.lang.ArrayUtils.contains;
 
 /**
  * <p>The root control class for the entire ActiveObjects API.  <code>EntityManager</code> is the source of all {@link
@@ -87,7 +91,7 @@ public class EntityManager
     private PolymorphicTypeMapper typeMapper;
     private final ReadWriteLock typeMapperLock = new ReentrantReadWriteLock(true);
 
-    private final com.google.common.cache.Cache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
+    private final LoadingCache<Class<? extends ValueGenerator<?>>, ValueGenerator<?>> valGenCache;
 
     /**
      * Creates a new instance of <code>EntityManager</code> using the specified {@link DatabaseProvider}.
@@ -283,6 +287,10 @@ public class EntityManager
 
     protected <T extends RawEntity<K>, K> T peer(EntityInfo<T, K> entityInfo, K key) throws SQLException
     {
+        if (null == key) {
+            return null;
+        }
+        
         return peer(entityInfo, toArray(key))[0];
     }
 
@@ -655,6 +663,11 @@ public class EntityManager
      * <p>This method delegates the call to {@link #find(Class, String, Query)}, passing the primary key field for the
      * given type as the <code>String</code> parameter.</p>
      *
+     * <p>Note that in the case of calling this function with a {@link net.java.ao.Query} with select fields, the
+     * first field will be passed to {@link #find(Class, String, Query)}. If this is not the intention, a direct
+     * call to {@link #find(Class, String, Query)} should be made instead, with the primary key field specified
+     * and present in the select fields.</p>
+     *
      * @param type The type of the entities to retrieve.
      * @param query The {@link Query} instance to be used to determine the results.
      * @return An array of entities of the given type which match the specified query.
@@ -698,56 +711,22 @@ public class EntityManager
         query.resolvePrimaryKey(entityInfo.getPrimaryKey());
 
         final Preload preloadAnnotation = type.getAnnotation(Preload.class);
-        if (preloadAnnotation != null)
+        final Set<String> selectedFields;
+        if (preloadAnnotation == null || contains(preloadAnnotation.value(), Preload.ALL))
         {
-            if (!Iterables.get(query.getFields(), 0).equals("*") && query.getJoins().isEmpty())
-            {
-                Iterable<String> oldFields = query.getFields();
-                List<String> newFields = new ArrayList<String>();
-
-                for (String newField : preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()))
-                {
-                    newField = newField.trim();
-
-                    int fieldLoc = -1;
-                    for (int i = 0; i < Iterables.size(oldFields); i++)
-                    {
-                        if (Iterables.get(oldFields, i).equals(newField))
-                        {
-                            fieldLoc = i;
-                            break;
-                        }
-                    }
-
-                    if (fieldLoc < 0)
-                    {
-                        newFields.add(newField);
-                    }
-                    else
-                    {
-                        newFields.add(Iterables.get(oldFields, fieldLoc));
-                    }
-                }
-
-                if (!newFields.contains("*"))
-                {
-                    for (String oldField : oldFields)
-                    {
-                        if (!newFields.contains(oldField))
-                        {
-                            newFields.add(oldField);
-                        }
-                    }
-                }
-
-                query.setFields(newFields.toArray(new String[newFields.size()]));
-            }
+            // select all fields from the table - no preload is specified or the user has specified all
+            selectedFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
         }
         else
         {
-            Set<String> fields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
-            query.setFields(fields.toArray(new String[fields.size()]));
+            // select user's selection, as well as any specific preloads
+            selectedFields = new HashSet<String>(preloadValue(preloadAnnotation, nameConverters.getFieldNameConverter()));
+            for (String existingField : query.getFields())
+            {
+                selectedFields.add(existingField);
+            }
         }
+        query.setFields(selectedFields.toArray(new String[selectedFields.size()]));
 
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -774,7 +753,11 @@ public class EntityManager
                 final Map<String, Object> values = new HashMap<String, Object>();
                 for (String name : canonicalFields)
                 {
-                    values.put(name, res.getObject(name));
+                    final FieldInfo fieldInfo = entityInfo.getField(name);
+                    final TypeInfo<K> typeInfo = fieldInfo.getTypeInfo();
+                    final LogicalType logicalType = typeInfo.getLogicalType();
+                    
+                    values.put(name, logicalType.pullFromDatabase(this, res, fieldInfo.getJavaType(), name));
                 }
                 if (!values.isEmpty())
                 {
@@ -847,7 +830,7 @@ public class EntityManager
     }
 
     /**
-     * <p>Opitimsed read for large datasets. This method will stream all rows for the given type to the given
+     * <p>Optimised read for large datasets. This method will stream all rows for the given type to the given
      * callback.</p>
      *
      * <p>Please see {@link #stream(Class, Query, EntityStreamCallback)} for details / limitations.
@@ -857,7 +840,14 @@ public class EntityManager
      */
     public <T extends RawEntity<K>, K> void stream(Class<T> type, EntityStreamCallback<T, K> streamCallback) throws SQLException
     {
-        stream(type, Query.select("*"), streamCallback);
+        final EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
+
+        final Set<String> valueFields = getValueFieldsNames(entityInfo, nameConverters.getFieldNameConverter());
+
+        final Query query = Query.select();
+        query.setFields(valueFields.toArray(new String[valueFields.size()]));
+
+        stream(type, query, streamCallback);
     }
 
     /**

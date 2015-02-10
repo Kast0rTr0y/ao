@@ -4,7 +4,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import net.java.ao.test.ConfigurationProperties;
-import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +21,9 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
 
     private static final ImmutableMap<String, JdbcConfiguration> CONFIGS = ImmutableMap.<String, JdbcConfiguration>builder()
             .put("hsql", new Hsql())
+            .put("h2-memory", new H2Memory())
+            .put("h2-file", new H2File())
+            .put("h2-server", new H2Server())
             .put("hsql-file", new HsqlFileStorage())
             .put("mysql", new MySql())
             .put("postgres", new Postgres())
@@ -91,6 +93,9 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             final JdbcConfiguration jdbcConfiguration = buildJdbcConfiguration(db);
 
             logger.debug("JDBC configuration key is {} and resolved to {}", db, jdbcConfiguration);
+
+            jdbcConfiguration.init();
+
             return jdbcConfiguration;
         }
 
@@ -113,6 +118,18 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 else if ("hsql".equals(db))
                 {
                     jdbcConfiguration =  new Hsql(dbUrl, username, password, dbSchema);
+                }
+                else if ("h2-memory".equals(db))
+                {
+                    jdbcConfiguration = new H2Memory(dbUrl, username, password, dbSchema);
+                }
+                else if ("h2-file".equals(db))
+                {
+                    jdbcConfiguration = new H2File(dbUrl, username, password, dbSchema);
+                }
+                else if ("h2-server".equals(db))
+                {
+                    jdbcConfiguration = new H2Server(dbUrl, username, password, dbSchema);
                 }
                 else if ("hsql-file".equals(db))
                 {

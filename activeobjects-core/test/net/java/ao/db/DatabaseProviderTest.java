@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
@@ -41,6 +42,7 @@ import net.java.ao.schema.DefaultSequenceNameConverter;
 import net.java.ao.schema.DefaultTriggerNameConverter;
 import net.java.ao.schema.DefaultUniqueNameConverter;
 import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.StringLength;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
@@ -51,6 +53,7 @@ import net.java.ao.schema.ddl.SQLAction;
 import test.schema.Company;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static net.java.ao.DatabaseProviders.getDatabaseProviderWithNoIndex;
 import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,6 +61,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -104,6 +108,30 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
+    public void testRenderActionAlterStringColumn() throws IOException
+    {
+        testRenderAction("alter-string-column.sql", createActionAlterStringColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException
+    {
+        testRenderAction("alter-string-length-column.sql", createActionAlterStringLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException
+    {
+        testRenderAction("alter-string-maxlength-column.sql", createActionAlterStringMaxLengthColumn, getDatabaseProvider());
+    }
+
+    @Test
+    public void testRenderActionAlterNumericColumn() throws IOException
+    {
+        testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
+    }
+
+    @Test
     public void testRenderActionDropColumn() throws IOException
     {
         testRenderAction("drop-column.sql", createActionDropColumn, getDatabaseProvider());
@@ -119,6 +147,12 @@ public abstract class DatabaseProviderTest
     public final void testRenderActionDropIndex() throws IOException
     {
         testRenderAction("drop-index.sql", createActionDropIndex, getDatabaseProvider());
+    }
+
+    @Test
+    public final void testRenderActionDropNonExistentIndex() throws IOException
+    {
+         testRenderAction(new String[]{""}, createActionDropNonExistentIndex, getDatabaseProviderWithNoIndex());
     }
 
     @Test
@@ -184,18 +218,19 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
-    public final void testDropIndexWithSpecificName() {
+    public final void testDropIndexWithSpecificName()
+    {
         final DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
         final DDLIndex index = new DDLIndex();
         index.setField("field");
         index.setTable("table");
         index.setType(getDatabaseProvider().getTypeManager().getType(Long.class));
-        index.setIndexName("indexName");
+        index.setIndexName("index_table_field");
         action.setIndex(index);
         final Iterable<SQLAction> sqlActions = getDatabaseProvider().renderAction(nameConverters, action);
 
         assertTrue("Should be dropping the existing index by name",
-                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("indexName"));
+                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("index_table_field"));
     }
 
     protected String getExpectedWhereClause()
@@ -266,6 +301,62 @@ public abstract class DatabaseProviderTest
                 "column1, table2.column2 ASC",
                 "table1.column1 ASC, table2.column2 ASC"
         );
+    }
+
+    @Test
+    public final void testProcessOrderClauseAppendTail()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesAppendTail()));
+    }
+
+    protected List<String> getExpectedOrderClausesAppendTail()
+    {
+        return ImmutableList.of(
+                "table1.column1 ASC, table2.column2 ASC extraCharacter"
+        );
+    }
+
+    @Test
+    public final void testProcessOrderClauseExcessNameLength()
+    {
+        final List<String> orderClauses = ImmutableList.of(
+                "someNamesThatOverMaximumLengthExtraCharacter"
+        );
+
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
+        {
+            @Override
+            public String apply(@Nullable final String input)
+            {
+                return getDatabaseProvider().processOrderClause(input);
+            }
+        });
+
+
+        assertThat(processedOrderClauses, is(getExpectedOrderClausesExcessNameLength()));
+    }
+
+    protected List<String> getExpectedOrderClausesExcessNameLength()
+    {
+        String excessColumnTableName = "someNamesThatOverMaximumLengthExtraCharacter";
+
+        excessColumnTableName = getDatabaseProvider().shorten(excessColumnTableName);
+
+        return ImmutableList.of(excessColumnTableName);
     }
 
     private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
@@ -480,6 +571,116 @@ public abstract class DatabaseProviderTest
         }
     };
 
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.MAX_LENGTH)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(10)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(20)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringMaxLengthColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("company");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("name");
+            oldField.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(767)));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("name");
+            field.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(StringLength.UNLIMITED)));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
+
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLTable table = new DDLTable();
+            table.setName("person");
+
+            DDLField oldField = new DDLField();
+            oldField.setName("age");
+            oldField.setType(db.getTypeManager().getType(Integer.class));
+            oldField.setNotNull(true);
+            table.setFields(new DDLField[]{oldField});
+
+            DDLField field = new DDLField();
+            field.setName("age");
+            field.setType(db.getTypeManager().getType(Long.class));
+            field.setNotNull(true);
+
+            DDLAction back = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
+            back.setOldField(oldField);
+            back.setField(field);
+            back.setTable(table);
+
+            return back;
+        }
+    };
+
     protected final Function<DatabaseProvider, DDLAction> createActionDropColumn = new Function<DatabaseProvider, DDLAction>()
     {
         public DDLAction apply(DatabaseProvider db)
@@ -546,6 +747,23 @@ public abstract class DatabaseProviderTest
             index.setField("companyID");
             index.setTable("person");
             index.setType(db.getTypeManager().getType(String.class));
+            index.setIndexName(nameConverters.getIndexNameConverter().getName("person", "companyID"));
+            back.setIndex(index);
+
+            return back;
+        }
+    };
+
+    private Function<DatabaseProvider, DDLAction> createActionDropNonExistentIndex = new Function<DatabaseProvider, DDLAction>()
+    {
+        public DDLAction apply(DatabaseProvider db)
+        {
+            DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
+
+            DDLIndex index = new DDLIndex();
+            index.setField("companyID");
+            index.setTable("person");
+            index.setIndexName("index_non_existent");
             back.setIndex(index);
 
             return back;
