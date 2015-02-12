@@ -49,7 +49,6 @@ import static org.slf4j.LoggerFactory.getLogger;
  *
  * @author Sergey Bushik
  */
-@SuppressWarnings("ALL")
 public class NuoDBDisposableDataSourceHandler {
 
     private static final ClassLoader CLASS_LOADER = NuoDBDisposableDataSourceHandler.class.getClassLoader();

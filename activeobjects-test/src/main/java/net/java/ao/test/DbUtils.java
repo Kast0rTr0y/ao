@@ -4,6 +4,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
 import net.java.ao.db.HSQLDatabaseProvider;
+import net.java.ao.db.NuoDBDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,11 @@ public final class DbUtils
     public static boolean isHsql(EntityManager em)
     {
         return em.getProvider() instanceof HSQLDatabaseProvider;
+    }
+
+    public static boolean isNuoDB(EntityManager em)
+    {
+        return em.getProvider() instanceof NuoDBDatabaseProvider;
     }
 
     public static <T> T checkSqlExecuted(EntityManager em, Callable<T> callable) throws Exception

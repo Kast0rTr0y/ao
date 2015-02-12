@@ -155,10 +155,6 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
                 {
                     jdbcConfiguration =  new DerbyEmbedded(dbUrl, username, password, dbSchema);
                 }
-                else if ("nuodb".equals(db))
-                {
-                    jdbcConfiguration =  new NuoDB(dbUrl, username, password, dbSchema);
-                }
             }
             else
             {
