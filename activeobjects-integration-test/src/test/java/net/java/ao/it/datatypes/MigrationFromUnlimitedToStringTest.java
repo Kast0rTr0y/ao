@@ -18,6 +18,8 @@ import org.junit.rules.ExpectedException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import static net.java.ao.test.DbUtils.isHsql;
+import static net.java.ao.test.DbUtils.isNuoDB;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -54,15 +56,16 @@ public final class MigrationFromUnlimitedToStringTest extends ActiveObjectsInteg
         e.setText(LARGE_STRING);
         e.save();
 
-        if (!DbUtils.isHsql(entityManager))
+        if (!isHsql(entityManager) && !isNuoDB(entityManager))
         {
             // HSQL silently truncates, others vomit
+            // NuoDB changes declared length, but doesn't truncate
             expectedException.expect(SQLException.class);
         }
 
         entityManager.migrate(VarcharColumn.class);
 
-        if (DbUtils.isHsql(entityManager))
+        if (isHsql(entityManager))
         {
             // check the truncated migration
             VarcharColumn retrieved = entityManager.get(VarcharColumn.class, e.getID());
