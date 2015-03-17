@@ -160,6 +160,13 @@ public final class SqlUtilsTest
         assertEquals("*a*.*id*,*b*.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
     }
 
+    @Test
+    public void testProcessHavingClause()
+    {
+        assertEquals("COUNT(*id*) > 2", SqlUtils.processHavingClause("COUNT(id) > 2", TEST_ID_PROCESSOR));
+        assertEquals("COUNT(a.*id*) > 2", SqlUtils.processHavingClause("COUNT(a.id) > 2", TEST_ID_PROCESSOR));
+    }
+
     private static class TestIdProcessor implements Function<String, String>
     {
         @Override

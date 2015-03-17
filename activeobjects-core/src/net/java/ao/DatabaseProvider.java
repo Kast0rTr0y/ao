@@ -396,6 +396,7 @@ public abstract class DatabaseProvider implements Disposable
         sql.append(renderQueryJoins(query, converter));
         sql.append(renderQueryWhere(query));
         sql.append(renderQueryGroupBy(query));
+        sql.append(renderQueryHaving(query));
         sql.append(renderQueryOrderBy(query));
         sql.append(renderQueryLimit(query));
 
@@ -759,6 +760,43 @@ public abstract class DatabaseProvider implements Disposable
             @Override
             public String apply(String field)
             {
+                return processID(field);
+            }
+        });
+    }
+
+    /**
+     * <p>Renders the HAVING portion of the query in the database-specific SQL
+     * dialect.  Very few databases deviate from the standard in this matter,
+     * thus the default implementation is usually sufficient.</p>
+     * <p/>
+     * <p>An example return value: <code>" HAVING COUNT(name)"</code></p>
+     * <p/>
+     * <p>There is usually no need to call this method directly.  Under normal
+     * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
+     *
+     * @param query The Query instance from which to determine the HAVING properties.
+     * @return The database-specific SQL rendering of the HAVING portion of the query.
+     */
+    protected String renderQueryHaving(Query query)
+    {
+        StringBuilder sql = new StringBuilder();
+
+        String havingClause = query.getHavingClause();
+        if (havingClause != null)
+        {
+            sql.append(" HAVING ");
+            sql.append(processHavingClause(havingClause));
+        }
+
+        return sql.toString();
+    }
+
+    private String processHavingClause(String having)
+    {
+        return SqlUtils.processHavingClause(having, new Function<String, String>() {
+            @Override
+            public String apply(String field) {
                 return processID(field);
             }
         });
