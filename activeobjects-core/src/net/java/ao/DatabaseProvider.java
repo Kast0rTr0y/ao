@@ -770,7 +770,7 @@ public abstract class DatabaseProvider implements Disposable
      * dialect.  Very few databases deviate from the standard in this matter,
      * thus the default implementation is usually sufficient.</p>
      * <p/>
-     * <p>An example return value: <code>" HAVING COUNT(name)"</code></p>
+     * <p>An example return value: <code>" HAVING COUNT(name) &gt; 2"</code></p>
      * <p/>
      * <p>There is usually no need to call this method directly.  Under normal
      * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
