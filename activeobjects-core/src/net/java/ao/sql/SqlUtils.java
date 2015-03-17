@@ -76,10 +76,10 @@ public final class SqlUtils
         {
             final StringBuilder repl = new StringBuilder();
 
-            // $1 signifies the (optional) table name to potentially quote
+            // $1 signifies the (optional) table name that should not be quoted
             if (matcher.group(1) != null)
             {
-                repl.append(processor.apply("$1"));
+                repl.append(matcher.group(1));
                 repl.append(".");
             }
 
