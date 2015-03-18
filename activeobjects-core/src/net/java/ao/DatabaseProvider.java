@@ -805,10 +805,10 @@ public abstract class DatabaseProvider implements Disposable
         {
             final StringBuilder repl = new StringBuilder();
 
-            // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name to potentially quote
+            // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name that should not be quoted
             if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null)
             {
-                repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
+                repl.append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME));
                 repl.append(".");
             }
 

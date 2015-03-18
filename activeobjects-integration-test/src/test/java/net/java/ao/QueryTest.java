@@ -117,6 +117,12 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
+    public final void testSelectWithOrderAndAliasClause()
+    {
+        assertSelectSqlEquals(getSelectWithOrderClauseAndAliasQuery(), getExpectedSqlForSelectWithOrderClauseAndAlias());
+    }
+
+    @Test
     public final void testSelectWithMultipleOrderClauses()
     {
         assertSelectSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForSelectWithMultipleOrderClauses());
@@ -151,6 +157,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         return Query.select().order(getPersonLastName() + " DESC");
     }
 
+    private Query getSelectWithOrderClauseAndAliasQuery()
+    {
+        return Query.select().alias(Person.class, "p").order("p." + getPersonLastName() + " DESC");
+    }
+
     private Query getSelectWithMultipleOrderClausesQuery()
     {
         return Query.select().order(getPersonLastName() + ", " + getPersonAge() + ", " + getPersonId());
@@ -162,6 +173,8 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     protected abstract String getExpectedSqlForSelectWithOrderClause();
+
+    protected abstract String getExpectedSqlForSelectWithOrderClauseAndAlias();
 
     protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders()
     {

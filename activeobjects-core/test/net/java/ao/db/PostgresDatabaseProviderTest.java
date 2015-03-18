@@ -22,8 +22,8 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
         final List<String> orderClauses = ImmutableList.of(
                 "\"column1\"",
                 "\"column1\" ASC",
-                "\"table1\".\"column1\"",
-                "\"table1\".\"column1\" ASC"
+                "table1.\"column1\"",
+                "table1.\"column1\" ASC"
         );
 
         final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
@@ -98,11 +98,11 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
                 "\"column1\"",
                 "\"column1\" Asc",
                 "\"column1\" Desc",
-                "\"table1\".\"column1\"",
-                "\"table1\".\"column1\" ASC",
-                "\"table1\".\"column1\" ASC, \"column2\"",
-                "\"column1\", \"table2\".\"column2\" ASC",
-                "\"table1\".\"column1\" ASC, \"table2\".\"column2\" ASC"
+                "table1.\"column1\"",
+                "table1.\"column1\" ASC",
+                "table1.\"column1\" ASC, \"column2\"",
+                "\"column1\", table2.\"column2\" ASC",
+                "table1.\"column1\" ASC, table2.\"column2\" ASC"
         );
     }
 
@@ -119,6 +119,6 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     @Override
     protected List<String> getExpectedOrderClausesAppendTail()
     {
-        return ImmutableList.of("\"table1\".\"column1\" ASC, \"table2\".\"column2\" ASC \"extraCharacter\"");
+        return ImmutableList.of("table1.\"column1\" ASC, table2.\"column2\" ASC \"extraCharacter\"");
     }
 }

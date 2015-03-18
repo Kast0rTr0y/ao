@@ -59,6 +59,11 @@ public final class DerbyQueryTest extends QueryTest
         return format("SELECT %s FROM %s ORDER BY %s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
     }
 
+    @Override
+    protected String getExpectedSqlForSelectWithOrderClauseAndAlias()
+    {
+        return format("SELECT p.%s FROM %s p ORDER BY p.%s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
+    }
 
     @Override
     protected String getExpectedSqlForCountWithOrderClause()

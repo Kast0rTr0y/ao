@@ -60,6 +60,12 @@ public final class OracleQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOrderClauseAndAlias()
+    {
+        return format("SELECT p.%s FROM %s p ORDER BY p.%s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
+    }
+
+    @Override
     protected String getExpectedSqlForCountWithOrderClause()
     {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC", getExpectedTableName(Person.class), getPersonLastName());
