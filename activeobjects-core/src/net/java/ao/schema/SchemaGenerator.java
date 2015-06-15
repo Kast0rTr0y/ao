@@ -245,11 +245,7 @@ public final class SchemaGenerator
         {
             final Class<? extends RawEntity<?>> throughType = manyToMany.value();
             final String reverse = manyToMany.reverse();
-            if (reverse.length() == 0)
-            {
-                logger.warn(method + " does not have a value specified for the reverse element of its ManyToMany annotation. A value will be required by a future version of ActiveObjects.");
-            }
-            else
+            if (reverse.length() != 0)
             {
                 try
                 {
@@ -260,10 +256,8 @@ public final class SchemaGenerator
                     throw new IllegalArgumentException(method + " has a ManyToMany annotation with an invalid reverse element value. It must be the name of the corresponding getter method on the joining entity.", exception);
                 }
             }
-            if (manyToMany.through().length() == 0)
+            if (manyToMany.through().length() != 0)
             {
-                logger.warn(method + " does not have a value specified for the through element of its ManyToMany annotation. A value will be required by a future version of ActiveObjects.");
-            } else {
                 try
                 {
                     throughType.getMethod(manyToMany.through());
