@@ -282,11 +282,7 @@ public final class SchemaGenerator
         if (oneToMany != null)
         {
             final String reverse = oneToMany.reverse();
-            if (reverse.length() == 0)
-            {
-                logger.warn(method + " does not have a value specified for the reverse element of its OneToMany annotation. A value will be required by a future version of ActiveObjects.");
-            }
-            else
+            if (reverse.length() != 0)
             {
                 try
                 {
