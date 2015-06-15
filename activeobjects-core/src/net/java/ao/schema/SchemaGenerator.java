@@ -296,11 +296,7 @@ public final class SchemaGenerator
         if (oneToOne != null)
         {
             final String reverse = oneToOne.reverse();
-            if (reverse.length() == 0)
-            {
-                logger.warn(method + " does not have a value specified for the reverse element of its OneToOne annotation. A value will be required by a future version of ActiveObjects.");
-            }
-            else
+            if (reverse.length() != 0)
             {
                 try
                 {
