@@ -93,7 +93,7 @@ public final class SqlUtils
         return sql.toString();
     }
 
-    public static String processHavingClause(String groupBy, Function<String, String> processor)
+    public static String processHavingClause(String groupBy, Function<String, String> columnNameProcessor, Function<String, String> tableNameProcessor)
     {
         final Matcher matcher = HAVING_CLAUSE.matcher(groupBy);
         final StringBuffer sql = new StringBuffer();
@@ -107,15 +107,15 @@ public final class SqlUtils
             // the functions opening bracket
             repl.append("(");
 
-            // $2 signifies the (optional) table name
+            // $2 signifies the (optional) table name to potentially quote
             if (matcher.group(2) != null)
             {
-                repl.append(matcher.group(2));
+                repl.append(tableNameProcessor.apply("$2"));
                 repl.append(".");
             }
 
             // $3 signifies the (mandatory) column name to potentially quote
-            repl.append(processor.apply("$3"));
+            repl.append(columnNameProcessor.apply("$3"));
 
             // the functions closing bracket
             repl.append(")");

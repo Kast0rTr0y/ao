@@ -804,12 +804,22 @@ public abstract class DatabaseProvider implements Disposable
 
     private String processHavingClause(String having)
     {
-        return SqlUtils.processHavingClause(having, new Function<String, String>() {
-            @Override
-            public String apply(String field) {
-                return processID(field);
-            }
-        });
+        return SqlUtils.processHavingClause(having, new Function<String, String>()
+                {
+                    @Override
+                    public String apply(String field)
+                    {
+                        return processID(field);
+                    }
+                },
+                new Function<String, String>()
+                {
+                    @Override
+                    public String apply(String tableName)
+                    {
+                        return processTableName(tableName);
+                    }
+                });
     }
 
     /**
