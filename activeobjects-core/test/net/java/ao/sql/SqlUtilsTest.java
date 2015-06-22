@@ -11,6 +11,7 @@ import static org.junit.Assert.*;
 public final class SqlUtilsTest
 {
     private static final TestIdProcessor TEST_ID_PROCESSOR = new TestIdProcessor();
+    private static final TestTableNameProcessor TEST_TABLE_NAME_PROCESSOR = new TestTableNameProcessor();
     private static final String[] SEPARATORS = new String[]{"=", "!=", "<=", ">=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
 
     @Test
@@ -156,8 +157,8 @@ public final class SqlUtilsTest
     @Test
     public void testProcessGroupByClause()
     {
-        assertEquals("*id*,*otherId*", SqlUtils.processGroupByClause("id,otherId", TEST_ID_PROCESSOR));
-        assertEquals("a.*id*,b.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
+        assertEquals("*id*,*otherId*", SqlUtils.processGroupByClause("id,otherId", TEST_ID_PROCESSOR, TEST_TABLE_NAME_PROCESSOR));
+        assertEquals("#a#.*id*,#b#.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR, TEST_TABLE_NAME_PROCESSOR));
     }
 
     private static class TestIdProcessor implements Function<String, String>
@@ -166,6 +167,15 @@ public final class SqlUtilsTest
         public String apply(String id)
         {
             return "*" + id + "*";
+        }
+    }
+
+    private static class TestTableNameProcessor implements Function<String, String>
+    {
+        @Override
+        public String apply(String id)
+        {
+            return "#" + id + "#";
         }
     }
 }

@@ -68,7 +68,7 @@ public final class SqlUtils
         return sb.toString();
     }
     
-    public static String processGroupByClause(String groupBy, Function<String, String> processor)
+    public static String processGroupByClause(String groupBy, Function<String, String> columnNameProcessor, Function<String, String> tableNameProcessor)
     {
         final Matcher matcher = GROUP_BY_CLAUSE.matcher(groupBy);
         final StringBuffer sql = new StringBuffer();
@@ -76,15 +76,15 @@ public final class SqlUtils
         {
             final StringBuilder repl = new StringBuilder();
 
-            // $1 signifies the (optional) table name that should not be quoted
+            // $1 signifies the (optional) table name to potentially quote
             if (matcher.group(1) != null)
             {
-                repl.append(matcher.group(1));
+                repl.append(tableNameProcessor.apply("$1"));
                 repl.append(".");
             }
 
             // $2 signifies the (mandatory) column name to potentially quote
-            repl.append(processor.apply("$2"));
+            repl.append(columnNameProcessor.apply("$2"));
 
             matcher.appendReplacement(sql, repl.toString());
         }
