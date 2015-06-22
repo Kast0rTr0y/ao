@@ -223,7 +223,7 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithAliasedExplicitJoin()
     {
-        return format("SELECT p.'%s' FROM %s p JOIN %s c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY 'p'.'%s'",
+        return format("SELECT p.'%s' FROM %s p JOIN %s c ON p.'%s' = c.'%s' WHERE p.'%s' IS NULL AND p.'%s' = 3 GROUP BY p.'%s'",
                 getPersonId(), getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
                 getPersonCompany(), getCompanyId(),

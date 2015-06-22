@@ -755,14 +755,24 @@ public abstract class DatabaseProvider implements Disposable
 
     private String processGroupByClause(String groupBy)
     {
-        return SqlUtils.processGroupByClause(groupBy, new Function<String, String>()
-        {
-            @Override
-            public String apply(String field)
-            {
-                return processID(field);
-            }
-        });
+        return SqlUtils.processGroupByClause(groupBy,
+                new Function<String, String>()
+                {
+                    @Override
+                    public String apply(String field)
+                    {
+                        return processID(field);
+                    }
+                },
+                new Function<String, String>()
+                {
+                    @Override
+                    public String apply(String tableName)
+                    {
+                        return processTableName(tableName);
+                    }
+                }
+        );
     }
 
     /**
@@ -2300,6 +2310,22 @@ public abstract class DatabaseProvider implements Disposable
         return quote(shorten(id));
     }
 
+    /**
+     * Processes the table name as {@link #processID(String)} but use
+     * #shouldQuoteTableName(String) to check if the table name should
+     * be quoted or not.
+     *
+     * @param tableName The table name to process.
+     * @return A unique identifier corresponding with the input which is
+     *         guaranteed to function within the underlying database.
+     * @see #getMaxIDLength()
+     * @see #shouldQuoteTableName(String)
+     */
+    public final String processTableName(String tableName)
+    {
+        return quoteTableName(shorten(tableName));
+    }
+
     public final String withSchema(String tableName)
     {
         final String processedTableName = processID(tableName);
@@ -2318,13 +2344,17 @@ public abstract class DatabaseProvider implements Disposable
 
     public final String quote(String id)
     {
-        if (shouldQuoteID(id))
-        {
-            String quote = quoteRef.get();
-            return quote + id + quote;
-        }
+        return shouldQuoteID(id) ? quoteId(id) : id;
+    }
 
-        return id;
+    public final String quoteTableName(String tableName)
+    {
+        return shouldQuoteTableName(tableName) ? quoteId(tableName) : tableName;
+    }
+
+    private String quoteId(String id) {
+        String quote = quoteRef.get();
+        return quote + id + quote;
     }
 
     /**
@@ -2342,6 +2372,21 @@ public abstract class DatabaseProvider implements Disposable
     protected boolean shouldQuoteID(String id)
     {
         return getReservedWords().contains(Case.UPPER.apply(id));
+    }
+
+    /**
+     * Determines whether or not the table name should be quoted
+     * before transmission to the underlying database.  The default implementation
+     * does the same as {@link #shouldQuoteID(String)} but can be
+     * overridden by subclasses.
+     *
+     * @param tableName The table name to check against the quoting rules.
+     * @return <code>true</code> if the table name is invalid under
+     *         the relevant quoting rules, otherwise <code>false</code>.
+     */
+    protected boolean shouldQuoteTableName(String tableName)
+    {
+        return shouldQuoteID(tableName);
     }
 
     /**
