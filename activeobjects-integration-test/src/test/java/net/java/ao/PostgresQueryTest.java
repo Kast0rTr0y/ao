@@ -159,15 +159,13 @@ public final class PostgresQueryTest extends QueryTest
     @Override
     protected String getExpectedSqlForSelectWithHaving()
     {
-        // GROUP BY 'p'.'%s' actually is wrong. this must be altered to p.'%s' after https://ecosystem.atlassian.net/browse/AO-633 is resolved
-        return format("SELECT p.'%s' FROM %s p JOIN %s pc ON p.'%s' = pc.'%s' GROUP BY 'p'.'%s' HAVING COUNT(pc.'%s') > 2", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
+        return format("SELECT p.'%s' FROM %s p JOIN %s pc ON p.'%s' = pc.'%s' GROUP BY p.'%s' HAVING COUNT(pc.'%s') > 2", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
     }
 
     @Override
     protected String getExpectedSqlForCountWithHaving()
     {
-        // GROUP BY 'p'.'%s' actually is wrong. this must be altered to p.'%s' after https://ecosystem.atlassian.net/browse/AO-633 is resolved
-        return format("SELECT COUNT(*) FROM %s p JOIN %s pc ON p.'%s' = pc.'%s' GROUP BY 'p'.'%s' HAVING COUNT(pc.'%s') > 2", getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
+        return format("SELECT COUNT(*) FROM %s p JOIN %s pc ON p.'%s' = pc.'%s' GROUP BY p.'%s' HAVING COUNT(pc.'%s') > 2", getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
     }
 
     @Override
