@@ -16,7 +16,7 @@ public final class SqlUtils
     public static final Pattern WHERE_CLAUSE = Pattern.compile("(\\w+)(?=\\s*((=|!=|>|<|<>|<=|>=|(?<!(NOT\\s{1,10}))LIKE|(?<!(NOT\\s{1,10}))like|(?<!(NOT\\s{1,10}))BETWEEN|(?<!(NOT\\s{1,10}))between|IS|is|(?<!((IS|AND)\\s{1,10}))NOT|(?<!(NOT\\s{1,10}))IN|(?<!(is\\s{1,10}))not|(?<!(not\\s{1,10}))in)(\\s|\\()))");
     public static final Pattern ON_CLAUSE = Pattern.compile("(?:(\\w+)\\.)?(?:(\\w+)\\.)?(\\w+)(\\s*=\\s*)(?:(\\w+)\\.)?(?:(\\w+)\\.)?(\\w+)");
     public static final Pattern GROUP_BY_CLAUSE = Pattern.compile("(?:(\\w+)\\.)?(\\w+)");
-    public static final Pattern HAVING_CLAUSE = Pattern.compile("(AVG|COUNT|FIRST|LAST|MAX|MIN|SUM)\\((?:(\\w+)\\.)?(\\w+)\\)");
+    public static final Pattern HAVING_CLAUSE = Pattern.compile("(?:(\\w+)\\()?(?:(\\w+)\\.)?(\\w+)\\)?(?=\\s*(?:(?:=|!=|>|<|<>|<=|>=|(?<!(?:NOT\\s{1,10}))LIKE|(?<!(?:NOT\\s{1,10}))like|(?<!(?:NOT\\s{1,10}))BETWEEN|(?<!(?:NOT\\s{1,10}))between|IS|is|(?<!(?:(?:IS|AND)\\s{1,10}))NOT|(?<!(?:NOT\\s{1,10}))IN|(?<!(?:is\\s{1,10}))not|(?<!(?:not\\s{1,10}))in)(?:\\s|\\()))");
 
     private SqlUtils()
     {
@@ -93,19 +93,22 @@ public final class SqlUtils
         return sql.toString();
     }
 
-    public static String processHavingClause(String groupBy, Function<String, String> columnNameProcessor, Function<String, String> tableNameProcessor)
+    public static String processHavingClause(String having, Function<String, String> columnNameProcessor, Function<String, String> tableNameProcessor)
     {
-        final Matcher matcher = HAVING_CLAUSE.matcher(groupBy);
+        final Matcher matcher = HAVING_CLAUSE.matcher(having);
         final StringBuffer sql = new StringBuffer();
         while(matcher.find())
         {
             final StringBuilder repl = new StringBuilder();
 
-            // $1 signifies the (mandatory) aggregate function
-            repl.append(matcher.group(1));
+            // $1 signifies the (optional) aggregate function
+            if (matcher.group(1) != null)
+            {
+                repl.append(matcher.group(1));
 
-            // the functions opening bracket
-            repl.append("(");
+                // the functions opening bracket
+                repl.append("(");
+            }
 
             // $2 signifies the (optional) table name to potentially quote
             if (matcher.group(2) != null)
@@ -117,8 +120,11 @@ public final class SqlUtils
             // $3 signifies the (mandatory) column name to potentially quote
             repl.append(columnNameProcessor.apply("$3"));
 
-            // the functions closing bracket
-            repl.append(")");
+            if (matcher.group(1) != null)
+            {
+                // the functions closing bracket
+                repl.append(")");
+            }
 
             matcher.appendReplacement(sql, repl.toString());
         }
