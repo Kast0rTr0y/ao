@@ -38,6 +38,7 @@ import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.Case;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.UniqueNameConverter;
@@ -367,6 +368,11 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider
 	@Override
 	protected boolean shouldQuoteID(String id) {
         return !PATTERN_QUOTE_ID.matcher(id).matches();
+    }
+
+    @Override
+    protected boolean shouldQuoteTableName(String tableName) {
+        return getReservedWords().contains(Case.UPPER.apply(tableName));
     }
 
     @Override
