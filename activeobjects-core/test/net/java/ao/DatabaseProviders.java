@@ -9,6 +9,7 @@ import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
+import net.java.ao.db.NuoDBDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
@@ -51,6 +52,24 @@ public class DatabaseProviders
     public static OracleDatabaseProvider getOracleDatabaseProvider()
     {
         return new OracleDatabaseProvider(newDataSource(""));
+    }
+
+    public static NuoDBDatabaseProvider getNuoDBDatabaseProvider()
+    {
+        return new NuoDBDatabaseProvider(newDataSource(""))
+        {
+            @Override
+            protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
+            {
+                return true;
+            }
+
+            @Override
+            protected boolean hasIndex(String table, String index)
+            {
+                return true;
+            }
+        };
     }
 
     public static MySQLDatabaseProvider getMySqlDatabaseProvider()

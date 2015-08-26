@@ -202,6 +202,19 @@ public class TypeManager
                 .build();
     }
 
+    public static TypeManager nuodb()
+    {
+        return new TypeManager.Builder()
+                .addMapping(blobType(), schemaType("BLOB"))
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(dateType(), schemaType("TIMESTAMP").scaleAllowed(true).precisionAllowed(false), qualifiers().scale(6).precision(16))
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(integerType(), schemaType("INTEGER").precisionAllowed(false), qualifiers().precision(9))
+                .addMapping(longType(), schemaType("BIGINT").precisionAllowed(false))
+                .addStringTypes("VARCHAR", "TEXT", Integer.MAX_VALUE)
+                .build();
+    }
+
     public static class Builder
     {
         private final SetMultimap<Class<?>, TypeInfo<?>> classIndex = HashMultimap.create();
