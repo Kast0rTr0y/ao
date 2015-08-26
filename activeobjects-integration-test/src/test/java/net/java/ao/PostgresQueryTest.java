@@ -61,6 +61,12 @@ public final class PostgresQueryTest extends QueryTest
     }
 
     @Override
+    protected String getExpectedSqlForSelectWithOrderClauseAndAlias()
+    {
+        return format("SELECT p.'%s' FROM %s p ORDER BY p.'%s' DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
+    }
+
+    @Override
     protected String getExpectedSqlForSelectWithMultipleOrderClauses()
     {
         return format("SELECT '%s' FROM %s ORDER BY '%s', '%s', '%s'", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());

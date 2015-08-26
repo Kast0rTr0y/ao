@@ -866,7 +866,7 @@ public abstract class DatabaseProvider implements Disposable
             // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name to potentially quote
             if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null)
             {
-                repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
+                repl.append(processTableName(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
                 repl.append(".");
             }
 
