@@ -3,12 +3,12 @@
  */
 package net.java.ao.blog.core;
 
-import java.io.Serializable;
-import java.util.Iterator;
-
 import org.apache.wicket.markup.repeater.util.ModelIteratorAdapter;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+
+import java.io.Serializable;
+import java.util.Iterator;
 
 /**
  * Convenience implementation of {@link ModelIteratorAdapter} that wraps items
@@ -16,13 +16,13 @@ import org.apache.wicket.model.Model;
  */
 public class DefaultModelIteratorAdaptor extends ModelIteratorAdapter {
 
-	@SuppressWarnings("unchecked")
-	public DefaultModelIteratorAdaptor(Iterator delegate) {
-		super(delegate);
-	}
+    @SuppressWarnings("unchecked")
+    public DefaultModelIteratorAdaptor(Iterator delegate) {
+        super(delegate);
+    }
 
-	@Override
-	protected IModel model(Object object) {
-		return new Model((Serializable) object);
-	}
+    @Override
+    protected IModel model(Object object) {
+        return new Model((Serializable) object);
+    }
 }

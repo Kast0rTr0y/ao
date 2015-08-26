@@ -13,44 +13,35 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 
-public class DynamicFieldNameConverter implements FieldNameConverter, FieldNameProcessor
-{
+public class DynamicFieldNameConverter implements FieldNameConverter, FieldNameProcessor {
     private static final Logger logger = LoggerFactory.getLogger(DynamicFieldNameConverter.class);
 
     private final Supplier<FieldNameConverter> fncSupplier;
 
-    public DynamicFieldNameConverter()
-    {
+    public DynamicFieldNameConverter() {
         this.fncSupplier = Suppliers.memoize(new SystemPropertyFieldNameConverterSupplier());
     }
 
     @Override
-    public String getName(Method method)
-    {
+    public String getName(Method method) {
         return fncSupplier.get().getName(method);
     }
 
     @Override
-    public String getPolyTypeName(Method method)
-    {
+    public String getPolyTypeName(Method method) {
         return fncSupplier.get().getPolyTypeName(method);
     }
 
     @Override
-    public String convertName(String name)
-    {
-        if (fncSupplier.get() instanceof FieldNameProcessor)
-        {
+    public String convertName(String name) {
+        if (fncSupplier.get() instanceof FieldNameProcessor) {
             return ((FieldNameProcessor) fncSupplier.get()).convertName(name);
-        }
-        else
-        {
+        } else {
             return name;
         }
     }
 
-    private static final class SystemPropertyFieldNameConverterSupplier implements Supplier<FieldNameConverter>
-    {
+    private static final class SystemPropertyFieldNameConverterSupplier implements Supplier<FieldNameConverter> {
         private static final String DEFAULT = "atlassian";
 
         private final ImmutableMap<String, FieldNameConverter> converters = ImmutableMap.<String, FieldNameConverter>of(
@@ -60,8 +51,7 @@ public class DynamicFieldNameConverter implements FieldNameConverter, FieldNameP
         );
 
         @Override
-        public FieldNameConverter get()
-        {
+        public FieldNameConverter get() {
             final String key = ConfigurationProperties.get("ao.test.fieldnameconverter", DEFAULT);
             final FieldNameConverter fnc = converters.get(key);
 

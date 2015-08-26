@@ -18,29 +18,24 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public class PersonImpl
-{
+public class PersonImpl {
     public static final String LAST_NAME = "Smith";
     public static boolean enableOverride = false;
 
     private Person person;
 
-    public PersonImpl(Person person)
-    {
+    public PersonImpl(Person person) {
         this.person = person;
     }
 
-    public String getLastName()
-    {
-        if (enableOverride)
-        {
+    public String getLastName() {
+        if (enableOverride) {
             return LAST_NAME;
         }
         return person.getLastName();
     }
 
-    public void setLastName(String lastName)
-    {
+    public void setLastName(String lastName) {
         person.setLastName(lastName);
     }
 }

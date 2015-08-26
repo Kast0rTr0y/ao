@@ -12,11 +12,9 @@ import org.junit.Test;
 import java.sql.SQLException;
 
 @Data(TestOneToManyWithPreload.OneToManyWithPreloadDatabaseUpdater.class)
-public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
-{
+public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest {
     @Test
-    public void getManyElementsWithPreload() throws Exception
-    {
+    public void getManyElementsWithPreload() throws Exception {
         final Company c = newCompany("My Company");
 
         newPerson(c, "M. Brown");
@@ -26,8 +24,7 @@ public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
         c.getPersons();
     }
 
-    private Person newPerson(Company c, String name) throws SQLException
-    {
+    private Person newPerson(Company c, String name) throws SQLException {
         final Person p = entityManager.create(Person.class);
         p.setName(name);
         p.setCompany(c);
@@ -35,8 +32,7 @@ public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
         return p;
     }
 
-    private Company newCompany(String name) throws SQLException
-    {
+    private Company newCompany(String name) throws SQLException {
         final Company c = entityManager.create(Company.class);
         c.setName(name);
         c.save();
@@ -44,8 +40,7 @@ public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
     }
 
     @Preload
-    static interface Company extends Entity
-    {
+    static interface Company extends Entity {
         void setName(String name);
 
         String getName();
@@ -55,8 +50,7 @@ public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
     }
 
     @Preload
-    static interface Person extends Entity
-    {
+    static interface Person extends Entity {
         void setName(String name);
 
         String getName();
@@ -66,10 +60,8 @@ public final class TestOneToManyWithPreload extends ActiveObjectsIntegrationTest
         void setCompany(Company c);
     }
 
-    public static final class OneToManyWithPreloadDatabaseUpdater implements DatabaseUpdater
-    {
-        public void update(EntityManager entityManager) throws Exception
-        {
+    public static final class OneToManyWithPreloadDatabaseUpdater implements DatabaseUpdater {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(Person.class, Company.class);
         }
     }

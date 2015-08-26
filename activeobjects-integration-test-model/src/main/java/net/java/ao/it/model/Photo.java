@@ -18,8 +18,8 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface Photo extends Commentable
-{
-	public int getDepth();
-	public void setDepth(int depth);
+public interface Photo extends Commentable {
+    public int getDepth();
+
+    public void setDepth(int depth);
 }

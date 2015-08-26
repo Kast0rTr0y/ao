@@ -10,14 +10,15 @@ import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @Data(TestEntityWithLongId.TestEntityWithLongIdDatabaseUpdater.class)
-public final class TestEntityWithLongId extends ActiveObjectsIntegrationTest
-{
+public final class TestEntityWithLongId extends ActiveObjectsIntegrationTest {
     @Test
-    public void testEntity() throws Exception
-    {
+    public void testEntity() throws Exception {
         final EntityWithLongId e = entityManager.create(EntityWithLongId.class);
 
         assertNotNull(e.getId());
@@ -34,17 +35,14 @@ public final class TestEntityWithLongId extends ActiveObjectsIntegrationTest
         assertEquals(e.getDescription(), e1.getDescription());
     }
 
-    public static class TestEntityWithLongIdDatabaseUpdater implements DatabaseUpdater
-    {
+    public static class TestEntityWithLongIdDatabaseUpdater implements DatabaseUpdater {
         @Override
-        public void update(EntityManager entityManager) throws Exception
-        {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(EntityWithLongId.class);
         }
     }
 
-    public static interface EntityWithLongId extends RawEntity<Long>
-    {
+    public static interface EntityWithLongId extends RawEntity<Long> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")

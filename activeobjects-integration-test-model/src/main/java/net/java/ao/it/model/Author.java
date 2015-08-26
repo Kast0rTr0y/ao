@@ -23,6 +23,7 @@ import net.java.ao.Preload;
  */
 @Preload("name")
 public interface Author extends Entity {
-	public String getName();
-	public void setName(String name);
+    public String getName();
+
+    public void setName(String name);
 }

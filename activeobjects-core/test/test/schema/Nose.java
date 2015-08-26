@@ -21,10 +21,12 @@ import net.java.ao.Entity;
  * @author Daniel Spiewak
  */
 public interface Nose extends Entity {
-	
-	public int getLength();
-	public void setLength(int length);
-	
-	public Person getPerson();
-	public void setPerson(Person person);
+
+    public int getLength();
+
+    public void setLength(int length);
+
+    public Person getPerson();
+
+    public void setPerson(Person person);
 }

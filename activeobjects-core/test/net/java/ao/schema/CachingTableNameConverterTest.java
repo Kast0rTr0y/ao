@@ -9,38 +9,35 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public final class CachingTableNameConverterTest
-{
+public final class CachingTableNameConverterTest {
     private TableNameConverter cachingTableNameConverter;
 
     @Mock
     private TableNameConverter delegateTableNameConverter;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         when(delegateTableNameConverter.getName(anyRawEntityClass())).thenReturn("table_name");
         cachingTableNameConverter = new CachingTableNameConverter(delegateTableNameConverter);
     }
 
     @Test
-    public void getNameIsCachedWhenCalledMoreThanOnce()
-    {
+    public void getNameIsCachedWhenCalledMoreThanOnce() {
         final String name = cachingTableNameConverter.getName(SomeEntity.class);
         assertEquals(name, cachingTableNameConverter.getName(SomeEntity.class));
         verify(delegateTableNameConverter, times(1)).getName(SomeEntity.class);
     }
 
-    private static interface SomeEntity extends RawEntity<Object>
-    {
+    private static interface SomeEntity extends RawEntity<Object> {
 
     }
 
-    private static Class<? extends RawEntity<?>> anyRawEntityClass()
-    {
+    private static Class<? extends RawEntity<?>> anyRawEntityClass() {
         return Matchers.anyObject();
     }
 }

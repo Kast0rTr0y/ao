@@ -18,4 +18,5 @@ package test.schema;
 /**
  * @author Daniel Spiewak
  */
-public interface Magazine extends Publication {}
+public interface Magazine extends Publication {
+}

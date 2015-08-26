@@ -24,7 +24,7 @@ import net.java.ao.RawEntity;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * An abstract implementation of {@link FieldNameConverter} which handles common
@@ -34,8 +34,7 @@ import static com.google.common.base.Preconditions.*;
  *
  * @author Daniel Spiewak
  */
-public abstract class AbstractFieldNameConverter implements FieldNameConverter, FieldNameProcessor
-{
+public abstract class AbstractFieldNameConverter implements FieldNameConverter, FieldNameProcessor {
     private final List<FieldNameResolver> fieldNameResolvers;
 
     /**
@@ -43,8 +42,7 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter, 
      *
      * @see
      */
-    protected AbstractFieldNameConverter()
-    {
+    protected AbstractFieldNameConverter() {
         this(Lists.<FieldNameResolver>newArrayList(
                 new RelationalFieldNameResolver(),
                 new MutatorFieldNameResolver(),
@@ -57,8 +55,7 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter, 
         ));
     }
 
-    protected AbstractFieldNameConverter(List<FieldNameResolver> fieldNameResolvers)
-    {
+    protected AbstractFieldNameConverter(List<FieldNameResolver> fieldNameResolvers) {
         this.fieldNameResolvers = checkNotNull(fieldNameResolvers);
     }
 
@@ -76,11 +73,10 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter, 
      *
      * @param method The method for which a field name must be generated.
      * @return A valid database identifier to be used as the field name representative
-     *         of the method in question.
+     * of the method in question.
      * @see net.java.ao.schema.FieldNameConverter#getName(Method)
      */
-    public final String getName(Method method)
-    {
+    public final String getName(Method method) {
         return getNameInternal(method, PolyTypeHandler.STRAIGHT);
     }
 
@@ -88,98 +84,77 @@ public abstract class AbstractFieldNameConverter implements FieldNameConverter, 
      * Documentation on the {@link #getName(Method)} method.
      *
      * @return A valid database identifier to be used as the field name representative
-     *         of the method in question.
+     * of the method in question.
      * @see net.java.ao.schema.FieldNameConverter#getPolyTypeName(Method)
      */
-    public final String getPolyTypeName(Method method)
-    {
+    public final String getPolyTypeName(Method method) {
         return getNameInternal(method, PolyTypeHandler.POLY);
     }
 
-    private String getNameInternal(final Method method, final PolyTypeHandler polyTypeHandler)
-    {
+    private String getNameInternal(final Method method, final PolyTypeHandler polyTypeHandler) {
         final FieldNameResolver fieldNameResolver = findFieldNameResolver(checkNotNull(method));
         final String resolved = fieldNameResolver.resolve(method);
 
-        if (resolved == null)
-        {
+        if (resolved == null) {
             return null;
         }
 
-        if (!fieldNameResolver.transform())
-        {
+        if (!fieldNameResolver.transform()) {
             return resolved;
         }
 
-        if (polyTypeHandler.equals(PolyTypeHandler.POLY))
-        {
+        if (polyTypeHandler.equals(PolyTypeHandler.POLY)) {
             return convertName(polyTypeHandler.handle(resolved));
-        }
-        else
-        {
+        } else {
             final EntityFieldNameHandler from = EntityFieldNameHandler.from(method);
             return convertName(from.handle(polyTypeHandler.handle(resolved)));
         }
     }
 
-    private static enum PolyTypeHandler
-    {
-        STRAIGHT, POLY
-            {
-                @Override
-                String handle(String s)
-                {
-                    return s + "Type";
-                }
-            };
+    private static enum PolyTypeHandler {
+        STRAIGHT, POLY {
+            @Override
+            String handle(String s) {
+                return s + "Type";
+            }
+        };
 
-        String handle(String s)
-        {
+        String handle(String s) {
             return s;
         }
     }
 
-    private static enum EntityFieldNameHandler
-    {
-        PRIMITIVE, ENTITY
-            {
-                @Override
-                String handle(String s)
-                {
-                    return s + "ID";
-                }
-            };
+    private static enum EntityFieldNameHandler {
+        PRIMITIVE, ENTITY {
+            @Override
+            String handle(String s) {
+                return s + "ID";
+            }
+        };
 
-        String handle(String s)
-        {
+        String handle(String s) {
             return s;
         }
 
-        static EntityFieldNameHandler from(Method m)
-        {
+        static EntityFieldNameHandler from(Method m) {
             return from(isAttributeOfTypeEntity(m));
         }
 
-        static EntityFieldNameHandler from(boolean isEntity)
-        {
+        static EntityFieldNameHandler from(boolean isEntity) {
             return isEntity ? ENTITY : PRIMITIVE;
         }
     }
 
 
-    private FieldNameResolver findFieldNameResolver(final Method method)
-    {
-        return Iterables.find(fieldNameResolvers, new Predicate<FieldNameResolver>()
-        {
-            public boolean apply(FieldNameResolver input)
-            {
+    private FieldNameResolver findFieldNameResolver(final Method method) {
+        return Iterables.find(fieldNameResolvers, new Predicate<FieldNameResolver>() {
+            public boolean apply(FieldNameResolver input) {
                 return input.accept(method);
             }
         });
     }
 
-    private static boolean isAttributeOfTypeEntity(Method method)
-    {
+    private static boolean isAttributeOfTypeEntity(Method method) {
         final Class<?> attributeTypeFromMethod = Common.getAttributeTypeFromMethod(method);
         return attributeTypeFromMethod != null && RawEntity.class.isAssignableFrom(attributeTypeFromMethod);
     }

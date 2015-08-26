@@ -9,12 +9,11 @@ package net.java.ao;
  *
  * @see net.java.ao.EntityManager#migrate(Class[])
  */
-public interface SchemaConfiguration
-{
+public interface SchemaConfiguration {
     /**
      * Tells whether the table with the given table name should be managed by Active Objects.
      *
-     * @param tableName the name of the table to be managed (or not)
+     * @param tableName     the name of the table to be managed (or not)
      * @param caseSensitive whether or not the case of the table name should be taken in account
      * @return {@code true} if Active Objects is allowed to manage the table named {@code tableName}
      */

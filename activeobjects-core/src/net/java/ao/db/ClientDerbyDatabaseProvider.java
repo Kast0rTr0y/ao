@@ -23,15 +23,12 @@ import java.sql.SQLException;
 /**
  * @author Daniel Spiewak
  */
-public class ClientDerbyDatabaseProvider extends DerbyDatabaseProvider
-{
-    public ClientDerbyDatabaseProvider(DisposableDataSource dataSource)
-    {
+public class ClientDerbyDatabaseProvider extends DerbyDatabaseProvider {
+    public ClientDerbyDatabaseProvider(DisposableDataSource dataSource) {
         super(dataSource);
     }
 
     @Override
-    protected void setPostConnectionProperties(Connection conn) throws SQLException
-    {
+    protected void setPostConnectionProperties(Connection conn) throws SQLException {
     }
 }

@@ -24,15 +24,17 @@ import net.java.ao.schema.StringLength;
  */
 @Preload("title")
 public interface Comment extends Entity {
-	public String getTitle();
-	public void setTitle(String title);
-	
-    @StringLength(StringLength.UNLIMITED)
-	public String getText();
+    public String getTitle();
+
+    public void setTitle(String title);
 
     @StringLength(StringLength.UNLIMITED)
-	public void setText(String text);
-	
-	public Commentable getCommentable();
-	public void setCommentable(Commentable commentable);
+    public String getText();
+
+    @StringLength(StringLength.UNLIMITED)
+    public void setText(String text);
+
+    public Commentable getCommentable();
+
+    public void setCommentable(Commentable commentable);
 }

@@ -30,147 +30,137 @@
  */
 package net.java.ao.contacts.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import net.java.ao.contacts.db.EmailAddress;
+import net.java.ao.contacts.db.Friendship;
+import net.java.ao.contacts.db.Person;
+import org.jdesktop.fuse.InjectedResource;
+import org.jdesktop.fuse.ResourceInjector;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.sql.SQLException;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-
-import net.java.ao.contacts.db.EmailAddress;
-import net.java.ao.contacts.db.Person;
-import net.java.ao.contacts.db.Friendship;
-
-import org.jdesktop.fuse.InjectedResource;
-import org.jdesktop.fuse.ResourceInjector;
-
 /**
  * @author Daniel Spiewak
  */
 public class MainFrame extends JFrame {
-	@InjectedResource
-	private GradientPaint backgroundGradient;
-	
-	public MainFrame() {
-		super("Dogfood Contacts");
-		
-		ResourceInjector.get("ui.style").inject(this);
-		
-		add(new GradientHeader("Dogfood Contacts"), BorderLayout.NORTH);
-		
-		JPanel body = new JPanel() {
-			@Override
-			protected void paintComponent(Graphics g) {
-				Graphics2D g2 = (Graphics2D) g;
-				g2.setPaint(backgroundGradient);
-				g2.fillRect(0, 0, getWidth(), getHeight());
-			}
-		};
-		body.setLayout(new BorderLayout());
-		getContentPane().add(body);
-		
-		body.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
-		
-		final ContactsTable contactsTable = new ContactsTable();
-		contactsTable.addMouseListener(new MouseListener() {
-			private long clickTime = 0;
-			
-			public void mouseClicked(MouseEvent e) {
-				if (e.getWhen() - clickTime < 250) {
-					mouseDoubleClicked(e);
-				}
-				clickTime = e.getWhen();
-			}
-			
-			public void mouseDoubleClicked(MouseEvent e) {
-				EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, contactsTable.getSelectedContact());
-				dialog.setVisible(true);
-				
-				((ContactsModel) contactsTable.getModel()).refreshModel();
-			}
+    @InjectedResource
+    private GradientPaint backgroundGradient;
 
-			public void mouseEntered(MouseEvent e) {
-			}
+    public MainFrame() {
+        super("Dogfood Contacts");
 
-			public void mouseExited(MouseEvent e) {
-			}
+        ResourceInjector.get("ui.style").inject(this);
 
-			public void mousePressed(MouseEvent e) {
-			}
+        add(new GradientHeader("Dogfood Contacts"), BorderLayout.NORTH);
 
-			public void mouseReleased(MouseEvent e) {
-			}
-		});
-		
-		JScrollPane scrollPane = new JScrollPane(contactsTable);
-		scrollPane.getViewport().setBackground(Color.WHITE);
-		body.add(scrollPane);
-		
-		JPanel buttons = new JPanel();
-		buttons.setOpaque(false);
-		body.add(buttons, BorderLayout.SOUTH);
-		
-		JButton addContact = new JButton("Add Contact");
-		addContact.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, null);
-				dialog.setVisible(true);
-				
-				((ContactsModel) contactsTable.getModel()).refreshModel();
-			}
-		});
-		addContact.setOpaque(false);
-		buttons.add(addContact);
-		
-		JButton editContact = new JButton("Edit Contact");
-		editContact.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, contactsTable.getSelectedContact());
-				dialog.setVisible(true);
-				
-				((ContactsModel) contactsTable.getModel()).refreshModel();
-			}
-		});
-		editContact.setOpaque(false);
-		buttons.add(editContact);
-		
-		JButton removeContact = new JButton("Remove Contact");
-		removeContact.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					Person selectedContact = contactsTable.getSelectedContact();
-					for (EmailAddress address : selectedContact.getEmailAddresses()) {
-						UIManager.getManager().delete(address);
-					}
-					for (Friendship relation : UIManager.getManager().find(Friendship.class, "personAID = ? OR personBID = ?", 
-							selectedContact.getID(), selectedContact.getID())) {
-						UIManager.getManager().delete(relation);
-					}
-					
-					UIManager.getManager().delete(selectedContact);
-					
-					((ContactsModel) contactsTable.getModel()).refreshModel();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			}
-		});
-		removeContact.setOpaque(false);
-		buttons.add(removeContact);
-		
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setSize(500, 400);
-		
-		UIManager.centerWindow(this);
-	}
+        JPanel body = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setPaint(backgroundGradient);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        body.setLayout(new BorderLayout());
+        getContentPane().add(body);
+
+        body.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+
+        final ContactsTable contactsTable = new ContactsTable();
+        contactsTable.addMouseListener(new MouseListener() {
+            private long clickTime = 0;
+
+            public void mouseClicked(MouseEvent e) {
+                if (e.getWhen() - clickTime < 250) {
+                    mouseDoubleClicked(e);
+                }
+                clickTime = e.getWhen();
+            }
+
+            public void mouseDoubleClicked(MouseEvent e) {
+                EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, contactsTable.getSelectedContact());
+                dialog.setVisible(true);
+
+                ((ContactsModel) contactsTable.getModel()).refreshModel();
+            }
+
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+
+            public void mouseReleased(MouseEvent e) {
+            }
+        });
+
+        JScrollPane scrollPane = new JScrollPane(contactsTable);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        body.add(scrollPane);
+
+        JPanel buttons = new JPanel();
+        buttons.setOpaque(false);
+        body.add(buttons, BorderLayout.SOUTH);
+
+        JButton addContact = new JButton("Add Contact");
+        addContact.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, null);
+                dialog.setVisible(true);
+
+                ((ContactsModel) contactsTable.getModel()).refreshModel();
+            }
+        });
+        addContact.setOpaque(false);
+        buttons.add(addContact);
+
+        JButton editContact = new JButton("Edit Contact");
+        editContact.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                EditPersonDialog dialog = new EditPersonDialog(MainFrame.this, contactsTable.getSelectedContact());
+                dialog.setVisible(true);
+
+                ((ContactsModel) contactsTable.getModel()).refreshModel();
+            }
+        });
+        editContact.setOpaque(false);
+        buttons.add(editContact);
+
+        JButton removeContact = new JButton("Remove Contact");
+        removeContact.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Person selectedContact = contactsTable.getSelectedContact();
+                    for (EmailAddress address : selectedContact.getEmailAddresses()) {
+                        UIManager.getManager().delete(address);
+                    }
+                    for (Friendship relation : UIManager.getManager().find(Friendship.class, "personAID = ? OR personBID = ?",
+                            selectedContact.getID(), selectedContact.getID())) {
+                        UIManager.getManager().delete(relation);
+                    }
+
+                    UIManager.getManager().delete(selectedContact);
+
+                    ((ContactsModel) contactsTable.getModel()).refreshModel();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
+        removeContact.setOpaque(false);
+        buttons.add(removeContact);
+
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(500, 400);
+
+        UIManager.centerWindow(this);
+    }
 }

@@ -13,24 +13,22 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests for Blob data type
  */
-public final class BlobTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class BlobTypeTest extends ActiveObjectsIntegrationTest {
     private static byte[] SMALL_BLOB = "Some small sample".getBytes();
 
     // over 4000 bytes, as Oracle has issues with that.
     private static byte[] LARGE_BLOB;
 
-    static
-    {
+    static {
         String s = "123456789#"; // 10 chars
         StringBuilder sb = new StringBuilder(s.length() * 600);
-        for (int i = 0; i < 600; i++)
-        {
+        for (int i = 0; i < 600; i++) {
             sb.append(s);
         }
         sb.append(sb.length() + 4);
@@ -42,8 +40,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testByteArrayStore() throws Exception
-    {
+    public void testByteArrayStore() throws Exception {
         entityManager.migrate(ByteArrayBlobColumn.class);
 
         // create
@@ -72,8 +69,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testByteArrayNullColumnWithCreate() throws Exception
-    {
+    public void testByteArrayNullColumnWithCreate() throws Exception {
         entityManager.migrate(ByteArrayBlobColumn.class);
 
         // create
@@ -89,8 +85,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testByteArrayNullColumnWithSet() throws Exception
-    {
+    public void testByteArrayNullColumnWithSet() throws Exception {
         entityManager.migrate(ByteArrayBlobColumn.class);
 
         // create
@@ -108,8 +103,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
-    public void testInputStreamNullColumnWithCreate() throws Exception
-    {
+    public void testInputStreamNullColumnWithCreate() throws Exception {
         entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
@@ -125,8 +119,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
-    public void testInputStreamNullColumnWithSet() throws Exception
-    {
+    public void testInputStreamNullColumnWithSet() throws Exception {
         entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
@@ -145,8 +138,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
-    public void testInputStreamStore() throws Exception
-    {
+    public void testInputStreamStore() throws Exception {
         entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
@@ -176,8 +168,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullByteArrayStore() throws Exception
-    {
+    public void testNotNullByteArrayStore() throws Exception {
         entityManager.migrate(ByteArrayBlobColumn.class);
 
         // create
@@ -193,8 +184,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     // Transactional, as Oracle requires an active DB connection while reading an Entity's InputStream fields
-    public void testNotNullInputStreamStore() throws Exception
-    {
+    public void testNotNullInputStreamStore() throws Exception {
         entityManager.migrateDestructively(InputStreamBlobColumn.class);
 
         // create
@@ -210,8 +200,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnCreatingWithoutValue() throws Exception
-    {
+    public void testNotNullColumnCreatingWithoutValue() throws Exception {
         entityManager.migrate(NotNullByteArrayBlobColumn.class);
 
         // create
@@ -223,8 +212,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnSetNull() throws Exception
-    {
+    public void testNotNullColumnSetNull() throws Exception {
         entityManager.migrate(NotNullByteArrayBlobColumn.class);
 
         // create
@@ -239,8 +227,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
     }
 
@@ -249,8 +236,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -259,8 +245,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDeletion() throws Exception
-    {
+    public void testDeletion() throws Exception {
         entityManager.migrate(ByteArrayBlobColumn.class);
 
         // create
@@ -276,16 +261,14 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
         // TODO: check that blob got deleted
     }
 
-    private void assertByteArraysEquals(byte[] a, byte[] b)
-    {
+    private void assertByteArraysEquals(byte[] a, byte[] b) {
         assertEquals(new String(a), new String(b));
     }
 
     /**
      * Accessing the blob by getting the string
      */
-    public static interface ByteArrayBlobColumn extends Entity
-    {
+    public static interface ByteArrayBlobColumn extends Entity {
         public byte[] getData();
 
         public void setData(byte[] data);
@@ -294,8 +277,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Accessing the blob by an input stream
      */
-    public static interface InputStreamBlobColumn extends Entity
-    {
+    public static interface InputStreamBlobColumn extends Entity {
         public InputStream getData();
 
         public void setData(InputStream data);
@@ -304,8 +286,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Blob with not null constraint
      */
-    public static interface NotNullByteArrayBlobColumn extends Entity
-    {
+    public static interface NotNullByteArrayBlobColumn extends Entity {
         @NotNull
         public byte[] getData();
 
@@ -315,8 +296,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Accessing the blob by an input stream
      */
-    public static interface NotNullInputStreamBlobColumn extends Entity
-    {
+    public static interface NotNullInputStreamBlobColumn extends Entity {
         @NotNull
         public InputStream getData();
 
@@ -326,8 +306,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Default value - not supported
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("This is a blob!")
         public InputStream getData();
 
@@ -337,8 +316,7 @@ public final class BlobTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Empty default column - not supported
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public InputStream getData();
 

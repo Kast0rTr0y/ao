@@ -1,16 +1,10 @@
 package net.java.ao.it.datatypes;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-
-import net.java.ao.test.jdbc.NonTransactional;
-import org.junit.Test;
-
-import net.java.ao.*;
+import net.java.ao.ActiveObjectsConfigurationException;
+import net.java.ao.ActiveObjectsException;
+import net.java.ao.DBParam;
+import net.java.ao.Entity;
+import net.java.ao.RawEntity;
 import net.java.ao.schema.AutoIncrement;
 import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
@@ -18,15 +12,27 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.EntityUtils;
+import net.java.ao.test.jdbc.NonTransactional;
 import net.java.ao.util.DateUtils;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for Date data type (mapped to the Date class)
  */
-public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest {
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     /**
@@ -34,8 +40,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
     }
 
@@ -44,15 +49,13 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
     }
 
     @Test(expected = ActiveObjectsException.class)
     @NonTransactional
-    public void testDateTooFar() throws Exception
-    {
+    public void testDateTooFar() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam("ID", new Date(Long.MAX_VALUE)));
@@ -63,13 +66,11 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSpecialIds() throws Exception
-    {
+    public void testSpecialIds() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create a row with normal id
-        for (Date value : new Date[] {new Date(0), new Date(), DateUtils.MAX_DATE })
-        {
+        for (Date value : new Date[]{new Date(0), new Date(), DateUtils.MAX_DATE}) {
             SimpleColumn e = entityManager.create(SimpleColumn.class);
             e.setCreated(value);
             e.save();
@@ -85,7 +86,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
             expected.set(Calendar.MILLISECOND, 0);
             actual.set(Calendar.MILLISECOND, 0);
 
-            assertEquals(expected.getTime(),actual.getTime());
+            assertEquals(expected.getTime(), actual.getTime());
 
             checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", value);
         }
@@ -96,8 +97,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -120,7 +120,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         expected.set(Calendar.MILLISECOND, 0);
         actual.set(Calendar.MILLISECOND, 0);
 
-        assertEquals(expected.getTime(),actual.getTime());
+        assertEquals(expected.getTime(), actual.getTime());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getCreated", date);
     }
 
@@ -129,8 +129,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -139,8 +138,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testInvalidDefaultColumn() throws Exception
-    {
+    public void testInvalidDefaultColumn() throws Exception {
         entityManager.migrate(InvalidDefaultColumn.class);
     }
 
@@ -149,8 +147,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -169,7 +166,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         expected.set(Calendar.MILLISECOND, 0);
         actual.set(Calendar.MILLISECOND, 0);
 
-        assertEquals(expected.getTime(),actual.getTime());
+        assertEquals(expected.getTime(), actual.getTime());
 
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getCreated", date);
     }
@@ -179,8 +176,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -196,8 +192,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         Date date = new SimpleDateFormat(DATE_FORMAT).parse("2011-11-11 12:34:56");
@@ -216,8 +211,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -235,8 +229,8 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         expected.set(Calendar.MILLISECOND, 0);
         actual.set(Calendar.MILLISECOND, 0);
 
-        assertEquals(expected.getTime(),actual.getTime());
-        
+        assertEquals(expected.getTime(), actual.getTime());
+
         checkFieldValue(NotNullColumn.class, "getID", e.getID(), "getCreated", date);
     }
 
@@ -245,8 +239,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnSetNull() throws Exception
-    {
+    public void testNotNullColumnSetNull() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -261,8 +254,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -274,8 +266,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -287,8 +278,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDelete() throws Exception
-    {
+    public void testDelete() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -306,56 +296,40 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
         entityManager.delete(e);
         entityManager.flushAll();
 
-        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleColumn.class), new DbUtils.StatementCallback()
-        {
+        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleColumn.class), new DbUtils.StatementCallback() {
 
             @Override
-            public void setParameters(PreparedStatement statement) throws Exception
-            {
+            public void setParameters(PreparedStatement statement) throws Exception {
             }
 
             @Override
-            public void processResult(ResultSet resultSet) throws Exception
-            {
+            public void processResult(ResultSet resultSet) throws Exception {
                 assertFalse("table should have been empty", resultSet.next());
             }
         });
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Date fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Date fieldValue) throws Exception {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
-                        if (id instanceof Date)
-                        {
+                new DbUtils.StatementCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
+                        if (id instanceof Date) {
                             statement.setTimestamp(1, new java.sql.Timestamp(((Date) id).getTime()));
-                        }
-                        else
-                        {
+                        } else {
                             statement.setObject(1, id);
                         }
                     }
 
-                    public void processResult(ResultSet resultSet) throws Exception
-                    {
-                        if (resultSet.next())
-                        {
-                            if (fieldValue == null)
-                            {
+                    public void processResult(ResultSet resultSet) throws Exception {
+                        if (resultSet.next()) {
+                            if (fieldValue == null) {
                                 resultSet.getTimestamp(getFieldName(entityType, getterName));
                                 assertTrue(resultSet.wasNull());
-                            }
-                            else
-                            {
+                            } else {
                                 final DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT); // this date format doesn't include millis.
                                 assertEquals(dateFormat.format(new Date(fieldValue.getTime())), dateFormat.format(resultSet.getTimestamp(getFieldName(entityType, getterName))));
                             }
-                        }
-                        else
-                        {
+                        } else {
                             fail("No entry found in database with ID " + id);
                         }
                     }
@@ -366,8 +340,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * AutoIncrement primary key column - not supported
      */
-    public static interface AutoIncrementId extends RawEntity<Date>
-    {
+    public static interface AutoIncrementId extends RawEntity<Date> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -377,8 +350,7 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary key column
      */
-    public static interface SimpleId extends RawEntity<Date>
-    {
+    public static interface SimpleId extends RawEntity<Date> {
         @PrimaryKey("ID")
         public Date getId();
     }
@@ -386,49 +358,49 @@ public final class TimestampDateTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         public Date getCreated();
+
         public void setCreated(Date created);
     }
 
     /**
      * Empty default column - invalid date
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public Date getCreated();
+
         public void setCreated(Date created);
     }
 
     /**
      * Invalid default value - must be of the form yyyy-MM-dd
      */
-    public static interface InvalidDefaultColumn extends Entity
-    {
+    public static interface InvalidDefaultColumn extends Entity {
         @Default("Test")
         public Date getCreated();
+
         public void setCreated(Date created);
     }
 
     /**
      * Valid default value
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("2011-11-11 12:34:56")
         public Date getCreated();
+
         public void setCreated(Date created);
     }
 
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         public Date getCreated();
+
         public void setCreated(Date created);
     }
 }

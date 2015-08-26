@@ -11,12 +11,10 @@ import org.logicalcobwebs.proxool.ProxoolFacade;
 
 import java.sql.Driver;
 
-public class ProxoolDataSourceFactory implements DataSourceFactory
-{
+public class ProxoolDataSourceFactory implements DataSourceFactory {
     private static final String ALIAS = "active-objects";
 
-    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-    {
+    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password) {
         final ProxoolDataSource source = new ProxoolDataSource(ALIAS);
         source.setUser(username);
         source.setPassword(password);
@@ -24,25 +22,19 @@ public class ProxoolDataSourceFactory implements DataSourceFactory
         source.setDriverUrl(url);
         source.setMaximumConnectionCount(30);
 
-        return DelegatingDisposableDataSourceHandler.newInstance(source, new Disposable()
-        {
+        return DelegatingDisposableDataSourceHandler.newInstance(source, new Disposable() {
             @Override
-            public void dispose()
-            {
-                try
-                {
+            public void dispose() {
+                try {
                     ProxoolFacade.removeConnectionPool(ALIAS);
-                }
-                catch (ProxoolException e)
-                {
+                } catch (ProxoolException e) {
                     // ignored
                 }
             }
         });
     }
 
-    public static boolean isAvailable()
-    {
+    public static boolean isAvailable() {
         return ClassUtils.loadClass("org.logicalcobwebs.proxool.ProxoolDriver") != null;
     }
 }

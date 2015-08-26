@@ -3,7 +3,10 @@ package net.java.ao.benchmark;
 import net.java.ao.EntityStreamCallback;
 import net.java.ao.benchmark.model.Person;
 import net.java.ao.benchmark.model.PersonWithPreload;
-import net.java.ao.benchmark.util.*;
+import net.java.ao.benchmark.util.Report;
+import net.java.ao.benchmark.util.ReportPrinter;
+import net.java.ao.benchmark.util.StopWatch;
+import net.java.ao.benchmark.util.WikiReportPrinter;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.converters.NameConverters;
 import net.java.ao.test.converters.UpperCaseFieldNameConverter;
@@ -18,12 +21,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 @Data(BenchmarkDatabaseUpdater.class)
 @NameConverters(table = UpperCaseTableNameConverter.class, field = UpperCaseFieldNameConverter.class)
-public final class Benchmark extends ActiveObjectsIntegrationTest
-{
+public final class Benchmark extends ActiveObjectsIntegrationTest {
     private static final int NUMBER_OF_PERSONS = 10 * 1000;
 
     private final StopWatch<Integer> insertStopWatch = new StopWatch<Integer>("Inserts");
@@ -34,28 +36,24 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
     private final StopWatch<Integer> deleteStopWatch = new StopWatch<Integer>("Delete");
 
     @Before
-    public void warmUp()
-    {
+    public void warmUp() {
         checkNotNull(entityManager);
         entityManager.flushAll();
     }
 
     @Test
     @NonTransactional
-    public void runWithoutPreload() throws Exception
-    {
+    public void runWithoutPreload() throws Exception {
         run(Person.class);
     }
 
     @Test
     @NonTransactional
-    public void runWithPreload() throws Exception
-    {
+    public void runWithPreload() throws Exception {
         run(PersonWithPreload.class);
     }
 
-    private void run(Class<? extends Person> personClass) throws Exception
-    {
+    private void run(Class<? extends Person> personClass) throws Exception {
         System.out.printf("*** %s : %s ***\n", personClass.getName(), NUMBER_OF_PERSONS);
 
         for (int i = 0; i < 2; i++) // make sure things are correctly warmed up
@@ -69,50 +67,41 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         }
     }
 
-    private int warmUpInsertPersons(Class<? extends Person> personClass) throws SQLException
-    {
+    private int warmUpInsertPersons(Class<? extends Person> personClass) throws SQLException {
         final int warmUpNumber = 10;
-        for (int i = 0; i < warmUpNumber; i++)
-        {
+        for (int i = 0; i < warmUpNumber; i++) {
             insertPerson(personClass, i);
         }
         entityManager.flushAll();
         return warmUpNumber;
     }
 
-    private List<Integer> insertPersons(Class<? extends Person> personClass) throws SQLException
-    {
+    private List<Integer> insertPersons(Class<? extends Person> personClass) throws SQLException {
         final int warmUpNumber = warmUpInsertPersons(personClass);
         final int lastInsertIndex = warmUpNumber + NUMBER_OF_PERSONS;
         final List<Integer> personsKey = new ArrayList<Integer>(NUMBER_OF_PERSONS);
 
         insertStopWatch.start();
-        for (int i = warmUpNumber; i < lastInsertIndex; i++)
-        {
+        for (int i = warmUpNumber; i < lastInsertIndex; i++) {
             personsKey.add(insertPerson(personClass, i));
         }
         insertStopWatch.stop();
         return personsKey;
     }
 
-    private void updatePersons(Class<? extends Person> personClass, List<Integer> pks) throws SQLException
-    {
+    private void updatePersons(Class<? extends Person> personClass, List<Integer> pks) throws SQLException {
         updateStopWatch.start();
-        for (Integer i : pks)
-        {
+        for (Integer i : pks) {
             updatePerson(personClass, i);
         }
         updateStopWatch.stop();
     }
 
-    private <P extends Person> void streamPersons(Class<P> personClass) throws Exception
-    {
+    private <P extends Person> void streamPersons(Class<P> personClass) throws Exception {
         streamStopWatch.start();
-        entityManager.stream(personClass, new EntityStreamCallback<P, Integer>()
-        {
+        entityManager.stream(personClass, new EntityStreamCallback<P, Integer>() {
             @Override
-            public void onRowRead(P person)
-            {
+            public void onRowRead(P person) {
                 streamStopWatch.lap(new StringBuilder()
                         .append(person.getID())
                         .append("-")
@@ -125,8 +114,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         streamStopWatch.stop();
     }
 
-    private <P extends Person> P[] findPersons(Class<P> personClass) throws Exception
-    {
+    private <P extends Person> P[] findPersons(Class<P> personClass) throws Exception {
         entityManager.flushAll();
 
         findStopWatch.start();
@@ -134,8 +122,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         findStopWatch.stop();
 
         findLoopStopWatch.start();
-        for (Person person : all)
-        {
+        for (Person person : all) {
             findLoopStopWatch.lap(new StringBuilder()
                     .append(person.getID())
                     .append("-")
@@ -147,11 +134,9 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         return all;
     }
 
-    private <P extends Person> void deletePersons(P[] persons) throws Exception
-    {
+    private <P extends Person> void deletePersons(P[] persons) throws Exception {
         deleteStopWatch.start();
-        for (P person : persons)
-        {
+        for (P person : persons) {
             entityManager.delete(person);
             deleteStopWatch.lap(person.getID());
         }
@@ -159,8 +144,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
     }
 
 
-    private <P extends Person> int insertPerson(Class<P> personClass, int i) throws SQLException
-    {
+    private <P extends Person> int insertPerson(Class<P> personClass, int i) throws SQLException {
         final Person p = entityManager.create(personClass);
         p.setFirstName("firstName " + i);
         p.setLastName("lastName" + i);
@@ -169,8 +153,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         return p.getID();
     }
 
-    private void updatePerson(Class<? extends Person> personClass, int i) throws SQLException
-    {
+    private void updatePerson(Class<? extends Person> personClass, int i) throws SQLException {
         final Person p = entityManager.get(personClass, i);
         {
             p.setFirstName(p.getFirstName() + "#updated");
@@ -180,8 +163,7 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
     }
 
     @After
-    public void results()
-    {
+    public void results() {
         ReportPrinter printer = newReportPrinter();
 
         printer.print(newReport(insertStopWatch));
@@ -194,14 +176,12 @@ public final class Benchmark extends ActiveObjectsIntegrationTest
         System.out.println();
     }
 
-    private static ReportPrinter newReportPrinter()
-    {
+    private static ReportPrinter newReportPrinter() {
 //        return new PrettyPrintReportPrinter();
         return new WikiReportPrinter();
     }
 
-    private static Report newReport(StopWatch<?> stopWatch)
-    {
+    private static Report newReport(StopWatch<?> stopWatch) {
         return stopWatch.getReport();
     }
 }

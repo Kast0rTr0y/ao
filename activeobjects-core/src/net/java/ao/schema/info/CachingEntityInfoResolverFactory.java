@@ -6,8 +6,9 @@ import net.java.ao.types.TypeManager;
 /**
  * A factory which creates {@link CachingEntityInfoResolver CachingEntityInfoResolvers} which delegate to
  * {@link SimpleEntityInfoResolver SimpleEntityInfoResolvers}
-  * @see SimpleEntityInfoResolver
-  * @see CachingEntityInfoResolver
+ *
+ * @see SimpleEntityInfoResolver
+ * @see CachingEntityInfoResolver
  */
 public class CachingEntityInfoResolverFactory extends SimpleEntityInfoResolverFactory {
     @Override

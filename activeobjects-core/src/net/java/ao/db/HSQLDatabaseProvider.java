@@ -15,19 +15,8 @@
  */
 package net.java.ao.db;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
 import net.java.ao.Common;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
@@ -47,146 +36,145 @@ import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.google.common.collect.Iterables.concat;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * @author Daniel Spiewak
  */
-public final class HSQLDatabaseProvider extends DatabaseProvider
-{
-    public HSQLDatabaseProvider(DisposableDataSource dataSource)
-    {
+public final class HSQLDatabaseProvider extends DatabaseProvider {
+    public HSQLDatabaseProvider(DisposableDataSource dataSource) {
         this(dataSource, "PUBLIC");
     }
 
-    public HSQLDatabaseProvider(DisposableDataSource dataSource, String schema)
-    {
+    public HSQLDatabaseProvider(DisposableDataSource dataSource, String schema) {
         super(dataSource, schema, TypeManager.hsql());
     }
 
     @Override
-	@SuppressWarnings("unused")
+    @SuppressWarnings("unused")
     public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
                                                             Class<T> entityType, Class<K> pkType,
-                                                            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
-    {
-		StringBuilder sql = new StringBuilder("INSERT INTO " + processID(table) + " (");
+                                                            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException {
+        StringBuilder sql = new StringBuilder("INSERT INTO " + processID(table) + " (");
 
-		for (DBParam param : params) {
-			sql.append(processID(param.getField()));
-			sql.append(',');
-		}
-		if (params.length > 0) {
-			sql.setLength(sql.length() - 1);
-		} else {
-			sql.append(processID(pkField));
-		}
+        for (DBParam param : params) {
+            sql.append(processID(param.getField()));
+            sql.append(',');
+        }
+        if (params.length > 0) {
+            sql.setLength(sql.length() - 1);
+        } else {
+            sql.append(processID(pkField));
+        }
 
-		sql.append(") VALUES (");
+        sql.append(") VALUES (");
 
-		for (DBParam param : params) {
-			sql.append("?,");
-		}
-		if (params.length > 0) {
-			sql.setLength(sql.length() - 1);
-		} else {
-			sql.append("NULL");
-		}
+        for (DBParam param : params) {
+            sql.append("?,");
+        }
+        if (params.length > 0) {
+            sql.setLength(sql.length() - 1);
+        } else {
+            sql.append("NULL");
+        }
 
-		sql.append(")");
+        sql.append(")");
 
-		return executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
-	}
-
-	@Override
-    protected synchronized <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
-            Class<T> entityType, Class<K> pkType,
-            String pkField, String sql, DBParam... params) throws SQLException
-    {
-	    K back = null;
-
-		PreparedStatement stmt = preparedStatement(conn, sql);
-
-		for (int i = 0; i < params.length; i++) {
-			Object value = params[i].getValue();
-
-			if (value instanceof RawEntity<?>) {
-				value = Common.getPrimaryKeyValue((RawEntity<Object>) value);
-			}
-
-			if (params[i].getField().equalsIgnoreCase(pkField)) {
-				back = (K) value;
-			}
-
-			if (value == null) {
-				putNull(stmt, i + 1);
-			} else {
-				TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
-				type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
-			}
-		}
-
-		stmt.executeUpdate();
-		stmt.close();
-
-		if (back == null) {
-			stmt = conn.prepareStatement("CALL IDENTITY()");		// WARNING	potential breakage here if dealing with INSERTs outside ORM control
-
-			ResultSet res = stmt.executeQuery();
-			if (res.next()) {
-				 back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
-			}
-			res.close();
-			stmt.close();
-		}
-
-		return back;
-	}
-
-	@Override
-	public Object parseValue(int type, String value) {
-		if (value == null || value.equals("") || value.equals("NULL")) {
-			return null;
-		}
-
-		switch (type) {
-			case Types.TIMESTAMP:
-			case Types.DATE:
-			case Types.TIME:
-            case Types.VARCHAR:
-				Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
-				if (matcher.find()) {
-					value = matcher.group(1);
-				}
-			break;
-		}
-
-		return super.parseValue(type, value);
-	}
-
-	@Override
-	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, getSchema(), null, new String[] {"TABLE"});
-	}
+        return executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
+    }
 
     @Override
-    public void dispose()
-    {
+    protected synchronized <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn,
+                                                                                   Class<T> entityType, Class<K> pkType,
+                                                                                   String pkField, String sql, DBParam... params) throws SQLException {
+        K back = null;
+
+        PreparedStatement stmt = preparedStatement(conn, sql);
+
+        for (int i = 0; i < params.length; i++) {
+            Object value = params[i].getValue();
+
+            if (value instanceof RawEntity<?>) {
+                value = Common.getPrimaryKeyValue((RawEntity<Object>) value);
+            }
+
+            if (params[i].getField().equalsIgnoreCase(pkField)) {
+                back = (K) value;
+            }
+
+            if (value == null) {
+                putNull(stmt, i + 1);
+            } else {
+                TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
+                type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
+            }
+        }
+
+        stmt.executeUpdate();
+        stmt.close();
+
+        if (back == null) {
+            stmt = conn.prepareStatement("CALL IDENTITY()");        // WARNING	potential breakage here if dealing with INSERTs outside ORM control
+
+            ResultSet res = stmt.executeQuery();
+            if (res.next()) {
+                back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
+            }
+            res.close();
+            stmt.close();
+        }
+
+        return back;
+    }
+
+    @Override
+    public Object parseValue(int type, String value) {
+        if (value == null || value.equals("") || value.equals("NULL")) {
+            return null;
+        }
+
+        switch (type) {
+            case Types.TIMESTAMP:
+            case Types.DATE:
+            case Types.TIME:
+            case Types.VARCHAR:
+                Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
+                if (matcher.find()) {
+                    value = matcher.group(1);
+                }
+                break;
+        }
+
+        return super.parseValue(type, value);
+    }
+
+    @Override
+    public ResultSet getTables(Connection conn) throws SQLException {
+        return conn.getMetaData().getTables(null, getSchema(), null, new String[]{"TABLE"});
+    }
+
+    @Override
+    public void dispose() {
         Connection conn = null;
         Statement stmt = null;
-        try
-        {
+        try {
             conn = getConnection();
             stmt = conn.createStatement();
             stmt.executeUpdate("SHUTDOWN");
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             // ignored
-        }
-        finally
-        {
+        } finally {
             closeQuietly(stmt);
             closeQuietly(conn);
         }
@@ -194,179 +182,157 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected String renderQuerySelect(final Query query, TableNameConverter converter, boolean count) {
-		StringBuilder sql = new StringBuilder();
-		String tableName = query.getTable();
+    protected String renderQuerySelect(final Query query, TableNameConverter converter, boolean count) {
+        StringBuilder sql = new StringBuilder();
+        String tableName = query.getTable();
 
-		if (tableName == null) {
-			tableName = converter.getName(query.getTableType());
-		}
+        if (tableName == null) {
+            tableName = converter.getName(query.getTableType());
+        }
 
-		switch (query.getType()) {
-			case SELECT:
+        switch (query.getType()) {
+            case SELECT:
 
                 // Must match this syntax: http://www.hsqldb.org/doc/guide/ch09.html#select-section
 
-				sql.append("SELECT ");
+                sql.append("SELECT ");
 
                 int limit = query.getLimit();
                 int offset = query.getOffset();
-                if (limit >= 0 || offset > 0)
-                {
+                if (limit >= 0 || offset > 0) {
                     sql.append("LIMIT ");
 
-                    if (offset > 0)
-                    {
+                    if (offset > 0) {
                         sql.append(offset);
-                    }
-                    else
-                    {
+                    } else {
                         sql.append(0);
                     }
                     sql.append(" ");
 
-                    if (limit >= 0)
-                    {
+                    if (limit >= 0) {
                         sql.append(limit);
-                    }
-                    else
-                    {
+                    } else {
                         sql.append(0);
                     }
                     sql.append(" ");
                 }
 
-                if (query.isDistinct())
-                {
+                if (query.isDistinct()) {
                     sql.append("DISTINCT ");
                 }
 
-                if (count)
-                {
+                if (count) {
                     sql.append("COUNT(*)");
-                }
-                else
-                {
+                } else {
                     sql.append(querySelectFields(query, converter));
                 }
                 sql.append(" FROM ").append(queryTableName(query, converter));
-			break;
-		}
+                break;
+        }
 
-		return sql.toString();
-	}
-
-    @Override
-	protected String renderQueryLimit(Query query) {
-		return "";
-	}
+        return sql.toString();
+    }
 
     @Override
-	protected String renderAutoIncrement() {
-		return "GENERATED BY DEFAULT AS IDENTITY (START WITH 1)";
-	}
-
-	@Override
-	protected String getDateFormat() {
-		return "yyyy-MM-dd HH:mm:ss.SSS";
-	}
-
-	@Override
-	protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
-		return "";
-	}
-
-	@Override
-	protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
-		StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
-
-		for (DDLField field : table.getFields()) {
-			if (field.isUnique()) {
-				back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
-			}
-		}
-
-		return back.toString();
-	}
-
-	@Override
-	protected String renderValue(Object value) {
-		if (value instanceof Boolean) {
-			if (value.equals(true)) {
-				return "TRUE";
-			}
-
-			return "FALSE";
-		}
-
-		return super.renderValue(value);
-	}
+    protected String renderQueryLimit(Query query) {
+        return "";
+    }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected String renderAutoIncrement() {
+        return "GENERATED BY DEFAULT AS IDENTITY (START WITH 1)";
+    }
+
+    @Override
+    protected String getDateFormat() {
+        return "yyyy-MM-dd HH:mm:ss.SSS";
+    }
+
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
+        return "";
+    }
+
+    @Override
+    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
+        StringBuilder back = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
+
+        for (DDLField field : table.getFields()) {
+            if (field.isUnique()) {
+                back.append(" CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE(").append(processID(field.getName())).append("),\n");
+            }
+        }
+
+        return back.toString();
+    }
+
+    @Override
+    protected String renderValue(Object value) {
+        if (value instanceof Boolean) {
+            if (value.equals(true)) {
+                return "TRUE";
+            }
+
+            return "FALSE";
+        }
+
+        return super.renderValue(value);
+    }
+
+    @Override
+    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
         final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
-        if (field.isUnique())
-        {
+        if (field.isUnique()) {
             return concat(back, ImmutableList.of(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field)));
         }
         return back;
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
         ImmutableList.Builder<SQLAction> sql = ImmutableList.builder();
 
         // dropping foreign keys that affect the given column, as they HSQL doesn't like updating columns used in foreign keys!
         final Iterable<DDLForeignKey> foreignKeysForField = findForeignKeysForField(table, oldField);
-        for (DDLForeignKey fk : foreignKeysForField)
-        {
-                sql.add(renderAlterTableDropKey(fk));
+        for (DDLForeignKey fk : foreignKeysForField) {
+            sql.add(renderAlterTableDropKey(fk));
         }
 
         sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
-        if (!field.isPrimaryKey())
-        {
+        if (!field.isPrimaryKey()) {
             final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
-            if (!oldField.isUnique() && field.isUnique())
-            {
+            if (!oldField.isUnique() && field.isUnique()) {
                 sql.add(renderAddUniqueConstraint(uniqueNameConverter, table, field));
             }
-            if (oldField.isUnique() && !field.isUnique())
-            {
+            if (oldField.isUnique() && !field.isUnique()) {
                 sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ")
                         .append(withSchema(table.getName()))
                         .append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
             }
 
-            if (!field.isNotNull())
-            {
+            if (!field.isNotNull()) {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ALTER COLUMN ").append(oldField.getName())
                         .append(" SET NULL")));
             }
 
-            if (field.isNotNull())
-            {
+            if (field.isNotNull()) {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ALTER COLUMN ").append(oldField.getName())
                         .append(" SET NOT NULL")));
             }
 
-            if (field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue()))
-            {
+            if (field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ALTER COLUMN ").append(oldField.getName())
                         .append(" SET DEFAULT ").append(renderValue(field.getDefaultValue()))));
             }
 
-            if (field.getDefaultValue() == null && oldField.getDefaultValue() != null)
-            {
+            if (field.getDefaultValue() == null && oldField.getDefaultValue() != null) {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ALTER COLUMN ").append(oldField.getName())
@@ -375,17 +341,14 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
         }
 
 
-
         // re-enabling the foreign keys!
-        for (DDLForeignKey fk : foreignKeysForField)
-        {
+        for (DDLForeignKey fk : foreignKeysForField) {
             sql.add(renderAlterTableAddKey(fk));
         }
         return sql.build();
     }
 
-    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         return SQLAction.of(new StringBuilder()
                 .append("ALTER TABLE ").append(withSchema(table.getName()))
                 .append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))
@@ -393,35 +356,31 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
-	{
-		StringBuilder current = new StringBuilder();
+    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
+        StringBuilder current = new StringBuilder();
 
-		current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
-		current.append(renderField(nameConverters, table, field, options));
+        current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" ALTER COLUMN ");
+        current.append(renderField(nameConverters, table, field, options));
 
-		return SQLAction.of(current);
-	}
+        return SQLAction.of(current);
+    }
 
     @Override
-    protected RenderFieldOptions renderFieldOptionsInAlterColumn()
-    {
+    protected RenderFieldOptions renderFieldOptionsInAlterColumn() {
         return new RenderFieldOptions(true, false, false);
     }
 
     @Override
-	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
-	{
-		StringBuilder back = new StringBuilder("ALTER TABLE ");
+    protected SQLAction renderAlterTableDropKey(DDLForeignKey key) {
+        StringBuilder back = new StringBuilder("ALTER TABLE ");
 
-		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+        back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
-		return SQLAction.of(back);
-	}
+        return SQLAction.of(back);
+    }
 
     @Override
-    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         String indexName = getExistingIndexName(indexNameConverter, index);
         return SQLAction.of(new StringBuilder("DROP INDEX ")
                 .append(withSchema(indexName))
@@ -429,14 +388,14 @@ public final class HSQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected Set<String> getReservedWords() {
-		return RESERVED_WORDS;
-	}
+    protected Set<String> getReservedWords() {
+        return RESERVED_WORDS;
+    }
 
-	@Override
-	public boolean isCaseSensitive() {
-		return false;
-	}
+    @Override
+    public boolean isCaseSensitive() {
+        return false;
+    }
 
     private static final Set<String> RESERVED_WORDS = ImmutableSet.of(
             "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "ARRAY",

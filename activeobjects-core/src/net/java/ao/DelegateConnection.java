@@ -21,8 +21,8 @@ import java.sql.Connection;
  * @author Daniel Spiewak
  */
 public interface DelegateConnection extends Connection {
-	
-	public void setCloseable(boolean closeable);
 
-	public boolean isCloseable();
+    public void setCloseable(boolean closeable);
+
+    public boolean isCloseable();
 }
