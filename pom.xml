@@ -255,8 +255,8 @@
                                     <version>[2.1.0,)</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <message>Active Objects requires Java 6 or later to be built.</message>
-                                    <version>[1.6,)</version>
+                                    <message>Active Objects requires Java 7 or later to be built.</message>
+                                    <version>[1.7,)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
