@@ -2,8 +2,7 @@ package net.java.ao.schema.helper;
 
 import net.java.ao.types.TypeInfo;
 
-public interface Field
-{
+public interface Field {
     String getName();
 
     TypeInfo<?> getDatabaseType();

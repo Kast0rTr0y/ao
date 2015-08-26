@@ -1,6 +1,5 @@
 package net.java.ao.schema;
 
-public interface IndexNameConverter
-{
+public interface IndexNameConverter {
     String getName(String tableName, String fieldName);
 }

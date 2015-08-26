@@ -21,93 +21,77 @@ import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.info.CachingEntityInfoResolverFactory;
 import net.java.ao.schema.info.EntityInfoResolverFactory;
 
-import static com.google.common.base.Preconditions.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B extends AbstractEntityManagerBuilderWithDatabaseProperties>
-{
+public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B extends AbstractEntityManagerBuilderWithDatabaseProperties> {
     private final BuilderDatabaseProperties databaseProperties;
     private final BuilderEntityManagerConfiguration configuration;
 
-    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties)
-    {
+    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties) {
         this(databaseProperties, new BuilderEntityManagerConfiguration());
     }
 
-    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration)
-    {
+    AbstractEntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties, BuilderEntityManagerConfiguration configuration) {
         this.databaseProperties = checkNotNull(databaseProperties);
         this.configuration = checkNotNull(configuration);
     }
 
-    public B schema(String schema)
-    {
+    public B schema(String schema) {
         databaseProperties.setSchema(schema);
         return cast();
     }
 
-    public B tableNameConverter(TableNameConverter tableNameConverter)
-    {
+    public B tableNameConverter(TableNameConverter tableNameConverter) {
         configuration.setTableNameConverter(checkNotNull(tableNameConverter));
         return cast();
     }
 
-    public B fieldNameConverter(FieldNameConverter fieldNameConverter)
-    {
+    public B fieldNameConverter(FieldNameConverter fieldNameConverter) {
         configuration.setFieldNameConverter(checkNotNull(fieldNameConverter));
         return cast();
     }
 
-    public B sequenceNameConverter(SequenceNameConverter sequenceNameConverter)
-    {
+    public B sequenceNameConverter(SequenceNameConverter sequenceNameConverter) {
         configuration.setSequenceNameConverter(checkNotNull(sequenceNameConverter));
         return cast();
     }
 
-    public B triggerNameConverter(TriggerNameConverter triggerNameConverter)
-    {
+    public B triggerNameConverter(TriggerNameConverter triggerNameConverter) {
         configuration.setTriggerNameConverter(checkNotNull(triggerNameConverter));
         return cast();
     }
 
-    public B indexNameConverter(IndexNameConverter indexNameConverter)
-    {
+    public B indexNameConverter(IndexNameConverter indexNameConverter) {
         configuration.setIndexNameConverter(checkNotNull(indexNameConverter));
         return cast();
     }
 
-    public B uniqueNameConverter(UniqueNameConverter uniqueNameConverter)
-    {
+    public B uniqueNameConverter(UniqueNameConverter uniqueNameConverter) {
         configuration.setUniqueNameConverter(checkNotNull(uniqueNameConverter));
         return cast();
     }
 
-    public B schemaConfiguration(SchemaConfiguration schemaConfiguration)
-    {
+    public B schemaConfiguration(SchemaConfiguration schemaConfiguration) {
         configuration.setSchemaConfiguration(schemaConfiguration);
         return cast();
     }
 
-    final BuilderDatabaseProperties getDatabaseProperties()
-    {
+    final BuilderDatabaseProperties getDatabaseProperties() {
         return databaseProperties;
     }
 
-    final BuilderEntityManagerConfiguration getEntityManagerConfiguration()
-    {
+    final BuilderEntityManagerConfiguration getEntityManagerConfiguration() {
         return configuration;
     }
 
     public abstract EntityManager build();
 
     @SuppressWarnings("unchecked")
-    private B cast()
-    {
+    private B cast() {
         return (B) this;
     }
 
-    static class BuilderEntityManagerConfiguration implements EntityManagerConfiguration
-    {
+    static class BuilderEntityManagerConfiguration implements EntityManagerConfiguration {
         private SchemaConfiguration schemaConfiguration;
         private TableNameConverter tableNameConverter;
         private FieldNameConverter fieldNameConverter;
@@ -118,14 +102,12 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
         private EntityInfoResolverFactory entityInfoResolverFactory;
 
         @Override
-        public boolean useWeakCache()
-        {
+        public boolean useWeakCache() {
             return false;
         }
 
         @Override
-        public NameConverters getNameConverters()
-        {
+        public NameConverters getNameConverters() {
             return new SimpleNameConverters(
                     getTableNameConverter(),
                     getFieldNameConverter(),
@@ -135,119 +117,96 @@ public abstract class AbstractEntityManagerBuilderWithDatabaseProperties<B exten
                     getUniqueNameConverter());
         }
 
-        private TableNameConverter getTableNameConverter()
-        {
+        private TableNameConverter getTableNameConverter() {
             return tableNameConverter != null ? tableNameConverter : defaultTableNameConverter();
         }
 
-        private static TableNameConverter defaultTableNameConverter()
-        {
+        private static TableNameConverter defaultTableNameConverter() {
             return new TableAnnotationTableNameConverter(new CamelCaseTableNameConverter());
         }
 
-        private SequenceNameConverter getSequenceNameConverter()
-        {
+        private SequenceNameConverter getSequenceNameConverter() {
             return sequenceNameConverter != null ? sequenceNameConverter : defaultSequenceNameConverter();
         }
 
-        private TriggerNameConverter getTriggerNameConverter()
-        {
+        private TriggerNameConverter getTriggerNameConverter() {
             return triggerNameConverter != null ? triggerNameConverter : defaultTriggerNameConverter();
         }
 
-        private UniqueNameConverter getUniqueNameConverter()
-        {
+        private UniqueNameConverter getUniqueNameConverter() {
             return uniqueNameConverter != null ? uniqueNameConverter : defaultUniqueNameConverter();
         }
 
-        private UniqueNameConverter defaultUniqueNameConverter()
-        {
+        private UniqueNameConverter defaultUniqueNameConverter() {
             return new DefaultUniqueNameConverter();
         }
 
-        private IndexNameConverter getIndexNameConverter()
-        {
+        private IndexNameConverter getIndexNameConverter() {
             return indexNameConverter != null ? indexNameConverter : defaultIndexNameConverter();
         }
 
-        private IndexNameConverter defaultIndexNameConverter()
-        {
+        private IndexNameConverter defaultIndexNameConverter() {
             return new DefaultIndexNameConverter();
         }
 
-        private TriggerNameConverter defaultTriggerNameConverter()
-        {
+        private TriggerNameConverter defaultTriggerNameConverter() {
             return new DefaultTriggerNameConverter();
         }
 
-        private SequenceNameConverter defaultSequenceNameConverter()
-        {
+        private SequenceNameConverter defaultSequenceNameConverter() {
             return new DefaultSequenceNameConverter();
         }
 
-        private FieldNameConverter getFieldNameConverter()
-        {
+        private FieldNameConverter getFieldNameConverter() {
             return fieldNameConverter != null ? fieldNameConverter : defaultFieldNameConverter();
         }
 
-        private static CamelCaseFieldNameConverter defaultFieldNameConverter()
-        {
+        private static CamelCaseFieldNameConverter defaultFieldNameConverter() {
             return new CamelCaseFieldNameConverter();
         }
 
-        public void setTableNameConverter(TableNameConverter tableNameConverter)
-        {
+        public void setTableNameConverter(TableNameConverter tableNameConverter) {
             this.tableNameConverter = tableNameConverter;
         }
 
-        public void setFieldNameConverter(FieldNameConverter fieldNameConverter)
-        {
+        public void setFieldNameConverter(FieldNameConverter fieldNameConverter) {
             this.fieldNameConverter = fieldNameConverter;
         }
 
-        public void setSequenceNameConverter(SequenceNameConverter sequenceNameConverter)
-        {
+        public void setSequenceNameConverter(SequenceNameConverter sequenceNameConverter) {
             this.sequenceNameConverter = sequenceNameConverter;
         }
 
-        public void setTriggerNameConverter(TriggerNameConverter triggerNameConverter)
-        {
+        public void setTriggerNameConverter(TriggerNameConverter triggerNameConverter) {
             this.triggerNameConverter = triggerNameConverter;
         }
 
-        public void setIndexNameConverter(IndexNameConverter indexNameConverter)
-        {
+        public void setIndexNameConverter(IndexNameConverter indexNameConverter) {
             this.indexNameConverter = indexNameConverter;
         }
 
-        public void setUniqueNameConverter(UniqueNameConverter uniqueNameConverter)
-        {
+        public void setUniqueNameConverter(UniqueNameConverter uniqueNameConverter) {
             this.uniqueNameConverter = uniqueNameConverter;
         }
 
-        public SchemaConfiguration getSchemaConfiguration()
-        {
+        public SchemaConfiguration getSchemaConfiguration() {
             return schemaConfiguration != null ? schemaConfiguration : new DefaultSchemaConfiguration();
         }
 
-        public void setSchemaConfiguration(SchemaConfiguration schemaConfiguration)
-        {
+        public void setSchemaConfiguration(SchemaConfiguration schemaConfiguration) {
             this.schemaConfiguration = schemaConfiguration;
         }
 
         @Override
-        public EntityInfoResolverFactory getEntityInfoResolverFactory()
-        {
+        public EntityInfoResolverFactory getEntityInfoResolverFactory() {
             return entityInfoResolverFactory != null ? entityInfoResolverFactory : defaultSchemaInfoResolverFactory();
         }
 
-        public void setEntityInfoResolverFactory(EntityInfoResolverFactory entityInfoResolverFactory)
-        {
+        public void setEntityInfoResolverFactory(EntityInfoResolverFactory entityInfoResolverFactory) {
             this.entityInfoResolverFactory = entityInfoResolverFactory;
         }
 
-        private static EntityInfoResolverFactory defaultSchemaInfoResolverFactory()
-        {
+        private static EntityInfoResolverFactory defaultSchemaInfoResolverFactory() {
             return new CachingEntityInfoResolverFactory();
         }
     }

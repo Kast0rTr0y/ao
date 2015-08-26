@@ -19,6 +19,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface Book extends Publication {
-	public boolean isHardcover();
-	public void setHardcover(boolean hardcover);
+    public boolean isHardcover();
+
+    public void setHardcover(boolean hardcover);
 }

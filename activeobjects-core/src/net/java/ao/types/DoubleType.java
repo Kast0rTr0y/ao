@@ -1,43 +1,37 @@
 package net.java.ao.types;
 
+import net.java.ao.EntityManager;
+import net.java.ao.util.DoubleUtils;
+import net.java.ao.util.StringUtils;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import net.java.ao.util.DoubleUtils;
-
-import net.java.ao.EntityManager;
-import net.java.ao.util.StringUtils;
-
+import static java.sql.Types.DECIMAL;
 import static java.sql.Types.DOUBLE;
 import static java.sql.Types.NUMERIC;
-import static java.sql.Types.DECIMAL;
 
-final class DoubleType extends AbstractLogicalType<Double>
-{
-    public DoubleType()
-    {
+final class DoubleType extends AbstractLogicalType<Double> {
+    public DoubleType() {
         super("Double",
-              new Class<?>[] { Double.class, double.class },
-              DOUBLE, new Integer[] { DOUBLE, NUMERIC, DECIMAL });
+                new Class<?>[]{Double.class, double.class},
+                DOUBLE, new Integer[]{DOUBLE, NUMERIC, DECIMAL});
     }
 
     @Override
     public Double pullFromDatabase(EntityManager manager, ResultSet res, Class<Double> type, String columnName)
-        throws SQLException
-    {
+            throws SQLException {
         return res.getDouble(columnName);
     }
-    
+
     @Override
-    protected Double validateInternal(Double value)
-    {
+    protected Double validateInternal(Double value) {
         DoubleUtils.checkDouble(value);
         return value;
     }
-    
+
     @Override
-    public Double parse(String input)
-    {
+    public Double parse(String input) {
         return StringUtils.isBlank(input) ? null : Double.parseDouble(input);
-    } 
+    }
 }

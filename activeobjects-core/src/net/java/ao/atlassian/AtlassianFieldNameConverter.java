@@ -18,16 +18,15 @@ import net.java.ao.schema.UnderscoreFieldNameConverter;
 
 import java.lang.reflect.Method;
 
-import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Lists.*;
-import static net.java.ao.atlassian.ConverterUtils.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Lists.newArrayList;
+import static net.java.ao.atlassian.ConverterUtils.MAX_LENGTH;
+import static net.java.ao.atlassian.ConverterUtils.checkLength;
 
-public final class AtlassianFieldNameConverter implements FieldNameConverter, FieldNameProcessor
-{
+public final class AtlassianFieldNameConverter implements FieldNameConverter, FieldNameProcessor {
     private AbstractFieldNameConverter fieldNameConverter;
 
-    public AtlassianFieldNameConverter()
-    {
+    public AtlassianFieldNameConverter() {
         fieldNameConverter = new UnderscoreFieldNameConverter(Case.UPPER, newArrayList(
                 new IgnoredFieldNameResolver(),
                 new RelationalFieldNameResolver(),
@@ -42,8 +41,7 @@ public final class AtlassianFieldNameConverter implements FieldNameConverter, Fi
     }
 
     @Override
-    public String getName(Method method)
-    {
+    public String getName(Method method) {
         final String name = fieldNameConverter.getName(method);
         return checkLength(name,
                 "Invalid entity, generated field name (" + name + ") for method '" + method + "' is too long! " +
@@ -51,8 +49,7 @@ public final class AtlassianFieldNameConverter implements FieldNameConverter, Fi
     }
 
     @Override
-    public String getPolyTypeName(Method method)
-    {
+    public String getPolyTypeName(Method method) {
         final String name = fieldNameConverter.getPolyTypeName(method);
         return checkLength(name,
                 "Invalid entity, generated field polymorphic type name (" + name + ") for method '" + method + "' is too long! " +
@@ -60,35 +57,29 @@ public final class AtlassianFieldNameConverter implements FieldNameConverter, Fi
     }
 
     @Override
-    public String convertName(String name)
-    {
+    public String convertName(String name) {
         return fieldNameConverter.convertName(name);
     }
 
-    private static final class TransformingFieldNameResolver implements FieldNameResolver
-    {
+    private static final class TransformingFieldNameResolver implements FieldNameResolver {
         private final FieldNameResolver delegate;
 
-        public TransformingFieldNameResolver(FieldNameResolver delegate)
-        {
+        public TransformingFieldNameResolver(FieldNameResolver delegate) {
             this.delegate = checkNotNull(delegate);
         }
 
         @Override
-        public boolean accept(Method method)
-        {
+        public boolean accept(Method method) {
             return delegate.accept(method);
         }
 
         @Override
-        public String resolve(Method method)
-        {
+        public String resolve(Method method) {
             return delegate.resolve(method);
         }
 
         @Override
-        public boolean transform()
-        {
+        public boolean transform() {
             return true;
         }
     }

@@ -33,8 +33,7 @@ import net.java.ao.RawEntity;
  *
  * @author Daniel Spiewak
  */
-public interface TableNameConverter
-{
+public interface TableNameConverter {
     /**
      * Generates a table name to correspond with the specified class. The
      * algorithm used must check for the existance of the {@link Table}

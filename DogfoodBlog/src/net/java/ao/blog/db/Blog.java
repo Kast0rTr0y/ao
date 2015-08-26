@@ -22,9 +22,10 @@ import net.java.ao.OneToMany;
  * @author Daniel Spiewak
  */
 public interface Blog extends Entity {
-	public String getName();
-	public void setName(String name);
-	
-	@OneToMany
-	public Post[] getPosts();
+    public String getName();
+
+    public void setName(String name);
+
+    @OneToMany
+    public Post[] getPosts();
 }

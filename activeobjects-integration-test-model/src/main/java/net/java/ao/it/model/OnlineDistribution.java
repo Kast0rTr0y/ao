@@ -25,12 +25,11 @@ import java.net.URL;
  * @author Daniel Spiewak
  */
 @Preload("url")
-public interface OnlineDistribution extends Distribution
-{
-	
-	@Accessor("url")
-	public URL getURL();
-	
-	@Mutator("url")
-	public void setURL(URL url);
+public interface OnlineDistribution extends Distribution {
+
+    @Accessor("url")
+    public URL getURL();
+
+    @Mutator("url")
+    public void setURL(URL url);
 }

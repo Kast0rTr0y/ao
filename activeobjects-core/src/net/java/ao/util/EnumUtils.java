@@ -6,38 +6,24 @@ import java.lang.reflect.InvocationTargetException;
 
 import static com.google.common.collect.Lists.newArrayList;
 
-public final class EnumUtils
-{
-    public static Iterable<Enum> values(Class<? extends Enum> type)
-    {
-        try
-        {
+public final class EnumUtils {
+    public static Iterable<Enum> values(Class<? extends Enum> type) {
+        try {
             return newArrayList((Enum[]) type.getMethod("values").invoke(null));
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             throw new IllegalStateException(e);
-        }
-        catch (SecurityException e)
-        {
+        } catch (SecurityException e) {
             throw new IllegalStateException(e);
-        }
-        catch (IllegalAccessException e)
-        {
+        } catch (IllegalAccessException e) {
             throw new IllegalStateException(e);
-        }
-        catch (InvocationTargetException e)
-        {
+        } catch (InvocationTargetException e) {
             throw new IllegalStateException(e);
-        }
-        catch (NoSuchMethodException e)
-        {
+        } catch (NoSuchMethodException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    public static int size(Class<? extends Enum> type)
-    {
+    public static int size(Class<? extends Enum> type) {
         return Iterables.size(values(type));
     }
 }

@@ -1,10 +1,12 @@
 package net.java.ao.it;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import net.java.ao.EntityStreamCallback;
+import net.java.ao.it.DatabaseProcessor.PersonData;
+import net.java.ao.it.model.OnlineDistribution;
+import net.java.ao.it.model.Person;
+import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.jdbc.Data;
+import org.junit.Test;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -12,25 +14,20 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.java.ao.EntityStreamCallback;
-import net.java.ao.it.DatabaseProcessor.PersonData;
-import net.java.ao.it.model.OnlineDistribution;
-import net.java.ao.it.model.Person;
-import net.java.ao.test.ActiveObjectsIntegrationTest;
-import net.java.ao.test.jdbc.Data;
-
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 @Data(DatabaseProcessor.class)
-public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
-{
+public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest {
 
     /**
      * Test that calling a getter on the interface is properly supported by the proxy
      */
     @Test
-    public void testGetter()
-    {
+    public void testGetter() {
         Person person = getPerson();
 
         assertEquals(PersonData.FIRST_NAME, person.getFirstName());
@@ -40,8 +37,7 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * Test that using an accessor annotation works as well
      */
     @Test
-    public void testNonGetterAccessor()
-    {
+    public void testNonGetterAccessor() {
         OnlineDistribution dist = getOnlineDistribution();
         // reference is hidden, so we can't easily compare. Not null will suffice.
         assertNotNull(dist.getURL());
@@ -51,8 +47,7 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * Test that we can use a getter declared in a superinterface
      */
     @Test
-    public void testSuperInterfaceGetter()
-    {
+    public void testSuperInterfaceGetter() {
         OnlineDistribution dist = getOnlineDistribution();
 
         assertNotNull(dist.getID());
@@ -63,8 +58,7 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * don't make sense for lazy loading. If object graph materialisation through JOINS is supported, this can be removed.
      */
     @Test
-    public void testRelationGetter()
-    {
+    public void testRelationGetter() {
         Person person = getPerson();
 
         assertNull(person.getNose());
@@ -74,8 +68,7 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * Test that calling a setter causes a runtime exception, because that would leave the client in a dangerous assumption state otherwise
      */
     @Test(expected = RuntimeException.class)
-    public void testSetter()
-    {
+    public void testSetter() {
         getPerson().setAge(99);
     }
 
@@ -84,8 +77,7 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * assumption state if there's no exception thrown.
      */
     @Test(expected = RuntimeException.class)
-    public void testSave()
-    {
+    public void testSave() {
         getPerson().save();
     }
 
@@ -93,63 +85,52 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
      * Test that calling other, non-critical mutating methods on the proxy don't cause exceptions
      */
     @Test
-    public void testNoopProxyMethods()
-    {
-        PropertyChangeListener listener = new PropertyChangeListener()
-        {
+    public void testNoopProxyMethods() {
+        PropertyChangeListener listener = new PropertyChangeListener() {
             @Override
-            public void propertyChange(PropertyChangeEvent evt)
-            {
+            public void propertyChange(PropertyChangeEvent evt) {
                 fail();
             }
         };
-        
+
         Person person = getPerson();
         person.addPropertyChangeListener(listener);
         person.removePropertyChangeListener(listener);
     }
 
     @Test
-    public void testToString()
-    {
+    public void testToString() {
         Person person = getPerson();
-        
+
         assertNotNull(person.toString());
     }
 
     @Test
-    public void testHashCode()
-    {
+    public void testHashCode() {
         Person person = getPerson();
-        
+
         assertNotNull(person.hashCode());
     }
 
     @Test
-    public void testEquals()
-    {
+    public void testEquals() {
         Person person0 = getPerson();
         Person person1 = getPerson();
-        
+
         assertTrue(person0.equals(person1));
     }
 
-    private Person getPerson()
-    {
+    private Person getPerson() {
         final List<Person> persons = new ArrayList<Person>();
 
-        try
-        {
-            entityManager.stream(Person.class, new EntityStreamCallback<Person, Integer>()
-            {
+        try {
+            entityManager.stream(Person.class, new EntityStreamCallback<Person, Integer>() {
                 @Override
-                public void onRowRead(Person t)
-                {
+                public void onRowRead(Person t) {
                     persons.add(t);
                 }
             });
-        } catch (SQLException e)
-        {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
@@ -157,26 +138,22 @@ public class ReadOnlyEntityIntegrationTest extends ActiveObjectsIntegrationTest
         return persons.get(0);
     }
 
-    private OnlineDistribution getOnlineDistribution()
-    {
+    private OnlineDistribution getOnlineDistribution() {
         final List<OnlineDistribution> distributions = new ArrayList<OnlineDistribution>();
 
-        try
-        {
-            entityManager.stream(OnlineDistribution.class, new EntityStreamCallback<OnlineDistribution, Integer>()
-            {
+        try {
+            entityManager.stream(OnlineDistribution.class, new EntityStreamCallback<OnlineDistribution, Integer>() {
                 @Override
-                public void onRowRead(OnlineDistribution t)
-                {
+                public void onRowRead(OnlineDistribution t) {
                     distributions.add(t);
                 }
             });
-        } catch (SQLException e)
-        {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
-        if (distributions.size() == 0) fail("There should have been at least one OnlineDistribution read from the dataset");
+        if (distributions.size() == 0)
+            fail("There should have been at least one OnlineDistribution read from the dataset");
         return distributions.get(0);
     }
 

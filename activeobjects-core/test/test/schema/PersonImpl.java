@@ -19,23 +19,23 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public class PersonImpl {
-	public static boolean enableOverride = false;
-	
-	private Person person;
-	
-	public PersonImpl(Person person) {
-		this.person = person;
-	}
-	
-	public String getLastName() {
-		if (enableOverride) {
-			return "Smith";
-		}
-		
-		return person.getLastName();
-	}
-	
-	public void setLastName(String lastName) {
-		person.setLastName(lastName);
-	}
+    public static boolean enableOverride = false;
+
+    private Person person;
+
+    public PersonImpl(Person person) {
+        this.person = person;
+    }
+
+    public String getLastName() {
+        if (enableOverride) {
+            return "Smith";
+        }
+
+        return person.getLastName();
+    }
+
+    public void setLastName(String lastName) {
+        person.setLastName(lastName);
+    }
 }

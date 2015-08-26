@@ -29,45 +29,45 @@ import test.schema.Photo;
 import test.schema.Post;
 import test.schema.PrintDistribution;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Daniel Spiewak
  */
 public class DefaultPolymorphicTypeMapperTest {
-	private DefaultPolymorphicTypeMapper mapper;
-	
-	@Before
-	public void setUp() {
-		mapper = new DefaultPolymorphicTypeMapper(Person.class, Company.class, Post.class, Photo.class, Pen.class);
-		mapper.resolveMappings(new PluralizedTableNameConverter(new CamelCaseTableNameConverter()));
-	}
+    private DefaultPolymorphicTypeMapper mapper;
 
-	@Test
-	public void testConvert() {
-		assertEquals("person", mapper.convert(Person.class));
-		assertEquals("company", mapper.convert(Company.class));
-		assertEquals("post", mapper.convert(Post.class));
-		assertEquals("photo", mapper.convert(Photo.class));
-		assertEquals("pen", mapper.convert(Pen.class));
-		
-		assertEquals("test.schema.PrintDistribution", mapper.convert(PrintDistribution.class));
-	}
+    @Before
+    public void setUp() {
+        mapper = new DefaultPolymorphicTypeMapper(Person.class, Company.class, Post.class, Photo.class, Pen.class);
+        mapper.resolveMappings(new PluralizedTableNameConverter(new CamelCaseTableNameConverter()));
+    }
 
-	@Test
-	public void testInvert() {
-		assertEquals(Person.class, mapper.invert(Entity.class, "person"));
-		assertEquals(Company.class, mapper.invert(Company.class, "company"));
-		assertEquals(Post.class, mapper.invert(Commentable.class, "post"));
-		assertEquals(Photo.class, mapper.invert(Commentable.class, "photo"));
-		assertEquals(Pen.class, mapper.invert(Entity.class, "pen"));
+    @Test
+    public void testConvert() {
+        assertEquals("person", mapper.convert(Person.class));
+        assertEquals("company", mapper.convert(Company.class));
+        assertEquals("post", mapper.convert(Post.class));
+        assertEquals("photo", mapper.convert(Photo.class));
+        assertEquals("pen", mapper.convert(Pen.class));
 
-		assertEquals(PrintDistribution.class, mapper.invert(Distribution.class, "test.schema.PrintDistribution"));
-		assertEquals(OnlineDistribution.class, mapper.invert(Distribution.class, "test.schema.OnlineDistribution"));
-	}
-	
-	@Test(expected=IllegalArgumentException.class)
-	public void testInvalid() {
-		mapper.invert(Entity.class, "sldkfjsdflkjsdflkjdsflkdsjf");
-	}
+        assertEquals("test.schema.PrintDistribution", mapper.convert(PrintDistribution.class));
+    }
+
+    @Test
+    public void testInvert() {
+        assertEquals(Person.class, mapper.invert(Entity.class, "person"));
+        assertEquals(Company.class, mapper.invert(Company.class, "company"));
+        assertEquals(Post.class, mapper.invert(Commentable.class, "post"));
+        assertEquals(Photo.class, mapper.invert(Commentable.class, "photo"));
+        assertEquals(Pen.class, mapper.invert(Entity.class, "pen"));
+
+        assertEquals(PrintDistribution.class, mapper.invert(Distribution.class, "test.schema.PrintDistribution"));
+        assertEquals(OnlineDistribution.class, mapper.invert(Distribution.class, "test.schema.OnlineDistribution"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalid() {
+        mapper.invert(Entity.class, "sldkfjsdflkjsdflkjdsflkdsjf");
+    }
 }

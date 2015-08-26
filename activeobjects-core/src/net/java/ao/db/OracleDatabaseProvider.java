@@ -15,6 +15,30 @@
  */
 package net.java.ao.db;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import net.java.ao.Common;
+import net.java.ao.DBParam;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.DisposableDataSource;
+import net.java.ao.EntityManager;
+import net.java.ao.Query;
+import net.java.ao.RawEntity;
+import net.java.ao.schema.Case;
+import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.TableNameConverter;
+import net.java.ao.schema.UniqueNameConverter;
+import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
+import net.java.ao.types.TypeInfo;
+import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -25,108 +49,69 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-
-import net.java.ao.schema.Case;
-import net.java.ao.schema.TableNameConverter;
-import net.java.ao.schema.ddl.SQLAction;
-
-import net.java.ao.Common;
-import net.java.ao.DBParam;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.DisposableDataSource;
-import net.java.ao.EntityManager;
-import net.java.ao.Query;
-import net.java.ao.RawEntity;
-import net.java.ao.schema.IndexNameConverter;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.UniqueNameConverter;
-import net.java.ao.schema.ddl.DDLField;
-import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLTable;
-import net.java.ao.types.TypeInfo;
-import net.java.ao.types.TypeManager;
-import net.java.ao.types.TypeQualifiers;
-
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 /**
  * @author Daniel Spiewak
  */
-public final class OracleDatabaseProvider extends DatabaseProvider
-{
+public final class OracleDatabaseProvider extends DatabaseProvider {
     private static final int ORA_04080_TRIGGER_DOES_NOT_EXIST = 4080;
     private static final int ORA_02289_SEQUENCE_DOES_NOT_EXIST = 2289;
 
-    public OracleDatabaseProvider(DisposableDataSource dataSource)
-    {
+    public OracleDatabaseProvider(DisposableDataSource dataSource) {
         this(dataSource, null);
     }
 
-    public OracleDatabaseProvider(DisposableDataSource dataSource, String schema)
-    {
+    public OracleDatabaseProvider(DisposableDataSource dataSource, String schema) {
         super(dataSource, schema, TypeManager.oracle());
     }
 
     @Override
-    public String getSchema()
-    {
+    public String getSchema() {
         return isSchemaNotEmpty() ? Case.UPPER.apply(super.getSchema()) : null;
     }
 
     @Override
-    public ResultSet getTables(Connection conn) throws SQLException
-    {
+    public ResultSet getTables(Connection conn) throws SQLException {
         final DatabaseMetaData metaData = conn.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return metaData.getTables(null, schemaPattern, "%", new String[]{"TABLE"});
     }
 
     @Override
-    public ResultSet getSequences(Connection conn) throws SQLException
-    {
+    public ResultSet getSequences(Connection conn) throws SQLException {
         final DatabaseMetaData metaData = conn.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return metaData.getTables(null, schemaPattern, "%", new String[]{"SEQUENCE"});
     }
 
     @Override
-    public ResultSet getIndexes(Connection conn, String tableName) throws SQLException
-    {
+    public ResultSet getIndexes(Connection conn, String tableName) throws SQLException {
         final DatabaseMetaData metaData = conn.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return conn.getMetaData().getIndexInfo(null, schemaPattern, tableName, false, true);
     }
 
     @Override
-    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException
-    {
+    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException {
         final DatabaseMetaData metaData = connection.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
         return metaData.getImportedKeys(null, schemaPattern, tableName);
     }
 
     @Override
-    protected String renderQuerySelect(final Query query, final TableNameConverter converter, final boolean count)
-    {
+    protected String renderQuerySelect(final Query query, final TableNameConverter converter, final boolean count) {
         StringBuilder sql = new StringBuilder();
 
         // see http://www.oracle.com/technetwork/issue-archive/2006/06-sep/o56asktom-086197.html
 
-        if (Query.QueryType.SELECT.equals(query.getType()))
-        {
+        if (Query.QueryType.SELECT.equals(query.getType())) {
             int offset = query.getOffset();
             int limit = query.getLimit();
 
-            if (offset > 0)
-            {
+            if (offset > 0) {
                 sql.append("SELECT * FROM ( SELECT QUERY_INNER.*, ROWNUM ROWNUM_INNER FROM ( ");
-            }
-            else if (limit >= 0)
-            {
+            } else if (limit >= 0) {
                 sql.append("SELECT * FROM ( ");
             }
         }
@@ -137,28 +122,22 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-	protected String renderQueryLimit(Query query) {
+    protected String renderQueryLimit(Query query) {
         StringBuilder sql = new StringBuilder();
 
-        if (Query.QueryType.SELECT.equals(query.getType()))
-        {
+        if (Query.QueryType.SELECT.equals(query.getType())) {
             int offset = query.getOffset();
             int limit = query.getLimit();
 
-            if (offset > 0 && limit >= 0)
-            {
+            if (offset > 0 && limit >= 0) {
                 sql.append(" ) QUERY_INNER WHERE ROWNUM <= ");
                 sql.append(offset + limit);
                 sql.append(" ) WHERE ROWNUM_INNER > ");
                 sql.append(offset);
-            }
-            else if (offset > 0)
-            {
+            } else if (offset > 0) {
                 sql.append(" ) QUERY_INNER ) WHERE ROWNUM_INNER > ");
                 sql.append(offset);
-            }
-            else if (limit >= 0)
-            {
+            } else if (limit >= 0) {
                 sql.append(" ) WHERE ROWNUM <= ");
                 sql.append(limit);
             }
@@ -167,15 +146,14 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         return sql.toString();
     }
 
-	@Override
-	protected String renderAutoIncrement() {
-		return "";
-	}
+    @Override
+    protected String renderAutoIncrement() {
+        return "";
+    }
 
     @Override
     public Object parseValue(int type, String value) {
-        if (value == null || value.equals("") || value.equals("NULL"))
-        {
+        if (value == null || value.equals("") || value.equals("NULL")) {
             return null;
         }
 
@@ -186,53 +164,44 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                 if (matcher.find()) {
                     value = matcher.group(1);
                 }
-            break;
+                break;
         }
 
         return super.parseValue(type, value);
     }
 
     @Override
-    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
     }
 
-	@Override
-	protected String getDateFormat() {
-		return "dd-MMM-yy hh:mm:ss.SSS a";
-	}
+    @Override
+    protected String getDateFormat() {
+        return "dd-MMM-yy hh:mm:ss.SSS a";
+    }
 
     @Override
-    protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field) {
         String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD (" + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true)) + ")";
         return SQLAction.of(addStmt);
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
         final UniqueNameConverter uniqueNameConverter = nameConverters.getUniqueNameConverter();
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
-        if(!oldField.getType().equals(field.getType()))
-        {
-            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB") || oldField.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
-            {
-                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(), field.getType().getQualifiers()))
-                {
+        if (!oldField.getType().equals(field.getType())) {
+            if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB") || oldField.getType().getSchemaProperties().getSqlTypeName().equals("CLOB")) {
+                if (!TypeQualifiers.areCompatible(oldField.getType().getQualifiers(), field.getType().getQualifiers())) {
                     final String fieldName = processID(field.getName());
                     final String tempColName = processID(getTempColumnName(field.getName()));
                     String tempColType;
-                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB"))
-                    {
+                    if (field.getType().getSchemaProperties().getSqlTypeName().equals("CLOB")) {
                         tempColType = "CLOB";
-                    }
-                    else
-                    {
+                    } else {
                         final int stringLength = field.getType().getQualifiers().getStringLength();
-                        tempColType = "VARCHAR("+ stringLength +")";
+                        tempColType = "VARCHAR(" + stringLength + ")";
                     }
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD ").append(tempColName).append(" ").append(tempColType)));
                     back.add(SQLAction.of(new StringBuilder().append("UPDATE ").append(withSchema(table.getName())).append(" SET ").append(tempColName).append(" = ").append(fieldName)));
@@ -240,69 +209,57 @@ public final class OracleDatabaseProvider extends DatabaseProvider
                     back.addAll(renderDropColumnActions(nameConverters, table, field));
                     back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" RENAME COLUMN ").append(tempColName).append(" TO ").append(fieldName)));
                 }
-            }
-            else
-            {
+            } else {
                 back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" ").append(renderFieldType(field)).append(")")));
             }
         }
-        if (oldField.isNotNull() && !field.isNotNull())
-        {
+        if (oldField.isNotNull() && !field.isNotNull()) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NULL)")));
         }
 
-        if (!oldField.isNotNull() && field.isNotNull())
-        {
+        if (!oldField.isNotNull() && field.isNotNull()) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" NOT NULL)")));
         }
 
-        if (!Objects.equal(oldField.getDefaultValue(), field.getDefaultValue()))
-        {
+        if (!Objects.equal(oldField.getDefaultValue(), field.getDefaultValue())) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" MODIFY (").append(processID(field.getName())).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).append(")")));
         }
 
-        if (oldField.isUnique() && !field.isUnique())
-        {
+        if (oldField.isUnique() && !field.isUnique()) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName()))));
         }
 
-        if (!oldField.isUnique() && field.isUnique())
-        {
+        if (!oldField.isUnique() && field.isUnique()) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(uniqueNameConverter.getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")")));
         }
 
         return back.build();
     }
 
-	@Override
-	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
-	{
-		StringBuilder back = new StringBuilder("ALTER TABLE ");
+    @Override
+    protected SQLAction renderAlterTableDropKey(DDLForeignKey key) {
+        StringBuilder back = new StringBuilder("ALTER TABLE ");
 
-		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+        back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
 
-		return SQLAction.of(back);
-	}
+        return SQLAction.of(back);
+    }
 
     @Override
-    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String name = getExistingIndexName(indexNameConverter, index);
         return SQLAction.of(new StringBuilder().append("DROP INDEX ").append(withSchema(name)));
     }
 
     @Override
-    protected SQLAction renderDropTableStatement(DDLTable table)
-    {
+    protected SQLAction renderDropTableStatement(DDLTable table) {
         return SQLAction.of("DROP TABLE " + withSchema(table.getName()) + " PURGE");
     }
 
     @Override
-    public void handleUpdateError(String sql, SQLException e) throws SQLException
-    {
+    public void handleUpdateError(String sql, SQLException e) throws SQLException {
         if (isDropTrigger(sql, e)
-                || isDropSequence(sql, e))
-        {
+                || isDropSequence(sql, e)) {
             logger.debug("Ignoring non-existant trigger for SQL <" + sql + ">", e);
             return;
         }
@@ -310,69 +267,54 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         super.handleUpdateError(sql, e);
     }
 
-    private boolean isDropTrigger(String sql, SQLException e)
-    {
+    private boolean isDropTrigger(String sql, SQLException e) {
         return e.getErrorCode() == ORA_04080_TRIGGER_DOES_NOT_EXIST && sql.startsWith("DROP");
     }
 
-    private boolean isDropSequence(String sql, SQLException e)
-    {
+    private boolean isDropSequence(String sql, SQLException e) {
         return e.getErrorCode() == ORA_02289_SEQUENCE_DOES_NOT_EXIST && sql.startsWith("DROP");
     }
 
     @Override
-    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn,
                                                                       Class<T> entityType, Class<K> pkType,
-                                                                      String pkField, String sql, DBParam... params) throws SQLException
-    {
+                                                                      String pkField, String sql, DBParam... params) throws SQLException {
         PreparedStatement stmt = null;
         ResultSet res = null;
-        try
-        {
+        try {
             onSql(sql);
             stmt = conn.prepareStatement(sql, new String[]{pkField});
             K back = (K) setParameters(manager, stmt, params, pkField);
 
             stmt.executeUpdate();
 
-            if (back == null)
-            {
+            if (back == null) {
                 res = stmt.getGeneratedKeys();
-                if (res.next())
-                {
+                if (res.next()) {
                     back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
                 }
             }
             return back;
-        }
-        finally
-        {
+        } finally {
             closeQuietly(res);
             closeQuietly(stmt);
         }
     }
 
-    private Object setParameters(EntityManager manager, PreparedStatement stmt, DBParam[] params, String pkField) throws SQLException
-    {
+    private Object setParameters(EntityManager manager, PreparedStatement stmt, DBParam[] params, String pkField) throws SQLException {
         Object back = null;
         int i = 0;
-        for (; i < params.length; i++)
-        {
+        for (; i < params.length; i++) {
             Object value = params[i].getValue();
-            if (value instanceof RawEntity<?>)
-            {
+            if (value instanceof RawEntity<?>) {
                 value = Common.getPrimaryKeyValue((RawEntity<?>) value);
             }
-            if (params[i].getField().equalsIgnoreCase(pkField))
-            {
+            if (params[i].getField().equalsIgnoreCase(pkField)) {
                 back = value;
             }
-            if (value == null)
-            {
+            if (value == null) {
                 putNull(stmt, i + 1);
-            }
-            else
-            {
+            } else {
                 TypeInfo<Object> type = (TypeInfo<Object>) getTypeManager().getType(value.getClass());
                 type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
             }
@@ -381,39 +323,33 @@ public final class OracleDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
-        if (field.isAutoIncrement())
-        {
+    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field) {
+        if (field.isAutoIncrement()) {
             return ImmutableList.of(renderSequence(nameConverters, table, field).withUndoAction(renderDropSequence(nameConverters, table, field)),
-                                    renderTrigger(nameConverters, table, field).withUndoAction(renderDropTrigger(nameConverters, table, field)));
+                    renderTrigger(nameConverters, table, field).withUndoAction(renderDropTrigger(nameConverters, table, field)));
         }
         return ImmutableList.of();
     }
 
     @Override
-    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
-        if (field.isAutoIncrement())
-        {
+    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field) {
+        if (field.isAutoIncrement()) {
             return ImmutableList.of(renderDropTrigger(nameConverters, table, field),
-                                    renderDropSequence(nameConverters, table, field));
+                    renderDropSequence(nameConverters, table, field));
         }
         return ImmutableList.of();
     }
 
-    private SQLAction renderSequence(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    private SQLAction renderSequence(NameConverters nameConverters, DDLTable table, DDLField field) {
         return SQLAction.of("CREATE SEQUENCE " +
-            withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) +
-            " INCREMENT BY 1 START WITH 1 NOMAXVALUE MINVALUE 1");
+                withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) +
+                " INCREMENT BY 1 START WITH 1 NOMAXVALUE MINVALUE 1");
     }
-    
-    private SQLAction renderTrigger(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+
+    private SQLAction renderTrigger(NameConverters nameConverters, DDLTable table, DDLField field) {
         StringBuilder back = new StringBuilder();
 
-        back.append("CREATE TRIGGER ").append(withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())) +  '\n');
+        back.append("CREATE TRIGGER ").append(withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())) + '\n');
         back.append("BEFORE INSERT\n").append("    ON ").append(withSchema(table.getName())).append("   FOR EACH ROW\n");
         back.append("BEGIN\n");
         back.append("    SELECT ").append(withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))) + ".NEXTVAL");
@@ -422,49 +358,44 @@ public final class OracleDatabaseProvider extends DatabaseProvider
         return SQLAction.of(back);
     }
 
-    private SQLAction renderDropSequence(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    private SQLAction renderDropSequence(NameConverters nameConverters, DDLTable table, DDLField field) {
         return SQLAction.of("DROP SEQUENCE " +
-            withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))));
+                withSchema(nameConverters.getSequenceNameConverter().getName(shorten(table.getName()), shorten(field.getName()))));
     }
-    
-    private SQLAction renderDropTrigger(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+
+    private SQLAction renderDropTrigger(NameConverters nameConverters, DDLTable table, DDLField field) {
         return SQLAction.of("DROP TRIGGER " +
-            withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())));
+                withSchema(nameConverters.getTriggerNameConverter().autoIncrementName(table.getName(), field.getName())));
     }
 
     @Override
-	protected boolean shouldQuoteID(String id) {
+    protected boolean shouldQuoteID(String id) {
         return !"*".equals(id);
-	}
-
-	@Override
-	protected int getMaxIDLength() {
-		return 30;
-	}
-
-	@Override
-	protected Set<String> getReservedWords() {
-		return RESERVED_WORDS;
-	}
+    }
 
     @Override
-    public void putNull(PreparedStatement stmt, int index) throws SQLException
-    {
+    protected int getMaxIDLength() {
+        return 30;
+    }
+
+    @Override
+    protected Set<String> getReservedWords() {
+        return RESERVED_WORDS;
+    }
+
+    @Override
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
         stmt.setString(index, null);
     }
 
     @Override
-    public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException
-    {
+    public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException {
         stmt.setInt(index, value ? 1 : 0);
     }
 
-    private String getTempColumnName(final String name)
-    {
+    private String getTempColumnName(final String name) {
         String reversed = new StringBuilder(name).reverse().toString();
-        return reversed.replaceFirst("^[^a-zA-Z]+","");
+        return reversed.replaceFirst("^[^a-zA-Z]+", "");
     }
 
     public static final Set<String> RESERVED_WORDS = ImmutableSet.of(

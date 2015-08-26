@@ -1,9 +1,8 @@
 package net.java.ao.schema;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class CachingNameConverters implements NameConverters
-{
+public final class CachingNameConverters implements NameConverters {
     private final TableNameConverter tableNameConverter;
     private final FieldNameConverter fieldNameConverter;
     private final SequenceNameConverter sequenceNameConverter;
@@ -11,8 +10,7 @@ public final class CachingNameConverters implements NameConverters
     private final IndexNameConverter indexNameConverter;
     private final UniqueNameConverter uniqueNameConverter;
 
-    public CachingNameConverters(NameConverters nameConverters)
-    {
+    public CachingNameConverters(NameConverters nameConverters) {
         checkNotNull(nameConverters);
         this.tableNameConverter = new CachingTableNameConverter(nameConverters.getTableNameConverter());
         this.fieldNameConverter = nameConverters.getFieldNameConverter();
@@ -23,38 +21,32 @@ public final class CachingNameConverters implements NameConverters
     }
 
     @Override
-    public TableNameConverter getTableNameConverter()
-    {
+    public TableNameConverter getTableNameConverter() {
         return tableNameConverter;
     }
 
     @Override
-    public FieldNameConverter getFieldNameConverter()
-    {
+    public FieldNameConverter getFieldNameConverter() {
         return fieldNameConverter;
     }
 
     @Override
-    public SequenceNameConverter getSequenceNameConverter()
-    {
+    public SequenceNameConverter getSequenceNameConverter() {
         return sequenceNameConverter;
     }
 
     @Override
-    public TriggerNameConverter getTriggerNameConverter()
-    {
+    public TriggerNameConverter getTriggerNameConverter() {
         return triggerNameConverter;
     }
 
     @Override
-    public IndexNameConverter getIndexNameConverter()
-    {
+    public IndexNameConverter getIndexNameConverter() {
         return indexNameConverter;
     }
 
     @Override
-    public UniqueNameConverter getUniqueNameConverter()
-    {
+    public UniqueNameConverter getUniqueNameConverter() {
         return uniqueNameConverter;
     }
 }

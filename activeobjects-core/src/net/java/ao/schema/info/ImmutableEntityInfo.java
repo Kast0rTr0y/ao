@@ -11,8 +11,7 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
-{
+class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K> {
 
     private final Class<T> entityType;
     private final String tableName;
@@ -23,31 +22,25 @@ class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
     ImmutableEntityInfo(
             Class<T> entityType,
             String tableName,
-            Set<FieldInfo> fields)
-    {
+            Set<FieldInfo> fields) {
         this.entityType = checkNotNull(entityType, "entityType");
         this.tableName = checkNotNull(tableName, "tableName");
 
         ImmutableMap.Builder<String, FieldInfo> fieldByNameBuilder = ImmutableMap.builder();
         ImmutableMap.Builder<Method, FieldInfo> fieldByMethodBuilder = ImmutableMap.builder();
         FieldInfo primaryKey = null;
-        for (FieldInfo field : fields)
-        {
+        for (FieldInfo field : fields) {
             fieldByNameBuilder.put(field.getName(), field);
-            if (field.getPolymorphicName() != null)
-            {
+            if (field.getPolymorphicName() != null) {
                 fieldByNameBuilder.put(field.getPolymorphicName(), field);
             }
-            if (field.isPrimary())
-            {
+            if (field.isPrimary()) {
                 primaryKey = field;
             }
-            if (field.hasAccessor())
-            {
+            if (field.hasAccessor()) {
                 fieldByMethodBuilder.put(field.getAccessor(), field);
             }
-            if (field.hasMutator())
-            {
+            if (field.hasMutator()) {
                 fieldByMethodBuilder.put(field.getMutator(), field);
             }
         }
@@ -58,70 +51,59 @@ class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
     }
 
     @Override
-    public Class<T> getEntityType()
-    {
+    public Class<T> getEntityType() {
         return entityType;
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return tableName;
     }
 
     @Override
-    public FieldInfo<K> getPrimaryKey()
-    {
+    public FieldInfo<K> getPrimaryKey() {
         return primaryKey;
     }
 
     @Override
-    public Set<FieldInfo> getFields()
-    {
+    public Set<FieldInfo> getFields() {
         return ImmutableSet.copyOf(fieldByName.values());
     }
 
     @Override
-    public Set<String> getFieldNames()
-    {
+    public Set<String> getFieldNames() {
         return ImmutableSet.copyOf(Collections2.transform(getFields(), FieldInfo.PLUCK_NAME));
     }
 
     @Override
-    public FieldInfo getField(Method method)
-    {
+    public FieldInfo getField(Method method) {
         return fieldByMethod.get(method);
     }
 
     @Override
-    public FieldInfo getField(String fieldName)
-    {
+    public FieldInfo getField(String fieldName) {
         return fieldByName.get(fieldName);
     }
 
     @Override
-    public boolean hasAccessor(Method method)
-    {
+    public boolean hasAccessor(Method method) {
         FieldInfo field = fieldByMethod.get(method);
         return field != null && method.equals(field.getAccessor());
     }
 
     @Override
-    public boolean hasMutator(Method method)
-    {
+    public boolean hasMutator(Method method) {
         FieldInfo field = fieldByMethod.get(method);
         return field != null && method.equals(field.getMutator());
     }
 
     @Override
-    public boolean hasField(String fieldName)
-    {
+    public boolean hasField(String fieldName) {
         return fieldByName.containsKey(fieldName);
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -132,8 +114,7 @@ class ImmutableEntityInfo<T extends RawEntity<K>, K> implements EntityInfo<T, K>
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return entityType != null ? entityType.hashCode() : 0;
     }
 }

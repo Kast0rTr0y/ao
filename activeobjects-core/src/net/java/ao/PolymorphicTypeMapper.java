@@ -26,32 +26,32 @@ import net.java.ao.schema.TableNameConverter;
  * mapping of entity type to table names ({@link TableNameConverter}).  A
  * passable description of polymorphic type flags and relationships is
  * available in the javadoc for the {@link FieldNameConverter} interface.</p>
- * 
+ *
  * <p>An example set of mappings follows (assuming these are all polymorphic
  * types):</p>
- * 
+ *
  * <table border="1">
- * 		<tr>
- * 			<td><b>Classname</b></td>
- * 			<td><b>Polymorphic Type Flag</b></td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>com.company.db.Employee</td>
- * 			<td>employee</td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>com.company.db.Manager</td>
- * 			<td>manager</td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>com.company.db.CEO</td>
- * 			<td>ceo</td>
- * 		</tr>
+ * <tr>
+ * <td><b>Classname</b></td>
+ * <td><b>Polymorphic Type Flag</b></td>
+ * </tr>
+ *
+ * <tr>
+ * <td>com.company.db.Employee</td>
+ * <td>employee</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>com.company.db.Manager</td>
+ * <td>manager</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>com.company.db.CEO</td>
+ * <td>ceo</td>
+ * </tr>
  * </table>
- * 
+ *
  * <p>Mappings need not be entirely unique, as long as the mappings for all
  * subtypes of a specific supertype are internally unique.  For example, the
  * above example implies that all three entities are subtypes of a single
@@ -62,35 +62,35 @@ import net.java.ao.schema.TableNameConverter;
  * However, if the hierarchy for a single supertype does not have fully-defined
  * and unique mappings, unexpected behavior may result (such as retrieving
  * references to invalid entities).</p>
- * 
+ *
  * <p>A sane implementation (using manually-specified mappings) is implemented
  * within the {@link DefaultPolymorphicTypeMapper} class.  Very few use-cases
  * call for a custom implementation of this interface directly.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 public interface PolymorphicTypeMapper {
-	
-	/**
-	 * Retrieves the polymorphic type flag value which corresponds to the
-	 * specified type.  Return value must be repeatable given the same type
-	 * as well as uniquely defined within the hierarchy of the given type.
-	 * 
-	 * @param type	The type for which a polymorphic flag must be generated.
-	 * @return	The polymorphic flag type value which corresponds to the given type.
-	 * @see #invert(Class, String)
-	 */
-	public String convert(Class<? extends RawEntity<?>> type);
-	
-	/**
-	 * Retrieves the entity type which corresponds to the given polymorphic type
-	 * flag value as a subtype of the specified parent entity type.  Logically
-	 * the inverse of the {@link #convert(Class)} method.
-	 * 
-	 * @param parent	The parent interface of the type which must be retrieved.
-	 * @param type	The polymorphic type flag value which corresponds to the type
-	 * 		which must be retrieved.
-	 * @return	The entity type corresponding uniquely to the supertype-flag pair.
-	 */
-	public Class<? extends RawEntity<?>> invert(Class<? extends RawEntity<?>> parent, String type);
+
+    /**
+     * Retrieves the polymorphic type flag value which corresponds to the
+     * specified type.  Return value must be repeatable given the same type
+     * as well as uniquely defined within the hierarchy of the given type.
+     *
+     * @param type The type for which a polymorphic flag must be generated.
+     * @return The polymorphic flag type value which corresponds to the given type.
+     * @see #invert(Class, String)
+     */
+    public String convert(Class<? extends RawEntity<?>> type);
+
+    /**
+     * Retrieves the entity type which corresponds to the given polymorphic type
+     * flag value as a subtype of the specified parent entity type.  Logically
+     * the inverse of the {@link #convert(Class)} method.
+     *
+     * @param parent The parent interface of the type which must be retrieved.
+     * @param type   The polymorphic type flag value which corresponds to the type
+     *               which must be retrieved.
+     * @return The entity type corresponding uniquely to the supertype-flag pair.
+     */
+    public Class<? extends RawEntity<?>> invert(Class<? extends RawEntity<?>> parent, String type);
 }

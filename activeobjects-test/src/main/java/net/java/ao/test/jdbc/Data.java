@@ -1,13 +1,12 @@
 package net.java.ao.test.jdbc;
 
+import net.java.ao.EntityManager;
+import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import net.java.ao.EntityManager;
-
-import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -28,7 +27,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(TYPE)
 @Inherited
-public @interface Data
-{
+public @interface Data {
     Class<? extends DatabaseUpdater> value() default EmptyDatabase.class;
 }

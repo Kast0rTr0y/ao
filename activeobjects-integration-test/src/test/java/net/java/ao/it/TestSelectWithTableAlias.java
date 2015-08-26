@@ -11,22 +11,19 @@ import org.junit.Test;
 
 import java.util.concurrent.Callable;
 
-import static net.java.ao.it.TestSelectWithTableAlias.TestSelectWithTableAliasUpdater.*;
-import static org.junit.Assert.*;
+import static net.java.ao.it.TestSelectWithTableAlias.TestSelectWithTableAliasUpdater.DESCRIPTION;
+import static net.java.ao.it.TestSelectWithTableAlias.TestSelectWithTableAliasUpdater.NAME;
+import static org.junit.Assert.assertEquals;
 
 @Data(TestSelectWithTableAlias.TestSelectWithTableAliasUpdater.class)
-public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest
-{
+public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest {
     @Test
-    public void testSimpleQuery() throws Exception
-    {
+    public void testSimpleQuery() throws Exception {
         final TestEntity[] es = entityManager.find(TestEntity.class, Query.select().alias(TestEntity.class, "te"));
         assertEquals(1, es.length);
-        checkSqlNotExecuted(new Callable<Void>()
-        {
+        checkSqlNotExecuted(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 assertEquals(DESCRIPTION, es[0].getDescription());
                 return null;
             }
@@ -34,8 +31,7 @@ public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testQueryWithJoin() throws Exception
-    {
+    public void testQueryWithJoin() throws Exception {
         final String eIdColumn = getFieldName(TestEntity.class, "getID");
         final String eDescriptionColumn = getFieldName(TestEntity.class, "getDescription");
         final String oIdColumn = getFieldName(TestOtherEntity.class, "getID");
@@ -47,11 +43,9 @@ public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest
                 .where("o." + oNameColumn + " = ?", NAME));
 
         assertEquals(1, es.length);
-        checkSqlNotExecuted(new Callable<Void>()
-        {
+        checkSqlNotExecuted(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 assertEquals(DESCRIPTION, es[0].getDescription());
                 return null;
             }
@@ -59,8 +53,7 @@ public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest
     }
 
     @Preload("description")
-    public static interface TestEntity extends Entity
-    {
+    public static interface TestEntity extends Entity {
         String getDescription();
 
         void setDescription(String description);
@@ -70,21 +63,18 @@ public final class TestSelectWithTableAlias extends ActiveObjectsIntegrationTest
         void setOtherEntity(TestOtherEntity e);
     }
 
-    public static interface TestOtherEntity extends Entity
-    {
+    public static interface TestOtherEntity extends Entity {
         String getName();
 
         void setName(String name);
     }
 
-    public static final class TestSelectWithTableAliasUpdater implements DatabaseUpdater
-    {
+    public static final class TestSelectWithTableAliasUpdater implements DatabaseUpdater {
         static final String NAME = "som-e-n-am--e";
         static final String DESCRIPTION = "bla";
 
         @Override
-        public void update(EntityManager entityManager) throws Exception
-        {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(TestEntity.class, TestOtherEntity.class);
 
             final TestOtherEntity o = entityManager.create(TestOtherEntity.class);

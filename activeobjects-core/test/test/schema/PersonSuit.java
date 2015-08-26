@@ -22,15 +22,18 @@ import net.java.ao.schema.Default;
  * @author Daniel Spiewak
  */
 public interface PersonSuit extends Entity {
-	
-	public Person getPerson();
-	public void setPerson(Person person);
-	
-	public PersonLegalDefence getPersonLegalDefence();
-	public void setPersonLegalDefence(PersonLegalDefence defence);
-	
-	@Default("false")
-	public boolean isDeleted();
-	@Default("false")
-	public void setDeleted(boolean deleted);
+
+    public Person getPerson();
+
+    public void setPerson(Person person);
+
+    public PersonLegalDefence getPersonLegalDefence();
+
+    public void setPersonLegalDefence(PersonLegalDefence defence);
+
+    @Default("false")
+    public boolean isDeleted();
+
+    @Default("false")
+    public void setDeleted(boolean deleted);
 }

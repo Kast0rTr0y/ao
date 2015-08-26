@@ -15,23 +15,10 @@
  */
 package net.java.ao.db;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
 import com.google.common.collect.Iterables;
-
-import net.java.ao.schema.ddl.SQLAction;
-
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -46,62 +33,65 @@ import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * @author Daniel Spiewak
  */
-public class SQLServerDatabaseProvider extends DatabaseProvider
-{
+public class SQLServerDatabaseProvider extends DatabaseProvider {
     private static final Pattern VALUE_PATTERN = Pattern.compile("^\\((.*?)\\)$");
 
-    public SQLServerDatabaseProvider(DisposableDataSource dataSource)
-    {
+    public SQLServerDatabaseProvider(DisposableDataSource dataSource) {
         this(dataSource, "dbo");
     }
 
-    public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema)
-    {
+    public SQLServerDatabaseProvider(DisposableDataSource dataSource, String schema) {
         super(dataSource, schema, TypeManager.sqlServer());
     }
 
-	@Override
-	public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
-		if (query.getOffset() >= 0) {
-			res.absolute(query.getOffset());
-		}
-	}
+    @Override
+    public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
+        if (query.getOffset() >= 0) {
+            res.absolute(query.getOffset());
+        }
+    }
 
-	@Override
-	public ResultSet getTables(Connection conn) throws SQLException {
-		return conn.getMetaData().getTables(null, getSchema(), null, new String[] {"TABLE"});
-	}
+    @Override
+    public ResultSet getTables(Connection conn) throws SQLException {
+        return conn.getMetaData().getTables(null, getSchema(), null, new String[]{"TABLE"});
+    }
 
-	@Override
-	public Object parseValue(int type, String value) {
-        if (value == null || value.equals("") || value.equals("NULL"))
-        {
+    @Override
+    public Object parseValue(int type, String value) {
+        if (value == null || value.equals("") || value.equals("NULL")) {
             return null;
         }
 
         Matcher valueMatcher = VALUE_PATTERN.matcher(value);
-        while (valueMatcher.matches())
-        {
+        while (valueMatcher.matches()) {
             value = valueMatcher.group(1);
             valueMatcher = VALUE_PATTERN.matcher(value);
         }
 
-        switch (type)
-        {
+        switch (type) {
             case Types.TIMESTAMP:
             case Types.DATE:
             case Types.TIME:
             case Types.VARCHAR:
                 Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
-                if (matcher.find())
-                {
+                if (matcher.find()) {
                     value = matcher.group(1);
                 }
                 break;
@@ -111,46 +101,39 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
         final ImmutableList.Builder<SQLAction> sql = ImmutableList.builder();
 
         // Removing index before applying changes to columns, SQL Server doesn't like to touch columns with indexes!
         final Iterable<DDLIndex> indexes = findIndexesForField(table, field);
-        for (DDLIndex index : indexes)
-        {
+        for (DDLIndex index : indexes) {
             SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
-            if (sqlAction != null)
-            {
+            if (sqlAction != null) {
                 sql.add(sqlAction);
             }
         }
 
-        if (field.isPrimaryKey())
-        {
+        if (field.isPrimaryKey()) {
             sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))));
         }
 
         sql.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
-        if (field.isPrimaryKey())
-        {
+        if (field.isPrimaryKey()) {
             sql.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" ADD CONSTRAINT ").append(primaryKeyName(table.getName(), field.getName()))
                     .append(" PRIMARY KEY (").append(field.getName()).append(")")));
         }
 
-        if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null))
-        {
+        if ((field.getDefaultValue() != null && !field.getDefaultValue().equals(oldField.getDefaultValue())) || (field.getDefaultValue() == null && oldField.getDefaultValue() != null)) {
             //lowercase 'sys.objects' because the database could be case sensitive, and the lowercase name is the proper name for such cases.
             sql.add(SQLAction.of(new StringBuilder()
                     .append("IF EXISTS (SELECT 1 FROM sys.objects WHERE NAME = ").append(renderValue(defaultConstraintName(table, field))).append(") ")
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(defaultConstraintName(table, field))));
 
-            if (field.getDefaultValue() != null)
-            {
+            if (field.getDefaultValue() != null) {
                 sql.add(SQLAction.of(new StringBuilder()
                         .append("ALTER TABLE ").append(withSchema(table.getName()))
                         .append(" ADD CONSTRAINT ").append(defaultConstraintName(table, field))
@@ -159,50 +142,42 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             }
         }
 
-        if (!oldField.isUnique() && field.isUnique())
-        {
+        if (!oldField.isUnique() && field.isUnique()) {
             sql.add(SQLAction.of(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()))
                     .append(" UNIQUE(").append(processID(field.getName())).append(")")));
         }
 
-        if (oldField.isUnique() && !field.isUnique())
-        {
+        if (oldField.isUnique() && !field.isUnique()) {
             sql.add(SQLAction.of(new StringBuilder()
                     .append("ALTER TABLE ").append(withSchema(table.getName()))
                     .append(" DROP CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), oldField.getName()))));
         }
 
         // re-adding indexes!
-        for (DDLIndex index : indexes)
-        {
+        for (DDLIndex index : indexes) {
             sql.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
         }
 
         return sql.build();
     }
 
-    private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field)
-    {
-        return Iterables.filter(newArrayList(table.getIndexes()), new Predicate<DDLIndex>()
-        {
+    private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field) {
+        return Iterables.filter(newArrayList(table.getIndexes()), new Predicate<DDLIndex>() {
             @Override
-            public boolean apply(DDLIndex index)
-            {
+            public boolean apply(DDLIndex index) {
                 return index.getField().equals(field.getName());
             }
         });
     }
 
-    private String defaultConstraintName(DDLTable table, DDLField field)
-    {
+    private String defaultConstraintName(DDLTable table, DDLField field) {
         return "df_" + table.getName() + '_' + field.getName();
     }
 
     @Override
-    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         StringBuilder back = new StringBuilder();
 
         back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
@@ -212,80 +187,73 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();
-        if (hasIndex(tableName, indexName))
-        {
+        if (hasIndex(tableName, indexName)) {
             return SQLAction.of(new StringBuilder().append("DROP INDEX ")
                     .append(processID(indexName))
                     .append(" ON ")
                     .append(withSchema(tableName)));
-        }
-        else
-        {
+        } else {
             return null;
         }
     }
 
     @Override
-    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         return "CONSTRAINT " + uniqueNameConverter.getName(table.getName(), field.getName()) + " UNIQUE";
     }
 
     @Override
-    protected RenderFieldOptions renderFieldOptionsInAlterColumn()
-    {
+    protected RenderFieldOptions renderFieldOptionsInAlterColumn() {
         return new RenderFieldOptions(false, false, true);
     }
 
     @Override
-	protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
-		StringBuilder sql = new StringBuilder();
-		String tableName = query.getTable();
+    protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
+        StringBuilder sql = new StringBuilder();
+        String tableName = query.getTable();
 
-		if (tableName == null) {
-			tableName = converter.getName(query.getTableType());
-		}
+        if (tableName == null) {
+            tableName = converter.getName(query.getTableType());
+        }
 
-		switch (query.getType()) {
-			case SELECT:
-				sql.append("SELECT ");
+        switch (query.getType()) {
+            case SELECT:
+                sql.append("SELECT ");
 
-				if (query.isDistinct()) {
-					sql.append("DISTINCT ");
-				}
+                if (query.isDistinct()) {
+                    sql.append("DISTINCT ");
+                }
 
-				int limit = query.getLimit();
-				if (limit >= 0) {
-					if (query.getOffset() > 0) {
-						limit += query.getOffset();
-					}
+                int limit = query.getLimit();
+                if (limit >= 0) {
+                    if (query.getOffset() > 0) {
+                        limit += query.getOffset();
+                    }
 
-					sql.append("TOP ").append(limit).append(' ');
-				}
+                    sql.append("TOP ").append(limit).append(' ');
+                }
 
-				if (count) {
-					sql.append("COUNT(*)");
-				} else {
+                if (count) {
+                    sql.append("COUNT(*)");
+                } else {
                     sql.append(querySelectFields(query, converter));
-				}
+                }
                 sql.append(" FROM ").append(queryTableName(query, converter));
-			break;
-		}
+                break;
+        }
 
-		return sql.toString();
-	}
+        return sql.toString();
+    }
 
-	@Override
-	protected String renderQueryLimit(Query query) {
-		return "";
-	}
+    @Override
+    protected String renderQueryLimit(Query query) {
+        return "";
+    }
 
-    protected String renderPrimaryKey(String tableName, String pkFieldName)
-    {
+    protected String renderPrimaryKey(String tableName, String pkFieldName) {
         StringBuilder b = new StringBuilder();
         b.append("CONSTRAINT ");
         b.append(primaryKeyName(tableName, pkFieldName));
@@ -295,28 +263,24 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
         return b.toString();
     }
 
-    private String primaryKeyName(String tableName, String pkFieldName)
-    {
+    private String primaryKeyName(String tableName, String pkFieldName) {
         return "pk_" + tableName + "_" + pkFieldName;
     }
 
     @Override
-	protected String renderAutoIncrement() {
-		return "IDENTITY(1,1)";
-	}
+    protected String renderAutoIncrement() {
+        return "IDENTITY(1,1)";
+    }
 
     @Override
-    protected String renderFieldDefault(DDLTable table, DDLField field)
-    {
+    protected String renderFieldDefault(DDLTable table, DDLField field) {
         return new StringBuilder().append(" CONSTRAINT ").append(defaultConstraintName(table, field)).append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
     }
 
     @Override
-    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
-    {
+    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
         final boolean autoIncrement = field.isAutoIncrement();
-        try
-        {
+        try {
             field.setAutoIncrement(false); // we don't want the autoincrement aspect of the field to be taken in account for "alter column"
 
             final StringBuilder current = new StringBuilder();
@@ -324,89 +288,83 @@ public class SQLServerDatabaseProvider extends DatabaseProvider
             current.append(renderField(nameConverters, table, field, options));
 
             return SQLAction.of(current);
-        }
-        finally
-        {
+        } finally {
             field.setAutoIncrement(autoIncrement);
         }
     }
 
     @Override
-	protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field) {
         return SQLAction.of("ALTER TABLE " + withSchema(table.getName()) + " ADD " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true)));
-	}
-
-	@Override
-	protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
-	{
-		StringBuilder back = new StringBuilder("ALTER TABLE ");
-
-		back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
-
-		return SQLAction.of(back);
-	}
-
-	@Override
-	@SuppressWarnings("unused")
-    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
-            Class<T> entityType, Class<K> pkType,
-            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
-    {
-		boolean identityInsert = false;
-		StringBuilder sql = new StringBuilder();
-
-		if (pkIdentity) {
-			for (DBParam param : params) {
-				if (param.getField().trim().equalsIgnoreCase(pkField)) {
-					identityInsert = true;
-					sql.append("SET IDENTITY_INSERT ").append(withSchema(table)).append(" ON\n");
-					break;
-				}
-			}
-		}
-
-		sql.append("INSERT INTO ").append(withSchema(table));
-
-		if (params.length > 0) {
-			sql.append(" (");
-			for (DBParam param : params) {
-				sql.append(processID(param.getField()));
-				sql.append(',');
-			}
-			sql.setLength(sql.length() - 1);
-
-			sql.append(") VALUES (");
-
-			for (DBParam param : params) {
-				sql.append("?,");
-			}
-			sql.setLength(sql.length() - 1);
-
-			sql.append(")");
-		} else {
-			sql.append(" DEFAULT VALUES");
-		}
-
-		if (identityInsert) {
-			sql.append("\nSET IDENTITY_INSERT ").append(processID(table)).append(" OFF");
-		}
-
-		K back = executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
-
-		return back;
-	}
+    }
 
     @Override
-    public void putNull(final PreparedStatement stmt, final int index) throws SQLException
-    {
+    protected SQLAction renderAlterTableDropKey(DDLForeignKey key) {
+        StringBuilder back = new StringBuilder("ALTER TABLE ");
+
+        back.append(withSchema(key.getDomesticTable())).append(" DROP CONSTRAINT ").append(processID(key.getFKName()));
+
+        return SQLAction.of(back);
+    }
+
+    @Override
+    @SuppressWarnings("unused")
+    public synchronized <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
+                                                                         Class<T> entityType, Class<K> pkType,
+                                                                         String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException {
+        boolean identityInsert = false;
+        StringBuilder sql = new StringBuilder();
+
+        if (pkIdentity) {
+            for (DBParam param : params) {
+                if (param.getField().trim().equalsIgnoreCase(pkField)) {
+                    identityInsert = true;
+                    sql.append("SET IDENTITY_INSERT ").append(withSchema(table)).append(" ON\n");
+                    break;
+                }
+            }
+        }
+
+        sql.append("INSERT INTO ").append(withSchema(table));
+
+        if (params.length > 0) {
+            sql.append(" (");
+            for (DBParam param : params) {
+                sql.append(processID(param.getField()));
+                sql.append(',');
+            }
+            sql.setLength(sql.length() - 1);
+
+            sql.append(") VALUES (");
+
+            for (DBParam param : params) {
+                sql.append("?,");
+            }
+            sql.setLength(sql.length() - 1);
+
+            sql.append(")");
+        } else {
+            sql.append(" DEFAULT VALUES");
+        }
+
+        if (identityInsert) {
+            sql.append("\nSET IDENTITY_INSERT ").append(processID(table)).append(" OFF");
+        }
+
+        K back = executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
+
+        return back;
+    }
+
+    @Override
+    public void putNull(final PreparedStatement stmt, final int index) throws SQLException {
         stmt.setNull(index, Types.NULL);
     }
 
     @Override
-	protected Set<String> getReservedWords() {
-		return RESERVED_WORDS;
-	}
+    protected Set<String> getReservedWords() {
+        return RESERVED_WORDS;
+    }
 
     private static final Set<String> RESERVED_WORDS = ImmutableSet.of(
             "ADD", "EXCEPT", "PERCENT", "ALL", "EXEC", "PLAN", "ALTER", "EXECUTE",

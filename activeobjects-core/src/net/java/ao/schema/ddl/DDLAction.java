@@ -35,127 +35,125 @@ import java.util.Arrays;
  * @author Daniel Spiewak
  */
 public class DDLAction {
-	private DDLActionType actionType;
+    private DDLActionType actionType;
 
-	private DDLTable table;
-	private DDLField oldField, field;
-	private DDLForeignKey key;
-	private DDLIndex index;
+    private DDLTable table;
+    private DDLField oldField, field;
+    private DDLForeignKey key;
+    private DDLIndex index;
     private DDLValue[] values;
 
-    private DDLAction()
-    {}
+    private DDLAction() {
+    }
 
-	public DDLAction(DDLActionType actionType) {
-		this.actionType = actionType;
-	}
+    public DDLAction(DDLActionType actionType) {
+        this.actionType = actionType;
+    }
 
-	public DDLTable getTable() {
-		return table;
-	}
+    public DDLTable getTable() {
+        return table;
+    }
 
-	public void setTable(DDLTable table) {
-		this.table = table;
-	}
+    public void setTable(DDLTable table) {
+        this.table = table;
+    }
 
-	public DDLField getField() {
-		return field;
-	}
+    public DDLField getField() {
+        return field;
+    }
 
-	public void setField(DDLField field) {
-		this.field = field;
-	}
+    public void setField(DDLField field) {
+        this.field = field;
+    }
 
-	public DDLForeignKey getKey() {
-		return key;
-	}
+    public DDLForeignKey getKey() {
+        return key;
+    }
 
-	public void setKey(DDLForeignKey key) {
-		this.key = key;
-	}
+    public void setKey(DDLForeignKey key) {
+        this.key = key;
+    }
 
-	public DDLActionType getActionType() {
-		return actionType;
-	}
+    public DDLActionType getActionType() {
+        return actionType;
+    }
 
 
-	public DDLField getOldField() {
-		return oldField;
-	}
+    public DDLField getOldField() {
+        return oldField;
+    }
 
-	public void setOldField(DDLField oldField) {
-		this.oldField = oldField;
-	}
+    public void setOldField(DDLField oldField) {
+        this.oldField = oldField;
+    }
 
-	public DDLIndex getIndex() {
-		return index;
-	}
+    public DDLIndex getIndex() {
+        return index;
+    }
 
-	public void setIndex(DDLIndex index) {
-		this.index = index;
-	}
+    public void setIndex(DDLIndex index) {
+        this.index = index;
+    }
 
-    public DDLValue[] getValues()
-    {
+    public DDLValue[] getValues() {
         return values;
     }
 
-    public void setValues(DDLValue[] values)
-    {
+    public void setValues(DDLValue[] values) {
         this.values = values;
     }
 
     @Override
-	public int hashCode() {
-		int back = 0;
+    public int hashCode() {
+        int back = 0;
 
-		if (actionType != null) {
-			back += actionType.hashCode();
-		}
-		if (table != null) {
-			back += table.hashCode();
-		}
-		if (oldField != null) {
-			back += oldField.hashCode();
-		}
-		if (field != null) {
-			back += field.hashCode();
-		}
-		if (key != null) {
-			back += key.hashCode();
-		}
-		if (index != null) {
-			back += index.hashCode();
-		}
+        if (actionType != null) {
+            back += actionType.hashCode();
+        }
+        if (table != null) {
+            back += table.hashCode();
+        }
+        if (oldField != null) {
+            back += oldField.hashCode();
+        }
+        if (field != null) {
+            back += field.hashCode();
+        }
+        if (key != null) {
+            back += key.hashCode();
+        }
+        if (index != null) {
+            back += index.hashCode();
+        }
         if (values != null) {
             back += Arrays.hashCode(values);
         }
-		back %= 2 << 15;
+        back %= 2 << 15;
 
-		return back;
-	}
+        return back;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof DDLAction) {
-			DDLAction action = (DDLAction) obj;
-			if (action == this) {
-				return true;
-			}
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DDLAction) {
+            DDLAction action = (DDLAction) obj;
+            if (action == this) {
+                return true;
+            }
 
-			if ((action.getTable() == null || action.getTable().equals(table))
-					&& (action.getActionType() == actionType)
-					&& (action.getOldField() == null || action.getOldField().equals(oldField))
-					&& (action.getField() == null || action.getField().equals(field))
-					&& (action.getKey() == null || action.getKey().equals(key))
-					&& (action.getIndex() == null || action.getIndex().equals(index))
+            if ((action.getTable() == null || action.getTable().equals(table))
+                    && (action.getActionType() == actionType)
+                    && (action.getOldField() == null || action.getOldField().equals(oldField))
+                    && (action.getField() == null || action.getField().equals(field))
+                    && (action.getKey() == null || action.getKey().equals(key))
+                    && (action.getIndex() == null || action.getIndex().equals(index))
                     && (action.getValues() == null || Arrays.equals(action.getValues(), values))) {
-				return true;
-			}
+                return true;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		return super.equals(obj);
-	}
+        return super.equals(obj);
+    }
 }

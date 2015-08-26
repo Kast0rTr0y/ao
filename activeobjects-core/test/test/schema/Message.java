@@ -22,14 +22,17 @@ import net.java.ao.schema.NotNull;
  * @author Daniel Spiewak
  */
 public interface Message extends Entity {
-	
-	@NotNull
-	public String getContents();
-	public void setContents(String contents);
 
-	public Address getFrom();
-	public void setFrom(Address from);
+    @NotNull
+    public String getContents();
 
-	public Address getTo();
-	public void setTo(Address to);
+    public void setContents(String contents);
+
+    public Address getFrom();
+
+    public void setFrom(Address from);
+
+    public Address getTo();
+
+    public void setTo(Address to);
 }
