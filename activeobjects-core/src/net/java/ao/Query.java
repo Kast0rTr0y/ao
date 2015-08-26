@@ -66,6 +66,7 @@ public class Query implements Serializable
 	
 	private String orderClause;
 	private String groupClause;
+	private String havingClause;
 	private int limit = -1;
 	private int offset = -1;
 	
@@ -164,6 +165,12 @@ public class Query implements Serializable
 		
 		return this;
 	}
+
+    public Query having(String clause) {
+        havingClause = clause;
+
+        return this;
+    }
 	
 	public Query limit(int limit) {
 		this.limit = limit;
@@ -267,6 +274,14 @@ public class Query implements Serializable
 	public void setGroupClause(String groupClause) {
 		this.groupClause = groupClause;
 	}
+
+    public String getHavingClause() {
+        return havingClause;
+    }
+
+    public void setHavingClause(String havingClause) {
+        this.havingClause = havingClause;
+    }
 
 	public int getLimit() {
 		return limit;

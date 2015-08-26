@@ -3,6 +3,7 @@ package net.java.ao;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
+import net.java.ao.it.model.PersonChair;
 import net.java.ao.test.junit.SqlServerIntegrationTest;
 import org.junit.experimental.categories.Category;
 
@@ -132,6 +133,18 @@ public final class SqlServerQueryTest extends QueryTest
     protected String getExpectedSqlForCountWithGroupBy()
     {
         return format("SELECT TOP 4 COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
+    }
+
+    @Override
+    protected String getExpectedSqlForSelectWithHaving()
+    {
+        return format("SELECT p.%s FROM %s p JOIN %s pc ON p.%s = pc.%s GROUP BY p.%s HAVING COUNT(pc.%s) > 2", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
+    }
+
+    @Override
+    protected String getExpectedSqlForCountWithHaving()
+    {
+        return format("SELECT COUNT(*) FROM %s p JOIN %s pc ON p.%s = pc.%s GROUP BY p.%s HAVING COUNT(pc.%s) > 2", getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
     }
 
     @Override
