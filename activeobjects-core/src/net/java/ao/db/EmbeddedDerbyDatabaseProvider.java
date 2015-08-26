@@ -27,30 +27,22 @@ import static net.java.ao.Common.closeQuietly;
 /**
  * @author Daniel Spiewak
  */
-public class EmbeddedDerbyDatabaseProvider extends DerbyDatabaseProvider
-{
+public class EmbeddedDerbyDatabaseProvider extends DerbyDatabaseProvider {
     private final String uri;
 
-    public EmbeddedDerbyDatabaseProvider(DisposableDataSource dataSource, String uri)
-    {
+    public EmbeddedDerbyDatabaseProvider(DisposableDataSource dataSource, String uri) {
         super(dataSource);
         this.uri = checkNotNull(uri);
     }
 
     @Override
-    public void dispose()
-    {
+    public void dispose() {
         Connection conn = null;
-        try
-        {
+        try {
             conn = DriverManager.getConnection(uri + ";shutdown=true");
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             // ignored
-        }
-        finally
-        {
+        } finally {
             closeQuietly(conn);
         }
         super.dispose();

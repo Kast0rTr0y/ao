@@ -25,12 +25,13 @@ import java.lang.annotation.Target;
  * have a UNIQUE constraint.  This constraint is implemented within
  * the underlying database and is not enforced by ActiveObjects
  * itself.</p>
- * 
+ *
  * <p>This annotation is only relevant to migrations.  It has no effect upon
  * "runtime" entity usage.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Unique {}
+public @interface Unique {
+}

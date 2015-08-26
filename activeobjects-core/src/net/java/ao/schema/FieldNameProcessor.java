@@ -1,6 +1,5 @@
 package net.java.ao.schema;
 
-public interface FieldNameProcessor
-{
+public interface FieldNameProcessor {
     String convertName(String name);
 }

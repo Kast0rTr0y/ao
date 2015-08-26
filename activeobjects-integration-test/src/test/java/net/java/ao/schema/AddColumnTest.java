@@ -7,23 +7,20 @@ import org.junit.Test;
 
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-public final class AddColumnTest extends ActiveObjectsIntegrationTest
-{
+public final class AddColumnTest extends ActiveObjectsIntegrationTest {
     @Test
     @NonTransactional
-    public void testAddColumn() throws Exception
-    {
+    public void testAddColumn() throws Exception {
         entityManager.migrate(Clean.T.class);
 
         final Clean.T t = entityManager.create(Clean.T.class);
 
-        checkSqlExecuted(new Callable<Void>()
-        {
+        checkSqlExecuted(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 entityManager.migrate(AddedColumn.T.class);
                 return null;
             }
@@ -39,17 +36,13 @@ public final class AddColumnTest extends ActiveObjectsIntegrationTest
         newT.save();
     }
 
-    static final class Clean
-    {
-        public static interface T extends Entity
-        {
+    static final class Clean {
+        public static interface T extends Entity {
         }
     }
 
-    static final class AddedColumn
-    {
-        public static interface T extends Entity
-        {
+    static final class AddedColumn {
+        public static interface T extends Entity {
             String getColumn();
 
             void setColumn(String column);

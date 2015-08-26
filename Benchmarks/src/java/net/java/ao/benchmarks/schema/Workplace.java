@@ -13,12 +13,14 @@ import net.java.ao.OneToMany;
 @Implementation(WorkplaceImpl.class)
 public interface Workplace extends Entity {
 
-	public String getOfficeName();
-	public void setOfficeName(String name);
-	
-	public short getCoffeeQuality();
-	public void setCoffeeQuality(short quality);
-	
-	@OneToMany
-	public Person[] getPeople();
+    public String getOfficeName();
+
+    public void setOfficeName(String name);
+
+    public short getCoffeeQuality();
+
+    public void setCoffeeQuality(short quality);
+
+    @OneToMany
+    public Person[] getPeople();
 }

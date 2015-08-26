@@ -32,8 +32,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(TYPE)
 @Inherited
-public @interface NameConverters
-{
+public @interface NameConverters {
     /**
      * Specifies an implementation of {@link TableNameConverter}.
      */

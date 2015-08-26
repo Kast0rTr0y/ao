@@ -5,11 +5,9 @@ import net.java.ao.benchmark.model.Person;
 import net.java.ao.benchmark.model.PersonWithPreload;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 
-public final class BenchmarkDatabaseUpdater implements DatabaseUpdater
-{
+public final class BenchmarkDatabaseUpdater implements DatabaseUpdater {
     @Override
-    public void update(EntityManager entityManager) throws Exception
-    {
+    public void update(EntityManager entityManager) throws Exception {
         entityManager.migrate(Person.class, PersonWithPreload.class);
     }
 }

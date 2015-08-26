@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
  * <p>Marks a method as to be ignored by the schema generation engine.  This
  * annotation has no effect on the normal "runtime" behavior of the method
  * or its containing entity.</p>
- * 
+ *
  * <p>As a general rule, it's a good idea to use this annotation on any method
  * which does not have a one-to-one correspondance with a database field.  For
  * example, utility methods within the entity which perform high-level operations
@@ -33,12 +33,13 @@ import java.lang.annotation.Target;
  * lead to any problems in the actual invocation.  However, if a migration is run
  * against an entity containing such a method, extraneous fields may be generated
  * and the migration may even fail completely.</p>
- * 
+ *
  * <p>This annotation is only relevant to migrations.  It has no effect upon
  * "runtime" entity usage.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Ignore {}
+public @interface Ignore {
+}

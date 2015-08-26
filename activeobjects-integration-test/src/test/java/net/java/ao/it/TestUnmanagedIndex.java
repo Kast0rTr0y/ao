@@ -8,7 +8,12 @@ import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.ddl.*;
+import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionType;
+import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
+import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
@@ -25,26 +30,22 @@ import static org.mockito.Mockito.when;
 
 /**
  * Test to recreate the issue described in:
- *  https://ecosystem.atlassian.net/browse/AO-554?focusedCommentId=140467
- *
+ * https://ecosystem.atlassian.net/browse/AO-554?focusedCommentId=140467
  */
 @Data(TestUnmanagedIndex.EntityDatabaseUpdater.class)
-public final class TestUnmanagedIndex extends ActiveObjectsIntegrationTest
-{
+public final class TestUnmanagedIndex extends ActiveObjectsIntegrationTest {
 
     private static final String UNMANAGED_INDEX_NAME = "index_ao_unmanaged";
 
     @Test
-    public void testUnmanagedIndexShouldNotBeDroppedByAo() throws Exception
-    {
+    public void testUnmanagedIndexShouldNotBeDroppedByAo() throws Exception {
         entityManager.migrate(LexoRank.class);
         createUnmanagedIndex(UNMANAGED_INDEX_NAME);
         entityManager.migrate(LexoRank.class);
         assertTrue(findIndexInDatabase(UNMANAGED_INDEX_NAME).isPresent());
     }
 
-    private void createUnmanagedIndex(String indexName) throws Exception
-    {
+    private void createUnmanagedIndex(String indexName) throws Exception {
         DDLAction unmanagedIndexAction = new DDLAction(DDLActionType.CREATE_INDEX);
         DDLIndex index = new DDLIndex();
         index.setField(entityManager.getFieldNameConverter().getName(LexoRank.class.getMethods()[0]));
@@ -63,48 +64,41 @@ public final class TestUnmanagedIndex extends ActiveObjectsIntegrationTest
     }
 
 
-    private Optional<DDLIndex> findIndexInDatabase(final String indexName) throws SQLException
-    {
+    private Optional<DDLIndex> findIndexInDatabase(final String indexName) throws SQLException {
         final DDLTable table = getDdlTable();
-        return Iterables.tryFind(newArrayList(table.getIndexes()), new Predicate<DDLIndex>()
-        {
+        return Iterables.tryFind(newArrayList(table.getIndexes()), new Predicate<DDLIndex>() {
             @Override
-            public boolean apply(DDLIndex index)
-            {
+            public boolean apply(DDLIndex index) {
                 return index.getIndexName().equalsIgnoreCase(indexName);
             }
         });
 
     }
 
-    private DDLTable getDdlTable() throws SQLException
-    {
+    private DDLTable getDdlTable() throws SQLException {
         final DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), new DefaultSchemaConfiguration());
-        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>()
-        {
+        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>() {
             @Override
-            public boolean apply(DDLTable t)
-            {
+            public boolean apply(DDLTable t) {
                 return t.getName().equalsIgnoreCase(entityManager.getNameConverters().getTableNameConverter().getName(LexoRank.class));
             }
         });
     }
 
-    public static class EntityDatabaseUpdater implements DatabaseUpdater
-    {
+    public static class EntityDatabaseUpdater implements DatabaseUpdater {
         @Override
-        public void update(EntityManager entityManager) throws Exception
-        {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(LexoRank.class);
         }
     }
 
-    public static interface LexoRank extends Entity
-    {
+    public static interface LexoRank extends Entity {
         int getRank();
+
         void setRank(int rank);
 
         String getType();
+
         void setType(String type);
     }
 

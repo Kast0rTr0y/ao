@@ -15,21 +15,21 @@
  */
 package test.schema;
 
-import java.net.URL;
-
 import net.java.ao.Accessor;
 import net.java.ao.Mutator;
 import net.java.ao.Preload;
+
+import java.net.URL;
 
 /**
  * @author Daniel Spiewak
  */
 @Preload("url")
 public interface OnlineDistribution extends Distribution {
-	
-	@Accessor("url")
-	public URL getURL();
-	
-	@Mutator("url")
-	public void setURL(URL url);
+
+    @Accessor("url")
+    public URL getURL();
+
+    @Mutator("url")
+    public void setURL(URL url);
 }

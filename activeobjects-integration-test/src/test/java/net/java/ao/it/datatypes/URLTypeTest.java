@@ -18,22 +18,22 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * URL data type specific tests
  */
 @SuppressWarnings("unchecked")
-public final class URLTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class URLTypeTest extends ActiveObjectsIntegrationTest {
     /**
      * URL should not support AutoIncrement
      */
 
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
     }
 
@@ -42,8 +42,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimaryWithoutNotNull() throws Exception
-    {
+    public void testPrimaryWithoutNotNull() throws Exception {
         entityManager.migrate(PrimaryWithoutNotNull.class);
     }
 
@@ -52,8 +51,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         URL url = new URL("http://www.google.com");
@@ -67,8 +65,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNullId() throws Exception
-    {
+    public void testNullId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam("ID", null));
@@ -79,12 +76,10 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testColumnValues() throws Exception
-    {
+    public void testColumnValues() throws Exception {
         entityManager.migrate(SimpleId.class);
 
-        for (URL url : new URL[] {new URL("http://www.google.com"), new URL("http://localhost:2990/jira#anchor"), new URL("file://localhost/etc/passwd"), new URL("https://google.com?q=active objects")})
-        {
+        for (URL url : new URL[]{new URL("http://www.google.com"), new URL("http://localhost:2990/jira#anchor"), new URL("file://localhost/etc/passwd"), new URL("https://google.com?q=active objects")}) {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", url));
             entityManager.flushAll();
             assertEquals(url, e.getId());
@@ -97,8 +92,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -120,8 +114,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
 
         entityManager.create(EmptyDefaultColumn.class);
@@ -132,8 +125,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testInvalidDefaultColumn() throws Exception
-    {
+    public void testInvalidDefaultColumn() throws Exception {
         entityManager.migrate(InvalidDefaultColumn.class);
 
         entityManager.create(InvalidDefaultColumn.class);
@@ -144,8 +136,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -161,8 +152,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -178,8 +168,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -194,8 +183,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testNullValueWithPullFromDatabase() throws Exception
-    {
+    public void testNullValueWithPullFromDatabase() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -214,8 +202,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -232,8 +219,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -245,8 +231,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -258,8 +243,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testWrongDatatype() throws Exception
-    {
+    public void testWrongDatatype() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getUrl"), Boolean.FALSE));
@@ -273,8 +257,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testWrongDatatypeCorrectData() throws Exception
-    {
+    public void testWrongDatatypeCorrectData() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getUrl"), "http://www.google.com"));
@@ -288,8 +271,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testWrongDatatypeWrongData() throws Exception
-    {
+    public void testWrongDatatypeWrongData() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         SimpleColumn e = entityManager.create(SimpleColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getUrl"), "blah://www.google.com"));
@@ -298,43 +280,32 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
     }
 
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final String fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final String fieldValue) throws Exception {
         executeStatement("SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
-            new DbUtils.StatementCallback()
-            {
-                public void setParameters(PreparedStatement statement) throws Exception
-                {
-                    if (id instanceof URL)
-                    {
-                        statement.setString(1, id.toString());
+                new DbUtils.StatementCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
+                        if (id instanceof URL) {
+                            statement.setString(1, id.toString());
+                        } else {
+                            statement.setObject(1, id);
+                        }
                     }
-                    else
-                    {
-                        statement.setObject(1, id);
-                    }
-                }
 
-                public void processResult(ResultSet resultSet) throws Exception
-                {
-                    if (resultSet.next())
-                    {
-                        assertEquals(fieldValue, resultSet.getString(getFieldName(entityType, getterName)));
-                    }
-                    else
-                    {
-                        fail("No entry found in database with ID " + id);
+                    public void processResult(ResultSet resultSet) throws Exception {
+                        if (resultSet.next()) {
+                            assertEquals(fieldValue, resultSet.getString(getFieldName(entityType, getterName)));
+                        } else {
+                            fail("No entry found in database with ID " + id);
+                        }
                     }
                 }
-            }
         );
     }
 
     /**
      * Auto increment primary key column - not supported
      */
-    public static interface AutoIncrementId extends RawEntity<URL>
-    {
+    public static interface AutoIncrementId extends RawEntity<URL> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -345,8 +316,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Primary column without NotNull annotation - should be ok
      */
-    public static interface PrimaryWithoutNotNull extends RawEntity<URL>
-    {
+    public static interface PrimaryWithoutNotNull extends RawEntity<URL> {
         @PrimaryKey("ID")
         @StringLength(255)
         public URL getId();
@@ -355,8 +325,7 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary column
      */
-    public static interface SimpleId extends RawEntity<URL>
-    {
+    public static interface SimpleId extends RawEntity<URL> {
         @NotNull
         @PrimaryKey("ID")
         @StringLength(255)
@@ -366,62 +335,62 @@ public final class URLTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 
     /**
      * Empty URL for default value - not supported
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 
     /**
      * Default values
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("http://www.google.com?q=active%20objects")
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 
-    public static interface InvalidDefaultColumn extends Entity
-    {
+    public static interface InvalidDefaultColumn extends Entity {
         @Default("NULL")
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 
     /**
      * Indexed column - not supported
      */
-    public static interface Indexed extends Entity
-    {
+    public static interface Indexed extends Entity {
         @net.java.ao.schema.Indexed
         @StringLength(255)
         public URL getUrl();
+
         public void setUrl(URL url);
     }
 }

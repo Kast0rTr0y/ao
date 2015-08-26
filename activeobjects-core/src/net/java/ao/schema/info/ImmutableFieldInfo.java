@@ -5,8 +5,7 @@ import net.java.ao.types.TypeInfo;
 
 import java.lang.reflect.Method;
 
-class ImmutableFieldInfo<T> implements FieldInfo
-{
+class ImmutableFieldInfo<T> implements FieldInfo {
 
     private final String fieldName;
     private final String polymorphicName;
@@ -26,10 +25,9 @@ class ImmutableFieldInfo<T> implements FieldInfo
     private final Class<ValueGenerator<? extends T>> generatorType;
 
     ImmutableFieldInfo(String fieldName, String polymorphicName, Method accessor, Method mutator,
-                              Class<T> fieldType, TypeInfo<T> typeInfo, boolean primary, boolean nullable,
-                              boolean isTransient, boolean autoIncrement, boolean defaultValue,
-                              Class<ValueGenerator<? extends T>> generatorType)
-    {
+                       Class<T> fieldType, TypeInfo<T> typeInfo, boolean primary, boolean nullable,
+                       boolean isTransient, boolean autoIncrement, boolean defaultValue,
+                       Class<ValueGenerator<? extends T>> generatorType) {
         this.fieldName = fieldName;
         this.polymorphicName = polymorphicName;
         this.accessor = accessor;
@@ -45,104 +43,87 @@ class ImmutableFieldInfo<T> implements FieldInfo
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return fieldName;
     }
 
     @Override
-    public String getPolymorphicName()
-    {
+    public String getPolymorphicName() {
         return polymorphicName;
     }
 
     @Override
-    public boolean isPrimary()
-    {
+    public boolean isPrimary() {
         return primary;
     }
 
     @Override
-    public boolean isNullable()
-    {
+    public boolean isNullable() {
         return nullable;
     }
 
     @Override
-    public boolean isStorable()
-    {
+    public boolean isStorable() {
         return !isTransient() && getTypeInfo().getLogicalType().shouldStore(getJavaType());
     }
 
     @Override
-    public boolean isCacheable()
-    {
+    public boolean isCacheable() {
         return isStorable();
     }
 
     @Override
-    public boolean isTransient()
-    {
+    public boolean isTransient() {
         return isTransient;
     }
 
     @Override
-    public boolean hasAutoIncrement()
-    {
+    public boolean hasAutoIncrement() {
         return autoIncrement;
     }
 
     @Override
-    public boolean hasDefaultValue()
-    {
+    public boolean hasDefaultValue() {
         return defaultValue;
     }
 
     @Override
-    public TypeInfo<T> getTypeInfo()
-    {
+    public TypeInfo<T> getTypeInfo() {
         return typeInfo;
     }
 
     @Override
-    public Class<T> getJavaType()
-    {
+    public Class<T> getJavaType() {
         return fieldType;
     }
 
     @Override
-    public boolean hasAccessor()
-    {
+    public boolean hasAccessor() {
         return accessor != null;
     }
 
     @Override
-    public Method getAccessor()
-    {
+    public Method getAccessor() {
         return accessor;
     }
 
     @Override
-    public boolean hasMutator()
-    {
+    public boolean hasMutator() {
         return mutator != null;
     }
 
     @Override
-    public Method getMutator()
-    {
+    public Method getMutator() {
         return mutator;
     }
 
     @Override
-    public Class<? extends ValueGenerator<? extends T>> getGeneratorType()
-    {
+    public Class<? extends ValueGenerator<? extends T>> getGeneratorType() {
         return generatorType;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ImmutableFieldInfo)) return false;
 
@@ -156,8 +137,7 @@ class ImmutableFieldInfo<T> implements FieldInfo
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         int result = fieldName.hashCode();
         result = 31 * result + (accessor != null ? accessor.hashCode() : 0);
         result = 31 * result + (mutator != null ? mutator.hashCode() : 0);
@@ -165,8 +145,7 @@ class ImmutableFieldInfo<T> implements FieldInfo
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "ImmutableFieldInfo{" +
                 "fieldName='" + fieldName + '\'' +
                 ", polymorphicName='" + polymorphicName + '\'' +

@@ -24,14 +24,17 @@ import net.java.ao.schema.Default;
  */
 @Preload("width")
 public interface Pen extends Entity {
-	public double getWidth();
-	public void setWidth(double width);
-	
-	public Person getPerson();
-	public void setPerson(Person person);
-	
-	@Default("false")
-	public boolean isDeleted();
-	@Default("false")
-	public void setDeleted(boolean deleted);
+    public double getWidth();
+
+    public void setWidth(double width);
+
+    public Person getPerson();
+
+    public void setPerson(Person person);
+
+    @Default("false")
+    public boolean isDeleted();
+
+    @Default("false")
+    public void setDeleted(boolean deleted);
 }

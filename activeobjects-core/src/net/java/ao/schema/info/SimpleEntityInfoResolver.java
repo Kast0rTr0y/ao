@@ -26,8 +26,7 @@ import java.util.Set;
  * A {@code EntityInfoResolver} which creates new {@link EntityInfo} instances on every invocation of
  * {@link #resolve(Class)}
  */
-public class SimpleEntityInfoResolver implements EntityInfoResolver
-{
+public class SimpleEntityInfoResolver implements EntityInfoResolver {
 
     private final NameConverters nameConverters;
     private final TypeManager typeManager;
@@ -38,40 +37,30 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
     }
 
     @Override
-    public <T extends RawEntity<K>, K> EntityInfo<T, K> resolve(Class<T> type)
-    {
+    public <T extends RawEntity<K>, K> EntityInfo<T, K> resolve(Class<T> type) {
         final FieldNameConverter fieldNameConverter = nameConverters.getFieldNameConverter();
 
         final Map<String, Method> accessorByFieldName = Maps.newHashMap();
         final Map<String, Method> mutatorByFieldName = Maps.newHashMap();
 
         // First find all the methods
-        for (Method method : type.getMethods())
-        {
-            if (method.isAnnotationPresent(Ignore.class))
-            {
+        for (Method method : type.getMethods()) {
+            if (method.isAnnotationPresent(Ignore.class)) {
                 continue;
             }
 
-            if (Common.isAccessor(method))
-            {
+            if (Common.isAccessor(method)) {
                 String name = fieldNameConverter.getName(method);
-                if (name != null)
-                {
-                    if (accessorByFieldName.containsKey(name))
-                    {
+                if (name != null) {
+                    if (accessorByFieldName.containsKey(name)) {
                         throw new IllegalArgumentException(String.format("Invalid Entity definition. Both %s and %s generate the same table name (%s)", method, accessorByFieldName.get(name), name));
                     }
                     accessorByFieldName.put(name, method);
                 }
-            }
-            else if (Common.isMutator(method))
-            {
+            } else if (Common.isMutator(method)) {
                 String name = fieldNameConverter.getName(method);
-                if (name != null)
-                {
-                    if (mutatorByFieldName.containsKey(name))
-                    {
+                if (name != null) {
+                    if (mutatorByFieldName.containsKey(name)) {
                         throw new IllegalArgumentException(String.format("Invalid Entity definition. Both %s and %s generate the same table name (%s)", method, mutatorByFieldName.get(name), name));
                     }
                     mutatorByFieldName.put(fieldNameConverter.getName(method), method);
@@ -81,8 +70,7 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
 
         Set<FieldInfo> fields = Sets.newHashSet();
 
-        for (String fieldName : Sets.union(accessorByFieldName.keySet(), mutatorByFieldName.keySet()))
-        {
+        for (String fieldName : Sets.union(accessorByFieldName.keySet(), mutatorByFieldName.keySet())) {
             fields.add(createFieldInfo(fieldName, accessorByFieldName.get(fieldName), mutatorByFieldName.get(fieldName)));
         }
 
@@ -94,8 +82,7 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
     }
 
     @SuppressWarnings("unchecked")
-    private FieldInfo createFieldInfo(String fieldName, Method accessor, Method mutator)
-    {
+    private FieldInfo createFieldInfo(String fieldName, Method accessor, Method mutator) {
         Class fieldType = Common.getAttributeTypeFromMethod(Objects.firstNonNull(accessor, mutator));
 
         AnnotationDelegate annotations = getAnnotations(accessor, mutator);
@@ -117,8 +104,7 @@ public class SimpleEntityInfoResolver implements EntityInfoResolver
         );
     }
 
-    private AnnotationDelegate getAnnotations(Method accessor, Method mutator)
-    {
+    private AnnotationDelegate getAnnotations(Method accessor, Method mutator) {
         return accessor != null ? new AnnotationDelegate(accessor, mutator) : new AnnotationDelegate(mutator, accessor);
     }
 

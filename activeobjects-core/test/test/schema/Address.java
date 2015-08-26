@@ -24,6 +24,6 @@ import net.java.ao.Polymorphic;
  */
 @Polymorphic
 public interface Address extends Entity {
-	@OneToMany
-	public Message[] getMessages();
+    @OneToMany
+    public Message[] getMessages();
 }

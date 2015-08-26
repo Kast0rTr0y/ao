@@ -33,11 +33,9 @@ import net.java.ao.Common;
  * </tr>
  * </table>
  */
-public final class CamelCaseTableNameConverter extends CanonicalClassNameTableNameConverter
-{
+public final class CamelCaseTableNameConverter extends CanonicalClassNameTableNameConverter {
     @Override
-    protected String getName(String entityClassCanonicalName)
-    {
+    protected String getName(String entityClassCanonicalName) {
         return Common.convertDowncaseName(Common.convertSimpleClassName(entityClassCanonicalName));
     }
 }

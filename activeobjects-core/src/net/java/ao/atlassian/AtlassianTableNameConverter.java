@@ -37,14 +37,12 @@ import static net.java.ao.atlassian.ConverterUtils.checkLength;
  *     public interface YourEntity {}
  * </pre>
  */
-public final class AtlassianTableNameConverter implements TableNameConverter
-{
+public final class AtlassianTableNameConverter implements TableNameConverter {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final TableNameConverter tableNameConverter;
 
-    public AtlassianTableNameConverter(TablePrefix prefix)
-    {
+    public AtlassianTableNameConverter(TablePrefix prefix) {
         // this the basic conversion we want, under score and upper case
         final UnderscoreTableNameConverter baseConverter = new UnderscoreTableNameConverter(Case.UPPER);
 
@@ -55,8 +53,7 @@ public final class AtlassianTableNameConverter implements TableNameConverter
     }
 
     @Override
-    public String getName(Class<? extends RawEntity<?>> entityClass)
-    {
+    public String getName(Class<? extends RawEntity<?>> entityClass) {
         final String name = tableNameConverter.getName(entityClass);
         checkLength(name,
                 "Invalid entity, generated table name (" + name + ") for '" + entityClass.getName() + "' is too long! " +

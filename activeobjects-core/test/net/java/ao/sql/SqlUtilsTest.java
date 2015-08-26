@@ -6,24 +6,22 @@ import org.junit.Test;
 import java.util.regex.Matcher;
 
 import static java.lang.String.format;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public final class SqlUtilsTest
-{
+public final class SqlUtilsTest {
     private static final TestIdProcessor TEST_ID_PROCESSOR = new TestIdProcessor();
     private static final String[] SEPARATORS = new String[]{"=", "!=", "<=", ">=", "<", ">", "<>", "like", "LIKE", "is", "IS", "IS NOT", "is not"};
 
     @Test
-    public void testWhereClause()
-    {
-        for (String s : SEPARATORS)
-        {
+    public void testWhereClause() {
+        for (String s : SEPARATORS) {
             testWhereClauseWithSeparator(s);
         }
     }
 
-    private void testWhereClauseWithSeparator(String s)
-    {
+    private void testWhereClauseWithSeparator(String s) {
         testWhereClause(format("field %s value", s), "field");
         testWhereClause(format("field %s ?", s), "field");
 
@@ -59,33 +57,27 @@ public final class SqlUtilsTest
                 "TO_DATE", "TO_DATE", "FROM_DATE", "FROM_DATE", "FROM_DATE", "TO_DATE", "COLLABORATOR");
     }
 
-    private void testWhereClause(String clause, String... fields)
-    {
+    private void testWhereClause(String clause, String... fields) {
         final Matcher m = SqlUtils.WHERE_CLAUSE.matcher(clause);
-        for (String field : fields)
-        {
+        for (String field : fields) {
             assertTrue("Could not match " + field, m.find());
             assertEquals(field, m.group(1));
         }
 
         final boolean next = m.find();
-        if (next)
-        {
+        if (next) {
             assertFalse("Found an extra match " + m.group(1), next);
         }
     }
 
     @Test
-    public void testProcessWhereClause()
-    {
-        for (String s : SEPARATORS)
-        {
+    public void testProcessWhereClause() {
+        for (String s : SEPARATORS) {
             testProcessWhereClauseWithSeparator(s);
         }
     }
 
-    private void testProcessWhereClauseWithSeparator(String s)
-    {
+    private void testProcessWhereClauseWithSeparator(String s) {
         testProcessWhereClause(
                 format("field %s value", s),
                 format("*field* %s value", s));
@@ -140,31 +132,26 @@ public final class SqlUtilsTest
         );
     }
 
-    private void testProcessWhereClause(String where, String expected)
-    {
+    private void testProcessWhereClause(String where, String expected) {
         assertEquals(expected, SqlUtils.processWhereClause(where, TEST_ID_PROCESSOR));
     }
 
     @Test
-    public void testProcessOnClausePattern()
-    {
+    public void testProcessOnClausePattern() {
         assertEquals("*id* = *otherId*", SqlUtils.processOnClause("id = otherId", TEST_ID_PROCESSOR));
         assertEquals("a.*id* = b.*otherId*", SqlUtils.processOnClause("a.id = b.otherId", TEST_ID_PROCESSOR));
         assertEquals("schema.*a*.*id* = schema.*b*.*otherId*", SqlUtils.processOnClause("schema.a.id = schema.b.otherId", TEST_ID_PROCESSOR));
     }
 
     @Test
-    public void testProcessGroupByClause()
-    {
+    public void testProcessGroupByClause() {
         assertEquals("*id*,*otherId*", SqlUtils.processGroupByClause("id,otherId", TEST_ID_PROCESSOR));
         assertEquals("*a*.*id*,*b*.*otherId*", SqlUtils.processGroupByClause("a.id,b.otherId", TEST_ID_PROCESSOR));
     }
 
-    private static class TestIdProcessor implements Function<String, String>
-    {
+    private static class TestIdProcessor implements Function<String, String> {
         @Override
-        public String apply(String id)
-        {
+        public String apply(String id) {
             return "*" + id + "*";
         }
     }

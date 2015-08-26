@@ -22,9 +22,11 @@ import net.java.ao.Entity;
  */
 public interface Authorship extends Entity {
 
-	public Publication getPublication();
-	public void setPublication(Publication publication);
-	
-	public Author getAuthor();
-	public void setAuthor(Author author);
+    public Publication getPublication();
+
+    public void setPublication(Publication publication);
+
+    public Author getAuthor();
+
+    public void setAuthor(Author author);
 }

@@ -33,66 +33,50 @@ import java.util.regex.Pattern;
  *
  * @author Daniel Spiewak
  */
-class OrderedProperties extends HashMap<String, String> implements Iterable<String>
-{
+class OrderedProperties extends HashMap<String, String> implements Iterable<String> {
     private static final long serialVersionUID = 2L;
     private final List<String> keyList;
 
-    private OrderedProperties()
-    {
+    private OrderedProperties() {
         keyList = new LinkedList<String>();
     }
 
-    static OrderedProperties load(String resource)
-    {
+    static OrderedProperties load(String resource) {
         final OrderedProperties p = new OrderedProperties();
         final InputStream is = OrderedProperties.class.getResourceAsStream(resource);
-        try
-        {
+        try {
             p.load(is);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new IllegalStateException(e);
-        }
-        finally
-        {
-            try
-            {
+        } finally {
+            try {
                 is.close();
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 // ignored
             }
         }
         return p;
     }
 
-    private void load(InputStream inStream) throws IOException
-    {
+    private void load(InputStream inStream) throws IOException {
         load(new InputStreamReader(inStream));
     }
 
-    private void load(Reader reader) throws IOException
-    {
+    private void load(Reader reader) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(reader);
         Pattern pattern = Pattern.compile("([^#].+)=([^#\\r\\n]+)");
 
         String line;
-        while ((line = bufferedReader.readLine()) != null)
-        {
+        while ((line = bufferedReader.readLine()) != null) {
             Matcher matcher = pattern.matcher(line);
-            if (matcher.find())
-            {
+            if (matcher.find()) {
                 keyList.add(matcher.group(1).trim());
                 put(matcher.group(1).trim(), matcher.group(2).trim());
             }
         }
     }
 
-    public Iterator<String> iterator()
-    {
+    public Iterator<String> iterator() {
         return keyList.iterator();
     }
 }

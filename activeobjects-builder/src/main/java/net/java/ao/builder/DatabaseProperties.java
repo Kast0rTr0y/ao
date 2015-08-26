@@ -1,7 +1,6 @@
 package net.java.ao.builder;
 
-public interface DatabaseProperties
-{
+public interface DatabaseProperties {
     String getUrl();
 
     String getUsername();

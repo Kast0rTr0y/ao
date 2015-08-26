@@ -25,19 +25,19 @@ import java.lang.annotation.Target;
  * annotation can also be (and usually is) used to manually specify
  * a field name which corresponds to a method; as in the following
  * example:</p>
- * 
+ *
  * <pre>public Company extends Entity {
  *     // ...
- *     
+ *
  *     &#064;Mutator("url")
  *     public void setURL(URL url);
  *     // ...
  * }</pre>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Mutator {
-	String value();
+    String value();
 }

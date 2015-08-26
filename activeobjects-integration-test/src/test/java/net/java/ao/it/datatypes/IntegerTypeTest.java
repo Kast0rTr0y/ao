@@ -16,20 +16,20 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for Integer data type
  */
-public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class IntegerTypeTest extends ActiveObjectsIntegrationTest {
     /**
      * Test AutoIncrement
      */
     @Test
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
 
         AutoIncrementId e = entityManager.create(AutoIncrementId.class);
@@ -44,8 +44,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", 12345));
@@ -59,8 +58,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNullId() throws Exception
-    {
+    public void testNullId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam("ID", null));
@@ -71,13 +69,11 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSpecialIds() throws Exception
-    {
+    public void testSpecialIds() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         // create a row with normal id
-        for (Integer value : new Integer[]{Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE})
-        {
+        for (Integer value : new Integer[]{Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE}) {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", value));
             assertEquals(value, e.getId());
             checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", value);
@@ -89,8 +85,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -113,8 +108,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -125,8 +119,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testInvalidDefaultColumn() throws Exception
-    {
+    public void testInvalidDefaultColumn() throws Exception {
         entityManager.migrate(InvalidDefaultColumn.class);
     }
 
@@ -135,8 +128,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -152,8 +144,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -169,8 +160,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -185,8 +175,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testNullValueWithPullFromDatabase() throws Exception
-    {
+    public void testNullValueWithPullFromDatabase() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -204,8 +193,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -221,8 +209,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnSetNull() throws Exception
-    {
+    public void testNotNullColumnSetNull() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -238,8 +225,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -251,8 +237,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -264,8 +249,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimitiveColumn() throws Exception
-    {
+    public void testPrimitiveColumn() throws Exception {
         entityManager.migrate(PrimitiveColumn.class);
 
         // create
@@ -290,8 +274,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimitiveNotNullColumn() throws Exception
-    {
+    public void testPrimitiveNotNullColumn() throws Exception {
         entityManager.migrate(PrimitiveNotNullColumn.class);
 
         // create
@@ -315,33 +298,25 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDelete() throws Exception
-    {
+    public void testDelete() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", 12345));
         entityManager.delete(e);
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Integer fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Integer fieldValue) throws Exception {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
+                new DbUtils.StatementCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
                         statement.setObject(1, id);
                     }
 
-                    public void processResult(ResultSet resultSet) throws Exception
-                    {
-                        if (resultSet.next())
-                        {
+                    public void processResult(ResultSet resultSet) throws Exception {
+                        if (resultSet.next()) {
                             int dbValue = resultSet.getInt(getFieldName(entityType, getterName));
                             assertEquals(fieldValue, resultSet.wasNull() ? null : dbValue);
-                        }
-                        else
-                        {
+                        } else {
                             fail("No entry found in database with ID " + id);
                         }
                     }
@@ -352,8 +327,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
     /**
      * AutoIncrement primary key column
      */
-    public static interface AutoIncrementId extends RawEntity<Integer>
-    {
+    public static interface AutoIncrementId extends RawEntity<Integer> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -363,8 +337,7 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary key column
      */
-    public static interface SimpleId extends RawEntity<Integer>
-    {
+    public static interface SimpleId extends RawEntity<Integer> {
         @PrimaryKey("ID")
         public Integer getId();
     }
@@ -372,9 +345,9 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         public Integer getAge();
+
         public void setAge(Integer age);
     }
 
@@ -382,59 +355,59 @@ public final class IntegerTypeTest extends ActiveObjectsIntegrationTest
      * Empty default column
      * Invalid as not supported accross all databases
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public Integer getAge();
+
         public void setAge(Integer age);
     }
 
     /**
      * Invalid default value - must be parseable to an Integer
      */
-    public static interface InvalidDefaultColumn extends Entity
-    {
+    public static interface InvalidDefaultColumn extends Entity {
         @Default("Test")
         public Integer getAge();
+
         public void setAge(Integer age);
     }
 
     /**
      * Valid default value
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("100")
         public Integer getAge();
+
         public void setAge(Integer age);
     }
 
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         public Integer getAge();
+
         public void setAge(Integer age);
     }
 
     /**
      * Primitive column
      */
-    public static interface PrimitiveColumn extends Entity
-    {
+    public static interface PrimitiveColumn extends Entity {
         public int getAge();
+
         public void setAge(int age);
     }
 
     /**
      * Primitive not null column
      */
-    public static interface PrimitiveNotNullColumn extends Entity
-    {
+    public static interface PrimitiveNotNullColumn extends Entity {
         @NotNull
         public int getAge();
+
         public void setAge(int age);
     }
 }

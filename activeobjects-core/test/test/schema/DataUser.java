@@ -22,15 +22,18 @@ import net.java.ao.schema.Unique;
  * @author daniel
  */
 public interface DataUser {
-	@NotNull
-	public byte[] getPasswordHash();
-	public void setPasswordHash(byte[] passwordHash);
-	
-	@NotNull
-	@Unique
-	public String getUsername();
-	public void setUsername(String username);
-	
-	public String getRoleString();
-	public void setRoleString(String roleString);
+    @NotNull
+    public byte[] getPasswordHash();
+
+    public void setPasswordHash(byte[] passwordHash);
+
+    @NotNull
+    @Unique
+    public String getUsername();
+
+    public void setUsername(String username);
+
+    public String getRoleString();
+
+    public void setRoleString(String roleString);
 }

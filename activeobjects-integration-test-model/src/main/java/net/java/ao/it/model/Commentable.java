@@ -24,7 +24,7 @@ import net.java.ao.Polymorphic;
  */
 @Polymorphic
 public interface Commentable extends Entity {
-	
-	@OneToMany
-	public Comment[] getComments();
+
+    @OneToMany
+    public Comment[] getComments();
 }

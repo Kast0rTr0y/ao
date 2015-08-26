@@ -30,80 +30,76 @@
  */
 package net.java.ao.contacts.ui;
 
-import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.awt.Window;
+import net.java.ao.EntityManager;
+import net.java.ao.schema.PluralizedNameConverter;
+import org.jdesktop.fuse.ResourceInjector;
+
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-
-import javax.swing.UnsupportedLookAndFeelException;
-
-import net.java.ao.EntityManager;
-import net.java.ao.schema.PluralizedNameConverter;
-
-import org.jdesktop.fuse.ResourceInjector;
 
 /**
  * @author Daniel Spiewak
  */
 public final class UIManager {
-	private static EntityManager manager;
-	
-	public static void init() {
-		Properties dbProperties = new Properties();
-		
-		InputStream is = UIManager.class.getResourceAsStream("/db.properties");
-		try {
-			dbProperties.load(is);
-		} catch (IOException e) {
-		} finally {
-			try {
-				is.close();
-			} catch (IOException e) {
-			}
-		}
-		
-		manager = new EntityManager(dbProperties.getProperty("db.uri"), dbProperties.getProperty("db.username"), 
-				dbProperties.getProperty("db.password"));
-		
+    private static EntityManager manager;
+
+    public static void init() {
+        Properties dbProperties = new Properties();
+
+        InputStream is = UIManager.class.getResourceAsStream("/db.properties");
+        try {
+            dbProperties.load(is);
+        } catch (IOException e) {
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+            }
+        }
+
+        manager = new EntityManager(dbProperties.getProperty("db.uri"), dbProperties.getProperty("db.username"),
+                dbProperties.getProperty("db.password"));
+
 //		Logger.getLogger("net.java.ao").setLevel(Level.FINE);
-		
-		manager.setTableNameConverter(new PluralizedNameConverter());
-		
-		ResourceInjector.addModule("org.jdesktop.fuse.swing.SwingModule");
-		ResourceInjector.get("ui.style").load("/style.properties");
-		
-		try {
-			javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException e) {
-		} catch (InstantiationException e) {
-		} catch (IllegalAccessException e) {
-		} catch (UnsupportedLookAndFeelException e) {
-		}
-	}
-	
-	public static EntityManager getManager() {
-		return manager;
-	}
-	
-	public static void show() {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				MainFrame frame = new MainFrame();
-				frame.setVisible(true);
-			}
-		});
-	}
-	
-	public static void centerWindow(Window window) {
-		int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
-		int screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
-		
-		window.setLocation((screenWidth - window.getWidth()) / 2, (screenHeight - window.getHeight()) / 2);
-	}
-	
-	public static void dispose() {
-		manager.getProvider().dispose();
-	}
+
+        manager.setTableNameConverter(new PluralizedNameConverter());
+
+        ResourceInjector.addModule("org.jdesktop.fuse.swing.SwingModule");
+        ResourceInjector.get("ui.style").load("/style.properties");
+
+        try {
+            javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException e) {
+        } catch (InstantiationException e) {
+        } catch (IllegalAccessException e) {
+        } catch (UnsupportedLookAndFeelException e) {
+        }
+    }
+
+    public static EntityManager getManager() {
+        return manager;
+    }
+
+    public static void show() {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                MainFrame frame = new MainFrame();
+                frame.setVisible(true);
+            }
+        });
+    }
+
+    public static void centerWindow(Window window) {
+        int screenWidth = Toolkit.getDefaultToolkit().getScreenSize().width;
+        int screenHeight = Toolkit.getDefaultToolkit().getScreenSize().height;
+
+        window.setLocation((screenWidth - window.getWidth()) / 2, (screenHeight - window.getHeight()) / 2);
+    }
+
+    public static void dispose() {
+        manager.getProvider().dispose();
+    }
 }

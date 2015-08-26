@@ -12,27 +12,23 @@ import net.java.ao.test.ConfigurationProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class DynamicTableNameConverter implements TableNameConverter
-{
+public final class DynamicTableNameConverter implements TableNameConverter {
     private static final Logger logger = LoggerFactory.getLogger(DynamicTableNameConverter.class);
 
     private final Supplier<TableNameConverter> tncSupplier;
 
-    public DynamicTableNameConverter()
-    {
+    public DynamicTableNameConverter() {
         this.tncSupplier = Suppliers.memoize(new SystemPropertyTableNameConverterSupplier());
     }
 
     @Override
-    public String getName(Class<? extends RawEntity<?>> clazz)
-    {
+    public String getName(Class<? extends RawEntity<?>> clazz) {
         return tncSupplier.get().getName(clazz);
     }
 
-    private static final class SystemPropertyTableNameConverterSupplier implements Supplier<TableNameConverter>
-    {
+    private static final class SystemPropertyTableNameConverterSupplier implements Supplier<TableNameConverter> {
         public static final String DEFAULT = "atlassian";
 
         private final ImmutableMap<String, TableNameConverter> converters = ImmutableMap.of(
@@ -42,8 +38,7 @@ public final class DynamicTableNameConverter implements TableNameConverter
         );
 
         @Override
-        public TableNameConverter get()
-        {
+        public TableNameConverter get() {
             final String key = ConfigurationProperties.get("ao.test.tablenameconverter", DEFAULT);
             final TableNameConverter tnc = converters.get(key);
 
@@ -52,25 +47,21 @@ public final class DynamicTableNameConverter implements TableNameConverter
         }
     }
 
-    private static final class TestPrefix implements TablePrefix
-    {
+    private static final class TestPrefix implements TablePrefix {
         private static final String DEFAULT_SEPARATOR = "_";
         private final String prefix;
         private final String separator;
 
-        public TestPrefix(String prefix)
-        {
+        public TestPrefix(String prefix) {
             this(prefix, DEFAULT_SEPARATOR);
         }
 
-        public TestPrefix(String prefix, String separator)
-        {
+        public TestPrefix(String prefix, String separator) {
             this.prefix = checkNotNull(prefix);
             this.separator = checkNotNull(separator);
         }
 
-        public String prepend(String string)
-        {
+        public String prepend(String string) {
             return new StringBuilder().append(prefix).append(separator).append(string).toString();
         }
     }

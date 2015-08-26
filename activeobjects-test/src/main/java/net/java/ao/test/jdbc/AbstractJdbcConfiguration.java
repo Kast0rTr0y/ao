@@ -7,8 +7,7 @@ import static org.apache.commons.lang.StringUtils.defaultString;
 /**
  *
  */
-public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
-{
+public abstract class AbstractJdbcConfiguration implements JdbcConfiguration {
     public static final String DEFAULT_USER = "ao_user";
     public static final String DEFAULT_PASSWORD = "ao_password";
     private final String url;
@@ -16,73 +15,60 @@ public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
     private final String password;
     private final String schema;
 
-    protected AbstractJdbcConfiguration(String url, String username, String password, String schema)
-    {
+    protected AbstractJdbcConfiguration(String url, String username, String password, String schema) {
         this.url = defaultString(url, getDefaultUrl());
         this.username = defaultString(username, getDefaultUsername());
         this.password = defaultString(password, getDefaultPassword());
         this.schema = defaultString(schema, getDefaultSchema());
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
-    public String getPassword()
-    {
+    public String getPassword() {
         return password;
     }
 
     @Override
-    public String getSchema()
-    {
+    public String getSchema() {
         return schema;
     }
 
-    public String getUrl()
-    {
+    public String getUrl() {
         return url;
     }
 
     @Override
-    public void init()
-    {
+    public void init() {
     }
 
     protected abstract String getDefaultSchema();
 
     protected abstract String getDefaultUrl();
 
-    protected String getDefaultUsername()
-    {
+    protected String getDefaultUsername() {
         return DEFAULT_USER;
     }
 
-    protected String getDefaultPassword()
-    {
+    protected String getDefaultPassword() {
         return DEFAULT_PASSWORD;
     }
 
     @Override
-    public final int hashCode()
-    {
+    public final int hashCode() {
         return Objects.hashCode(getUsername(), getPassword(), getUrl(), getSchema());
     }
 
     @Override
-    public final boolean equals(Object obj)
-    {
-        if (obj == null)
-        {
+    public final boolean equals(Object obj) {
+        if (obj == null) {
             return false;
         }
-        if (obj == this)
-        {
+        if (obj == this) {
             return true;
         }
-        if (!(obj instanceof JdbcConfiguration))
-        {
+        if (!(obj instanceof JdbcConfiguration)) {
             return false;
         }
 
@@ -94,8 +80,7 @@ public abstract class AbstractJdbcConfiguration implements JdbcConfiguration
     }
 
     @Override
-    public final String toString()
-    {
+    public final String toString() {
         return new StringBuilder().append(getUrl())
                 .append(" :: ").append(getSchema() != null ? getSchema() : "<no schema>")
                 .append(" - ").append(getUsername())

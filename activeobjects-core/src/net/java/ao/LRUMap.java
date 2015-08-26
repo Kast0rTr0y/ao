@@ -1,4 +1,4 @@
-package net.java.ao; /*******************************************************************************
+package net.java.ao; /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,7 +15,7 @@ package net.java.ao; /**********************************************************
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *******************************************************************************/
+ */
 
 /**
  *
@@ -52,6 +52,7 @@ class LRUMap<K, V> extends LinkedHashMap<K, V> {
 
     /**
      * Sets the max capacity for this LRUMap
+     *
      * @param size Max Size (as integer)
      */
     public void setMaxSize(int size) {
