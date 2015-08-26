@@ -20,12 +20,15 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import net.java.ao.db.H2DatabaseProvider;
+import net.java.ao.it.model.PersonChair;
 import net.java.ao.schema.info.EntityInfo;
+
 import org.junit.Test;
 
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
+import net.java.ao.db.NuoDBDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
 import net.java.ao.db.SQLServerDatabaseProvider;
@@ -36,7 +39,6 @@ import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
-
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -322,6 +324,32 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithGroupBy();
 
     @Test
+    public final void testSelectWithHaving()
+    {
+        assertSelectSqlEquals(getSelectWithHavingQuery(), getExpectedSqlForSelectWithHaving());
+    }
+
+    @Test
+    public final void testCountWithHaving()
+    {
+        assertCountSqlEquals(getSelectWithHavingQuery(), getExpectedSqlForCountWithHaving());
+    }
+
+    private Query getSelectWithHavingQuery()
+    {
+        return Query.select()
+                .alias(Person.class, "p")
+                .alias(PersonChair.class, "pc")
+                .join(PersonChair.class, "p." + getPersonId() + " = pc." + getPersonChairPerson())
+                .group("p." + getPersonId())
+                .having("COUNT(pc." + getPersonChairChair() + ") > 2");
+    }
+
+    protected abstract String getExpectedSqlForSelectWithHaving();
+
+    protected abstract String getExpectedSqlForCountWithHaving();
+
+    @Test
     public final void testSelectWithExplicitJoin()
     {
         assertSelectSqlEquals(getSelectWithExplicitJoinQuery(), getExpectedSqlForSelectWithExplicitJoin());
@@ -466,6 +494,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         return getFieldName(CompanyAddressInfo.class, "getAddressLine1");
     }
 
+    protected final String getPersonChairPerson()
+    {
+        return getFieldName(PersonChair.class, "getPerson");
+    }
+
+    protected final String getPersonChairChair()
+    {
+        return getFieldName(PersonChair.class, "getChair");
+    }
+
     private void assertSelectSqlEquals(Query query, String expected)
     {
         assertEquals(expected, toSql(getDatabaseProvider(), query, false));
@@ -569,6 +607,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
         public static MySQLDatabaseProvider getMySqlDatabaseProvider()
         {
             return new MySQLDatabaseProvider(newDataSource(""));
+        }
+        
+        public static NuoDBDatabaseProvider getNuoDBDatabaseProvider()
+        {
+        	return new NuoDBDatabaseProvider(newDataSource(""));
         }
 
         public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()

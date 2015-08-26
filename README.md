@@ -27,11 +27,11 @@ The active objects project uses maven for its build. To build:
 
 ### Committing Guidelines
 
-Please see [the following guide](https://extranet.atlassian.com/x/Uouvdg) for committing to this module.
+Please see [The Platform Rules of Engagement (go/proe)](http://go.atlassian.com/proe) for committing to this module.
 
 ### Builds
 
-The Bamboo builds for this project are on [BEAC](https://extranet-bamboo.internal.atlassian.com/browse/AO)
+The Bamboo builds for this project are on [EcoBAC](https://ecosystem-bamboo.internal.atlassian.com/browse/AOLIB)
 
 ## External User?
 
