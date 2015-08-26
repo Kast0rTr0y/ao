@@ -20,6 +20,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
 import net.java.ao.db.H2DatabaseProvider;
+import net.java.ao.it.model.PersonChair;
 import net.java.ao.schema.info.EntityInfo;
 
 import org.junit.Test;
