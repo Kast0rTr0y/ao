@@ -6,8 +6,7 @@ import net.java.ao.schema.info.EntityInfoResolverFactory;
 /**
  * This represents a configuration for entity manager creation.
  */
-public interface EntityManagerConfiguration
-{
+public interface EntityManagerConfiguration {
     /**
      * @deprecated since 0.25. EntityManager now no longer caches.
      */
@@ -31,6 +30,7 @@ public interface EntityManagerConfiguration
     /**
      * Gets a EntityInfo factory to use when parsing the schema configuration annotated on
      * the {@link RawEntity entity} type
+     *
      * @return a non-{@code null} {@link net.java.ao.schema.info.EntityInfoResolver EntityInfo factory}
      */
     EntityInfoResolverFactory getEntityInfoResolverFactory();

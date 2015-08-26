@@ -6,14 +6,13 @@ import java.lang.reflect.Method;
  * An interface to resolve field names.
  * Implementation should not transform (upper case, under score, camel case, etc...) the resolved name.
  */
-public interface FieldNameResolver
-{
+public interface FieldNameResolver {
     /**
      * Tells whether this field name resolver will be able to resolve a name from this method.
      *
      * @param method the method to figure out the field name for
      * @return {@code true} if {@link #resolve(Method)} will actually resolve the field name given the same method
-     *         argument
+     * argument
      */
     boolean accept(Method method);
 

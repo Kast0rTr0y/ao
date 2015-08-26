@@ -35,20 +35,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
 @WithIndex
-public final class SearchTest extends ActiveObjectsIntegrationTest
-{
+public final class SearchTest extends ActiveObjectsIntegrationTest {
     @Before
-    public void setUp() throws Exception
-    {
-        Map<String, String[]> people = new LinkedHashMap<String, String[]>()
-        {
+    public void setUp() throws Exception {
+        Map<String, String[]> people = new LinkedHashMap<String, String[]>() {
             {
 //                put("Daniel", new String[]{"Spiewak", "http://www.codecommit.com"}); // already is in the DB
                 put("Christopher", new String[]{"Spiewak", "http://www.weirdthings.com"});
@@ -65,16 +65,14 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         String[] companies = {"Miller", "Chrysler", "Apple", "GM", "HP", "Dell", "Wal-Mart",
                 "Ma Bell", "Sell, Sell, Sell", "Viacom"};
 
-        for (String firstName : people.keySet())
-        {
+        for (String firstName : people.keySet()) {
             Person person = entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL(people.get(firstName)[1])));
             person.setFirstName(firstName);
             person.setLastName(people.get(firstName)[0]);
             person.save();
         }
 
-        for (String name : companies)
-        {
+        for (String name : companies) {
             Company company = entityManager.create(Company.class);
             company.setName(name);
             company.save();
@@ -82,8 +80,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testSearchable()
-    {
+    public void testSearchable() {
         List<String> fields = Common.getSearchableFields(entityManager, Company.class);
 
         assertEquals(1, fields.size());
@@ -95,21 +92,18 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         assertEquals(possibilities.size(), fields.size());
 
         Collections.sort(fields);
-        for (int i = 0; i < possibilities.size(); i++)
-        {
+        for (int i = 0; i < possibilities.size(); i++) {
             assertEquals(possibilities.get(i), fields.get(i));
         }
     }
 
     @Test
-    public void testSearch() throws Exception
-    {
+    public void testSearch() throws Exception {
         // using the searchable
         final SearchableEntityManager entityManager = getSearchableEntityManager();
 
         Person[] people = entityManager.search(Person.class, "Spiewak");
-        Map<String, String> resultsMap = new HashMap<String, String>()
-        {
+        Map<String, String> resultsMap = new HashMap<String, String>() {
             {
                 put("Daniel", "Spiewak");
                 put("Christopher", "Spiewak");
@@ -117,8 +111,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         };
 
         assertEquals(resultsMap.size(), people.length);
-        for (Person p : people)
-        {
+        for (Person p : people) {
             assertNotNull(resultsMap.get(p.getFirstName()));
             assertEquals(resultsMap.get(p.getFirstName()), p.getLastName());
 
@@ -127,16 +120,14 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         assertEquals(0, resultsMap.size());
 
         people = entityManager.search(Person.class, "martin");
-        resultsMap = new HashMap<String, String>()
-        {
+        resultsMap = new HashMap<String, String>() {
             {
                 put("Martin", "Smith");
             }
         };
 
         assertEquals(resultsMap.size(), people.length);
-        for (Person p : people)
-        {
+        for (Person p : people) {
             assertNotNull(resultsMap.get(p.getFirstName()));
             assertEquals(resultsMap.get(p.getFirstName()), p.getLastName());
 
@@ -145,8 +136,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         assertEquals(0, resultsMap.size());
 
         people = entityManager.search(Person.class, "sMitH");
-        resultsMap = new HashMap<String, String>()
-        {
+        resultsMap = new HashMap<String, String>() {
             {
                 put("Martin", "Smith");
                 put("Steve", "Smith");
@@ -155,8 +145,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         };
 
         assertEquals(resultsMap.size(), people.length);
-        for (Person p : people)
-        {
+        for (Person p : people) {
             assertNotNull(resultsMap.get(p.getFirstName()));
             assertEquals(resultsMap.get(p.getFirstName()), p.getLastName());
 
@@ -165,24 +154,21 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         assertEquals(0, resultsMap.size());
 
         Company[] companies = entityManager.search(Company.class, "miller");
-        Set<String> resultSet = new HashSet<String>()
-        {
+        Set<String> resultSet = new HashSet<String>() {
             {
                 add("Miller");
             }
         };
 
         assertEquals(resultSet.size(), companies.length);
-        for (Company c : companies)
-        {
+        for (Company c : companies) {
             assertTrue(resultSet.contains(c.getName()));
             resultSet.remove(c.getName());
         }
         assertEquals(0, resultSet.size());
 
         companies = entityManager.search(Company.class, "deLL sell");
-        resultSet = new HashSet<String>()
-        {
+        resultSet = new HashSet<String>() {
             {
                 add("Dell");
                 add("Sell, Sell, Sell");
@@ -190,8 +176,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         };
 
         assertEquals(resultSet.size(), companies.length);
-        for (Company c : companies)
-        {
+        for (Company c : companies) {
             assertTrue(resultSet.contains(c.getName()));
             resultSet.remove(c.getName());
         }
@@ -201,8 +186,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         resultSet = new HashSet<String>();
 
         assertEquals(resultSet.size(), companies.length);
-        for (Company c : companies)
-        {
+        for (Company c : companies) {
             assertTrue(resultSet.contains(c.getName()));
             resultSet.remove(c.getName());
         }
@@ -210,8 +194,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testDelete() throws Exception
-    {
+    public void testDelete() throws Exception {
         final SearchableEntityManager entityManager = getSearchableEntityManager();
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
@@ -229,8 +212,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testAddToIndex() throws Exception
-    {
+    public void testAddToIndex() throws Exception {
         final SearchableEntityManager entityManager = getSearchableEntityManager();
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
@@ -253,8 +235,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testRemoveFromIndex() throws Exception
-    {
+    public void testRemoveFromIndex() throws Exception {
         final SearchableEntityManager entityManager = getSearchableEntityManager();
 
         assertEquals(0, entityManager.search(Person.class, "foreman").length);
@@ -274,8 +255,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOptimize() throws Exception
-    {
+    public void testOptimize() throws Exception {
         final SearchableEntityManager entityManager = getSearchableEntityManager();
 
         IndexReader reader = IndexReader.open(entityManager.getIndexDir());
@@ -289,8 +269,7 @@ public final class SearchTest extends ActiveObjectsIntegrationTest
         reader.close();
     }
 
-    private SearchableEntityManager getSearchableEntityManager()
-    {
+    private SearchableEntityManager getSearchableEntityManager() {
         return (SearchableEntityManager) entityManager;
     }
 }

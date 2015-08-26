@@ -8,10 +8,8 @@ package net.java.ao.builder;
  * @see EntityManagerBuilderWithUrlAndUsername
  * @see EntityManagerBuilderWithDatabaseProperties
  */
-public final class EntityManagerBuilder
-{
-    public static EntityManagerBuilderWithUrl url(String url)
-    {
+public final class EntityManagerBuilder {
+    public static EntityManagerBuilderWithUrl url(String url) {
         return new EntityManagerBuilderWithUrl(url);
     }
 }

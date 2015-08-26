@@ -5,7 +5,6 @@ import net.java.ao.EntityManager;
 /**
  *
  */
-public interface DatabaseUpdater
-{
+public interface DatabaseUpdater {
     void update(EntityManager entityManager) throws Exception;
 }

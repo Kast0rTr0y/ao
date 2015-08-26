@@ -8,10 +8,9 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class SimpleNameConverters implements NameConverters
-{
+public final class SimpleNameConverters implements NameConverters {
     private final TableNameConverter tableNameConverter;
     private final FieldNameConverter fieldNameConverter;
     private final SequenceNameConverter sequenceNameConverter;
@@ -25,8 +24,7 @@ public final class SimpleNameConverters implements NameConverters
             SequenceNameConverter sequenceNameConverter,
             TriggerNameConverter triggerNameConverter,
             IndexNameConverter indexNameConverter,
-            UniqueNameConverter uniqueNameConverter)
-    {
+            UniqueNameConverter uniqueNameConverter) {
         this.tableNameConverter = checkNotNull(tableNameConverter);
         this.fieldNameConverter = checkNotNull(fieldNameConverter);
         this.sequenceNameConverter = checkNotNull(sequenceNameConverter);
@@ -36,38 +34,32 @@ public final class SimpleNameConverters implements NameConverters
     }
 
     @Override
-    public TableNameConverter getTableNameConverter()
-    {
+    public TableNameConverter getTableNameConverter() {
         return tableNameConverter;
     }
 
     @Override
-    public FieldNameConverter getFieldNameConverter()
-    {
+    public FieldNameConverter getFieldNameConverter() {
         return fieldNameConverter;
     }
 
     @Override
-    public SequenceNameConverter getSequenceNameConverter()
-    {
+    public SequenceNameConverter getSequenceNameConverter() {
         return sequenceNameConverter;
     }
 
     @Override
-    public TriggerNameConverter getTriggerNameConverter()
-    {
+    public TriggerNameConverter getTriggerNameConverter() {
         return triggerNameConverter;
     }
 
     @Override
-    public IndexNameConverter getIndexNameConverter()
-    {
+    public IndexNameConverter getIndexNameConverter() {
         return indexNameConverter;
     }
 
     @Override
-    public UniqueNameConverter getUniqueNameConverter()
-    {
+    public UniqueNameConverter getUniqueNameConverter() {
         return uniqueNameConverter;
     }
 }

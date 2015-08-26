@@ -35,15 +35,19 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @Data(DatabaseProcessor.class)
-public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
-{
+public final class SchemaReaderTest extends ActiveObjectsIntegrationTest {
     @SuppressWarnings("null")
     @Test
-    public void testReadSchema() throws SQLException
-    {
+    public void testReadSchema() throws SQLException {
         String[] expectedFields = {
                 getFieldName(Person.class, "getID"),
                 getFieldName(Person.class, "getFirstName"),
@@ -61,10 +65,8 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertEquals(DatabaseProcessor.EXPLICITLY_MIGRATED_CLASSES.length + DatabaseProcessor.IMPLICITLY_MIGRATED_CLASSES.length, parsedTables.length);
 
         DDLTable personDDL = null;
-        for (DDLTable table : parsedTables)
-        {
-            if (table.getName().equalsIgnoreCase(getTableName(Person.class, false)))
-            {
+        for (DDLTable table : parsedTables) {
+            if (table.getName().equalsIgnoreCase(getTableName(Person.class, false))) {
                 personDDL = table;
                 break;
             }
@@ -74,20 +76,16 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertEquals(expectedFields.length, personDDL.getFields().length);
         assertEquals(1, personDDL.getForeignKeys().length);
 
-        for (DDLField field : personDDL.getFields())
-        {
+        for (DDLField field : personDDL.getFields()) {
             boolean found = false;
-            for (String expectedField : expectedFields)
-            {
-                if (expectedField.equalsIgnoreCase(field.getName()))
-                {
+            for (String expectedField : expectedFields) {
+                if (expectedField.equalsIgnoreCase(field.getName())) {
                     found = true;
                     break;
                 }
             }
 
-            if (!found)
-            {
+            if (!found) {
                 fail("Field " + field.getName() + " was unexpected");
             }
         }
@@ -114,10 +112,8 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertNull(cidField.getDefaultValue());
 
         DDLForeignKey cidKey = null;
-        for (DDLForeignKey key : personDDL.getForeignKeys())
-        {
-            if (key.getField().equalsIgnoreCase(getFieldName(Person.class, "getCompany")))
-            {
+        for (DDLForeignKey key : personDDL.getForeignKeys()) {
+            if (key.getField().equalsIgnoreCase(getFieldName(Person.class, "getCompany"))) {
                 cidKey = key;
                 break;
             }
@@ -131,17 +127,14 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertTrue(getTableName(Company.class, false).equalsIgnoreCase(cidKey.getTable()));
     }
 
-    private void assertTypesEquivalent(int typeShouldBe, int typeIs)
-    {
-        if (!Common.fuzzyTypeCompare(typeShouldBe, typeIs))
-        {
+    private void assertTypesEquivalent(int typeShouldBe, int typeIs) {
+        if (!Common.fuzzyTypeCompare(typeShouldBe, typeIs)) {
             fail("Expected JDBC type " + typeShouldBe + ", got " + typeIs);
         }
     }
-    
+
     @Test
-    public void testDiffSchema()
-    {
+    public void testDiffSchema() {
         DDLTable[] ddl1 = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
         DDLTable[] ddl2 = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
 
@@ -149,8 +142,7 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testSortTopologically()
-    {
+    public void testSortTopologically() {
         DDLTable table1 = new DDLTable();
         table1.setName("table1");
 
@@ -205,24 +197,19 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         assertEquals(3, actions.length);
         assertNotSame(table1, actions[0].getTable());
 
-        for (DDLAction action : actions)
-        {
+        for (DDLAction action : actions) {
             assertEquals(DDLActionType.CREATE, action.getActionType());
         }
 
-        if (actions[1].getTable().equals(table1))
-        {
+        if (actions[1].getTable().equals(table1)) {
             assertEquals(table2, actions[0].getTable());
-        }
-        else if (actions[1].getTable().equals(table2))
-        {
+        } else if (actions[1].getTable().equals(table2)) {
             assertEquals(table1, actions[2].getTable());
         }
     }
 
     @Test
-    public void testAlterDropForeignKeyComesBeforeDropTable()
-    {
+    public void testAlterDropForeignKeyComesBeforeDropTable() {
         final String localTableName = "localTableName";
         final String foreignTableName = "foreignTableName";
 
@@ -236,8 +223,7 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         // that's it we don't care in which order tables are dropped
     }
 
-    private DDLAction newDropTable(String localTableName)
-    {
+    private DDLAction newDropTable(String localTableName) {
         final DDLTable ddlTable = new DDLTable();
         ddlTable.setName(localTableName);
 
@@ -246,8 +232,7 @@ public final class SchemaReaderTest extends ActiveObjectsIntegrationTest
         return dropTable;
     }
 
-    private DDLAction newDropForeignKey(String localTableName, String foreignTableName)
-    {
+    private DDLAction newDropForeignKey(String localTableName, String foreignTableName) {
         final DDLForeignKey foreignKey = new DDLForeignKey();
         foreignKey.setDomesticTable(localTableName);
         foreignKey.setTable(foreignTableName);

@@ -4,7 +4,6 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import net.java.ao.test.ConfigurationProperties;
-import net.java.ao.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +15,7 @@ import static net.java.ao.util.StringUtils.isBlank;
  *
  * @see ConfigurationProperties
  */
-public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
-{
+public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(DynamicJdbcConfiguration.class);
 
     private static final ImmutableMap<String, JdbcConfiguration> CONFIGS = ImmutableMap.<String, JdbcConfiguration>builder()
@@ -35,57 +33,47 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
     private static final Supplier<JdbcConfiguration> jdbcSupplier = Suppliers.memoize(new SystemPropertyJdbcConfigurationSupplier());
 
 
-    public DynamicJdbcConfiguration()
-    {
+    public DynamicJdbcConfiguration() {
         super(jdbcSupplier.get().getUrl(), jdbcSupplier.get().getUsername(), jdbcSupplier.get().getPassword(), jdbcSupplier.get().getSchema());
     }
 
-    protected DynamicJdbcConfiguration(String url, String username, String password, String schema)
-    {
+    protected DynamicJdbcConfiguration(String url, String username, String password, String schema) {
         super(url, username, password, schema);
     }
 
     @Override
-    public String getUrl()
-    {
+    public String getUrl() {
         return jdbcSupplier.get().getUrl();
     }
 
     @Override
-    protected String getDefaultSchema()
-    {
+    protected String getDefaultSchema() {
         return jdbcSupplier.get().getSchema();
     }
 
     @Override
-    protected String getDefaultUrl()
-    {
+    protected String getDefaultUrl() {
         return jdbcSupplier.get().getUrl();
     }
 
     @Override
-    public String getUsername()
-    {
+    public String getUsername() {
         return jdbcSupplier.get().getUsername();
     }
 
     @Override
-    public String getPassword()
-    {
+    public String getPassword() {
         return jdbcSupplier.get().getPassword();
     }
 
     @Override
-    public String getSchema()
-    {
+    public String getSchema() {
         return jdbcSupplier.get().getSchema();
     }
 
-    private static final class SystemPropertyJdbcConfigurationSupplier implements Supplier<JdbcConfiguration>
-    {
+    private static final class SystemPropertyJdbcConfigurationSupplier implements Supplier<JdbcConfiguration> {
         @Override
-        public JdbcConfiguration get()
-        {
+        public JdbcConfiguration get() {
             final String db = ConfigurationProperties.get("ao.test.database", DEFAULT);
             final JdbcConfiguration jdbcConfiguration = buildJdbcConfiguration(db);
 
@@ -93,8 +81,7 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             return jdbcConfiguration;
         }
 
-        private JdbcConfiguration buildJdbcConfiguration(String db)
-        {
+        private JdbcConfiguration buildJdbcConfiguration(String db) {
             JdbcConfiguration jdbcConfiguration = null;
 
             String username = ConfigurationProperties.get("db.username", null);
@@ -103,40 +90,24 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration
             String dbSchema = ConfigurationProperties.get("db.schema", null);
 
 
-            if (!isBlank(username) || !isBlank(password) || !isBlank(dbUrl) || !isBlank(dbSchema))
-            {
-                if ("postgres".equals(db))
-                {
-                    jdbcConfiguration =  new Postgres(dbUrl, username, password, dbSchema);
-                }
-                else if ("hsql".equals(db))
-                {
-                    jdbcConfiguration =  new Hsql(dbUrl, username, password, dbSchema);
-                }
-                else if ("hsql-file".equals(db))
-                {
+            if (!isBlank(username) || !isBlank(password) || !isBlank(dbUrl) || !isBlank(dbSchema)) {
+                if ("postgres".equals(db)) {
+                    jdbcConfiguration = new Postgres(dbUrl, username, password, dbSchema);
+                } else if ("hsql".equals(db)) {
+                    jdbcConfiguration = new Hsql(dbUrl, username, password, dbSchema);
+                } else if ("hsql-file".equals(db)) {
                     jdbcConfiguration = new HsqlFileStorage(dbUrl, username, password, dbSchema);
+                } else if ("mysql".equals(db)) {
+                    jdbcConfiguration = new MySql(dbUrl, username, password, dbSchema);
+                } else if ("oracle".equals(db)) {
+                    jdbcConfiguration = new Oracle(dbUrl, username, password, dbSchema);
+                } else if ("sqlserver".equals(db)) {
+                    jdbcConfiguration = new SqlServer(dbUrl, username, password, dbSchema);
+                } else if ("derby-embedded".equals(db)) {
+                    jdbcConfiguration = new DerbyEmbedded(dbUrl, username, password, dbSchema);
                 }
-                else if ("mysql".equals(db))
-                {
-                    jdbcConfiguration =  new MySql(dbUrl, username, password, dbSchema);
-                }
-                else if ("oracle".equals(db))
-                {
-                    jdbcConfiguration =  new Oracle(dbUrl, username, password, dbSchema);
-                }
-                else if ("sqlserver".equals(db))
-                {
-                    jdbcConfiguration =  new SqlServer(dbUrl, username, password, dbSchema);
-                }
-                else if ("derby-embedded".equals(db))
-                {
-                    jdbcConfiguration =  new DerbyEmbedded(dbUrl, username, password, dbSchema);
-                }
-            }
-            else
-            {
-                jdbcConfiguration =  CONFIGS.get(db);
+            } else {
+                jdbcConfiguration = CONFIGS.get(db);
             }
             return jdbcConfiguration;
         }

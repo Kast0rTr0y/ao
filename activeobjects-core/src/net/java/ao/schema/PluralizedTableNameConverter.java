@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.*;
-import static com.google.common.collect.Lists.*;
-import static java.util.regex.Pattern.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.util.regex.Pattern.compile;
 
 /**
  * <p>A simple table name converter which imposes a set of regular-expression
@@ -27,28 +27,22 @@ import static java.util.regex.Pattern.*;
  * <p>To enable table name pluralization, simply set the name converter for
  * the {@link net.java.ao.EntityManager} in question to an instance of this class.</p>
  */
-public final class PluralizedTableNameConverter extends TransformsTableNameConverter
-{
+public final class PluralizedTableNameConverter extends TransformsTableNameConverter {
     private TableNameConverter delegate;
 
-    public PluralizedTableNameConverter()
-    {
+    public PluralizedTableNameConverter() {
         this(new ClassNameTableNameConverter());
     }
 
-    public PluralizedTableNameConverter(CanonicalClassNameTableNameConverter delegateTableNameConverter)
-    {
+    public PluralizedTableNameConverter(CanonicalClassNameTableNameConverter delegateTableNameConverter) {
         super(transforms(), delegateTableNameConverter);
         this.delegate = delegateTableNameConverter;
     }
 
-    private static List<Transform> transforms()
-    {
+    private static List<Transform> transforms() {
         final OrderedProperties patterns = OrderedProperties.load("/net/java/ao/schema/englishPluralRules.properties");
-        return Lists.transform(newArrayList(patterns), new Function<String, Transform>()
-        {
-            public Transform apply(String from)
-            {
+        return Lists.transform(newArrayList(patterns), new Function<String, Transform>() {
+            public Transform apply(String from) {
                 return new PatternTransform(from, patterns.get(from));
             }
         });
@@ -57,53 +51,43 @@ public final class PluralizedTableNameConverter extends TransformsTableNameConve
     /*
      * TODO why?!?!
      */
-    public TableNameConverter getDelegate()
-    {
+    public TableNameConverter getDelegate() {
         return delegate;
     }
 
     /**
      *
      */
-    static final class PatternTransform implements Transform
-    {
+    static final class PatternTransform implements Transform {
         private static final Pattern PLACE_HOLDER_PATTERN = compile("(\\{\\})");
 
         private final Pattern patternToMatch;
         private final String transformationPattern;
 
-        PatternTransform(String patternToMatch, String transformationPattern)
-        {
+        PatternTransform(String patternToMatch, String transformationPattern) {
             checkNotNull(patternToMatch);
             this.patternToMatch = compile(patternToMatch, Pattern.CASE_INSENSITIVE);
             this.transformationPattern = checkNotNull(transformationPattern);
         }
 
-        public boolean accept(String entityClassCanonicalName)
-        {
+        public boolean accept(String entityClassCanonicalName) {
             return patternToMatch.matcher(entityClassCanonicalName).matches();
         }
 
-        public String apply(String entityClassCanonicalName)
-        {
+        public String apply(String entityClassCanonicalName) {
             return transform(patternToMatch, entityClassCanonicalName, transformationPattern);
         }
 
-        static String transform(Pattern patternToMatch, String currentString, String transformationPattern)
-        {
+        static String transform(Pattern patternToMatch, String currentString, String transformationPattern) {
             final Matcher m = patternToMatch.matcher(currentString);
-            if (m.matches())
-            {
+            if (m.matches()) {
                 return replacePlaceHolders(transformationPattern, m.group(1));
-            }
-            else
-            {
+            } else {
                 return currentString;
             }
         }
 
-        static String replacePlaceHolders(String stringWithPlaceHolders, String value)
-        {
+        static String replacePlaceHolders(String stringWithPlaceHolders, String value) {
             return PLACE_HOLDER_PATTERN.matcher(stringWithPlaceHolders).replaceAll(value);
         }
     }

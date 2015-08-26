@@ -9,10 +9,8 @@ import snaq.db.DBPoolDataSource;
 
 import java.sql.Driver;
 
-public final class DbPoolDataSourceFactory implements DataSourceFactory
-{
-    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-    {
+public final class DbPoolDataSourceFactory implements DataSourceFactory {
+    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password) {
         final DBPoolDataSource ds = new DBPoolDataSource();
         ds.setName("active-objects");
         ds.setDriverClassName(driverClass.getName());
@@ -23,17 +21,14 @@ public final class DbPoolDataSourceFactory implements DataSourceFactory
         ds.setMaxSize(30);
         ds.setExpiryTime(3600);  // Specified in seconds.
 
-        return DelegatingDisposableDataSourceHandler.newInstance(ds, new Disposable()
-        {
-            public void dispose()
-            {
+        return DelegatingDisposableDataSourceHandler.newInstance(ds, new Disposable() {
+            public void dispose() {
                 ds.releaseConnectionPool();
             }
         });
     }
 
-    public static boolean isAvailable()
-    {
+    public static boolean isAvailable() {
         return ClassUtils.loadClass("snaq.db.ConnectionPool") != null;
     }
 }

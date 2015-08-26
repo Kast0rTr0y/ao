@@ -24,12 +24,13 @@ import net.java.ao.Polymorphic;
  */
 @Polymorphic
 public interface Publication extends Entity {
-	public String getTitle();
-	public void setTitle(String title);
-	
-	@ManyToMany(Authorship.class)
-	public Author[] getAuthors();
-	
-	@ManyToMany(PublicationToDistribution.class)
-	public Distribution[] getDistributions();
+    public String getTitle();
+
+    public void setTitle(String title);
+
+    @ManyToMany(Authorship.class)
+    public Author[] getAuthors();
+
+    @ManyToMany(PublicationToDistribution.class)
+    public Distribution[] getDistributions();
 }

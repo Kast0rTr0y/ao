@@ -19,7 +19,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public enum Profession {
-	DEVELOPER,
-	MUSICIAN,
-	WELDER
+    DEVELOPER,
+    MUSICIAN,
+    WELDER
 }

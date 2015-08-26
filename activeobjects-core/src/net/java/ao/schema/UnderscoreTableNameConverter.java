@@ -2,7 +2,7 @@ package net.java.ao.schema;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static net.java.ao.Common.convertSimpleClassName;
-import static net.java.ao.schema.UnderScoreUtils.*;
+import static net.java.ao.schema.UnderScoreUtils.camelCaseToUnderScore;
 
 /**
  * <p>Imposes an underscore word-separation convention on table
@@ -42,18 +42,15 @@ import static net.java.ao.schema.UnderScoreUtils.*;
  * <p>This converter, coupled with {@link PluralizedTableNameConverter} is
  * all that is required to emulate the ActiveRecord table name conversion.</p>
  */
-public final class UnderscoreTableNameConverter extends CanonicalClassNameTableNameConverter
-{
+public final class UnderscoreTableNameConverter extends CanonicalClassNameTableNameConverter {
     private final Case tableNameCase;
 
-    public UnderscoreTableNameConverter(Case tableNameCase)
-    {
+    public UnderscoreTableNameConverter(Case tableNameCase) {
         this.tableNameCase = checkNotNull(tableNameCase);
     }
 
     @Override
-    protected String getName(String entityClassCanonicalName)
-    {
+    protected String getName(String entityClassCanonicalName) {
         return tableNameCase.apply(camelCaseToUnderScore(convertSimpleClassName(entityClassCanonicalName)));
     }
 }

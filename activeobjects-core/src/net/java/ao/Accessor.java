@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * <p>Used to mark a particular field as an accessor.  This allows
  * two things:</p>
- * 
+ *
  * <ul>
  * <li>Non-compliance with the get/set convention</li>
  * <li>Overriding of the auto-generated field name (e.g. a method named
@@ -31,16 +31,16 @@ import java.lang.annotation.Target;
  * the desired field name was in fact "uri".  This annotation allows such
  * field names</li>
  * </ul>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Accessor {
-	
-	/**
-	 * The name of the field for which this method is an accessor.  This
-	 * will override any automatically generated field name.
-	 */
-	String value();
+
+    /**
+     * The name of the field for which this method is an accessor.  This
+     * will override any automatically generated field name.
+     */
+    String value();
 }

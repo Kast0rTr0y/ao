@@ -1,7 +1,6 @@
 package net.java.ao.schema;
 
-public interface NameConverters
-{
+public interface NameConverters {
     TableNameConverter getTableNameConverter();
 
     FieldNameConverter getFieldNameConverter();

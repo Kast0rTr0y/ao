@@ -1,13 +1,10 @@
 package net.java.ao.benchmark.util;
 
-public final class WikiReportPrinter implements ReportPrinter
-{
+public final class WikiReportPrinter implements ReportPrinter {
     @Override
-    public void print(Report report)
-    {
+    public void print(Report report) {
         System.out.printf("| %s ", report.getTotalTime());
-        if (report.hasLaps())
-        {
+        if (report.hasLaps()) {
             System.out.printf("| %s ", report.getAverageTime());
         }
     }

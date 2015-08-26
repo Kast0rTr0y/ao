@@ -6,7 +6,7 @@ import net.java.ao.RawEntity;
 
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>A table name converter that simply caches the converted table names.</p>
@@ -14,24 +14,19 @@ import static com.google.common.base.Preconditions.*;
  *
  * @since 0.9
  */
-public class CachingTableNameConverter implements TableNameConverter
-{
+public class CachingTableNameConverter implements TableNameConverter {
     private final Map<Class<? extends RawEntity<?>>, String> cache;
 
-    public CachingTableNameConverter(final TableNameConverter delegateTableNameConverter)
-    {
+    public CachingTableNameConverter(final TableNameConverter delegateTableNameConverter) {
         checkNotNull(delegateTableNameConverter);
-        this.cache = new MapMaker().makeComputingMap(new Function<Class<? extends RawEntity<?>>, String>()
-        {
-            public String apply(Class<? extends RawEntity<?>> entityClass)
-            {
+        this.cache = new MapMaker().makeComputingMap(new Function<Class<? extends RawEntity<?>>, String>() {
+            public String apply(Class<? extends RawEntity<?>> entityClass) {
                 return delegateTableNameConverter.getName(entityClass);
             }
         });
     }
 
-    public String getName(Class<? extends RawEntity<?>> entityClass)
-    {
+    public String getName(Class<? extends RawEntity<?>> entityClass) {
         return cache.get(entityClass);
     }
 }

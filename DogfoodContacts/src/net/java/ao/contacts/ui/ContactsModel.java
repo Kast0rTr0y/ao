@@ -30,83 +30,82 @@
  */
 package net.java.ao.contacts.ui;
 
-import java.sql.SQLException;
-
-import javax.swing.table.AbstractTableModel;
-
 import net.java.ao.contacts.db.EmailAddress;
 import net.java.ao.contacts.db.Person;
+
+import javax.swing.table.AbstractTableModel;
+import java.sql.SQLException;
 
 /**
  * @author Daniel Spiewak
  */
 public class ContactsModel extends AbstractTableModel {
-	private Person[] people;
-	
-	public ContactsModel() {
-		refreshModel();
-	}
-	
-	@Override
-	public String getColumnName(int column) {
-		switch (column) {
-			case 0:
-				return "First Name";
-				
-			case 1:
-				return "Last Name";
-				
-			case 2:
-				return "Email";
-		}
-		return null;
-	}
-	
-	@Override
-	public Class<?> getColumnClass(int columnIndex) {
-		return String.class;
-	}
+    private Person[] people;
 
-	public int getColumnCount() {
-		return 3;
-	}
+    public ContactsModel() {
+        refreshModel();
+    }
 
-	public int getRowCount() {
-		return people.length;
-	}
+    @Override
+    public String getColumnName(int column) {
+        switch (column) {
+            case 0:
+                return "First Name";
 
-	public Object getValueAt(int rowIndex, int columnIndex) {
-		switch (columnIndex) {
-			case 0:
-				return people[rowIndex].getFirstName();
-				
-			case 1:
-				return people[rowIndex].getLastName();
-				
-			case 2:
-				EmailAddress[] addresses = people[rowIndex].getEmailAddresses();
-				String value = "";
-				
-				if (addresses.length > 0) {
-					value += addresses[0].getEmail() + (addresses.length > 1 ? ", ..." : "");
-				}
-				
-				return value;
-		}
-		return null;
-	}
-	
-	public Person getPersonAt(int rowIndex) {
-		return people[rowIndex];
-	}
-	
-	public void refreshModel() {
-		try {
-			people = UIManager.getManager().find(Person.class);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		
-		fireTableDataChanged();
-	}
+            case 1:
+                return "Last Name";
+
+            case 2:
+                return "Email";
+        }
+        return null;
+    }
+
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        return String.class;
+    }
+
+    public int getColumnCount() {
+        return 3;
+    }
+
+    public int getRowCount() {
+        return people.length;
+    }
+
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        switch (columnIndex) {
+            case 0:
+                return people[rowIndex].getFirstName();
+
+            case 1:
+                return people[rowIndex].getLastName();
+
+            case 2:
+                EmailAddress[] addresses = people[rowIndex].getEmailAddresses();
+                String value = "";
+
+                if (addresses.length > 0) {
+                    value += addresses[0].getEmail() + (addresses.length > 1 ? ", ..." : "");
+                }
+
+                return value;
+        }
+        return null;
+    }
+
+    public Person getPersonAt(int rowIndex) {
+        return people[rowIndex];
+    }
+
+    public void refreshModel() {
+        try {
+            people = UIManager.getManager().find(Person.class);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        fireTableDataChanged();
+    }
 }

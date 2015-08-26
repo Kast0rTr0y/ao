@@ -5,22 +5,19 @@ import net.java.ao.Preload;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public final class PreloadTest extends ActiveObjectsIntegrationTest
-{
+public final class PreloadTest extends ActiveObjectsIntegrationTest {
     /**
      * Test get with listed preload values
      */
     @Test
     @NonTransactional
-    public void testGetPreloadListed() throws Exception
-    {
+    public void testGetPreloadListed() throws Exception {
         entityManager.migrate(PreloadListed.class);
 
         int id = insertEntry(PreloadListed.class, 1000l, "Toto", 50);
@@ -42,8 +39,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testGetPreloadAll() throws Exception
-    {
+    public void testGetPreloadAll() throws Exception {
         entityManager.migrate(PreloadAll.class);
 
         int id = insertEntry(PreloadAll.class, 1000l, "Toto", 50);
@@ -65,8 +61,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testFindPreloadListed() throws Exception
-    {
+    public void testFindPreloadListed() throws Exception {
         entityManager.migrate(PreloadListed.class);
 
         int id = insertEntry(PreloadListed.class, 1000l, "Toto", 50);
@@ -88,8 +83,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testFindPreloadAll() throws Exception
-    {
+    public void testFindPreloadAll() throws Exception {
         entityManager.migrate(PreloadAll.class);
 
         int id = insertEntry(PreloadAll.class, 1000l, "Toto", 50);
@@ -109,8 +103,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
     /**
      * Insert an entry into the db
      */
-    private Integer insertEntry(Class aoClass, final Long age, final String name, final Integer hello) throws Exception
-    {
+    private Integer insertEntry(Class aoClass, final Long age, final String name, final Integer hello) throws Exception {
         // get count, which will be the last existing id
         int id = entityManager.count(aoClass);
 
@@ -122,10 +115,8 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
 
         // insert one entry
         DbUtils.executeUpdate(entityManager, insert,
-                new DbUtils.UpdateCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
+                new DbUtils.UpdateCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
                         statement.setLong(1, age);
                         statement.setString(2, name);
                         statement.setInt(3, hello);
@@ -138,8 +129,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
     /**
      * Update the entry with new values
      */
-    private void updateEntry(Class aoClass, final Integer id, final Long age, final String name, final Integer hello) throws Exception
-    {
+    private void updateEntry(Class aoClass, final Integer id, final Long age, final String name, final Integer hello) throws Exception {
         final String insert = "UPDATE " +
                 getTableName(aoClass) + " SET " +
                 escapeFieldName(aoClass, "getAge") + " = ?, " +
@@ -149,10 +139,8 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
 
         // insert one entry
         DbUtils.executeUpdate(entityManager, insert,
-                new DbUtils.UpdateCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
+                new DbUtils.UpdateCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
                         statement.setLong(1, age);
                         statement.setString(2, name);
                         statement.setInt(3, hello);
@@ -166,8 +154,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Object with preload values
      */
     @Preload({"age", "name", "hello"})
-    public static interface PreloadListed extends Entity
-    {
+    public static interface PreloadListed extends Entity {
         public Long getAge();
 
         public void setAge(Long age);
@@ -185,8 +172,7 @@ public final class PreloadTest extends ActiveObjectsIntegrationTest
      * Object with star preload value
      */
     @Preload("*")
-    public static interface PreloadAll extends Entity
-    {
+    public static interface PreloadAll extends Entity {
         public Long getAge();
 
         public void setAge(Long age);

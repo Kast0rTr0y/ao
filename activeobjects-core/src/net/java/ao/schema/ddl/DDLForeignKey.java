@@ -23,86 +23,86 @@ import net.java.ao.schema.Case;
  * this class only contains table and field <i>names</i>, rather than
  * the full DDL representation.  Basically, this class just wraps around
  * the data represented by a fully-rendered foreign key constraint.</p>
- * 
+ *
  * <p>This class also defines the convention used to determine foreign
  * key names.  It is important that this convention be observed by DDL
  * renderings (i.e. database providers) otherwise migrations will do
  * strange things.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 public class DDLForeignKey {
-	private String field = "";
-	
-	private String domesticTable = "";
-	private String table = "";
-	private String foreignField = "";
+    private String field = "";
 
-	public String getField() {
-		return field;
-	}
+    private String domesticTable = "";
+    private String table = "";
+    private String foreignField = "";
 
-	public void setField(String field) {
-		this.field = field;
-	}
+    public String getField() {
+        return field;
+    }
 
-	public String getTable() {
-		return table;
-	}
+    public void setField(String field) {
+        this.field = field;
+    }
 
-	public void setTable(String table) {
-		this.table = table;
-	}
+    public String getTable() {
+        return table;
+    }
 
-	public String getForeignField() {
-		return foreignField;
-	}
+    public void setTable(String table) {
+        this.table = table;
+    }
 
-	public void setForeignField(String foreignField) {
-		this.foreignField = foreignField;
-	}
-	
-	public String getFKName() {
-		return new StringBuilder()
+    public String getForeignField() {
+        return foreignField;
+    }
+
+    public void setForeignField(String foreignField) {
+        this.foreignField = foreignField;
+    }
+
+    public String getFKName() {
+        return new StringBuilder()
                 .append("fk_")
                 .append(Case.LOWER.apply(getDomesticTable()))
                 .append('_')
                 .append(Case.LOWER.apply(getField()))
                 .toString();
-	}
+    }
 
-	public String getDomesticTable() {
-		return domesticTable;
-	}
+    public String getDomesticTable() {
+        return domesticTable;
+    }
 
-	public void setDomesticTable(String domesticTable) {
-		this.domesticTable = domesticTable;
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		
-		if (obj instanceof DDLForeignKey) {
-			DDLForeignKey key = (DDLForeignKey) obj;
-			
-			if (key.field.equals(field) && key.foreignField.equals(foreignField) && key.table.equals(table) && key.domesticTable.equals(domesticTable)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return field.hashCode() + table.hashCode() + foreignField.hashCode() + domesticTable.hashCode();
-	}
-	
-	@Override
-	public String toString() {
-		return getDomesticTable() + "." + getField() + " => " + getTable() + "." + getForeignField();
-	}
+    public void setDomesticTable(String domesticTable) {
+        this.domesticTable = domesticTable;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj instanceof DDLForeignKey) {
+            DDLForeignKey key = (DDLForeignKey) obj;
+
+            if (key.field.equals(field) && key.foreignField.equals(foreignField) && key.table.equals(table) && key.domesticTable.equals(domesticTable)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return field.hashCode() + table.hashCode() + foreignField.hashCode() + domesticTable.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return getDomesticTable() + "." + getField() + " => " + getTable() + "." + getForeignField();
+    }
 }

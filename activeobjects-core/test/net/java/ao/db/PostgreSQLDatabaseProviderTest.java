@@ -27,12 +27,14 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-@RunWith (MockitoJUnitRunner.class)
-public class PostgreSQLDatabaseProviderTest
-{
-    @Mock DisposableDataSource datasource;
-    @Mock Connection conn;
-    @Mock DatabaseMetaData connMetaData;
+@RunWith(MockitoJUnitRunner.class)
+public class PostgreSQLDatabaseProviderTest {
+    @Mock
+    DisposableDataSource datasource;
+    @Mock
+    Connection conn;
+    @Mock
+    DatabaseMetaData connMetaData;
 
     NameConverters nameConverters;
     DDLTable table;
@@ -42,8 +44,7 @@ public class PostgreSQLDatabaseProviderTest
     private DDLField newField;
 
     @Before
-    public void setUp() throws Exception
-    {
+    public void setUp() throws Exception {
         when(datasource.getConnection()).thenReturn(conn);
         when(conn.getMetaData()).thenReturn(connMetaData);
         when(connMetaData.getIdentifierQuoteString()).thenReturn("'");
@@ -59,8 +60,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesAddedUniqueConstraint() throws Exception
-    {
+    public void alterTableChangeColumnHandlesAddedUniqueConstraint() throws Exception {
         oldField.setUnique(false);
         newField.setUnique(true);
 
@@ -70,8 +70,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesRemovedUniqueConstraint() throws Exception
-    {
+    public void alterTableChangeColumnHandlesRemovedUniqueConstraint() throws Exception {
         oldField.setUnique(true);
         newField.setUnique(false);
 
@@ -81,8 +80,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesRenamedColumn() throws Exception
-    {
+    public void alterTableChangeColumnHandlesRenamedColumn() throws Exception {
         newField.setName("the_field");
 
         List<SQLAction> ddl = renderAlterTableChangeColumn();
@@ -91,8 +89,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesRenamedColumnAndRemovedUniqueConstraint() throws Exception
-    {
+    public void alterTableChangeColumnHandlesRenamedColumnAndRemovedUniqueConstraint() throws Exception {
         oldField.setUnique(true);
         newField.setUnique(false);
         newField.setName("the_field");
@@ -104,8 +101,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesAddedRemovedConstraintAndAddedDefault() throws Exception
-    {
+    public void alterTableChangeColumnHandlesAddedRemovedConstraintAndAddedDefault() throws Exception {
         oldField.setUnique(true);
         newField.setUnique(false);
         newField.setDefaultValue("abc");
@@ -117,8 +113,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesChangedType() throws Exception
-    {
+    public void alterTableChangeColumnHandlesChangedType() throws Exception {
         oldField.setType(TypeManager.postgres().getType(Integer.class));
         newField.setType(TypeManager.postgres().getType(Long.class));
 
@@ -128,8 +123,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesAddedDefaultValue() throws Exception
-    {
+    public void alterTableChangeColumnHandlesAddedDefaultValue() throws Exception {
         oldField.setDefaultValue(null);
         newField.setDefaultValue("empty");
 
@@ -139,8 +133,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesRemovedDefaultValue() throws Exception
-    {
+    public void alterTableChangeColumnHandlesRemovedDefaultValue() throws Exception {
         oldField.setDefaultValue("empty");
         newField.setDefaultValue(null);
 
@@ -150,8 +143,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesAddedNotNullConstraint() throws Exception
-    {
+    public void alterTableChangeColumnHandlesAddedNotNullConstraint() throws Exception {
         oldField.setNotNull(false);
         newField.setNotNull(true);
 
@@ -161,8 +153,7 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void alterTableChangeColumnHandlesRemovedNotNullConstraint() throws Exception
-    {
+    public void alterTableChangeColumnHandlesRemovedNotNullConstraint() throws Exception {
         oldField.setNotNull(true);
         newField.setNotNull(false);
 
@@ -172,15 +163,13 @@ public class PostgreSQLDatabaseProviderTest
     }
 
     @Test
-    public void joinQuery()
-    {
+    public void joinQuery() {
         Query query = Query.select("name").from(Person.class).join(Company.class).where("cool = ?", true);
         String rendered = provider.renderQuery(query, nameConverters.getTableNameConverter(), false);
         assertThat(rendered, is("SELECT 'person'.'name' FROM public.'person' JOIN public.'company' WHERE 'cool' = ?"));
     }
 
-    private DDLField createField()
-    {
+    private DDLField createField() {
         DDLField field = new DDLField();
         field.setName("teh_field");
         field.setType(TypeManager.postgres().getType(String.class));
@@ -188,8 +177,7 @@ public class PostgreSQLDatabaseProviderTest
         return field;
     }
 
-    private List<SQLAction> renderAlterTableChangeColumn()
-    {
+    private List<SQLAction> renderAlterTableChangeColumn() {
         return Lists.newArrayList(provider.renderAlterTableChangeColumn(nameConverters, table, oldField, newField));
     }
 }

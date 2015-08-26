@@ -29,18 +29,19 @@ import java.lang.annotation.Target;
  * over the defined type and should <i>only</i> be used on <code>int</code>
  * or <code>long</code> fields (<code>short</code> is also acceptable if
  * great care is taken).</p>
- * 
+ *
  * <p>For databases which really have no way of supporting this exact
  * functionality (like Oracle), implementation may be omitted as long as
  * the 90% case is still covered.  For example, the Oracle implementation
  * of this property relies on the fact that PRIMARY KEY fields are already
  * auto-generated if no value is specified.</p>
- * 
+ *
  * <p>This annotation is only relevant to migrations.  It has no effect upon
  * "runtime" entity usage.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface AutoIncrement {}
+public @interface AutoIncrement {
+}

@@ -5,13 +5,11 @@ import org.junit.Test;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
-public class TypeQualifiersTest
-{
+public class TypeQualifiersTest {
     TypeQualifiers q = TypeQualifiers.qualifiers();
 
     @Test
-    public void testPrecisionCompatibility()
-    {
+    public void testPrecisionCompatibility() {
         // COMPATIBLE if precisions match
         assertTrue("Expect compatibility when precision hasn't changed", TypeQualifiers.areCompatible(q.precision(10), q.precision(10)));
         assertTrue("Expect compatibility when neither DB or entity has a precision", TypeQualifiers.areCompatible(q, q));
@@ -27,8 +25,7 @@ public class TypeQualifiersTest
     }
 
     @Test
-    public void testScaleCompatibility()
-    {
+    public void testScaleCompatibility() {
         // COMPATIBLE if scales match
         assertTrue("Expect compatibility when scale hasn't changed", TypeQualifiers.areCompatible(q.scale(10), q.scale(10)));
         assertTrue("Expect compatibility when neither DB or entity has a scale", TypeQualifiers.areCompatible(q, q));
@@ -44,8 +41,7 @@ public class TypeQualifiersTest
     }
 
     @Test
-    public void testStringLengthCompatibility()
-    {
+    public void testStringLengthCompatibility() {
         // INCOMPATIBLE if there's a mismatch where either the entity or database specifies an UNLIMITED length constraint
         assertFalse("Expect incompatibility when DB has an unlimited string length and entity has a string length", TypeQualifiers.areCompatible(q.stringLength(100), q.stringLength(TypeQualifiers.UNLIMITED_LENGTH)));
         assertFalse("Expect incompatibility when DB does not have a string length and entity has an unlimited string length", TypeQualifiers.areCompatible(q.stringLength(TypeQualifiers.UNLIMITED_LENGTH), q));

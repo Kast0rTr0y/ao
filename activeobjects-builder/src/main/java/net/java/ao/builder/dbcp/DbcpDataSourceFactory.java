@@ -10,33 +10,25 @@ import org.apache.commons.dbcp.BasicDataSource;
 import java.sql.Driver;
 import java.sql.SQLException;
 
-public final class DbcpDataSourceFactory implements DataSourceFactory
-{
-    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-    {
+public final class DbcpDataSourceFactory implements DataSourceFactory {
+    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password) {
         final BasicDataSource dbcp = new BasicDataSource();
         dbcp.setUrl(url);
         dbcp.setUsername(username);
         dbcp.setPassword(password);
-        return DelegatingDisposableDataSourceHandler.newInstance(dbcp, new Disposable()
-        {
+        return DelegatingDisposableDataSourceHandler.newInstance(dbcp, new Disposable() {
             @Override
-            public void dispose()
-            {
-                try
-                {
+            public void dispose() {
+                try {
                     dbcp.close();
-                }
-                catch (SQLException e)
-                {
+                } catch (SQLException e) {
                     //ignored
                 }
             }
         });
     }
 
-    public static boolean isAvailable()
-    {
+    public static boolean isAvailable() {
         return ClassUtils.loadClass("org.apache.commons.dbcp.BasicDataSource") != null;
     }
 }

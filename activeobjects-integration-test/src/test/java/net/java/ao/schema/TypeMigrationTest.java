@@ -1,15 +1,14 @@
 package net.java.ao.schema;
 
-import java.util.concurrent.Callable;
-
-import org.junit.Test;
-
 import net.java.ao.Entity;
 import net.java.ao.it.model.Address;
 import net.java.ao.it.model.Profession;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.NonTransactional;
+import org.junit.Test;
+
+import java.util.concurrent.Callable;
 
 /**
  * Ensure that SQL is run to migrate column types when the DB physical type has changed,
@@ -17,18 +16,14 @@ import net.java.ao.test.jdbc.NonTransactional;
  *
  * See https://ecosystem.atlassian.net/browse/AO-418 for details.
  */
-public class TypeMigrationTest extends ActiveObjectsIntegrationTest
-{
+public class TypeMigrationTest extends ActiveObjectsIntegrationTest {
     @Test
     @NonTransactional
-    public void testMigrationWithUnchangedLogicalOrPhysicalTypes() throws Exception
-    {
+    public void testMigrationWithUnchangedLogicalOrPhysicalTypes() throws Exception {
         entityManager.migrate(TestTable.class);
-        checkSqlNotExecuted(new Callable<Object>()
-        {
+        checkSqlNotExecuted(new Callable<Object>() {
             @Override
-            public Object call() throws Exception
-            {
+            public Object call() throws Exception {
                 entityManager.migrate(TestTable.class);
                 return null;
             }
@@ -37,23 +32,18 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testMigrationWithUnchangedPhysicalTypes() throws Exception
-    {
+    public void testMigrationWithUnchangedPhysicalTypes() throws Exception {
         entityManager.migrate(TestTable.class);
-        checkSqlNotExecuted(new Callable<Object>()
-        {
+        checkSqlNotExecuted(new Callable<Object>() {
             @Override
-            public Object call() throws Exception
-            {
+            public Object call() throws Exception {
                 entityManager.migrate(EquivalentTable.class);
                 return null;
             }
         });
-        checkSqlNotExecuted(new Callable<Object>()
-        {
+        checkSqlNotExecuted(new Callable<Object>() {
             @Override
-            public Object call() throws Exception
-            {
+            public Object call() throws Exception {
                 entityManager.migrate(TestTable.class);
                 return null;
             }
@@ -62,14 +52,11 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testMigrationThatChangesPhysicalTypeForEntityColumn() throws Exception
-    {
+    public void testMigrationThatChangesPhysicalTypeForEntityColumn() throws Exception {
         entityManager.migrate(TestTable.class);
-        checkSqlExecuted(new Callable<Object>()
-        {
+        checkSqlExecuted(new Callable<Object>() {
             @Override
-            public Object call() throws Exception
-            {
+            public Object call() throws Exception {
                 entityManager.migrate(DifferentEntityColumnType.class);
                 return null;
             }
@@ -78,17 +65,13 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testMigrationThatChangesPhysicalTypeForEnumColumn() throws Exception
-    {
+    public void testMigrationThatChangesPhysicalTypeForEnumColumn() throws Exception {
         // This test fails in Oracle due to https://ecosystem.atlassian.net/browse/AO-373
-        if (!DbUtils.isOracle(entityManager))
-        {
+        if (!DbUtils.isOracle(entityManager)) {
             entityManager.migrate(TestTable.class);
-            checkSqlExecuted(new Callable<Object>()
-            {
+            checkSqlExecuted(new Callable<Object>() {
                 @Override
-                public Object call() throws Exception
-                {
+                public Object call() throws Exception {
                     entityManager.migrate(DifferentEnumColumnType.class);
                     return null;
                 }
@@ -98,14 +81,11 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testMigrationThatDropsColumnWithForeignKey() throws Exception
-    {
-        entityManager.migrate(ColumnForeignKey.class,DropColumnRemoteEntity.class);
-        checkSqlExecuted(new Callable<Object>()
-        {
+    public void testMigrationThatDropsColumnWithForeignKey() throws Exception {
+        entityManager.migrate(ColumnForeignKey.class, DropColumnRemoteEntity.class);
+        checkSqlExecuted(new Callable<Object>() {
             @Override
-            public Object call() throws Exception
-            {
+            public Object call() throws Exception {
                 entityManager.migrateDestructively(DropColumnForeignKey.class);
                 return null;
             }
@@ -113,68 +93,71 @@ public class TypeMigrationTest extends ActiveObjectsIntegrationTest
     }
 
     @Table(value = "ENTITY")
-    private interface TestTable extends Entity
-    {
+    private interface TestTable extends Entity {
         public Address getEntityVal();
+
         public void setEntityVal(Address entityVal);
 
         public Profession getEnumVal();
+
         public void setEnumVal(Profession enumVal);
     }
 
     @Table(value = "ENTITY")
-    private interface EquivalentTable extends Entity
-    {
+    private interface EquivalentTable extends Entity {
         @Indexed
         public Integer getEntityValId();
+
         public void setEntityValId(Integer entityVal);
 
         public String getEntityValType();
+
         public void setEntityValType(String entityValType);
 
         public String getEnumVal();
+
         public void setEnumVal(String enumVal);
     }
 
     @Table(value = "ENTITY")
-    private interface DifferentEntityColumnType extends Entity
-    {
+    private interface DifferentEntityColumnType extends Entity {
         @Indexed
         public Long getEntityValId();
+
         public void setEntityValId(Long entityVal);
 
         public String getEntityValType();
+
         public void setEntityValType(String entityValType);
 
         public Profession getEnumVal();
+
         public void setEnumVal(Profession enumVal);
     }
 
     @Table(value = "ENTITY")
-    private interface DifferentEnumColumnType extends Entity
-    {
+    private interface DifferentEnumColumnType extends Entity {
         public Address getEntityVal();
+
         public void setEntityVal(Address entityVal);
 
         @StringLength(value = StringLength.UNLIMITED)
         public String getEnumVal();
+
         public void setEnumVal(String enumVal);
     }
 
     @Table(value = "REMOTE_ENTITY")
-    private interface DropColumnRemoteEntity extends Entity
-    {
+    private interface DropColumnRemoteEntity extends Entity {
 
     }
 
     @Table(value = "ENTITY")
-    private interface ColumnForeignKey extends Entity
-    {
+    private interface ColumnForeignKey extends Entity {
         public DropColumnRemoteEntity getRemoteEntity();
     }
 
     @Table(value = "ENTITY")
-    private interface DropColumnForeignKey extends Entity
-    {
+    private interface DropColumnForeignKey extends Entity {
     }
 }
