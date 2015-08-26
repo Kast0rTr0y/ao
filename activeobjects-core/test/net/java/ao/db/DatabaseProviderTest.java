@@ -21,7 +21,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Function;
@@ -61,7 +60,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)

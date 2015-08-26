@@ -1,0 +1,1 @@
+ALTER TABLE person ADD FOREIGN KEY (companyID) REFERENCES company(id)
