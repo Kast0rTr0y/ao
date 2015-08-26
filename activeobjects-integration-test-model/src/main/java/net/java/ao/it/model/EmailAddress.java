@@ -19,8 +19,8 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface EmailAddress extends Address
-{
-	public String getEmail();
-	public void setEmail(String email);
+public interface EmailAddress extends Address {
+    public String getEmail();
+
+    public void setEmail(String email);
 }

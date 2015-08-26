@@ -15,80 +15,68 @@
  */
 package net.java.ao.db;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Set;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
-import static com.google.common.collect.Iterables.concat;
-
-import net.java.ao.Query;
-import net.java.ao.schema.ddl.SQLAction;
-
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
+import net.java.ao.Query;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Set;
+
+import static com.google.common.collect.Iterables.concat;
 
 /**
  * @author Daniel Spiewak
  */
-public class MySQLDatabaseProvider extends DatabaseProvider
-{
-    public MySQLDatabaseProvider(DisposableDataSource dataSource)
-    {
+public class MySQLDatabaseProvider extends DatabaseProvider {
+    public MySQLDatabaseProvider(DisposableDataSource dataSource) {
         super(dataSource, null, TypeManager.mysql());
     }
 
     @Override
-	protected String renderAutoIncrement() {
-		return "AUTO_INCREMENT";
-	}
-	
-	@Override
-	protected String renderAppend() {
-		return "ENGINE=InnoDB";
-	}
+    protected String renderAutoIncrement() {
+        return "AUTO_INCREMENT";
+    }
 
     @Override
-    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    protected String renderAppend() {
+        return "ENGINE=InnoDB";
+    }
+
+    @Override
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         return "";
     }
 
     @Override
-    protected String renderQueryLimit(final Query query)
-    {
+    protected String renderQueryLimit(final Query query) {
         StringBuilder sql = new StringBuilder();
 
         // use the "LIMIT [<OFFSET>, ] <LIMIT>" style, with (2^64-1) meaning "unlimited"
         int offset = query.getOffset();
         int limit = query.getLimit();
 
-        if (offset > 0)
-        {
+        if (offset > 0) {
             sql.append(" LIMIT ");
             sql.append(offset);
             sql.append(", ");
-            if (limit >= 0)
-            {
+            if (limit >= 0) {
                 sql.append(limit);
-            }
-            else
-            {
+            } else {
                 sql.append("18446744073709551615");
             }
-        }
-        else if (limit >= 0)
-        {
+        } else if (limit >= 0) {
             sql.append(" LIMIT ");
             sql.append(limit);
         }
@@ -110,50 +98,43 @@ public class MySQLDatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
         final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
-        if (field.isUnique())
-        {
+        if (field.isUnique()) {
             return concat(back, ImmutableList.of(alterAddUniqueConstraint(nameConverters, table, field)));
         }
         return back;
     }
 
-    private SQLAction alterAddUniqueConstraint(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    private SQLAction alterAddUniqueConstraint(NameConverters nameConverters, DDLTable table, DDLField field) {
         return SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" ADD CONSTRAINT ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName())).append(" UNIQUE (").append(processID(field.getName())).append(")"));
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
         back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
 
         back.add(renderAlterTableChangeColumnStatement(nameConverters, table, oldField, field, renderFieldOptionsInAlterColumn()));
 
-        if (oldField.isUnique() && !field.isUnique())
-        {
+        if (oldField.isUnique() && !field.isUnique()) {
             back.add(SQLAction.of(new StringBuilder().append("ALTER TABLE ").append(withSchema(table.getName())).append(" DROP INDEX ").append(nameConverters.getUniqueNameConverter().getName(table.getName(), field.getName()))));
         }
 
-        if (!oldField.isUnique() && field.isUnique())
-        {
+        if (!oldField.isUnique() && field.isUnique()) {
             back.add(alterAddUniqueConstraint(nameConverters, table, field));
         }
-        
+
         back.addAll(renderAccessoriesForField(nameConverters, table, field));
 
         return back.build();
     }
 
     @Override
-	protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
-		StringBuilder back = new StringBuilder("CREATE INDEX ");
-		back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
+        StringBuilder back = new StringBuilder("CREATE INDEX ");
+        back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
                 .append(" ON ")
                 .append(processID(index.getTable()))
                 .append('(')
@@ -162,30 +143,27 @@ public class MySQLDatabaseProvider extends DatabaseProvider
         // silently, but some settings cause index creation to fail instead. When creating an index on columns that
         // have length data available, if the length is "too long", create a prefix index instead.
         TypeQualifiers qualifiers = index.getType().getQualifiers();
-        if (qualifiers.hasStringLength() && qualifiers.getStringLength() > 255)
-        {
+        if (qualifiers.hasStringLength() && qualifiers.getStringLength() > 255) {
             // When MySQL silently truncates a "long" index, the prefix index it creates is 255 characters. This
             // emulates that behaviour.
             back.append("(255)");
         }
         back.append(')');
-		
-		return SQLAction.of(back);
-	}
 
-    public void putNull(PreparedStatement stmt, int index) throws SQLException
-    {
+        return SQLAction.of(back);
+    }
+
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
         stmt.setString(index, null);
     }
 
-	@Override
-	protected Set<String> getReservedWords() {
-		return RESERVED_WORDS;
-	}
+    @Override
+    protected Set<String> getReservedWords() {
+        return RESERVED_WORDS;
+    }
 
     @Override
-    public boolean isCaseSensitive()
-    {
+    public boolean isCaseSensitive() {
         return FileSystemUtils.isCaseSensitive();
     }
 

@@ -19,21 +19,19 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public final class ClobTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class ClobTypeTest extends ActiveObjectsIntegrationTest {
     private static String SMALL_CLOB = "Some small sample";
 
     // over 4000 bytes, as Oracle has issues with that.
     private static String LARGE_CLOB;
 
-    static
-    {
+    static {
         int size = 8100;
         StringBuilder sb = new StringBuilder(size);
-        for (int i = 0; i < size / 10; i++)
-        {
+        for (int i = 0; i < size / 10; i++) {
             sb.append("0123456789#");
         }
         LARGE_CLOB = sb.append(size).toString();
@@ -44,11 +42,9 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      * see https://ecosystem.atlassian.net/browse/AO-396 for details.
      */
     @Test
-    public void testUnlimitedLengthFieldCanStoreStringWithLengthGreaterThan64k() throws Exception
-    {
+    public void testUnlimitedLengthFieldCanStoreStringWithLengthGreaterThan64k() throws Exception {
 
-        if (entityManager.getProvider() instanceof MySQLDatabaseProvider)
-        {
+        if (entityManager.getProvider() instanceof MySQLDatabaseProvider) {
             //force the DDL to create using the TEXT type when in MySQL so we test the migration of TEXT to LONGTEXT
             DDLAction createTableAction = new DDLAction(DDLActionType.CREATE);
             createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), LargeTextColumn.class));
@@ -56,10 +52,10 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
             String sqlStatement = action.iterator().next().getStatement();
 
             sqlStatement = sqlStatement.replace("TEXT LONGTEXT NOT NULL", "TEXT TEXT NOT NULL");
-            executeUpdate(sqlStatement, new DbUtils.UpdateCallback()
-            {
+            executeUpdate(sqlStatement, new DbUtils.UpdateCallback() {
                 @Override
-                public void setParameters(PreparedStatement statement) throws Exception {}
+                public void setParameters(PreparedStatement statement) throws Exception {
+                }
             });
         }
         entityManager.migrate(LargeTextColumn.class);
@@ -74,8 +70,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
         assertEquals("should be " + size + " long", size, found[0].getText().length());
     }
 
-    private String createString(int size)
-    {
+    private String createString(int size) {
         return new String(new char[size]).replace("\0", "a");
     }
 
@@ -84,8 +79,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         SimpleColumn e = entityManager.create(SimpleColumn.class);
@@ -119,8 +113,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -136,8 +129,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -155,8 +147,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -172,8 +163,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnCreatingWithoutValue() throws Exception
-    {
+    public void testNotNullColumnCreatingWithoutValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -185,8 +175,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnSetNull() throws Exception
-    {
+    public void testNotNullColumnSetNull() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -201,8 +190,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         DefaultColumn e = entityManager.create(DefaultColumn.class);
@@ -214,8 +202,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -224,8 +211,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDeletion() throws Exception
-    {
+    public void testDeletion() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -241,16 +227,14 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
         // TODO: check that blob got deleted
     }
 
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         @StringLength(StringLength.UNLIMITED)
         String getText();
 
         void setText(String text);
     }
 
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         @StringLength(StringLength.UNLIMITED)
         String getText();
@@ -258,8 +242,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
         void setText(String text);
     }
 
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("Test")
         @StringLength(StringLength.UNLIMITED)
         String getText();
@@ -267,8 +250,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest
         void setText(String text);
     }
 
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         @StringLength(StringLength.UNLIMITED)
         String getText();

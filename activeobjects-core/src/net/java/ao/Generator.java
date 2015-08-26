@@ -27,25 +27,24 @@ import java.lang.annotation.Target;
  * This can be used to implement functionality like UUID keys
  * and other values which must be generated in the application
  * layer.</p>
- * 
+ *
  * <p>This only generates values for INSERT statements, not
  * UPDATE, SELECT or any such statement.  It is likely that down
  * the road, such functionality will be added.  However, at the
  * moment the designed use-case is something like UUID
  * primary keys, rather than an application-layer ON UPDATE.</p>
- * 
+ *
  * @author Daniel Spiewak
  * @see net.java.ao.ValueGenerator
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Generator {
-	
-	/**
-	 * Specifies the generator class to use in creating new values
-	 * for the field in question.  This generator should be
-	 * thread-safe and execute very quickly.
-	 *
-	 */
-	Class<? extends ValueGenerator<?>> value();
+
+    /**
+     * Specifies the generator class to use in creating new values
+     * for the field in question.  This generator should be
+     * thread-safe and execute very quickly.
+     */
+    Class<? extends ValueGenerator<?>> value();
 }

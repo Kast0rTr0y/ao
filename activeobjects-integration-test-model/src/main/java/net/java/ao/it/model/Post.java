@@ -18,8 +18,8 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface Post extends Commentable
-{
-	public String getTitle();
-	public void setTitle(String title);
+public interface Post extends Commentable {
+    public String getTitle();
+
+    public void setTitle(String title);
 }

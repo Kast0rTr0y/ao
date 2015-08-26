@@ -9,14 +9,13 @@ import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Data(TestSelfReferencingEntity.SelfReferencingEntityDatabaseUpdater.class)
-public final class TestSelfReferencingEntity extends ActiveObjectsIntegrationTest
-{
+public final class TestSelfReferencingEntity extends ActiveObjectsIntegrationTest {
     @Test
-    public void doTest() throws Exception
-    {
+    public void doTest() throws Exception {
         final Sub1SelfReferencing sub1 = entityManager.create(Sub1SelfReferencing.class);
         sub1.setName("sub1");
         sub1.setSub1("I am sub1");
@@ -43,19 +42,16 @@ public final class TestSelfReferencingEntity extends ActiveObjectsIntegrationTes
         assertEquals("I am sub2", ((Sub2SelfReferencing) sub2Retrieved).getSub2());
     }
 
-    public static final class SelfReferencingEntityDatabaseUpdater implements DatabaseUpdater
-    {
+    public static final class SelfReferencingEntityDatabaseUpdater implements DatabaseUpdater {
         @Override
-        public void update(EntityManager entityManager) throws Exception
-        {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.setPolymorphicTypeMapper(new DefaultPolymorphicTypeMapper(Sub1SelfReferencing.class, Sub2SelfReferencing.class));
             entityManager.migrate(Sub1SelfReferencing.class, Sub2SelfReferencing.class);
         }
     }
 
     @Polymorphic
-    static interface SelfReferencing extends Entity
-    {
+    static interface SelfReferencing extends Entity {
         void setName(String name);
 
         String getName();
@@ -65,15 +61,13 @@ public final class TestSelfReferencingEntity extends ActiveObjectsIntegrationTes
         SelfReferencing getRef();
     }
 
-    static interface Sub1SelfReferencing extends SelfReferencing
-    {
+    static interface Sub1SelfReferencing extends SelfReferencing {
         void setSub1(String sub);
 
         String getSub1();
     }
 
-    static interface Sub2SelfReferencing extends SelfReferencing
-    {
+    static interface Sub2SelfReferencing extends SelfReferencing {
         void setSub2(String sub);
 
         String getSub2();

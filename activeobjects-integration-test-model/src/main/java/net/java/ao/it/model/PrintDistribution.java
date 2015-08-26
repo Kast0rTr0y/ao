@@ -18,8 +18,8 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface PrintDistribution extends Distribution
-{
-	public int getCopies();
-	public void setCopies(int copies);
+public interface PrintDistribution extends Distribution {
+    public int getCopies();
+
+    public void setCopies(int copies);
 }

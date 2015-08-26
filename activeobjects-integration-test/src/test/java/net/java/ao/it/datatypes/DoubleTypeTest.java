@@ -11,30 +11,27 @@ import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
-import net.java.ao.test.jdbc.Jdbc;
 import net.java.ao.test.jdbc.NonTransactional;
-import net.java.ao.test.jdbc.Oracle;
 import net.java.ao.util.DoubleUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for Double data type
  */
-public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class DoubleTypeTest extends ActiveObjectsIntegrationTest {
     /**
      * Test AutoIncrement - not supported
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
     }
 
@@ -43,8 +40,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsException.class)
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         final Double id = 1d;
@@ -60,8 +56,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testValidMinValue() throws Exception
-    {
+    public void testValidMinValue() throws Exception {
         entityManager.migrate(SimpleColumn.class);
         SimpleColumn e = entityManager.create(SimpleColumn.class);
         e.setAge(DoubleUtils.MIN_VALUE);
@@ -77,8 +72,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testValidMaxValue() throws Exception
-    {
+    public void testValidMaxValue() throws Exception {
         entityManager.migrate(SimpleColumn.class);
         SimpleColumn e = entityManager.create(SimpleColumn.class);
         e.setAge(DoubleUtils.MAX_VALUE);
@@ -94,8 +88,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsException.class)
     @NonTransactional
-    public void testInvalidMinValue() throws Exception
-    {
+    public void testInvalidMinValue() throws Exception {
         double badMin = -1.7976931348623157e+308;
         entityManager.migrate(SimpleColumn.class);
         SimpleColumn e = entityManager.create(SimpleColumn.class);
@@ -112,8 +105,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsException.class)
     @NonTransactional
-    public void testInvalidMaxValue() throws Exception
-    {
+    public void testInvalidMaxValue() throws Exception {
         entityManager.migrate(SimpleColumn.class);
         SimpleColumn e = entityManager.create(SimpleColumn.class);
         e.setAge(Double.MAX_VALUE);
@@ -129,12 +121,10 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSpecialValues() throws Exception
-    {
+    public void testSpecialValues() throws Exception {
         entityManager.migrate(SimpleColumn.class);
         // create a row with normal id
-        for (Double value : new Double[]{-1.8d, 0d, 1.5d})
-        {
+        for (Double value : new Double[]{-1.8d, 0d, 1.5d}) {
             SimpleColumn e = entityManager.create(SimpleColumn.class);
             e.setAge(value);
             e.save();
@@ -150,8 +140,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -172,8 +161,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -182,8 +170,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testInvalidDefaultColumn() throws Exception
-    {
+    public void testInvalidDefaultColumn() throws Exception {
         entityManager.migrate(InvalidDefaultColumn.class);
     }
 
@@ -192,8 +179,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -203,14 +189,13 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         assertEquals(new Double(100.2d), e.getAge());
         checkFieldValue(DefaultColumn.class, "getID", e.getID(), "getAge", 100.2d);
     }
-    
+
     /**
      * Test null value
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -220,14 +205,13 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         assertNull(e.getAge());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
     }
-    
+
     /**
      * Test null value
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -239,16 +223,14 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         assertNull(e.getAge());
         checkFieldValue(SimpleColumn.class, "getID", e.getID(), "getAge", null);
     }
-    
-    
+
 
     /**
      * Test a not null column
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -264,8 +246,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -277,8 +258,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -291,8 +271,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimitiveColumn() throws Exception
-    {
+    public void testPrimitiveColumn() throws Exception {
         entityManager.migrate(PrimitiveColumn.class);
 
         // create
@@ -317,8 +296,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimitiveNotNullColumn() throws Exception
-    {
+    public void testPrimitiveNotNullColumn() throws Exception {
         entityManager.migrate(PrimitiveNotNullColumn.class);
 
         // create
@@ -342,8 +320,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDeletion() throws Exception
-    {
+    public void testDeletion() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         SimpleColumn e = entityManager.create(SimpleColumn.class);
@@ -353,25 +330,18 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
         entityManager.delete(e);
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Double fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Double fieldValue) throws Exception {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
+                new DbUtils.StatementCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
                         statement.setObject(1, id);
                     }
 
-                    public void processResult(ResultSet resultSet) throws Exception
-                    {
-                        if (resultSet.next())
-                        {
+                    public void processResult(ResultSet resultSet) throws Exception {
+                        if (resultSet.next()) {
                             double dbValue = resultSet.getDouble(getFieldName(entityType, getterName));
                             assertEquals(fieldValue, resultSet.wasNull() ? null : dbValue);
-                        }
-                        else
-                        {
+                        } else {
                             fail("No entry found in database with ID " + id);
                         }
                     }
@@ -382,8 +352,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * AutoIncrement primary key
      */
-    public static interface AutoIncrementId extends RawEntity<Double>
-    {
+    public static interface AutoIncrementId extends RawEntity<Double> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -393,8 +362,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary key
      */
-    public static interface SimpleId extends RawEntity<Double>
-    {
+    public static interface SimpleId extends RawEntity<Double> {
         @PrimaryKey("ID")
         public Double getId();
     }
@@ -402,8 +370,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         public Double getAge();
 
         public void setAge(Double age);
@@ -412,8 +379,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Invalid default value - not a number
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public Double getAge();
 
@@ -423,8 +389,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Invalid value default column - not a number
      */
-    public static interface InvalidDefaultColumn extends Entity
-    {
+    public static interface InvalidDefaultColumn extends Entity {
         @Default("Test")
         public Double getAge();
 
@@ -434,8 +399,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Default value column
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("100.2d")
         public Double getAge();
 
@@ -445,8 +409,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         public Double getAge();
 
@@ -456,8 +419,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Primitive column
      */
-    public static interface PrimitiveColumn extends Entity
-    {
+    public static interface PrimitiveColumn extends Entity {
         public double getAge();
 
         public void setAge(double age);
@@ -466,8 +428,7 @@ public final class DoubleTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Primitive not null column
      */
-    public static interface PrimitiveNotNullColumn extends Entity
-    {
+    public static interface PrimitiveNotNullColumn extends Entity {
         @NotNull
         public double getAge();
 

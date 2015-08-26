@@ -21,10 +21,12 @@ import net.java.ao.Entity;
  * @author Daniel Spiewak
  */
 public interface PublicationToDistribution extends Entity {
-	
-	public Publication getPublication();
-	public void setPublication(Publication publication);
-	
-	public Distribution getDistribution();
-	public void setDistribution(Distribution distribution);
+
+    public Publication getPublication();
+
+    public void setPublication(Publication publication);
+
+    public Distribution getDistribution();
+
+    public void setDistribution(Distribution distribution);
 }

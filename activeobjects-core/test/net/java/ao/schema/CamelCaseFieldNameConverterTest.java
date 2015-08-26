@@ -15,51 +15,50 @@
  */
 package net.java.ao.schema;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.net.URL;
-
 import org.junit.Test;
-
 import test.schema.Company;
 import test.schema.CompanyAddressInfo;
 import test.schema.Person;
 import test.schema.PersonLegalDefence;
 import test.schema.PersonSuit;
 
+import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * @author Daniel Spiewak
  */
 public final class CamelCaseFieldNameConverterTest {
 
-	@Test
-	public void testGetName() throws SecurityException, NoSuchMethodException {
-		CamelCaseFieldNameConverter converter = new CamelCaseFieldNameConverter();
-		
-		assertEquals("firstName", converter.getName(Person.class.getMethod("getFirstName")));
-		assertEquals("firstName", converter.getName(Person.class.getMethod("setFirstName", String.class)));
-		
-		assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
-		assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
-		
-		assertEquals("companyID", converter.getName(Person.class.getMethod("getCompany")));
-		assertEquals("companyID", converter.getName(Person.class.getMethod("setCompany", Company.class)));
-		
-		assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
+    @Test
+    public void testGetName() throws SecurityException, NoSuchMethodException {
+        CamelCaseFieldNameConverter converter = new CamelCaseFieldNameConverter();
 
-		assertEquals("name", converter.getName(Company.class.getMethod("getName")));
-		assertEquals("name", converter.getName(Company.class.getMethod("setName", String.class)));
+        assertEquals("firstName", converter.getName(Person.class.getMethod("getFirstName")));
+        assertEquals("firstName", converter.getName(Person.class.getMethod("setFirstName", String.class)));
 
-		assertNull(converter.getName(Company.class.getMethod("getPeople")));
+        assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
+        assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
 
-		assertEquals("personLegalDefenceID", 
-				converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
-		assertEquals("personLegalDefenceID", 
-				converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
+        assertEquals("companyID", converter.getName(Person.class.getMethod("getCompany")));
+        assertEquals("companyID", converter.getName(Person.class.getMethod("setCompany", Company.class)));
 
-		assertEquals("addressLine1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
-		assertEquals("addressLine1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1", 
-				String.class)));
-	}
+        assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
+
+        assertEquals("name", converter.getName(Company.class.getMethod("getName")));
+        assertEquals("name", converter.getName(Company.class.getMethod("setName", String.class)));
+
+        assertNull(converter.getName(Company.class.getMethod("getPeople")));
+
+        assertEquals("personLegalDefenceID",
+                converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
+        assertEquals("personLegalDefenceID",
+                converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
+
+        assertEquals("addressLine1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
+        assertEquals("addressLine1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
+                String.class)));
+    }
 }

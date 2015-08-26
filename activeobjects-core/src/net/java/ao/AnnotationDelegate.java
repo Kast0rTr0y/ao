@@ -18,18 +18,16 @@ package net.java.ao;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * <p>WARNING: <i>Not</i> part of the public API.  This class is public only
  * to allow its use within other packages in the ActiveObjects library.</p>
  */
-public final class AnnotationDelegate
-{
+public final class AnnotationDelegate {
     private final Method method1, method2;
 
-    public AnnotationDelegate(Method method1, Method method2)
-    {
+    public AnnotationDelegate(Method method1, Method method2) {
         this.method1 = checkNotNull(method1);
         this.method2 = method2;
     }
@@ -41,11 +39,9 @@ public final class AnnotationDelegate
      * @return this element's annotation for the specified annotation type if present on any of the methods, else {@code null}
      * @see Method#getAnnotation(Class)
      */
-    public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
-    {
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         final T a = method1.getAnnotation(annotationClass);
-        if (a != null)
-        {
+        if (a != null) {
             return a;
         }
         return method2 == null ? null : method2.getAnnotation(annotationClass);
@@ -58,8 +54,7 @@ public final class AnnotationDelegate
      * @param annotationClass the Class object corresponding to the annotation type
      * @return {@code true} if an annotation for the specified annotation type is present on any of the methods, else {@code false}
      */
-    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass)
-    {
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
         return method1.isAnnotationPresent(annotationClass) || (method2 != null && method2.isAnnotationPresent(annotationClass));
     }
 }

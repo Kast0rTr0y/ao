@@ -10,14 +10,13 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Data(TestMultipleOneToOneOnOneEntity.DataUpdater.class)
-public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrationTest
-{
+public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrationTest {
     @Test
-    public void test() throws Exception
-    {
+    public void test() throws Exception {
         final X x = entityManager.create(X.class);
         assertTrue(x.getID() > 0);
 
@@ -39,18 +38,16 @@ public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrat
         assertEquals(oval.getID(), x.getTheOvalWindow().getID());
     }
 
-    private WindowTypeXref createWindowTypeXref(X x, String type) throws SQLException
-    {
+    private WindowTypeXref createWindowTypeXref(X x, String type) throws SQLException {
         final WindowTypeXref w = entityManager.create(WindowTypeXref.class);
         w.setX(x);
         w.setWindowType(type);
         w.save();
-        
+
         return w;
     }
 
-    interface X extends Entity
-    {
+    interface X extends Entity {
         @OneToOne(where = "windowType = 'square'")
         WindowTypeXref getTheSquareWindow();
 
@@ -61,8 +58,7 @@ public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrat
         WindowTypeXref getTheOvalWindow();
     }
 
-    interface WindowTypeXref extends Entity
-    {
+    interface WindowTypeXref extends Entity {
         public X getX();
 
         public void setX(X anX);
@@ -72,11 +68,9 @@ public final class TestMultipleOneToOneOnOneEntity extends ActiveObjectsIntegrat
         public String getWindowType();
     }
 
-    public static class DataUpdater implements DatabaseUpdater
-    {
+    public static class DataUpdater implements DatabaseUpdater {
         @Override
-        public void update(EntityManager entityManager) throws Exception
-        {
+        public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(X.class, WindowTypeXref.class);
         }
     }

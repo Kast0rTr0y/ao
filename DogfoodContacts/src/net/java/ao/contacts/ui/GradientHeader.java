@@ -30,53 +30,44 @@
  */
 package net.java.ao.contacts.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import org.jdesktop.fuse.InjectedResource;
 import org.jdesktop.fuse.ResourceInjector;
+
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * @author Daniel Spiewak
  */
 public class GradientHeader extends JPanel {
-	@InjectedResource
-	private GradientPaint gradient;
-	
-	private final int HEIGHT = 50;
-	
-	public GradientHeader(String title) {
-		super(new BorderLayout());
-		
-		ResourceInjector.get("ui.style").inject(this);
-		
-		setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-		
-		JLabel label = new JLabel(title);
-		label.setFont(label.getFont().deriveFont(18f).deriveFont(Font.BOLD));
-		label.setForeground(Color.WHITE);
-		add(label);
-	}
-	
-	@Override
-	protected void paintComponent(Graphics g) {
-		Graphics2D g2 = (Graphics2D) g;
-		
-		g2.setPaint(gradient);
-		g2.fillRect(0, 0, getWidth(), getHeight());
-	}
-	
-	@Override
-	public Dimension getPreferredSize() {
-		return new Dimension(super.getPreferredSize().width, HEIGHT);
-	}
+    @InjectedResource
+    private GradientPaint gradient;
+
+    private final int HEIGHT = 50;
+
+    public GradientHeader(String title) {
+        super(new BorderLayout());
+
+        ResourceInjector.get("ui.style").inject(this);
+
+        setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+
+        JLabel label = new JLabel(title);
+        label.setFont(label.getFont().deriveFont(18f).deriveFont(Font.BOLD));
+        label.setForeground(Color.WHITE);
+        add(label);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+
+        g2.setPaint(gradient);
+        g2.fillRect(0, 0, getWidth(), getHeight());
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(super.getPreferredSize().width, HEIGHT);
+    }
 }

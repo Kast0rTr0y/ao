@@ -1,53 +1,44 @@
 package net.java.ao.types;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 import net.java.ao.ActiveObjectsException;
 import net.java.ao.EntityManager;
 import net.java.ao.util.StringUtils;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import static java.sql.Types.VARCHAR;
 
-final class EnumType extends AbstractLogicalType<Enum<?>>
-{
-    public EnumType()
-    {
+final class EnumType extends AbstractLogicalType<Enum<?>> {
+    public EnumType() {
         super("Enum",
-              new Class<?>[] { Enum.class },
-              VARCHAR, new Integer[] { });
+                new Class<?>[]{Enum.class},
+                VARCHAR, new Integer[]{});
     }
 
     @Override
-    public boolean isAllowedAsPrimaryKey()
-    {
+    public boolean isAllowedAsPrimaryKey() {
         return true;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Enum<?> pullFromDatabase(EntityManager manager, ResultSet res, Class<Enum<?>> type, String columnName)
-        throws SQLException
-    {
+            throws SQLException {
         final String dbValue = res.getString(columnName);
-        if (StringUtils.isBlank(dbValue))
-        {
+        if (StringUtils.isBlank(dbValue)) {
             return null;
         }
-        try
-        {
+        try {
             return Enum.valueOf((Class<? extends Enum>) type, dbValue);
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             throw new ActiveObjectsException("Could not find enum value for '" + type + "' corresponding to database value '" + dbValue + "'");
         }
     }
 
     @Override
-    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value, int jdbcType) throws SQLException
-    {
+    public void putToDatabase(EntityManager manager, PreparedStatement stmt, int index, Enum<?> value, int jdbcType) throws SQLException {
         stmt.setString(index, value.name());
     }
 

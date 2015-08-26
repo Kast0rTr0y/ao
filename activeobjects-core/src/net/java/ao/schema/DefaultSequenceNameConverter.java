@@ -1,10 +1,8 @@
 package net.java.ao.schema;
 
-public final class DefaultSequenceNameConverter implements SequenceNameConverter
-{
+public final class DefaultSequenceNameConverter implements SequenceNameConverter {
     @Override
-    public String getName(String tableName, String fieldName)
-    {
+    public String getName(String tableName, String fieldName) {
         return new StringBuilder()
                 .append(tableName)
                 .append('_')

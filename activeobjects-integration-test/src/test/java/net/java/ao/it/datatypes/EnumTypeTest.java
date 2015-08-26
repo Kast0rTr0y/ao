@@ -11,7 +11,6 @@ import net.java.ao.schema.PrimaryKey;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.EntityUtils;
-
 import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -20,21 +19,21 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import static junit.framework.Assert.assertFalse;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for Enum data type
  */
 @SuppressWarnings("unchecked")
-public final class EnumTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class EnumTypeTest extends ActiveObjectsIntegrationTest {
     /**
      * Test AutoIncrement - this must not work on enums
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
     }
 
@@ -43,8 +42,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         SimpleId e = entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), Data.FIRST));
@@ -58,8 +56,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNullId() throws Exception
-    {
+    public void testNullId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), null));
@@ -70,12 +67,10 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSpecialIds() throws Exception
-    {
+    public void testSpecialIds() throws Exception {
         entityManager.migrate(SimpleId.class);
 
-        for (Data data : Data.values())
-        {
+        for (Data data : Data.values()) {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam(getFieldName(SimpleId.class, "getId"), data));
             assertEquals(data, e.getId());
             checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", data);
@@ -87,8 +82,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -110,8 +104,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -121,8 +114,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testInvalidDefaultColumn() throws Exception
-    {
+    public void testInvalidDefaultColumn() throws Exception {
         entityManager.migrate(InvalidDefaultColumn.class);
     }
 
@@ -132,8 +124,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testOutOfRangeDefaultColumn() throws Exception
-    {
+    public void testOutOfRangeDefaultColumn() throws Exception {
         entityManager.migrate(OutOfRangeDefaultColumn.class);
     }
 
@@ -143,8 +134,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     @Test
     @Ignore("Parsing of enum values from strings is not yet supported")
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -160,8 +150,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -177,8 +166,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -196,8 +184,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -213,8 +200,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -226,8 +212,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -239,41 +224,32 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDeletion() throws Exception
-    {
+    public void testDeletion() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", Data.THIRD));
         entityManager.delete(e);
 
-        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleId.class), new DbUtils.StatementCallback()
-        {
+        executeStatement("SELECT * FROM " + EntityUtils.getTableName(entityManager, SimpleId.class), new DbUtils.StatementCallback() {
             @Override
-            public void setParameters(PreparedStatement statement) throws Exception
-            {
+            public void setParameters(PreparedStatement statement) throws Exception {
             }
 
             @Override
-            public void processResult(ResultSet resultSet) throws Exception
-            {
+            public void processResult(ResultSet resultSet) throws Exception {
                 assertFalse("table should have been empty", resultSet.next());
             }
         });
 
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Data fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final Data fieldValue) throws Exception {
         DbUtils.executeStatement(entityManager, "SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
                 new DbUtils.StatementCallback() {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
-                        if (id instanceof Enum<?>)
-                        {
+                    public void setParameters(PreparedStatement statement) throws Exception {
+                        if (id instanceof Enum<?>) {
                             statement.setString(1, ((Enum<?>) id).name());
-                        }
-                        else
-                        {
+                        } else {
                             statement.setObject(1, id);
                         }
                     }
@@ -297,8 +273,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     /**
      * AutoIncrement primary key
      */
-    public static interface AutoIncrementId extends RawEntity<Data>
-    {
+    public static interface AutoIncrementId extends RawEntity<Data> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -308,8 +283,7 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary key
      */
-    public static interface SimpleId extends RawEntity<Data>
-    {
+    public static interface SimpleId extends RawEntity<Data> {
         @PrimaryKey("ID")
         public Data getId();
     }
@@ -317,59 +291,59 @@ public final class EnumTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         public Data getData();
+
         public void setData(Data data);
     }
 
     /**
      * Invalid default value - not matching the enum
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public Data getData();
+
         public void setData(Data data);
     }
 
     /**
      * Invalid value default column - not matching the enum
      */
-    public static interface InvalidDefaultColumn extends Entity
-    {
+    public static interface InvalidDefaultColumn extends Entity {
         @Default("Test")
         public Data getData();
+
         public void setData(Data data);
     }
 
     /**
      * Out of range value default column
      */
-    public static interface OutOfRangeDefaultColumn extends Entity
-    {
+    public static interface OutOfRangeDefaultColumn extends Entity {
         @Default("99")
         public Data getData();
+
         public void setData(Data data);
     }
 
     /**
      * Default value column
      */
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("1")
         public Data getData();
+
         public void setData(Data data);
     }
 
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         public Data getData();
+
         public void setData(Data data);
     }
 

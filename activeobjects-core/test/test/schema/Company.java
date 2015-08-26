@@ -15,8 +15,6 @@
  */
 package test.schema;
 
-import java.io.InputStream;
-
 import net.java.ao.Generator;
 import net.java.ao.OneToMany;
 import net.java.ao.RawEntity;
@@ -25,36 +23,42 @@ import net.java.ao.schema.Default;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.PrimaryKey;
 
+import java.io.InputStream;
+
 /**
  * @author Daniel Spiewak
  */
 public interface Company extends RawEntity<Long> {
-	
-	@PrimaryKey
-	@NotNull
-	@Generator(TimestampGenerator.class)
-	public long getCompanyID();
-	
-	@Searchable
-	@Default("Widgets Incorporated")
-	public String getName();
-	public void setName(String name);
-	
-	public boolean isCool();
-	public void setCool(boolean cool);
-	
-	@Generator(MotivationGenerator.class)
-	public String getMotivation();
-	
-	@Generator(MotivationGenerator.class)
-	public void setMotivation(String motivation);
-	
-	public CompanyAddressInfo getAddressInfo();
-	public void setAddressInfo(CompanyAddressInfo info);
-	
-	public InputStream getImage();
-	public void setImage(InputStream image);
-	
-	@OneToMany
-	public Person[] getPeople();
+
+    @PrimaryKey
+    @NotNull
+    @Generator(TimestampGenerator.class)
+    public long getCompanyID();
+
+    @Searchable
+    @Default("Widgets Incorporated")
+    public String getName();
+
+    public void setName(String name);
+
+    public boolean isCool();
+
+    public void setCool(boolean cool);
+
+    @Generator(MotivationGenerator.class)
+    public String getMotivation();
+
+    @Generator(MotivationGenerator.class)
+    public void setMotivation(String motivation);
+
+    public CompanyAddressInfo getAddressInfo();
+
+    public void setAddressInfo(CompanyAddressInfo info);
+
+    public InputStream getImage();
+
+    public void setImage(InputStream image);
+
+    @OneToMany
+    public Person[] getPeople();
 }

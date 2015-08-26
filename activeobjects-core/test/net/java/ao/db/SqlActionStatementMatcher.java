@@ -11,22 +11,18 @@ import static org.hamcrest.CoreMatchers.equalTo;
 /**
  * Matcher for SQLAction statement.
  */
-public class SqlActionStatementMatcher<T extends SQLAction> extends TypeSafeMatcher<T>
-{
-    public static Matcher<? super SQLAction> hasStatement(String statement)
-    {
+public class SqlActionStatementMatcher<T extends SQLAction> extends TypeSafeMatcher<T> {
+    public static Matcher<? super SQLAction> hasStatement(String statement) {
         //noinspection unchecked
         return new SqlActionStatementMatcher(equalTo(statement));
     }
 
-    public static Matcher<? super SQLAction> hasStatementMatching(String regex)
-    {
+    public static Matcher<? super SQLAction> hasStatementMatching(String regex) {
         //noinspection unchecked
         return new SqlActionStatementMatcher(new Matches(regex));
     }
 
-    public static Matcher<? super SQLAction> hasStatement(Matcher<String> statementMatcher)
-    {
+    public static Matcher<? super SQLAction> hasStatement(Matcher<String> statementMatcher) {
         //noinspection unchecked
         return new SqlActionStatementMatcher(statementMatcher);
     }
@@ -41,20 +37,17 @@ public class SqlActionStatementMatcher<T extends SQLAction> extends TypeSafeMatc
      *
      * @param statementMatcher a Matcher&lt;String&gt;
      */
-    public SqlActionStatementMatcher(Matcher<String> statementMatcher)
-    {
+    public SqlActionStatementMatcher(Matcher<String> statementMatcher) {
         this.matcher = statementMatcher;
     }
 
     @Override
-    protected boolean matchesSafely(final T item)
-    {
+    protected boolean matchesSafely(final T item) {
         return matcher.matches(item.getStatement());
     }
 
     @Override
-    public void describeTo(final Description description)
-    {
+    public void describeTo(final Description description) {
         description.appendText("a SQLAction with statement matching ");
         matcher.describeTo(description);
     }

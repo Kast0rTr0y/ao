@@ -12,19 +12,16 @@ import org.junit.Test;
  * Test for ACTIVEOBJECTS-64 where {@link Indexed} fields within {@link Polymorphic} entities try to create extra index
  * on non-existing tables.
  */
-public final class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest
-{
+public final class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest {
     @Test
-    public void createDatabaseSchema() throws Exception
-    {
+    public void createDatabaseSchema() throws Exception {
         entityManager.migrate(ReferenceableEntity.class, Achievement.class);
         entityManager.create(Achievement.class, new DBParam(getFieldName(Achievement.class, "getRef"), "some-ref")).save();
     }
 
 
     @Polymorphic
-    static interface ReferenceableEntity extends Entity
-    {
+    static interface ReferenceableEntity extends Entity {
         @Indexed
         @NotNull
         public String getRef();
@@ -32,7 +29,6 @@ public final class TestPolymorphicAndIndex extends ActiveObjectsIntegrationTest
         public void setRef(String ref);
     }
 
-    static interface Achievement extends ReferenceableEntity
-    {
+    static interface Achievement extends ReferenceableEntity {
     }
 }

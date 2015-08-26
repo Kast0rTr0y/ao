@@ -24,54 +24,54 @@ import java.util.List;
  * @author Daniel Spiewak
  */
 class ImplementationWrapper<T extends RawEntity<?>> {
-	private List<Object> implementations;
-	private boolean initialized = false;
-	
-	public ImplementationWrapper() {
-		implementations = new ArrayList<Object>();
-	}
-	
-	public void init(T instance) {
-		init(instance, instance.getEntityType());
-		initialized = true;
-	}
-	
-	private void init(T instance, Class<? extends RawEntity<?>> clazz) {
-		Implementation implAnnotation = clazz.getAnnotation(Implementation.class);
-		
-		if (implAnnotation != null) {
-			try {
-				Constructor<Object> con = (Constructor<Object>) implAnnotation.value().getConstructor(clazz);
-				implementations.add(con.newInstance(instance));
-			} catch (SecurityException e) {
-			} catch (NoSuchMethodException e) {
-			} catch (IllegalArgumentException e) {
-			} catch (InstantiationException e) {
-			} catch (IllegalAccessException e) {
-			} catch (InvocationTargetException e) {
-			}
-		}
-		
-		for (Class<?> sup : clazz.getInterfaces()) {
-            if (RawEntity.class.isAssignableFrom(sup)) {
-			    init(instance, (Class<? extends RawEntity<?>>) sup);
+    private List<Object> implementations;
+    private boolean initialized = false;
+
+    public ImplementationWrapper() {
+        implementations = new ArrayList<Object>();
+    }
+
+    public void init(T instance) {
+        init(instance, instance.getEntityType());
+        initialized = true;
+    }
+
+    private void init(T instance, Class<? extends RawEntity<?>> clazz) {
+        Implementation implAnnotation = clazz.getAnnotation(Implementation.class);
+
+        if (implAnnotation != null) {
+            try {
+                Constructor<Object> con = (Constructor<Object>) implAnnotation.value().getConstructor(clazz);
+                implementations.add(con.newInstance(instance));
+            } catch (SecurityException e) {
+            } catch (NoSuchMethodException e) {
+            } catch (IllegalArgumentException e) {
+            } catch (InstantiationException e) {
+            } catch (IllegalAccessException e) {
+            } catch (InvocationTargetException e) {
             }
-		}
-	}
-	
-	public MethodImplWrapper getMethod(String name, Class<?>... parameterTypes) {
-		if (!initialized) {
-			return null;
-		}
-		
-		for (Object obj : implementations) {
-			try {
-				return new MethodImplWrapper(obj, obj.getClass().getMethod(name, parameterTypes));
-			} catch (SecurityException e) {
-			} catch (NoSuchMethodException e) {
-			}
-		}
-		
-		return null;
-	}
+        }
+
+        for (Class<?> sup : clazz.getInterfaces()) {
+            if (RawEntity.class.isAssignableFrom(sup)) {
+                init(instance, (Class<? extends RawEntity<?>>) sup);
+            }
+        }
+    }
+
+    public MethodImplWrapper getMethod(String name, Class<?>... parameterTypes) {
+        if (!initialized) {
+            return null;
+        }
+
+        for (Object obj : implementations) {
+            try {
+                return new MethodImplWrapper(obj, obj.getClass().getMethod(name, parameterTypes));
+            } catch (SecurityException e) {
+            } catch (NoSuchMethodException e) {
+            }
+        }
+
+        return null;
+    }
 }

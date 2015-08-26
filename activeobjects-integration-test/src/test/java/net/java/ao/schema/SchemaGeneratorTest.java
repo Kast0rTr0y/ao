@@ -35,23 +35,32 @@ import org.junit.rules.ExpectedException;
 
 import java.sql.Types;
 
-import static net.java.ao.types.LogicalTypes.*;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.stringType;
+import static net.java.ao.types.LogicalTypes.urlType;
 import static org.hamcrest.Matchers.arrayWithSize;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Daniel Spiewak
  */
 @Data(DatabaseProcessor.class)
-public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
-{
-    @Rule public ExpectedException expectedException = ExpectedException.none();
+public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest {
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @SuppressWarnings("null")
     @Test
-    public void testParseDDL()
-    {
+    public void testParseDDL() {
         String[] expectedFields = {
                 getFieldName(Person.class, "getID"),
                 getFieldName(Person.class, "getFirstName"),
@@ -72,10 +81,8 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertEquals(6, parsedTables.length);
 
         DDLTable personDDL = null;
-        for (DDLTable table : parsedTables)
-        {
-            if (table.getName().equals(tableNameConverter.getName(Person.class)))
-            {
+        for (DDLTable table : parsedTables) {
+            if (table.getName().equals(tableNameConverter.getName(Person.class))) {
                 personDDL = table;
                 break;
             }
@@ -85,20 +92,16 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertEquals(expectedFields.length, personDDL.getFields().length);
         assertEquals(1, personDDL.getForeignKeys().length);
 
-        for (DDLField field : personDDL.getFields())
-        {
+        for (DDLField field : personDDL.getFields()) {
             boolean found = false;
-            for (String expectedField : expectedFields)
-            {
-                if (expectedField.equals(field.getName()))
-                {
+            for (String expectedField : expectedFields) {
+                if (expectedField.equals(field.getName())) {
                     found = true;
                     break;
                 }
             }
 
-            if (!found)
-            {
+            if (!found) {
                 fail("Field " + field.getName() + " was unexpected");
             }
         }
@@ -147,7 +150,7 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertNull(idField.getDefaultValue());
 
         assertEquals(LogicalTypes.entityType(Company.class, entityManager.getProvider().getTypeManager().getType(long.class), long.class),
-                     cidField.getType().getLogicalType());
+                cidField.getType().getLogicalType());
         assertEquals(Types.BIGINT, cidField.getJdbcType());
 
         assertFalse(cidField.isAutoIncrement());
@@ -158,10 +161,8 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertNull(cidField.getDefaultValue());
 
         DDLForeignKey cidKey = null;
-        for (DDLForeignKey key : personDDL.getForeignKeys())
-        {
-            if (key.getField().equals(getFieldName(Person.class, "getCompany")))
-            {
+        for (DDLForeignKey key : personDDL.getForeignKeys()) {
+            if (key.getField().equals(getFieldName(Person.class, "getCompany"))) {
                 cidKey = key;
                 break;
             }
@@ -175,13 +176,10 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
         assertEquals(tableNameConverter.getName(Company.class), cidKey.getTable());
 
         assertEquals(expectedIndexes.length, personDDL.getIndexes().length);
-        for (DDLIndex index : personDDL.getIndexes())
-        {
+        for (DDLIndex index : personDDL.getIndexes()) {
             boolean found = false;
-            for (String expectedIndex : expectedIndexes)
-            {
-                if (expectedIndex.equals(index.getField()))
-                {
+            for (String expectedIndex : expectedIndexes) {
+                if (expectedIndex.equals(index.getField())) {
                     assertEquals(tableNameConverter.getName(Person.class), index.getTable());
 
                     found = true;
@@ -189,16 +187,14 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
                 }
             }
 
-            if (!found)
-            {
+            if (!found) {
                 fail("Index for field " + index.getField() + " was unexpected");
             }
         }
     }
 
     @Test
-    public void testParseIndexIgnoresUnrelatedInterfaces() throws Exception
-    {
+    public void testParseIndexIgnoresUnrelatedInterfaces() throws Exception {
         TableNameConverter tableNameConverter = spy(entityManager.getTableNameConverter());
         FieldNameConverter fieldNameConverter = spy(entityManager.getFieldNameConverter());
         DDLIndex[] indexes = SchemaGenerator.parseIndexes(
@@ -212,44 +208,36 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testParseDDLRejectsUnrelatedFields() throws Exception
-    {
+    public void testParseDDLRejectsUnrelatedFields() throws Exception {
         expectedException.expect(RuntimeException.class);
         SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), AoValueHolder.class);
     }
 
     @Test
-    public void testParseDDLIgnoresUnrelatedInterfaces() throws Exception
-    {
+    public void testParseDDLIgnoresUnrelatedInterfaces() throws Exception {
         DDLTable[] tables = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(),
-            AoChildEntity.class);
+                AoChildEntity.class);
         assertThat(tables, arrayWithSize(1));
     }
 
-    public interface AoEntity extends Entity, OtherAoEntity<Integer>, RandomInterface
-    {
+    public interface AoEntity extends Entity, OtherAoEntity<Integer>, RandomInterface {
     }
 
-    public interface OtherAoEntity<T> extends RawEntity<T>
-    {
+    public interface OtherAoEntity<T> extends RawEntity<T> {
     }
 
-    public interface RandomInterface
-    {
+    public interface RandomInterface {
     }
 
-    public interface AoValueHolder extends Entity
-    {
+    public interface AoValueHolder extends Entity {
         RandomInterface getName();
     }
 
-    public interface AnotherInterface
-    {
+    public interface AnotherInterface {
         String getName();
     }
 
-    public interface AoChildEntity extends Entity, AnotherInterface
-    {
+    public interface AoChildEntity extends Entity, AnotherInterface {
         String getDescription();
     }
 }

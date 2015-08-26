@@ -19,6 +19,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface PrintDistribution extends Distribution {
-	public int getCopies();
-	public void setCopies(int copies);
+    public int getCopies();
+
+    public void setCopies(int copies);
 }

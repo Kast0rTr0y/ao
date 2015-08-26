@@ -15,12 +15,11 @@
  */
 package net.java.ao.schema.ddl;
 
+import net.java.ao.types.TypeInfo;
 import org.apache.commons.lang.StringUtils;
 
-import net.java.ao.types.TypeInfo;
-
 /**
- * Database-agnostic reprensentation of a general field index 
+ * Database-agnostic reprensentation of a general field index
  * statement (not related to full-text indexing).  To save on
  * object creation, as well as to simplify schema parsing, table
  * and field <i>names</i> are stored rather than full DDL
@@ -28,79 +27,77 @@ import net.java.ao.types.TypeInfo;
  * imposed to generate the names of field indexes.  It is
  * important that all DDL renderers (i.e. database providers)
  * observe this convention, else migrations will do strange things.
- * 
+ *
  * @author Daniel Spiewak
  */
 public class DDLIndex {
-	private String table;
-	private String field;
-	private TypeInfo<?> type;
+    private String table;
+    private String field;
+    private TypeInfo<?> type;
     private String indexName;
 
     public String getTable() {
-		return table;
-	}
+        return table;
+    }
 
-	public void setTable(String table) {
-		this.table = table;
-	}
+    public void setTable(String table) {
+        this.table = table;
+    }
 
-	public String getField() {
-		return field;
-	}
+    public String getField() {
+        return field;
+    }
 
-	public void setField(String field) {
-		this.field = field;
-	}
+    public void setField(String field) {
+        this.field = field;
+    }
 
-	public TypeInfo<?> getType() {
-		return type;
-	}
+    public TypeInfo<?> getType() {
+        return type;
+    }
 
-	public void setType(TypeInfo<?> type) {
-		this.type = type;
-	}
+    public void setType(TypeInfo<?> type) {
+        this.type = type;
+    }
 
-    public void setIndexName(String indexName)
-    {
+    public void setIndexName(String indexName) {
         this.indexName = indexName;
     }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (obj instanceof DDLIndex) {
-			DDLIndex index = (DDLIndex) obj;
-			
-			if (index.getTable().equals(table)
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DDLIndex) {
+            DDLIndex index = (DDLIndex) obj;
+
+            if (index.getTable().equals(table)
                     && index.getField().equals(field)
                     && StringUtils.equals(indexName, index.indexName)) {
-				return true;
-			}
-			
-			return false;
-		}
-		
-		return super.equals(obj);
-	}
+                return true;
+            }
 
-	@Override
-	public int hashCode() {
-		int back = 0;
-		
-		if (table != null) {
-			back += table.hashCode();
-		}
-		if (field != null) {
-			back += field.hashCode();
-		}
-		back %= 2 << 10;
-		
-		return back;
-	}
+            return false;
+        }
+
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        int back = 0;
+
+        if (table != null) {
+            back += table.hashCode();
+        }
+        if (field != null) {
+            back += field.hashCode();
+        }
+        back %= 2 << 10;
+
+        return back;
+    }
 
 
-    public String getIndexName()
-    {
+    public String getIndexName() {
         return indexName;
     }
 }

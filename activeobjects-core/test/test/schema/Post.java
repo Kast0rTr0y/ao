@@ -19,6 +19,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface Post extends Commentable {
-	public String getTitle();
-	public void setTitle(String title);
+    public String getTitle();
+
+    public void setTitle(String title);
 }

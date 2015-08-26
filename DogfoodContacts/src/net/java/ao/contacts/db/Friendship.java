@@ -36,10 +36,12 @@ import net.java.ao.Entity;
  * @author Daniel Spiewak
  */
 public interface Friendship extends Entity {
-	
-	public Person getFromPerson();
-	public void setFromPerson(Person fromPerson);
-	
-	public Person getToPerson();
-	public void setToPerson(Person toPerson);
+
+    public Person getFromPerson();
+
+    public void setFromPerson(Person fromPerson);
+
+    public Person getToPerson();
+
+    public void setToPerson(Person toPerson);
 }

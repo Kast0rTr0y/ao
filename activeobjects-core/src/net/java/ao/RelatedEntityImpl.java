@@ -15,12 +15,6 @@
  */
 package net.java.ao;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-
 import net.java.ao.types.TypeManager;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -30,79 +24,84 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.similar.MoreLikeThis;
 import org.apache.lucene.store.Directory;
 
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Daniel Spiewak
  */
 class RelatedEntityImpl {
-	private RawEntity<Object> entity;
-	
-	public RelatedEntityImpl(RelatedEntity<?> entity) {
-		this.entity = (RawEntity<Object>) entity;
-	}
-	
-	public RelatedEntity<?>[] getRelated() throws IOException, SQLException
-    {
-		Class<? extends RawEntity<Object>> type = entity.getEntityType();
+    private RawEntity<Object> entity;
+
+    public RelatedEntityImpl(RelatedEntity<?> entity) {
+        this.entity = (RawEntity<Object>) entity;
+    }
+
+    public RelatedEntity<?>[] getRelated() throws IOException, SQLException {
+        Class<? extends RawEntity<Object>> type = entity.getEntityType();
         EntityManager entityManager = entity.getEntityManager();
         String table = entityManager.getNameConverters().getTableNameConverter().getName(type);
-		List<String> indexFields = Common.getSearchableFields(entityManager, type);
-		String[] searchFields = new String[indexFields.size()];
-		
-		for (int i = 0; i < searchFields.length; i++) {
-			searchFields[i] = table + '.' + indexFields.get(i);
-		}
+        List<String> indexFields = Common.getSearchableFields(entityManager, type);
+        String[] searchFields = new String[indexFields.size()];
 
-		Directory indexDir = ((SearchableEntityManager) entityManager).getIndexDir();
-		IndexReader reader = null;
-		
-		try {
-			reader = IndexReader.open(indexDir);
-			IndexSearcher searcher = new IndexSearcher(indexDir);
+        for (int i = 0; i < searchFields.length; i++) {
+            searchFields[i] = table + '.' + indexFields.get(i);
+        }
 
-			MoreLikeThis more = new MoreLikeThis(reader);
-			more.setFieldNames(searchFields);
-			more.setAnalyzer(((SearchableEntityManager) entityManager).getAnalyzer());
-			
-			int docID = -1;
-			String primaryKeyField = Common.getPrimaryKeyField(type, entityManager.getNameConverters().getFieldNameConverter());
-			Object primaryKeyValue = Common.getPrimaryKeyValue(entity);
-			
-			TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField,
-			                                         Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().valueToString(primaryKeyValue)));
-			if (docs.next()) {
-				docID = docs.doc();
-			}
-			
-			if (docID < 0) {
-				return (RelatedEntity<?>[]) Array.newInstance(type, 0);
-			}
+        Directory indexDir = ((SearchableEntityManager) entityManager).getIndexDir();
+        IndexReader reader = null;
 
-			org.apache.lucene.search.Query query = more.like(docID);
-			Hits hits = searcher.search(query);
-			List<RelatedEntity<?>> back = new ArrayList<RelatedEntity<?>>();
+        try {
+            reader = IndexReader.open(indexDir);
+            IndexSearcher searcher = new IndexSearcher(indexDir);
 
-			for (int i = 0; i < hits.length(); i++) {
-				String entityKey = hits.doc(i).get(table + "." + primaryKeyField);
-				if (entityKey.equals(primaryKeyValue.toString())) {
-					continue;
-				}
-				
-				back.add((RelatedEntity<?>) (entityManager).peer(entityManager.resolveEntityInfo(type),
+            MoreLikeThis more = new MoreLikeThis(reader);
+            more.setFieldNames(searchFields);
+            more.setAnalyzer(((SearchableEntityManager) entityManager).getAnalyzer());
+
+            int docID = -1;
+            String primaryKeyField = Common.getPrimaryKeyField(type, entityManager.getNameConverters().getFieldNameConverter());
+            Object primaryKeyValue = Common.getPrimaryKeyValue(entity);
+
+            TermDocs docs = reader.termDocs(new Term(table + "." + primaryKeyField,
+                    Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().valueToString(primaryKeyValue)));
+            if (docs.next()) {
+                docID = docs.doc();
+            }
+
+            if (docID < 0) {
+                return (RelatedEntity<?>[]) Array.newInstance(type, 0);
+            }
+
+            org.apache.lucene.search.Query query = more.like(docID);
+            Hits hits = searcher.search(query);
+            List<RelatedEntity<?>> back = new ArrayList<RelatedEntity<?>>();
+
+            for (int i = 0; i < hits.length(); i++) {
+                String entityKey = hits.doc(i).get(table + "." + primaryKeyField);
+                if (entityKey.equals(primaryKeyValue.toString())) {
+                    continue;
+                }
+
+                back.add((RelatedEntity<?>) (entityManager).peer(entityManager.resolveEntityInfo(type),
                         Common.getPrimaryKeyType(getTypeManager(), type).getLogicalType().parseDefault(entityKey)));
-			}
+            }
 
-			return back.toArray((RelatedEntity<?>[]) Array.newInstance(type, back.size()));
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {}
-			}
-		}
-	}
+            return back.toArray((RelatedEntity<?>[]) Array.newInstance(type, back.size()));
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
 
-    private TypeManager getTypeManager()
-    {
+    private TypeManager getTypeManager() {
         return entity.getEntityManager().getProvider().getTypeManager();
     }
 }

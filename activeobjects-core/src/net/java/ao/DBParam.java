@@ -21,63 +21,63 @@ package net.java.ao;
  * nothing more than a value container.  There is no checking done to ensure
  * that the values match the type of the field.  Thus the responsibility of value/field
  * matching lies with the developer.
- * 
+ *
  * @author Daniel Spiewak
  */
 public class DBParam {
-	private String field;
-	private Object value;
-	
-	public DBParam(String field, Object value) {
-		if (field == null) {
-			throw new NullPointerException("Field cannot be null");
-		}
-		
-		this.field = field;
-		this.value = value;
-	}
+    private String field;
+    private Object value;
 
-	public String getField() {
-		return field;
-	}
+    public DBParam(String field, Object value) {
+        if (field == null) {
+            throw new NullPointerException("Field cannot be null");
+        }
 
-	public void setField(String field) {
-		if (field == null) {
-			throw new NullPointerException("Field cannot be null");
-		}
-		
-		this.field = field;
-	}
+        this.field = field;
+        this.value = value;
+    }
 
-	public Object getValue() {
-		return value;
-	}
+    public String getField() {
+        return field;
+    }
 
-	public void setValue(Object value) {
-		this.value = value;
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (obj == this) {
-			return true;
-		}
-		
-		if (obj instanceof DBParam) {
-			DBParam param = (DBParam) obj;
-			
-			boolean valueEquals = (param.value == null ? param.value == value : param.value.equals(value));
-			
-			if (param.field.equals(field) && valueEquals) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	@Override
-	public int hashCode() {
-		return field.hashCode() + (value == null ? 0 : value.hashCode());
-	}
+    public void setField(String field) {
+        if (field == null) {
+            throw new NullPointerException("Field cannot be null");
+        }
+
+        this.field = field;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj instanceof DBParam) {
+            DBParam param = (DBParam) obj;
+
+            boolean valueEquals = (param.value == null ? param.value == value : param.value.equals(value));
+
+            if (param.field.equals(field) && valueEquals) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return field.hashCode() + (value == null ? 0 : value.hashCode());
+    }
 }

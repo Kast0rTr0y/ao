@@ -13,42 +13,31 @@ import java.beans.PropertyVetoException;
 import java.sql.Driver;
 import java.sql.SQLException;
 
-public class C3poDataSourceFactory implements DataSourceFactory
-{
-    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password)
-    {
+public class C3poDataSourceFactory implements DataSourceFactory {
+    public DisposableDataSource getDataSource(Class<? extends Driver> driverClass, String url, String username, String password) {
         final ComboPooledDataSource cpds = new ComboPooledDataSource();
-        try
-        {
+        try {
             cpds.setDriverClass(driverClass.getName());
-        }
-        catch (PropertyVetoException e)
-        {
+        } catch (PropertyVetoException e) {
             throw new ActiveObjectsException(e);
         }
         cpds.setJdbcUrl(url);
         cpds.setUser(username);
         cpds.setPassword(password);
 
-        return DelegatingDisposableDataSourceHandler.newInstance(cpds, new Disposable()
-        {
+        return DelegatingDisposableDataSourceHandler.newInstance(cpds, new Disposable() {
             @Override
-            public void dispose()
-            {
-                try
-                {
+            public void dispose() {
+                try {
                     DataSources.destroy(cpds);
-                }
-                catch (SQLException ignored)
-                {
+                } catch (SQLException ignored) {
                     // ignored
                 }
             }
         });
     }
 
-    public static boolean isAvailable()
-    {
+    public static boolean isAvailable() {
         return ClassUtils.loadClass("com.mchange.v2.c3p0.ComboPooledDataSource") != null;
     }
 }

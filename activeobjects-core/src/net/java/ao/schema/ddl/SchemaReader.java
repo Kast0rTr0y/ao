@@ -15,6 +15,23 @@
  */
 package net.java.ao.schema.ddl;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import net.java.ao.Common;
+import net.java.ao.DatabaseProvider;
+import net.java.ao.SchemaConfiguration;
+import net.java.ao.schema.Case;
+import net.java.ao.schema.NameConverters;
+import net.java.ao.schema.helper.DatabaseMetaDataReader;
+import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
+import net.java.ao.schema.helper.Field;
+import net.java.ao.schema.helper.ForeignKey;
+import net.java.ao.schema.helper.Index;
+import net.java.ao.types.TypeInfo;
+import net.java.ao.types.TypeManager;
+import net.java.ao.types.TypeQualifiers;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -30,24 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-
-import net.java.ao.Common;
-import net.java.ao.DatabaseProvider;
-import net.java.ao.SchemaConfiguration;
-import net.java.ao.schema.Case;
-import net.java.ao.schema.NameConverters;
-import net.java.ao.schema.helper.DatabaseMetaDataReader;
-import net.java.ao.schema.helper.DatabaseMetaDataReaderImpl;
-import net.java.ao.schema.helper.Field;
-import net.java.ao.schema.helper.ForeignKey;
-import net.java.ao.schema.helper.Index;
-import net.java.ao.types.TypeInfo;
-import net.java.ao.types.TypeManager;
-import net.java.ao.types.TypeQualifiers;
-
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 
@@ -57,16 +56,11 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
  *
  * @author Daniel Spiewak
  */
-public final class SchemaReader
-{
-    static
-    {
-        try
-        {
+public final class SchemaReader {
+    static {
+        try {
             DEFAULT_MYSQL_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("0000-00-00 00:00:00").getTime();
-        }
-        catch (ParseException e)
-        {
+        } catch (ParseException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -80,33 +74,25 @@ public final class SchemaReader
      * <li>setUnique</li>
      * </ul>
      */
-    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration) throws SQLException
-    {
+    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration) throws SQLException {
         return readSchema(provider, nameConverters, schemaConfiguration, true);
     }
 
-    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
-    {
+    public static DDLTable[] readSchema(DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException {
         Connection connection = null;
-        try
-        {
+        try {
             connection = provider.getConnection();
             return readSchema(connection, provider, nameConverters, schemaConfiguration, includeForeignKeys);
-        }
-        finally
-        {
+        } finally {
             closeQuietly(connection);
         }
     }
 
-    public static DDLTable[] readSchema(Connection connection, DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException
-    {
+    public static DDLTable[] readSchema(Connection connection, DatabaseProvider provider, NameConverters nameConverters, SchemaConfiguration schemaConfiguration, final boolean includeForeignKeys) throws SQLException {
         final DatabaseMetaDataReader databaseMetaDataReader = new DatabaseMetaDataReaderImpl(provider, nameConverters, schemaConfiguration);
         final DatabaseMetaData databaseMetaData = connection.getMetaData();
-        final List<DDLTable> tables = newArrayList(Iterables.transform(databaseMetaDataReader.getTableNames(databaseMetaData), new Function<String, DDLTable>()
-        {
-            public DDLTable apply(String tableName)
-            {
+        final List<DDLTable> tables = newArrayList(Iterables.transform(databaseMetaDataReader.getTableNames(databaseMetaData), new Function<String, DDLTable>() {
+            public DDLTable apply(String tableName) {
                 return readTable(databaseMetaDataReader, databaseMetaData, tableName, includeForeignKeys);
             }
         }));
@@ -114,16 +100,14 @@ public final class SchemaReader
         return tables.toArray(new DDLTable[tables.size()]);
     }
 
-    private static DDLTable readTable(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName, boolean includeForeignKeys)
-    {
+    private static DDLTable readTable(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName, boolean includeForeignKeys) {
         DDLTable table = new DDLTable();
         table.setName(tableName);
 
         final List<DDLField> fields = readFields(databaseMetaDataReader, databaseMetaData, tableName);
         table.setFields(fields.toArray(new DDLField[fields.size()]));
 
-        if (includeForeignKeys)
-        {
+        if (includeForeignKeys) {
             final List<DDLForeignKey> foreignKeys = readForeignKeys(databaseMetaDataReader, databaseMetaData, tableName);
             table.setForeignKeys(foreignKeys.toArray(new DDLForeignKey[foreignKeys.size()]));
         }
@@ -134,13 +118,10 @@ public final class SchemaReader
         return table;
     }
 
-    private static List<DDLField> readFields(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName)
-    {
+    private static List<DDLField> readFields(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName) {
         return newArrayList(Iterables.transform(databaseMetaDataReader.
-                getFields(databaseMetaData, tableName), new Function<Field, DDLField>()
-        {
-            public DDLField apply(Field from)
-            {
+                getFields(databaseMetaData, tableName), new Function<Field, DDLField>() {
+            public DDLField apply(Field from) {
                 DDLField field = new DDLField();
                 field.setAutoIncrement(from.isAutoIncrement());
                 field.setDefaultValue(from.getDefaultValue());
@@ -155,12 +136,9 @@ public final class SchemaReader
         }));
     }
 
-    private static List<DDLForeignKey> readForeignKeys(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName)
-    {
-        return newArrayList(Iterables.transform(databaseMetaDataReader.getForeignKeys(databaseMetaData, tableName), new Function<ForeignKey, DDLForeignKey>()
-        {
-            public DDLForeignKey apply(ForeignKey from)
-            {
+    private static List<DDLForeignKey> readForeignKeys(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, String tableName) {
+        return newArrayList(Iterables.transform(databaseMetaDataReader.getForeignKeys(databaseMetaData, tableName), new Function<ForeignKey, DDLForeignKey>() {
+            public DDLForeignKey apply(ForeignKey from) {
                 DDLForeignKey key = new DDLForeignKey();
                 key.setForeignField(from.getForeignFieldName());
                 key.setField(from.getLocalFieldName());
@@ -171,12 +149,9 @@ public final class SchemaReader
         }));
     }
 
-    private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName)
-    {
-        return  newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>()
-        {
-            public DDLIndex apply(Index index)
-            {
+    private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName) {
+        return newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>() {
+            public DDLIndex apply(Index index) {
                 DDLIndex ddl = new DDLIndex();
                 ddl.setTable(tableName);
                 ddl.setField(index.getFieldName());
@@ -193,8 +168,7 @@ public final class SchemaReader
      * <code>onto</code>, a <code>CREATE TABLE</code>
      * statement will be generated.
      */
-    public static DDLAction[] diffSchema(TypeManager typeManager, DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensitive)
-    {
+    public static DDLAction[] diffSchema(TypeManager typeManager, DDLTable[] fromArray, DDLTable[] ontoArray, boolean caseSensitive) {
         Set<DDLAction> actions = new HashSet<DDLAction>();
 
         List<DDLTable> createTables = new ArrayList<DDLTable>();
@@ -204,42 +178,33 @@ public final class SchemaReader
         Map<String, DDLTable> from = new HashMap<String, DDLTable>();
         Map<String, DDLTable> onto = new HashMap<String, DDLTable>();
 
-        for (DDLTable table : fromArray)
-        {
+        for (DDLTable table : fromArray) {
             final String tableName = transform(table.getName(), caseSensitive);
             from.put(tableName, table);
         }
-        for (DDLTable table : ontoArray)
-        {
+        for (DDLTable table : ontoArray) {
             final String tableName = transform(table.getName(), caseSensitive);
             onto.put(tableName, table);
         }
 
-        for (DDLTable table : fromArray)
-        {
+        for (DDLTable table : fromArray) {
             final String tableName = transform(table.getName(), caseSensitive);
-            if (onto.containsKey(tableName))
-            {
+            if (onto.containsKey(tableName)) {
                 alterTables.add(table);
-            }
-            else
-            {
+            } else {
                 createTables.add(table);
             }
         }
 
-        for (DDLTable table : ontoArray)
-        {
+        for (DDLTable table : ontoArray) {
             String tableName = transform(table.getName(), caseSensitive);
 
-            if (!from.containsKey(tableName))
-            {
+            if (!from.containsKey(tableName)) {
                 dropTables.add(table);
             }
         }
 
-        for (DDLTable table : createTables)
-        {
+        for (DDLTable table : createTables) {
             DDLAction action = new DDLAction(DDLActionType.CREATE);
             action.setTable(table);
             actions.add(action);
@@ -248,8 +213,7 @@ public final class SchemaReader
 
         List<DDLForeignKey> dropKeys = new ArrayList<DDLForeignKey>();
 
-        for (DDLTable table : dropTables)
-        {
+        for (DDLTable table : dropTables) {
             DDLAction action = new DDLAction(DDLActionType.DROP);
             action.setTable(table);
             actions.add(action);
@@ -258,20 +222,16 @@ public final class SchemaReader
             dropKeys.addAll(Arrays.asList(table.getForeignKeys()));
 
             // remove all foreign to that table
-            for (DDLTable alterTable : alterTables)
-            {
-                for (DDLForeignKey fKey : alterTable.getForeignKeys())
-                {
-                    if (equals(fKey.getTable(), table.getName(), caseSensitive))
-                    {
+            for (DDLTable alterTable : alterTables) {
+                for (DDLForeignKey fKey : alterTable.getForeignKeys()) {
+                    if (equals(fKey.getTable(), table.getName(), caseSensitive)) {
                         dropKeys.add(fKey);
                     }
                 }
             }
         }
 
-        for (DDLTable fromTable : alterTables)
-        {
+        for (DDLTable fromTable : alterTables) {
             final String s = fromTable.getName();
             String tableName = transform(s, caseSensitive);
 
@@ -284,84 +244,64 @@ public final class SchemaReader
             Map<String, DDLField> fromFields = new HashMap<String, DDLField>();
             Map<String, DDLField> ontoFields = new HashMap<String, DDLField>();
 
-            for (DDLField field : fromTable.getFields())
-            {
+            for (DDLField field : fromTable.getFields()) {
                 String fieldName = transform(field.getName(), caseSensitive);
 
                 fromFields.put(fieldName, field);
             }
-            for (DDLField field : ontoTable.getFields())
-            {
+            for (DDLField field : ontoTable.getFields()) {
                 String fieldName = transform(field.getName(), caseSensitive);
 
                 ontoFields.put(fieldName, field);
             }
 
-            for (DDLField field : fromTable.getFields())
-            {
+            for (DDLField field : fromTable.getFields()) {
                 String fieldName = transform(field.getName(), caseSensitive);
 
-                if (ontoFields.containsKey(fieldName))
-                {
+                if (ontoFields.containsKey(fieldName)) {
                     alterFields.add(field);
-                }
-                else
-                {
+                } else {
                     createFields.add(field);
                 }
             }
 
-            for (DDLField field : ontoTable.getFields())
-            {
+            for (DDLField field : ontoTable.getFields()) {
                 String fieldName = transform(field.getName(), caseSensitive);
 
-                if (!fromFields.containsKey(fieldName))
-                {
+                if (!fromFields.containsKey(fieldName)) {
                     dropFields.add(field);
                 }
             }
 
-            for (DDLField field : createFields)
-            {
+            for (DDLField field : createFields) {
                 DDLAction action = new DDLAction(DDLActionType.ALTER_ADD_COLUMN);
                 action.setTable(fromTable);
                 action.setField(field);
                 actions.add(action);
             }
 
-            for (DDLField field : dropFields)
-            {
+            for (DDLField field : dropFields) {
                 DDLAction action = new DDLAction(DDLActionType.ALTER_DROP_COLUMN);
                 action.setTable(fromTable);
                 action.setField(field);
                 actions.add(action);
             }
 
-            for (DDLField fromField : alterFields)
-            {
+            for (DDLField fromField : alterFields) {
                 final String fieldName = transform(fromField.getName(), caseSensitive);
 
                 final DDLField ontoField = ontoFields.get(fieldName);
 
-                if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null)
-                {
+                if (fromField.getDefaultValue() == null && ontoField.getDefaultValue() != null) {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                }
-                else if (fromField.getDefaultValue() != null
-                        && !Common.fuzzyCompare(typeManager, fromField.getDefaultValue(), ontoField.getDefaultValue()))
-                {
+                } else if (fromField.getDefaultValue() != null
+                        && !Common.fuzzyCompare(typeManager, fromField.getDefaultValue(), ontoField.getDefaultValue())) {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                }
-                else if (!physicalTypesEqual(fromField.getType(), ontoField.getType()))
-                {
+                } else if (!physicalTypesEqual(fromField.getType(), ontoField.getType())) {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                }
-                else if (fromField.isNotNull() != ontoField.isNotNull())
-                {
+                } else if (fromField.isNotNull() != ontoField.isNotNull()) {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
-                }
-                else if (!fromField.isPrimaryKey() && (fromField.isUnique() != ontoField.isUnique()))
-                {
+                } else if (!fromField.isPrimaryKey() && (fromField.isUnique() != ontoField.isUnique())) {
                     actions.add(createColumnAlterAction(fromTable, ontoField, fromField));
                 }
             }
@@ -369,42 +309,34 @@ public final class SchemaReader
             // foreign keys
             List<DDLForeignKey> addKeys = new ArrayList<DDLForeignKey>();
 
-            for (DDLForeignKey fromKey : fromTable.getForeignKeys())
-            {
-                for (DDLForeignKey ontoKey : ontoTable.getForeignKeys())
-                {
+            for (DDLForeignKey fromKey : fromTable.getForeignKeys()) {
+                for (DDLForeignKey ontoKey : ontoTable.getForeignKeys()) {
                     if (!(fromKey.getTable().equalsIgnoreCase(ontoKey.getTable())
                             && fromKey.getForeignField().equalsIgnoreCase(ontoKey.getForeignField()))
                             && fromKey.getField().equalsIgnoreCase(ontoKey.getField())
-                            && fromKey.getDomesticTable().equalsIgnoreCase(ontoKey.getDomesticTable()))
-                    {
+                            && fromKey.getDomesticTable().equalsIgnoreCase(ontoKey.getDomesticTable())) {
                         addKeys.add(fromKey);
                     }
                 }
             }
 
-            for (DDLForeignKey ontoKey : ontoTable.getForeignKeys())
-            {
-                if (containsField(dropFields, ontoKey.getField()))
-                {
+            for (DDLForeignKey ontoKey : ontoTable.getForeignKeys()) {
+                if (containsField(dropFields, ontoKey.getField())) {
                     dropKeys.add(ontoKey);
                     continue;
                 }
 
-                for (DDLForeignKey fromKey : fromTable.getForeignKeys())
-                {
+                for (DDLForeignKey fromKey : fromTable.getForeignKeys()) {
                     if (!(ontoKey.getTable().equalsIgnoreCase(fromKey.getTable())
                             && ontoKey.getForeignField().equalsIgnoreCase(fromKey.getForeignField()))
                             && ontoKey.getField().equalsIgnoreCase(fromKey.getField())
-                            && ontoKey.getDomesticTable().equalsIgnoreCase(fromKey.getDomesticTable()))
-                    {
+                            && ontoKey.getDomesticTable().equalsIgnoreCase(fromKey.getDomesticTable())) {
                         dropKeys.add(ontoKey);
                     }
                 }
             }
 
-            for (DDLForeignKey key : addKeys)
-            {
+            for (DDLForeignKey key : addKeys) {
                 DDLAction action = new DDLAction(DDLActionType.ALTER_ADD_KEY);
                 action.setKey(key);
                 actions.add(action);
@@ -414,63 +346,52 @@ public final class SchemaReader
             List<DDLIndex> addIndexes = new ArrayList<DDLIndex>();
             List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
 
-            for (DDLIndex fromIndex : fromTable.getIndexes())
-            {
+            for (DDLIndex fromIndex : fromTable.getIndexes()) {
                 boolean found = false;
 
-                for (DDLIndex ontoIndex : ontoTable.getIndexes())
-                {
+                for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
                     if (fromIndex.getTable().equalsIgnoreCase(ontoIndex.getTable())
-                            && fromIndex.getField().equalsIgnoreCase(ontoIndex.getField()))
-                    {
+                            && fromIndex.getField().equalsIgnoreCase(ontoIndex.getField())) {
                         found = true;
                         break;
                     }
                 }
 
-                if (!found)
-                {
+                if (!found) {
                     addIndexes.add(fromIndex);
                 }
             }
 
-            for (DDLIndex ontoIndex : ontoTable.getIndexes())
-            {
+            for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
                 boolean found = false;
 
-                for (DDLIndex fromIndex : fromTable.getIndexes())
-                {
+                for (DDLIndex fromIndex : fromTable.getIndexes()) {
                     if (ontoIndex.getTable().equalsIgnoreCase(fromIndex.getTable())
-                            && ontoIndex.getField().equalsIgnoreCase(fromIndex.getField()))
-                    {
+                            && ontoIndex.getField().equalsIgnoreCase(fromIndex.getField())) {
                         found = true;
                         break;
                     }
                 }
 
-                if (!found)
-                {
+                if (!found) {
                     dropIndexes.add(ontoIndex);
                 }
             }
 
-            for (DDLIndex index : addIndexes)
-            {
+            for (DDLIndex index : addIndexes) {
                 DDLAction action = new DDLAction(DDLActionType.CREATE_INDEX);
                 action.setIndex(index);
                 actions.add(action);
             }
 
-            for (DDLIndex index : dropIndexes)
-            {
+            for (DDLIndex index : dropIndexes) {
                 DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
                 action.setIndex(index);
                 actions.add(action);
             }
         }
 
-        for (DDLForeignKey key : dropKeys)
-        {
+        for (DDLForeignKey key : dropKeys) {
             DDLAction action = new DDLAction(DDLActionType.ALTER_DROP_KEY);
             action.setKey(key);
             actions.add(action);
@@ -479,32 +400,25 @@ public final class SchemaReader
         return actions.toArray(new DDLAction[actions.size()]);
     }
 
-    private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto)
-    {
+    private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto) {
         // We need to check qualifier compatibility instead of equality because there can be a mismatch between entity annotation derived
         // qualifiers vs. those derived from table metadata even when the schema hasn't changed.
         return TypeQualifiers.areCompatible(from.getQualifiers(), onto.getQualifiers()) && from.getSchemaProperties().equals(onto.getSchemaProperties());
     }
 
-    private static boolean equals(String s, String s1, boolean caseSensitive)
-    {
+    private static boolean equals(String s, String s1, boolean caseSensitive) {
         return transform(s, caseSensitive).equals(transform(s1, caseSensitive));
     }
 
-    private static String transform(String s, boolean caseSensitive)
-    {
-        if (!caseSensitive)
-        {
+    private static String transform(String s, boolean caseSensitive) {
+        if (!caseSensitive) {
             return Case.LOWER.apply(s);
-        }
-        else
-        {
+        } else {
             return s;
         }
     }
 
-    public static DDLAction[] sortTopologically(DDLAction[] actions)
-    {
+    public static DDLAction[] sortTopologically(DDLAction[] actions) {
         List<DDLAction> back = new LinkedList<DDLAction>();
         Map<DDLAction, Set<DDLAction>> deps = new HashMap<DDLAction, Set<DDLAction>>();
         List<DDLAction> roots = new LinkedList<DDLAction>();
@@ -512,13 +426,11 @@ public final class SchemaReader
 
         performSort(actions, deps, roots);
 
-        while (!roots.isEmpty())
-        {
+        while (!roots.isEmpty()) {
             DDLAction[] rootsArray = roots.toArray(new DDLAction[roots.size()]);
             roots.remove(rootsArray[0]);
 
-            if (covered.contains(rootsArray[0]))
-            {
+            if (covered.contains(rootsArray[0])) {
                 throw new RuntimeException("Circular dependency detected in or below " + rootsArray[0].getTable().getName());
             }
             covered.add(rootsArray[0]);
@@ -527,22 +439,19 @@ public final class SchemaReader
 
             List<DDLAction> toRemove = new LinkedList<DDLAction>();
             Iterator<DDLAction> depIterator = deps.keySet().iterator();
-            while (depIterator.hasNext())
-            {
+            while (depIterator.hasNext()) {
                 DDLAction depAction = depIterator.next();
 
                 Set<DDLAction> individualDeps = deps.get(depAction);
                 individualDeps.remove(rootsArray[0]);
 
-                if (individualDeps.isEmpty())
-                {
+                if (individualDeps.isEmpty()) {
                     roots.add(depAction);
                     toRemove.add(depAction);
                 }
             }
 
-            for (DDLAction action : toRemove)
-            {
+            for (DDLAction action : toRemove) {
                 deps.remove(action);
             }
         }
@@ -562,8 +471,7 @@ public final class SchemaReader
       * CREATE_INDEX
       */
 
-    private static void performSort(DDLAction[] actions, Map<DDLAction, Set<DDLAction>> deps, List<DDLAction> roots)
-    {
+    private static void performSort(DDLAction[] actions, Map<DDLAction, Set<DDLAction>> deps, List<DDLAction> roots) {
         List<DDLAction> dropKeys = new LinkedList<DDLAction>();
         List<DDLAction> dropIndexes = new LinkedList<DDLAction>();
         List<DDLAction> dropColumns = new LinkedList<DDLAction>();
@@ -574,10 +482,8 @@ public final class SchemaReader
         List<DDLAction> addKeys = new LinkedList<DDLAction>();
         List<DDLAction> createIndexes = new LinkedList<DDLAction>();
 
-        for (DDLAction action : actions)
-        {
-            switch (action.getActionType())
-            {
+        for (DDLAction action : actions) {
+            switch (action.getActionType()) {
                 case ALTER_DROP_KEY:
                     dropKeys.add(action);
                     break;
@@ -619,247 +525,186 @@ public final class SchemaReader
         roots.addAll(dropKeys);
         roots.addAll(dropIndexes);
 
-        for (DDLAction action : dropColumns)
-        {
+        for (DDLAction action : dropColumns) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
 
-            for (DDLAction depAction : dropKeys)
-            {
+            for (DDLAction depAction : dropKeys) {
                 DDLForeignKey key = depAction.getKey();
 
                 if ((key.getTable().equals(action.getTable().getName()) && key.getForeignField().equals(action.getField().getName()))
-                        || (key.getDomesticTable().equals(action.getTable().getName()) && key.getField().equals(action.getField().getName())))
-                {
+                        || (key.getDomesticTable().equals(action.getTable().getName()) && key.getField().equals(action.getField().getName()))) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : changeColumns)
-        {
+        for (DDLAction action : changeColumns) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
 
-            for (DDLAction depAction : dropKeys)
-            {
+            for (DDLAction depAction : dropKeys) {
                 DDLForeignKey key = depAction.getKey();
 
                 if ((key.getTable().equals(action.getTable().getName()) && key.getForeignField().equals(action.getField().getName()))
-                        || (key.getDomesticTable().equals(action.getTable().getName()) && key.getField().equals(action.getField().getName())))
-                {
+                        || (key.getDomesticTable().equals(action.getTable().getName()) && key.getField().equals(action.getField().getName()))) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : dropColumns)
-            {
+            for (DDLAction depAction : dropColumns) {
                 if ((depAction.getTable().equals(action.getTable()) && depAction.getField().equals(action.getField()))
-                        || (depAction.getTable().equals(action.getTable()) && depAction.getField().equals(action.getOldField())))
-                {
+                        || (depAction.getTable().equals(action.getTable()) && depAction.getField().equals(action.getOldField()))) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : drops)
-        {
+        for (DDLAction action : drops) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
 
-            for (DDLAction depAction : dropKeys)
-            {
+            for (DDLAction depAction : dropKeys) {
                 DDLForeignKey key = depAction.getKey();
 
-                if (key.getTable().equals(action.getTable().getName()) || key.getDomesticTable().equals(action.getTable().getName()))
-                {
+                if (key.getTable().equals(action.getTable().getName()) || key.getDomesticTable().equals(action.getTable().getName())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : dropColumns)
-            {
-                if (depAction.getTable().equals(action.getTable()))
-                {
+            for (DDLAction depAction : dropColumns) {
+                if (depAction.getTable().equals(action.getTable())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : changeColumns)
-            {
-                if (depAction.getTable().equals(action.getTable()))
-                {
+            for (DDLAction depAction : changeColumns) {
+                if (depAction.getTable().equals(action.getTable())) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : creates)
-        {
+        for (DDLAction action : creates) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
 
-            for (DDLForeignKey key : action.getTable().getForeignKeys())
-            {
-                for (DDLAction depAction : creates)
-                {
-                    if (depAction != action && depAction.getTable().getName().equals(key.getTable()))
-                    {
+            for (DDLForeignKey key : action.getTable().getForeignKeys()) {
+                for (DDLAction depAction : creates) {
+                    if (depAction != action && depAction.getTable().getName().equals(key.getTable())) {
                         dependencies.add(depAction);
                     }
                 }
 
-                for (DDLAction depAction : addColumns)
-                {
+                for (DDLAction depAction : addColumns) {
                     if (depAction.getTable().getName().equals(key.getTable())
-                            && depAction.getField().getName().equals(key.getForeignField()))
-                    {
+                            && depAction.getField().getName().equals(key.getForeignField())) {
                         dependencies.add(depAction);
                     }
                 }
 
-                for (DDLAction depAction : changeColumns)
-                {
+                for (DDLAction depAction : changeColumns) {
                     if (depAction.getTable().getName().equals(key.getTable())
-                            && depAction.getField().getName().equals(key.getForeignField()))
-                    {
+                            && depAction.getField().getName().equals(key.getForeignField())) {
                         dependencies.add(depAction);
                     }
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : addColumns)
-        {
+        for (DDLAction action : addColumns) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
 
-            for (DDLAction depAction : creates)
-            {
-                if (depAction.getTable().equals(action.getTable()))
-                {
+            for (DDLAction depAction : creates) {
+                if (depAction.getTable().equals(action.getTable())) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : addKeys)
-        {
+        for (DDLAction action : addKeys) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
             DDLForeignKey key = action.getKey();
 
-            for (DDLAction depAction : creates)
-            {
+            for (DDLAction depAction : creates) {
                 if (depAction.getTable().getName().equals(key.getTable())
-                        || depAction.getTable().getName().equals(key.getDomesticTable()))
-                {
+                        || depAction.getTable().getName().equals(key.getDomesticTable())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : addColumns)
-            {
+            for (DDLAction depAction : addColumns) {
                 if ((depAction.getTable().getName().equals(key.getTable()) && depAction.getField().getName().equals(key.getForeignField()))
-                        || (depAction.getTable().getName().equals(key.getDomesticTable())) && depAction.getField().getName().equals(key.getField()))
-                {
+                        || (depAction.getTable().getName().equals(key.getDomesticTable())) && depAction.getField().getName().equals(key.getField())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : changeColumns)
-            {
+            for (DDLAction depAction : changeColumns) {
                 if ((depAction.getTable().getName().equals(key.getTable()) && depAction.getField().getName().equals(key.getForeignField()))
-                        || (depAction.getTable().getName().equals(key.getDomesticTable())) && depAction.getField().getName().equals(key.getField()))
-                {
+                        || (depAction.getTable().getName().equals(key.getDomesticTable())) && depAction.getField().getName().equals(key.getField())) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
 
-        for (DDLAction action : createIndexes)
-        {
+        for (DDLAction action : createIndexes) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
             DDLIndex index = action.getIndex();
 
-            for (DDLAction depAction : creates)
-            {
-                if (depAction.getTable().getName().equals(index.getTable()))
-                {
+            for (DDLAction depAction : creates) {
+                if (depAction.getTable().getName().equals(index.getTable())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : addColumns)
-            {
-                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField()))
-                {
+            for (DDLAction depAction : addColumns) {
+                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
                     dependencies.add(depAction);
                 }
             }
 
-            for (DDLAction depAction : changeColumns)
-            {
-                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField()))
-                {
+            for (DDLAction depAction : changeColumns) {
+                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
                     dependencies.add(depAction);
                 }
             }
 
-            if (dependencies.size() == 0)
-            {
+            if (dependencies.size() == 0) {
                 roots.add(action);
-            }
-            else
-            {
+            } else {
                 deps.put(action, dependencies);
             }
         }
@@ -868,18 +713,15 @@ public final class SchemaReader
     }
 
     private static boolean containsField(Iterable<DDLField> fields, final String fieldName) {
-        return Iterables.tryFind(fields, new Predicate<DDLField>()
-        {
+        return Iterables.tryFind(fields, new Predicate<DDLField>() {
             @Override
-            public boolean apply(DDLField field)
-            {
+            public boolean apply(DDLField field) {
                 return field.getName().equalsIgnoreCase(fieldName);
             }
         }).isPresent();
     }
 
-    private static DDLAction createColumnAlterAction(DDLTable table, DDLField oldField, DDLField field)
-    {
+    private static DDLAction createColumnAlterAction(DDLTable table, DDLField oldField, DDLField field) {
         DDLAction action = new DDLAction(DDLActionType.ALTER_CHANGE_COLUMN);
         action.setTable(table);
         action.setField(field);

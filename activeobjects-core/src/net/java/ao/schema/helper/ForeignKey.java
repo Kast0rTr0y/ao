@@ -1,7 +1,6 @@
 package net.java.ao.schema.helper;
 
-public interface ForeignKey
-{
+public interface ForeignKey {
     String getLocalTableName();
 
     String getLocalFieldName();

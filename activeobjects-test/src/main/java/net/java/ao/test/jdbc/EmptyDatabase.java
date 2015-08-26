@@ -5,9 +5,7 @@ import net.java.ao.EntityManager;
 /**
  *
  */
-public final class EmptyDatabase implements DatabaseUpdater
-{
-    public void update(EntityManager entityManager)
-    {
+public final class EmptyDatabase implements DatabaseUpdater {
+    public void update(EntityManager entityManager) {
     }
 }
