@@ -16,32 +16,25 @@ import static org.junit.Assert.assertFalse;
  *
  */
 @Data(DatabaseProcessor.class)
-public final class ConcurrencyTest extends ActiveObjectsIntegrationTest
-{
+public final class ConcurrencyTest extends ActiveObjectsIntegrationTest {
     private static final int NUMBER_OF_THREADS = 50;
 
     @Test
     @NonTransactional
-    public void testConcurrency() throws Throwable
-    {
+    public void testConcurrency() throws Throwable {
         final Thread[] threads = new Thread[NUMBER_OF_THREADS];
         final Throwable[] exceptions = new Throwable[threads.length];
 
         final Person person = createPerson();
         final Company company = createCompany();
-        try
-        {
-            for (int i = 0; i < threads.length; i++)
-            {
+        try {
+            for (int i = 0; i < threads.length; i++) {
                 final int threadNum = i;
-                threads[i] = new Thread("Concurrency Test " + i)
-                {
+                threads[i] = new Thread("Concurrency Test " + i) {
                     @Override
-                    public void run()
-                    {
+                    public void run() {
                         // a fair-few interleaved instructions
-                        try
-                        {
+                        try {
                             person.setAge(threadNum);
                             person.save();
 
@@ -64,55 +57,43 @@ public final class ConcurrencyTest extends ActiveObjectsIntegrationTest
                             person.save();
 
                             company.getImage();
-                        }
-                        catch (Throwable t)
-                        {
+                        } catch (Throwable t) {
                             exceptions[threadNum] = t;
                         }
                     }
                 };
             }
 
-            for (Thread thread : threads)
-            {
+            for (Thread thread : threads) {
                 thread.start();
             }
 
-            for (Thread thread : threads)
-            {
+            for (Thread thread : threads) {
                 thread.join();
             }
 
             int exceptionCount = 0;
-            for (Throwable e : exceptions)
-            {
-                if (e != null)
-                {
+            for (Throwable e : exceptions) {
+                if (e != null) {
                     exceptionCount++;
                 }
             }
-            for (Throwable e : exceptions)
-            {
-                if (e != null)
-                {
+            for (Throwable e : exceptions) {
+                if (e != null) {
                     throw new RuntimeException(exceptionCount + " threads failed. First failure: ", e);
                 }
             }
-        }
-        finally
-        {
+        } finally {
             entityManager.delete(person);
             entityManager.delete(company);
         }
     }
 
-    private Person createPerson() throws Exception
-    {
+    private Person createPerson() throws Exception {
         return entityManager.create(Person.class, new DBParam(getFieldName(Person.class, "getURL"), new URL("http://www.howtogeek.com")));
     }
 
-    private Company createCompany() throws Exception
-    {
+    private Company createCompany() throws Exception {
         return entityManager.create(Company.class);
     }
 }

@@ -8,8 +8,7 @@ import java.sql.SQLException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class H2Server extends AbstractJdbcConfiguration
-{
+public class H2Server extends AbstractJdbcConfiguration {
     private static final File TEMP_DIR = Files.createTempDir();
 
     private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/" + TEMP_DIR + "/ao-test;MVCC=TRUE";
@@ -21,61 +20,47 @@ public class H2Server extends AbstractJdbcConfiguration
 
     private static Lock h2ServerLock = new ReentrantLock();
 
-    public H2Server()
-    {
+    public H2Server() {
         this(DEFAULT_URL, DEFAULT_USER, DEFAULT_PASSWORD, DEFAULT_SCHEMA);
     }
 
-    public H2Server(String url, String username, String password, String schema)
-    {
+    public H2Server(String url, String username, String password, String schema) {
         super(url, username, password, schema);
     }
 
     @Override
-    protected String getDefaultUsername()
-    {
+    protected String getDefaultUsername() {
         return DEFAULT_USER;
     }
 
     @Override
-    protected String getDefaultPassword()
-    {
+    protected String getDefaultPassword() {
         return DEFAULT_PASSWORD;
     }
 
     @Override
-    protected String getDefaultSchema()
-    {
+    protected String getDefaultSchema() {
         return DEFAULT_SCHEMA;
     }
 
     @Override
-    protected String getDefaultUrl()
-    {
+    protected String getDefaultUrl() {
         return DEFAULT_URL;
     }
 
     @Override
-    public void init()
-    {
+    public void init() {
         h2ServerLock.lock();
-        try
-        {
-            if (h2Server == null)
-            {
+        try {
+            if (h2Server == null) {
                 // launch an H2 server if there isn't one
-                try
-                {
+                try {
                     h2Server = Server.createTcpServer().start();
-                }
-                catch (SQLException e)
-                {
+                } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
             }
-        }
-        finally
-        {
+        } finally {
             h2ServerLock.unlock();
         }
     }

@@ -18,5 +18,5 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface Magazine extends Publication
-{}
+public interface Magazine extends Publication {
+}

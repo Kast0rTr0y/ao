@@ -25,9 +25,10 @@ import java.lang.annotation.Target;
  * value store.  This allows for scenarios when the you know that the value
  * of the field will be updated in an external process or perhaps the value
  * will be too large to be reasonably cached.
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Transient {}
+public @interface Transient {
+}

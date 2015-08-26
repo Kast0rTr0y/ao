@@ -23,7 +23,7 @@ import net.java.ao.ValueGenerator;
  */
 public class MotivationGenerator implements ValueGenerator<String> {
 
-	public String generateValue(EntityManager manager) {
-		return "Work smarter, not harder";
-	}
+    public String generateValue(EntityManager manager) {
+        return "Work smarter, not harder";
+    }
 }

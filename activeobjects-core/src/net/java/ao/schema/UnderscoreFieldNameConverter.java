@@ -17,8 +17,8 @@ package net.java.ao.schema;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.*;
-import static net.java.ao.schema.UnderScoreUtils.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static net.java.ao.schema.UnderScoreUtils.camelCaseToUnderScore;
 
 /**
  * <p>Imposes an underscore word-separation convention upon field names.
@@ -65,8 +65,7 @@ import static net.java.ao.schema.UnderScoreUtils.*;
  *
  * @author Daniel Spiewak
  */
-public final class UnderscoreFieldNameConverter extends AbstractFieldNameConverter
-{
+public final class UnderscoreFieldNameConverter extends AbstractFieldNameConverter {
     private final Case fieldNameCase;
 
     /**
@@ -75,20 +74,17 @@ public final class UnderscoreFieldNameConverter extends AbstractFieldNameConvert
      *
      * @param fieldNameCase the case to use for field names
      */
-    public UnderscoreFieldNameConverter(Case fieldNameCase)
-    {
+    public UnderscoreFieldNameConverter(Case fieldNameCase) {
         this.fieldNameCase = checkNotNull(fieldNameCase);
     }
 
-    public UnderscoreFieldNameConverter(Case fieldNameCase, List<FieldNameResolver> fieldNameResolvers)
-    {
+    public UnderscoreFieldNameConverter(Case fieldNameCase, List<FieldNameResolver> fieldNameResolvers) {
         super(fieldNameResolvers);
         this.fieldNameCase = checkNotNull(fieldNameCase);
     }
 
     @Override
-    public String convertName(String name)
-    {
+    public String convertName(String name) {
         return fieldNameCase.apply(camelCaseToUnderScore(name));
     }
 }

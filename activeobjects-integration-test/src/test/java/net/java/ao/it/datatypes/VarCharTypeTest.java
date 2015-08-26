@@ -5,33 +5,37 @@ import net.java.ao.ActiveObjectsException;
 import net.java.ao.DBParam;
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
-import net.java.ao.schema.*;
-import net.java.ao.test.jdbc.NonTransactional;
-import net.java.ao.types.TypeQualifiers;
+import net.java.ao.schema.AutoIncrement;
+import net.java.ao.schema.Default;
+import net.java.ao.schema.Indexed;
+import net.java.ao.schema.NotNull;
+import net.java.ao.schema.PrimaryKey;
+import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
+import net.java.ao.test.jdbc.NonTransactional;
+import net.java.ao.types.TypeQualifiers;
+import org.apache.commons.lang.StringUtils;
+import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-import org.apache.commons.lang.StringUtils;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * VarChar data type specific tests
  */
 @SuppressWarnings("unchecked")
-public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
-{
+public final class VarCharTypeTest extends ActiveObjectsIntegrationTest {
     /**
      * VarChar does not support AutoIncrement
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testAutoIncrement() throws Exception
-    {
+    public void testAutoIncrement() throws Exception {
         entityManager.migrate(AutoIncrementId.class);
     }
 
@@ -40,8 +44,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testPrimaryWithoutNotNull() throws Exception
-    {
+    public void testPrimaryWithoutNotNull() throws Exception {
         entityManager.migrate(PrimaryWithoutNotNull.class);
     }
 
@@ -50,8 +53,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleId() throws Exception
-    {
+    public void testSimpleId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", "Test"));
@@ -64,8 +66,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsException.class)
     @NonTransactional
-    public void testEmptyId() throws Exception
-    {
+    public void testEmptyId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam("ID", ""));
@@ -76,8 +77,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNullId() throws Exception
-    {
+    public void testNullId() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         entityManager.create(SimpleId.class, new DBParam("ID", null));
@@ -88,13 +88,11 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testColumnValues() throws Exception
-    {
+    public void testColumnValues() throws Exception {
         entityManager.migrate(SimpleId.class);
 
         // create a row with normal id
-        for (String value : new String[]{"TABLE", "COLUMN", "NULL", "INDEX", "PRIMARY", "WHERE", "SELECT", "FROM", "@", ",", ";"})
-        {
+        for (String value : new String[]{"TABLE", "COLUMN", "NULL", "INDEX", "PRIMARY", "WHERE", "SELECT", "FROM", "@", ",", ";"}) {
             SimpleId e = entityManager.create(SimpleId.class, new DBParam("ID", value));
             assertEquals(value, e.getId());
             checkFieldValue(SimpleId.class, "getId", e.getId(), "getId", value);
@@ -106,8 +104,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -143,8 +140,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testEmptyDefaultColumn() throws Exception
-    {
+    public void testEmptyDefaultColumn() throws Exception {
         entityManager.migrate(EmptyDefaultColumn.class);
     }
 
@@ -153,8 +149,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testDefaultColumn() throws Exception
-    {
+    public void testDefaultColumn() throws Exception {
         entityManager.migrate(DefaultColumn.class);
 
         // create
@@ -173,8 +168,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithCreate() throws Exception
-    {
+    public void testNullColumnWithCreate() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -189,8 +183,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNullColumnWithSet() throws Exception
-    {
+    public void testNullColumnWithSet() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -204,8 +197,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testNullValueWithPullFromDatabase() throws Exception
-    {
+    public void testNullValueWithPullFromDatabase() throws Exception {
         entityManager.migrate(SimpleColumn.class);
 
         // create
@@ -223,8 +215,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullColumn() throws Exception
-    {
+    public void testNotNullColumn() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         // create
@@ -239,8 +230,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNoValue() throws Exception
-    {
+    public void testNotNullColumnNoValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         entityManager.create(NotNullColumn.class);
@@ -251,8 +241,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnNullValue() throws Exception
-    {
+    public void testNotNullColumnNullValue() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), null));
@@ -264,8 +253,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = IllegalArgumentException.class)
     @NonTransactional
-    public void testNotNullColumnEmptyString() throws Exception
-    {
+    public void testNotNullColumnEmptyString() throws Exception {
         entityManager.migrate(NotNullColumn.class);
 
         entityManager.create(NotNullColumn.class, new DBParam(getFieldName(NotNullColumn.class, "getName"), ""));
@@ -276,10 +264,9 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testColumnWithAllowableLength() throws Exception
-    {
+    public void testColumnWithAllowableLength() throws Exception {
         entityManager.migrate(ColumnWithAllowableLength.class);
-        
+
         entityManager.create(ColumnWithAllowableLength.class,
                 new DBParam(getFieldName(ColumnWithAllowableLength.class, "getName"),
                         StringUtils.repeat("*", TypeQualifiers.MAX_STRING_LENGTH)));
@@ -287,8 +274,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testColumnWithAllowableLengthAndIndex() throws Exception
-    {
+    public void testColumnWithAllowableLengthAndIndex() throws Exception {
         entityManager.migrate(ColumnWithAllowableLengthAndIndex.class);
 
         entityManager.create(ColumnWithAllowableLengthAndIndex.class,
@@ -301,29 +287,21 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      */
     @Test(expected = ActiveObjectsConfigurationException.class)
     @NonTransactional
-    public void testColumnWithExcessiveLength() throws Exception
-    {
+    public void testColumnWithExcessiveLength() throws Exception {
         entityManager.migrate(ColumnWithExcessiveLength.class);
     }
 
-    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final String fieldValue) throws Exception
-    {
+    private <T extends RawEntity<?>> void checkFieldValue(final Class<T> entityType, String idGetterName, final Object id, final String getterName, final String fieldValue) throws Exception {
         executeStatement("SELECT " + escapeFieldName(entityType, getterName) + " FROM " + getTableName(entityType) + " WHERE " + escapeFieldName(entityType, idGetterName) + " = ?",
-                new DbUtils.StatementCallback()
-                {
-                    public void setParameters(PreparedStatement statement) throws Exception
-                    {
+                new DbUtils.StatementCallback() {
+                    public void setParameters(PreparedStatement statement) throws Exception {
                         statement.setObject(1, id);
                     }
 
-                    public void processResult(ResultSet resultSet) throws Exception
-                    {
-                        if (resultSet.next())
-                        {
+                    public void processResult(ResultSet resultSet) throws Exception {
+                        if (resultSet.next()) {
                             assertEquals(fieldValue, resultSet.getString(getFieldName(entityType, getterName)));
-                        }
-                        else
-                        {
+                        } else {
                             fail("No entry found in database with ID " + id);
                         }
                     }
@@ -334,8 +312,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Auto increment primary key column - not supported
      */
-    public static interface AutoIncrementId extends RawEntity<String>
-    {
+    public static interface AutoIncrementId extends RawEntity<String> {
         @AutoIncrement
         @NotNull
         @PrimaryKey("ID")
@@ -345,8 +322,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Primary column without NotNull annotation - should be ok
      */
-    public static interface PrimaryWithoutNotNull extends RawEntity<String>
-    {
+    public static interface PrimaryWithoutNotNull extends RawEntity<String> {
         @PrimaryKey("ID")
         public String getId();
     }
@@ -354,8 +330,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple primary column
      */
-    public static interface SimpleId extends RawEntity<String>
-    {
+    public static interface SimpleId extends RawEntity<String> {
         @NotNull
         @PrimaryKey("ID")
         public String getId();
@@ -364,8 +339,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Simple column
      */
-    public static interface SimpleColumn extends Entity
-    {
+    public static interface SimpleColumn extends Entity {
         public String getName();
 
         public void setName(String name);
@@ -374,8 +348,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Empty String for default value - not supported
      */
-    public static interface EmptyDefaultColumn extends Entity
-    {
+    public static interface EmptyDefaultColumn extends Entity {
         @Default("")
         public String getName();
 
@@ -386,8 +359,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
      * Default values
      */
     @SuppressWarnings("unused")
-    public static interface DefaultColumn extends Entity
-    {
+    public static interface DefaultColumn extends Entity {
         @Default("Test")
         public String getName();
 
@@ -417,8 +389,7 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Not null column
      */
-    public static interface NotNullColumn extends Entity
-    {
+    public static interface NotNullColumn extends Entity {
         @NotNull
         public String getName();
 
@@ -428,16 +399,14 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Column with fixed string length annotation that is within the allowable limit
      */
-    public static interface ColumnWithAllowableLength extends Entity
-    {
+    public static interface ColumnWithAllowableLength extends Entity {
         @StringLength(TypeQualifiers.MAX_STRING_LENGTH)
         public String getName();
-        
+
         public void setName(String name);
     }
 
-    public static interface ColumnWithAllowableLengthAndIndex extends Entity
-    {
+    public static interface ColumnWithAllowableLengthAndIndex extends Entity {
         @Indexed
         @StringLength(TypeQualifiers.MAX_STRING_LENGTH)
         public String getName();
@@ -448,11 +417,10 @@ public final class VarCharTypeTest extends ActiveObjectsIntegrationTest
     /**
      * Column with fixed string length annotation that is above the allowable limit
      */
-    public static interface ColumnWithExcessiveLength extends Entity
-    {
+    public static interface ColumnWithExcessiveLength extends Entity {
         @StringLength(TypeQualifiers.MAX_STRING_LENGTH + 1)
         public String getName();
-        
+
         public void setName(String name);
     }
 }

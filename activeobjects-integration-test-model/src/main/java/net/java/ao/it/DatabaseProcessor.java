@@ -43,10 +43,9 @@ import java.sql.SQLException;
 /**
  *
  */
-public final class DatabaseProcessor implements DatabaseUpdater
-{
+public final class DatabaseProcessor implements DatabaseUpdater {
     // tables explicitly migrated into the schema
-    public static final Class[] EXPLICITLY_MIGRATED_CLASSES = new Class[] {
+    public static final Class[] EXPLICITLY_MIGRATED_CLASSES = new Class[]{
             PersonSuit.class,
             PersonChair.class,
             Pen.class,
@@ -68,7 +67,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
     };
 
     // tables that are created by relationships from EXPLICITLY_MIGRATED_CLASSES
-    public static final Class[] IMPLICITLY_MIGRATED_CLASSES = new Class[] {
+    public static final Class[] IMPLICITLY_MIGRATED_CLASSES = new Class[]{
             Author.class,
             Person.class,
             PersonLegalDefence.class,
@@ -78,8 +77,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
     };
 
     // creating the schema
-    public void update(EntityManager entityManager) throws Exception
-    {
+    public void update(EntityManager entityManager) throws Exception {
         //noinspection unchecked
         entityManager.migrate(EXPLICITLY_MIGRATED_CLASSES);
 
@@ -88,8 +86,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         entityManager.flushAll();
     }
 
-    private void addData(EntityManager entityManager) throws Exception
-    {
+    private void addData(EntityManager entityManager) throws Exception {
         final Company[] companies = addCompanies(entityManager);
         final Person person = addPerson(entityManager, companies[0]);
         addNose(entityManager, person);
@@ -110,11 +107,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         addMagazines(entityManager);
     }
 
-    private Company[] addCompanies(EntityManager entityManager) throws Exception
-    {
+    private Company[] addCompanies(EntityManager entityManager) throws Exception {
         final Company[] companies = new Company[CompanyData.ids.length];
-        for (int i = 0; i < companies.length; i++)
-        {
+        for (int i = 0; i < companies.length; i++) {
             // the image
             final InputStream is = new ByteArrayInputStream(CompanyData.IMAGES[i]);
 
@@ -133,8 +128,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return companies;
     }
 
-    public Nose addNose(EntityManager entityManager, Person person) throws SQLException
-    {
+    public Nose addNose(EntityManager entityManager, Person person) throws SQLException {
         final Nose nose = entityManager.create(Nose.class);
         nose.setPerson(person);
         nose.setLength(NoseData.LENGTH);
@@ -146,8 +140,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return nose;
     }
 
-    public Person addPerson(EntityManager entityManager, Company company) throws Exception
-    {
+    public Person addPerson(EntityManager entityManager, Company company) throws Exception {
         final Person person = entityManager.create(Person.class);
         person.setFirstName(PersonData.FIRST_NAME);
         person.setLastName(PersonData.LAST_NAME);
@@ -162,11 +155,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return person;
     }
 
-    private Pen[] addPens(EntityManager entityManager, Person person) throws Exception
-    {
+    private Pen[] addPens(EntityManager entityManager, Person person) throws Exception {
         final Pen[] pens = new Pen[PenData.ids.length];
-        for (int i = 0; i < PenData.ids.length; i++)
-        {
+        for (int i = 0; i < PenData.ids.length; i++) {
             final Pen pen = entityManager.create(Pen.class);
             pen.setPerson(person);
             pen.setWidth(PenData.WIDTHS[i]);
@@ -177,11 +168,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return pens;
     }
 
-    private Chair[] addChairs(EntityManager entityManager, Person person) throws Exception
-    {
+    private Chair[] addChairs(EntityManager entityManager, Person person) throws Exception {
         final Chair[] chairs = new Chair[ChairData.ids.length];
-        for (int i = 0; i < ChairData.ids.length; i++)
-        {
+        for (int i = 0; i < ChairData.ids.length; i++) {
             final Chair chair = entityManager.create(Chair.class);
             chair.setColour(ChairData.COLOURS[i]);
             chair.save();
@@ -198,11 +187,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return chairs;
     }
 
-    private PersonLegalDefence[] addPersonLegalDefences(EntityManager entityManager, Person person) throws Exception
-    {
+    private PersonLegalDefence[] addPersonLegalDefences(EntityManager entityManager, Person person) throws Exception {
         final PersonLegalDefence[] personLegalDefences = new PersonLegalDefence[PersonLegalDefenceData.ids.length];
-        for (int i = 0; i < PersonLegalDefenceData.ids.length; i++)
-        {
+        for (int i = 0; i < PersonLegalDefenceData.ids.length; i++) {
             final PersonLegalDefence personLegalDefence = entityManager.create(PersonLegalDefence.class);
             personLegalDefence.setSeverity(PersonLegalDefenceData.SEVERITIES[i]);
             personLegalDefence.save();
@@ -219,8 +206,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return personLegalDefences;
     }
 
-    private Post addPost(EntityManager entityManager) throws Exception
-    {
+    private Post addPost(EntityManager entityManager) throws Exception {
         final Post post = entityManager.create(Post.class);
         post.setTitle(PostData.TITLE);
         post.save();
@@ -231,11 +217,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return post;
     }
 
-    private Comment[] addPostComments(EntityManager entityManager, Post post) throws Exception
-    {
+    private Comment[] addPostComments(EntityManager entityManager, Post post) throws Exception {
         final Comment[] comments = new Comment[PostCommentData.ids.length];
-        for (int i = 0; i < PostCommentData.ids.length; i++)
-        {
+        for (int i = 0; i < PostCommentData.ids.length; i++) {
             final Comment comment = createComment(entityManager, post, PostCommentData.TITLES[i], PostCommentData.TEXTS[i], PostCommentData.INDICES[i]);
             PostCommentData.ids[i] = comment.getID();
             comments[i] = comment;
@@ -243,8 +227,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return comments;
     }
 
-    private Photo addPhoto(EntityManager entityManager) throws Exception
-    {
+    private Photo addPhoto(EntityManager entityManager) throws Exception {
         final Photo photo = entityManager.create(Photo.class);
         photo.save();
 
@@ -252,11 +235,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return photo;
     }
 
-    private Comment[] addPhotoComments(EntityManager entityManager, Photo photo) throws Exception
-    {
+    private Comment[] addPhotoComments(EntityManager entityManager, Photo photo) throws Exception {
         final Comment[] comments = new Comment[PhotoCommentData.ids.length];
-        for (int i = 0; i < PhotoCommentData.ids.length; i++)
-        {
+        for (int i = 0; i < PhotoCommentData.ids.length; i++) {
             final Comment comment = createComment(entityManager, photo, PhotoCommentData.TITLES[i], PhotoCommentData.TEXTS[i], PostCommentData.INDICES[i]);
             PhotoCommentData.ids[i] = comment.getID();
             comments[i] = comment;
@@ -264,11 +245,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return comments;
     }
 
-    private Address[] addAddresses(EntityManager entityManager) throws Exception
-    {
+    private Address[] addAddresses(EntityManager entityManager) throws Exception {
         final Address[] addresses = new Address[AddressData.getIds().length];
-        for (int i = 0; i < addresses.length; i++)
-        {
+        for (int i = 0; i < addresses.length; i++) {
             final EmailAddress address = entityManager.create(EmailAddress.class);
             address.setEmail(AddressData.EMAILS[i]);
             address.save();
@@ -279,8 +258,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return addresses;
     }
 
-    private void addMessages(EntityManager entityManager, Address address1, Address address2) throws Exception
-    {
+    private void addMessages(EntityManager entityManager, Address address1, Address address2) throws Exception {
         final Message message1 = addMessage(entityManager, address1, address2, MessageData.CONTENTS[0]);
         MessageData.ids[0] = message1.getID();
 
@@ -288,8 +266,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         MessageData.ids[1] = message2.getID();
     }
 
-    private Message addMessage(EntityManager entityManager, Address to, Address from, final String content) throws Exception
-    {
+    private Message addMessage(EntityManager entityManager, Address to, Address from, final String content) throws Exception {
         final String contents = EntityUtils.getFieldName(entityManager, Message.class, "getContents");
         final Message message = entityManager.create(Message.class, new DBParam(contents, content));
         message.setTo(to);
@@ -298,11 +275,9 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return message;
     }
 
-    private Book[] addBooks(EntityManager entityManager) throws Exception
-    {
+    private Book[] addBooks(EntityManager entityManager) throws Exception {
         final Book[] books = new Book[BookData.ids.length];
-        for (int i = 0; i < BookData.ids.length; i++)
-        {
+        for (int i = 0; i < BookData.ids.length; i++) {
             final Book book = entityManager.create(Book.class);
             book.setTitle(BookData.TITLES[i]);
             book.setHardcover(BookData.COVERS[i]);
@@ -310,8 +285,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
             BookData.ids[i] = book.getID();
 
-            for (int j = 0; j < BookData.AUTHOR_IDS[i].length; j++)
-            {
+            for (int j = 0; j < BookData.AUTHOR_IDS[i].length; j++) {
                 final Author author = addAuthor(entityManager, book, "Book author", j);
                 BookData.AUTHOR_IDS[i][j] = author.getID();
             }
@@ -330,19 +304,16 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return books;
     }
 
-    private Magazine[] addMagazines(EntityManager entityManager) throws Exception
-    {
+    private Magazine[] addMagazines(EntityManager entityManager) throws Exception {
         final Magazine[] magazines = new Magazine[MagazineData.ids.length];
-        for (int i = 0; i < MagazineData.ids.length; i++)
-        {
+        for (int i = 0; i < MagazineData.ids.length; i++) {
             final Magazine magazine = entityManager.create(Magazine.class);
             magazine.setTitle(MagazineData.TITLES[i]);
             magazine.save();
 
             MagazineData.ids[i] = magazine.getID();
 
-            for (int j = 0; j < MagazineData.AUTHOR_IDS[i].length; j++)
-            {
+            for (int j = 0; j < MagazineData.AUTHOR_IDS[i].length; j++) {
                 final Author author = addAuthor(entityManager, magazine, "Magazine author", j);
                 MagazineData.AUTHOR_IDS[i][j] = author.getID();
             }
@@ -361,8 +332,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return magazines;
     }
 
-    private Distribution addPrintDistribution(EntityManager entityManager, Publication publication, int copies) throws Exception
-    {
+    private Distribution addPrintDistribution(EntityManager entityManager, Publication publication, int copies) throws Exception {
         PrintDistribution distribution = entityManager.create(PrintDistribution.class);
         distribution.setCopies(copies);
         distribution.save();
@@ -375,8 +345,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return distribution;
     }
 
-    private Distribution addOnlineDistribution(EntityManager entityManager, Publication publication, String url) throws Exception
-    {
+    private Distribution addOnlineDistribution(EntityManager entityManager, Publication publication, String url) throws Exception {
         OnlineDistribution distribution = entityManager.create(OnlineDistribution.class);
         distribution.setURL(new URL(url));
         distribution.save();
@@ -389,8 +358,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return distribution;
     }
 
-    private Author addAuthor(EntityManager entityManager, Publication publication, String title, int index) throws Exception
-    {
+    private Author addAuthor(EntityManager entityManager, Publication publication, String title, int index) throws Exception {
         final Author author = entityManager.create(Author.class);
         author.setName(title + " " + publication.getID() + ":" + index);
         author.save();
@@ -403,8 +371,7 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return author;
     }
 
-    private Comment createComment(EntityManager entityManager, Commentable commentable, String title, String text, int index) throws Exception
-    {
+    private Comment createComment(EntityManager entityManager, Commentable commentable, String title, String text, int index) throws Exception {
         Comment comment = entityManager.create(Comment.class);
         comment.setTitle(title);
         comment.setText(text);
@@ -414,101 +381,84 @@ public final class DatabaseProcessor implements DatabaseUpdater
         return comment;
     }
 
-    public static final class CompanyData
-    {
+    public static final class CompanyData {
         static long[] ids = {-1L, -1L};
         public static final String[] NAMES = {"My Company 0", "My Company 1"};
         public static final boolean[] COOLS = {false, true};
         public static final byte[][] IMAGES = {getImage("company image 0"), getImage("company image 1")};
 
-        public static long[] getIds()
-        {
+        public static long[] getIds() {
             return ids;
         }
     }
 
-    public static final class NoseData
-    {
+    public static final class NoseData {
         static int id = -1;
         public static final int LENGTH = 123;
 
-        public static int getId()
-        {
+        public static int getId() {
             return id;
         }
     }
 
-    public static final class PersonData
-    {
+    public static final class PersonData {
         static int id = -1;
         public static final String FIRST_NAME = "Daniel";
         public static final String LAST_NAME = "Spiewak";
         public static final Profession PROFESSION = Profession.DEVELOPER;
         public static final byte[] IMAGE = getImage("person image");
 
-        public static int getId()
-        {
+        public static int getId() {
             return id;
         }
     }
 
-    public static final class AddressData
-    {
+    public static final class AddressData {
         static int[] ids = {-1, -1};
         public static final String[] EMAILS = {"email1@example.com", "email2@example.com"};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PenData
-    {
+    public static final class PenData {
         static int[] ids = {-1, -1, -1};
         public static final double[] WIDTHS = {0.3, 0.5, 0.7};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class ChairData
-    {
-        static int[] ids = { -1, -1, -1 };
-        public static final String[] COLOURS = { "black", "white", "red" };
+    public static final class ChairData {
+        static int[] ids = {-1, -1, -1};
+        public static final String[] COLOURS = {"black", "white", "red"};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PersonLegalDefenceData
-    {
+    public static final class PersonLegalDefenceData {
         static int[] ids = {-1, -1, -1};
         public static final int[] SEVERITIES = {2, 5, 7};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PostData
-    {
+    public static final class PostData {
         static int id = -1;
         public static final String TITLE = "Test Post";
 
-        public static int getId()
-        {
+        public static int getId() {
             return id;
         }
     }
 
-    public static final class PostCommentData
-    {
+    public static final class PostCommentData {
         static int[] ids = {-1, -1, -1, -1};
         public static final String[] TITLES = {
                 "Post comment title 0",
@@ -520,49 +470,41 @@ public final class DatabaseProcessor implements DatabaseUpdater
                 "Commenting on a post 1",
                 "Commenting on a post 2",
                 "Commenting on a post 3"};
-        public static final int[] INDICES = { 1, 2, 3, 4 };
+        public static final int[] INDICES = {1, 2, 3, 4};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PhotoData
-    {
+    public static final class PhotoData {
         static int id = -1;
 
-        public static int getId()
-        {
+        public static int getId() {
             return id;
         }
     }
 
-    public static final class PhotoCommentData
-    {
+    public static final class PhotoCommentData {
         static int[] ids = {-1, -1};
         public static final String[] TITLES = {"Photo comment title 0", "Photo comment title 1"};
         public static final String[] TEXTS = {"Commenting on a photo 0", "Commenting on a photo 1"};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class MessageData
-    {
+    public static final class MessageData {
         static int[] ids = {-1, -1};
         public static final String[] CONTENTS = {"Some message content 0", "Some message content 1"};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class BookData
-    {
+    public static final class BookData {
         static int[] ids = {-1, -1};
         public static int[][] AUTHOR_IDS = {{-1, -1}, {-1, -1, -1}};
         public static int[][] DISTRIBUTION_IDS = {{-1, -1}, {-1, -1}};
@@ -570,14 +512,12 @@ public final class DatabaseProcessor implements DatabaseUpdater
         public static final String[] TITLES = {"Book title 0", "Book title 1"};
         public static final boolean[] COVERS = {true, false};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class MagazineData
-    {
+    public static final class MagazineData {
         static int[] ids = {-1, -1};
         public static final int[][] AUTHOR_IDS = {{-1, -1, -1}, {-1, -1}};
         public static int[][] DISTRIBUTION_IDS = {{-1, -1}, {-1, -1}};
@@ -585,51 +525,40 @@ public final class DatabaseProcessor implements DatabaseUpdater
 
         public static final String[] TITLES = {"Magazine title 0", "Magazine title 1"};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class AuthorData
-    {
+    public static final class AuthorData {
         static int[] ids = {-1, -1, -1, -1};
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PersonChairData
-    {
+    public static final class PersonChairData {
         static int[] ids = new int[ChairData.ids.length];
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    public static final class PersonSuitData
-    {
+    public static final class PersonSuitData {
         static int[] ids = new int[PersonLegalDefenceData.ids.length];
 
-        public static int[] getIds()
-        {
+        public static int[] getIds() {
             return ids;
         }
     }
 
-    private static byte[] getImage(String fakeImage)
-    {
+    private static byte[] getImage(String fakeImage) {
         final byte[] img;
-        try
-        {
+        try {
             img = fakeImage.getBytes("UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
         return img;

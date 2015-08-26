@@ -1,19 +1,13 @@
 package net.java.ao.builder;
 
-public final class ClassUtils
-{
-    private ClassUtils()
-    {
+public final class ClassUtils {
+    private ClassUtils() {
     }
 
-    public static Class loadClass(String className)
-    {
-        try
-        {
+    public static Class loadClass(String className) {
+        try {
             return ClassUtils.class.getClassLoader().loadClass(className);
-        }
-        catch (ClassNotFoundException ignored)
-        {
+        } catch (ClassNotFoundException ignored) {
             return null;
         }
     }

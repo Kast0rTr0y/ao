@@ -22,57 +22,53 @@ import java.util.List;
 /**
  * <p>Imposes a standard camelCase convention upon field names.  This will
  * convert field in the following way:</p>
- * 
+ *
  * <table border="1">
- * 		<tr>
- * 			<td><b>Method Name</b></td>
- * 			<td><b>Returns Entity?</b></td>
- * 			<td><b>Field Name</b></td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>getFirstName</td>
- * 			<td><code>false</code></td>
- * 			<td>firstName</td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>setLastName</td>
- * 			<td><code>false</code></td>
- * 			<td>lastName</td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>getCompany</td>
- * 			<td><code>true</code></td>
- * 			<td>companyID</td>
- * 		</tr>
- * 
- * 		<tr>
- * 			<td>isCool</td>
- * 			<td><code>false</code></td>
- * 			<td>cool</td>
- * 		</tr>
+ * <tr>
+ * <td><b>Method Name</b></td>
+ * <td><b>Returns Entity?</b></td>
+ * <td><b>Field Name</b></td>
+ * </tr>
+ *
+ * <tr>
+ * <td>getFirstName</td>
+ * <td><code>false</code></td>
+ * <td>firstName</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>setLastName</td>
+ * <td><code>false</code></td>
+ * <td>lastName</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>getCompany</td>
+ * <td><code>true</code></td>
+ * <td>companyID</td>
+ * </tr>
+ *
+ * <tr>
+ * <td>isCool</td>
+ * <td><code>false</code></td>
+ * <td>cool</td>
+ * </tr>
  * </table>
- * 
+ *
  * <p>This is the default field name converter for ActiveObjects.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
-public final class CamelCaseFieldNameConverter extends AbstractFieldNameConverter
-{
-    public CamelCaseFieldNameConverter()
-    {
+public final class CamelCaseFieldNameConverter extends AbstractFieldNameConverter {
+    public CamelCaseFieldNameConverter() {
     }
 
-    public CamelCaseFieldNameConverter(List<FieldNameResolver> fieldNameResolvers)
-    {
+    public CamelCaseFieldNameConverter(List<FieldNameResolver> fieldNameResolvers) {
         super(fieldNameResolvers);
     }
 
     @Override
-    public String convertName(String name)
-    {
+    public String convertName(String name) {
         return Common.convertDowncaseName(name);
     }
 }

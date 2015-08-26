@@ -20,6 +20,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface PostalAddress extends Address {
-	public String getAddress();
-	public void setAddress(String address);
+    public String getAddress();
+
+    public void setAddress(String address);
 }

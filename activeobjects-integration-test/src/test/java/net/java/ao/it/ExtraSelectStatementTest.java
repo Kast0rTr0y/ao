@@ -1,12 +1,5 @@
 package net.java.ao.it;
 
-import java.net.URI;
-import java.net.URL;
-import java.util.Date;
-import java.util.concurrent.Callable;
-
-import org.junit.Test;
-
 import net.java.ao.Accessor;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
@@ -16,23 +9,25 @@ import net.java.ao.schema.StringLength;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
+import org.junit.Test;
+
+import java.net.URI;
+import java.net.URL;
+import java.util.Date;
+import java.util.concurrent.Callable;
 
 @Data(ExtraSelectStatementTest.TestExtraSelectStatementDatabaseUpdater.class)
-public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
-{
+public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest {
     @Test
-    public void testExtraSelectWhenClobTypeInOracleAndSQLServer() throws Exception
-    {
+    public void testExtraSelectWhenClobTypeInOracleAndSQLServer() throws Exception {
         // Test AO runs extra select statement when :
         // Oracle database and type = Boolean, Clob
         // MS SQL Server and type = Clob
         // All supported databases and java type = URL
         final Lego lego = entityManager.find(Lego.class)[0];
 
-        checkSqlNotExecuted(new Callable<Void>()
-        {
-            public Void call() throws Exception
-            {
+        checkSqlNotExecuted(new Callable<Void>() {
+            public Void call() throws Exception {
                 lego.getClobType();
                 lego.isBooleanType();
                 lego.getURLType();
@@ -50,8 +45,7 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
         });
     }
 
-    private interface Lego extends Entity
-    {
+    private interface Lego extends Entity {
         static final String CLOB_CONTENT = "A Clob type for Oracle and Microsoft SQL Server instead of String";
         static final String STRING_CONTENT = "Lego name";
         static final String BLOB_CONTENT = "Image content";
@@ -121,18 +115,15 @@ public class ExtraSelectStatementTest extends ActiveObjectsIntegrationTest
         void setLongType(Long longType);
     }
 
-    public enum Level
-    {
+    public enum Level {
         HIGH,
         MEDIUM,
         LOW
     }
 
-    public static final class TestExtraSelectStatementDatabaseUpdater implements DatabaseUpdater
-    {
+    public static final class TestExtraSelectStatementDatabaseUpdater implements DatabaseUpdater {
         @Override
-        public void update(final EntityManager entityManager) throws Exception
-        {
+        public void update(final EntityManager entityManager) throws Exception {
             entityManager.migrate(Lego.class);
 
             final Lego e = entityManager.create(Lego.class);

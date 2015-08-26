@@ -12,48 +12,38 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 @NameConverters(table = AbstractTestCreateTable.TestCreateTableTableNameConverter.class)
-public abstract class AbstractTestCreateTable extends ActiveObjectsIntegrationTest
-{
+public abstract class AbstractTestCreateTable extends ActiveObjectsIntegrationTest {
     @Test
     @NonTransactional
-    public final void testCreateTable() throws Exception
-    {
-        for (Class<? extends Entity> entity : getEntities())
-        {
+    public final void testCreateTable() throws Exception {
+        for (Class<? extends Entity> entity : getEntities()) {
             testCreateTable(entity);
         }
     }
 
     protected abstract List<Class<? extends Entity>> getEntities();
 
-    private void testCreateTable(final Class<? extends Entity> entityClass) throws Exception
-    {
-        checkSqlExecuted(new Callable<Void>()
-        {
+    private void testCreateTable(final Class<? extends Entity> entityClass) throws Exception {
+        checkSqlExecuted(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 entityManager.migrate(entityClass);
                 return null;
             }
         });
 
-        checkSqlNotExecuted(new Callable<Void>()
-        {
+        checkSqlNotExecuted(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
-            {
+            public Void call() throws Exception {
                 entityManager.migrate(entityClass);
                 return null;
             }
         });
     }
 
-    public static final class TestCreateTableTableNameConverter implements TableNameConverter
-    {
+    public static final class TestCreateTableTableNameConverter implements TableNameConverter {
         @Override
-        public String getName(Class<? extends RawEntity<?>> clazz)
-        {
+        public String getName(Class<? extends RawEntity<?>> clazz) {
             return "ENTITY";
         }
     }

@@ -19,8 +19,8 @@ package net.java.ao.it.model;
 /**
  * @author Daniel Spiewak
  */
-public interface PostalAddress extends Address
-{
-	public String getAddress();
-	public void setAddress(String address);
+public interface PostalAddress extends Address {
+    public String getAddress();
+
+    public void setAddress(String address);
 }

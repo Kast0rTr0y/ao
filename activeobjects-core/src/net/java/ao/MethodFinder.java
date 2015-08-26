@@ -25,51 +25,40 @@ import java.lang.reflect.Method;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-final class MethodFinder
-{
+final class MethodFinder {
 
-    public Iterable<Method> findAnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type)
-    {
+    public Iterable<Method> findAnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type) {
         return new AnnotatedMethods(annotation, type).getAnnotatedMethods();
     }
 
-    public Method findCounterPartMethod(FieldNameConverter converter, Method method)
-    {
+    public Method findCounterPartMethod(FieldNameConverter converter, Method method) {
         return new CounterPartMethod(converter, method).getCounterPartMethod();
     }
 
-    private final static Supplier<MethodFinder> INSTANCE_SUPPLIER = Suppliers.synchronizedSupplier(Suppliers.memoize(new Supplier<MethodFinder>()
-    {
+    private final static Supplier<MethodFinder> INSTANCE_SUPPLIER = Suppliers.synchronizedSupplier(Suppliers.memoize(new Supplier<MethodFinder>() {
         @Override
-        public MethodFinder get()
-        {
+        public MethodFinder get() {
             return new MethodFinder();
         }
     }));
 
-    public static MethodFinder getInstance()
-    {
+    public static MethodFinder getInstance() {
         return INSTANCE_SUPPLIER.get();
     }
 
-    private static final class AnnotatedMethods
-    {
+    private static final class AnnotatedMethods {
         private final Class<? extends Annotation> annotation;
         private final Class<?> type;
 
-        AnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type)
-        {
+        AnnotatedMethods(Class<? extends Annotation> annotation, Class<?> type) {
             this.annotation = checkNotNull(annotation);
             this.type = checkNotNull(type);
         }
 
-        Iterable<Method> getAnnotatedMethods()
-        {
+        Iterable<Method> getAnnotatedMethods() {
             final ImmutableList.Builder<Method> annotatedMethods = ImmutableList.builder();
-            for (Method m : type.getMethods())
-            {
-                if (m.isAnnotationPresent(annotation))
-                {
+            for (Method m : type.getMethods()) {
+                if (m.isAnnotationPresent(annotation)) {
                     annotatedMethods.add(m);
                 }
             }
@@ -77,25 +66,20 @@ final class MethodFinder
         }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            {
+        public boolean equals(Object o) {
+            if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass())
-            {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
 
             final AnnotatedMethods that = (AnnotatedMethods) o;
 
-            if (annotation != null ? !annotation.equals(that.annotation) : that.annotation != null)
-            {
+            if (annotation != null ? !annotation.equals(that.annotation) : that.annotation != null) {
                 return false;
             }
-            if (type != null ? !type.equals(that.type) : that.type != null)
-            {
+            if (type != null ? !type.equals(that.type) : that.type != null) {
                 return false;
             }
 
@@ -103,35 +87,29 @@ final class MethodFinder
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             int result = annotation != null ? annotation.hashCode() : 0;
             result = 31 * result + (type != null ? type.hashCode() : 0);
             return result;
         }
     }
 
-    private static final class CounterPartMethod
-    {
+    private static final class CounterPartMethod {
         private final FieldNameConverter converter;
         private final Method method;
 
-        CounterPartMethod(FieldNameConverter converter, Method method)
-        {
+        CounterPartMethod(FieldNameConverter converter, Method method) {
             this.converter = converter;
             this.method = method;
         }
 
-        Method getCounterPartMethod()
-        {
+        Method getCounterPartMethod() {
             final String name = converter.getName(method);
             final Class<?> clazz = method.getDeclaringClass();
 
-            for (Method other : clazz.getMethods())
-            {
+            for (Method other : clazz.getMethods()) {
                 final String otherName = converter.getName(other);
-                if (!other.equals(method) && otherName != null && otherName.equals(name))
-                {
+                if (!other.equals(method) && otherName != null && otherName.equals(name)) {
                     return other;
                 }
             }
@@ -139,25 +117,20 @@ final class MethodFinder
         }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            {
+        public boolean equals(Object o) {
+            if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass())
-            {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
 
             final CounterPartMethod that = (CounterPartMethod) o;
 
-            if (converter != null ? !converter.equals(that.converter) : that.converter != null)
-            {
+            if (converter != null ? !converter.equals(that.converter) : that.converter != null) {
                 return false;
             }
-            if (method != null ? !method.equals(that.method) : that.method != null)
-            {
+            if (method != null ? !method.equals(that.method) : that.method != null) {
                 return false;
             }
 
@@ -165,8 +138,7 @@ final class MethodFinder
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             int result = converter != null ? converter.hashCode() : 0;
             result = 31 * result + (method != null ? method.hashCode() : 0);
             return result;

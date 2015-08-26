@@ -8,40 +8,33 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * back this modification; this will only be done if the modification succeeded but then
  * some later action failed.
  */
-public final class SQLAction
-{
+public final class SQLAction {
     private final String statement;
     private final SQLAction undoAction;
-    
-    private SQLAction(String statement, SQLAction undoAction)
-    {
+
+    private SQLAction(String statement, SQLAction undoAction) {
         this.statement = checkNotNull(statement);
         this.undoAction = undoAction;
     }
-    
-    public static SQLAction of(CharSequence statement)
-    {
+
+    public static SQLAction of(CharSequence statement) {
         return new SQLAction(statement.toString(), null);
     }
-    
-    public SQLAction withUndoAction(SQLAction undoAction)
-    {
+
+    public SQLAction withUndoAction(SQLAction undoAction) {
         return new SQLAction(this.statement, undoAction);
     }
-    
-    public String getStatement()
-    {
+
+    public String getStatement() {
         return statement;
     }
-    
-    public SQLAction getUndoAction()
-    {
+
+    public SQLAction getUndoAction() {
         return undoAction;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "SQLAction{" +
                 "statement='" + statement + '\'' +
                 ", undoAction=" + undoAction +

@@ -1,8 +1,8 @@
-import java.sql.SQLException;
-
 import net.java.ao.contacts.db.EmailAddress;
 import net.java.ao.contacts.db.Friendship;
 import net.java.ao.contacts.ui.UIManager;
+
+import java.sql.SQLException;
 
 /*
  * Copyright 2007, Daniel Spiewak
@@ -39,22 +39,22 @@ import net.java.ao.contacts.ui.UIManager;
  * @author Daniel Spiewak
  */
 public class DogfoodContacts {
-	public static void main(String... args) {
-		UIManager.init();
-		
-		try {
-			UIManager.getManager().migrate(EmailAddress.class, Friendship.class);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		
-		UIManager.show();
-		
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				UIManager.dispose();
-			}
-		});
-	}
+    public static void main(String... args) {
+        UIManager.init();
+
+        try {
+            UIManager.getManager().migrate(EmailAddress.class, Friendship.class);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        UIManager.show();
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                UIManager.dispose();
+            }
+        });
+    }
 }

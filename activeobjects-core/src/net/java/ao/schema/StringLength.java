@@ -16,14 +16,14 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface StringLength {
-	
-	/**
-	 * Specifies the maximum length of the database column in characters.
-	 * This can be a positive integer or {@link #UNLIMITED}.
-	 */
-	int value();
+
+    /**
+     * Specifies the maximum length of the database column in characters.
+     * This can be a positive integer or {@link #UNLIMITED}.
+     */
+    int value();
 
     public static final int MAX_LENGTH = 450; // sql server nvarchar limit
 
-	public static final int UNLIMITED = -1;
+    public static final int UNLIMITED = -1;
 }

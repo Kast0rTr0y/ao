@@ -13,32 +13,26 @@ import java.sql.SQLException;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(ActiveObjectsJUnitRunner.class)
-public class TransactionTest extends ActiveObjectsIntegrationTest
-{
+public class TransactionTest extends ActiveObjectsIntegrationTest {
 
     @Test
     @NonTransactional
-    public void testRollbackUnsaved() throws Exception
-    {
+    public void testRollbackUnsaved() throws Exception {
         testRollback(false);
     }
 
     @Test
     @NonTransactional
-    public void testRollbackSaved() throws Exception
-    {
+    public void testRollbackSaved() throws Exception {
         testRollback(true);
     }
 
-    private void testRollback(final boolean save) throws SQLException
-    {
+    private void testRollback(final boolean save) throws SQLException {
         entityManager.migrate(Author.class);
-        final int id = new Transaction<Integer>(entityManager)
-        {
+        final int id = new Transaction<Integer>(entityManager) {
 
             @Override
-            protected Integer run() throws SQLException
-            {
+            protected Integer run() throws SQLException {
                 final Author author = entityManager.create(Author.class);
                 author.setName("George Orwell");
                 author.save();
@@ -46,14 +40,11 @@ public class TransactionTest extends ActiveObjectsIntegrationTest
             }
 
         }.execute();
-        try
-        {
-            new Transaction<Void>(entityManager)
-            {
+        try {
+            new Transaction<Void>(entityManager) {
 
                 @Override
-                protected Void run() throws SQLException
-                {
+                protected Void run() throws SQLException {
                     final Author author = entityManager.get(Author.class, id);
                     author.setName("Emily Bronte");
                     if (save) {
@@ -63,16 +54,12 @@ public class TransactionTest extends ActiveObjectsIntegrationTest
                 }
 
             }.execute();
+        } catch (final RuntimeException exception) {
         }
-        catch (final RuntimeException exception)
-        {
-        }
-        final String name = new Transaction<String>(entityManager)
-        {
+        final String name = new Transaction<String>(entityManager) {
 
             @Override
-            protected String run() throws SQLException
-            {
+            protected String run() throws SQLException {
                 final Author author = entityManager.get(Author.class, id);
                 return author.getName();
             }

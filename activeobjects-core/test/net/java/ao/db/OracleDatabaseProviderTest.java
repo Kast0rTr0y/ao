@@ -11,27 +11,22 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static net.java.ao.DatabaseProviders.*;
+import static net.java.ao.DatabaseProviders.getOracleDatabaseProvider;
 import static net.java.ao.types.TypeQualifiers.qualifiers;
 
-public final class OracleDatabaseProviderTest extends DatabaseProviderTest
-{
+public final class OracleDatabaseProviderTest extends DatabaseProviderTest {
     @Override
-    protected String getDatabase()
-    {
+    protected String getDatabase() {
         return "oracle";
     }
 
     @Override
-    protected DatabaseProvider getDatabaseProvider()
-    {
+    protected DatabaseProvider getDatabaseProvider() {
         return getOracleDatabaseProvider();
     }
 
-    private Function<DatabaseProvider, DDLAction> createActionAlterColumnSpecialCharacters = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionAlterColumnSpecialCharacters = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -56,8 +51,7 @@ public final class OracleDatabaseProviderTest extends DatabaseProviderTest
     };
 
     @Test
-    public void testRenderActionAlterStringColumnWithSpecialCharacters() throws IOException
-    {
+    public void testRenderActionAlterStringColumnWithSpecialCharacters() throws IOException {
         testRenderAction("alter-string-special-characters-column.sql", createActionAlterColumnSpecialCharacters, getDatabaseProvider());
     }
 }

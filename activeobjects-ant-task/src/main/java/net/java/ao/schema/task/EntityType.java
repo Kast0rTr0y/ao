@@ -21,13 +21,13 @@ import org.apache.tools.ant.types.DataType;
  * @author Daniel Spiewak
  */
 public class EntityType extends DataType {
-	private String text = "";
-	
-	public void addText(String text) {
-		this.text += text;
-	}
+    private String text = "";
 
-	public String getText() {
-		return text;
-	}
+    public void addText(String text) {
+        this.text += text;
+    }
+
+    public String getText() {
+        return text;
+    }
 }

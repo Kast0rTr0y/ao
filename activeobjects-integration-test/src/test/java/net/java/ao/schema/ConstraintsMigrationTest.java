@@ -10,26 +10,25 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.junit.*;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for NotNull and Default constraints
  */
-public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
-{
+public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest {
     /**
      * Remove not null constraint
      */
     @Test
     @NonTransactional
-    public void testRemoveNotNullConstraint() throws Exception
-    {
+    public void testRemoveNotNullConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -45,8 +44,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testAddNotNullConstraint() throws Exception
-    {
+    public void testAddNotNullConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -62,8 +60,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testAddDefaultConstraint() throws Exception
-    {
+    public void testAddDefaultConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -79,8 +76,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testRemoveDefaultConstraint() throws Exception
-    {
+    public void testRemoveDefaultConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -96,8 +92,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullAndDefaultToNotNullConstraint() throws Exception
-    {
+    public void testNotNullAndDefaultToNotNullConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -115,8 +110,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullToNotNullAndDefaultConstraint() throws Exception
-    {
+    public void testNotNullToNotNullAndDefaultConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -134,8 +128,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNoneToNotNullAndDefaultConstraint() throws Exception
-    {
+    public void testNoneToNotNullAndDefaultConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -153,8 +146,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testNotNullAndDefaultToNoConstraint() throws Exception
-    {
+    public void testNotNullAndDefaultToNoConstraint() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -173,8 +165,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testAddIndex() throws Exception
-    {
+    public void testAddIndex() throws Exception {
         // first create with constraint
         entityManager.migrate(Clean.T.class);
         assertEmpty();
@@ -192,8 +183,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testRemoveIndex() throws Exception
-    {
+    public void testRemoveIndex() throws Exception {
         // first create with constraint
         entityManager.migrate(Clean.T.class);
         assertEmpty();
@@ -210,8 +200,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testAddUniqueConstraint() throws Exception
-    {
+    public void testAddUniqueConstraint() throws Exception {
         // first create with constraint
         entityManager.migrate(Clean.T.class);
         assertEmpty();
@@ -228,8 +217,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
      */
     @Test
     @NonTransactional
-    public void testRemoveUniqueConstraint() throws Exception
-    {
+    public void testRemoveUniqueConstraint() throws Exception {
         // first create with constraint
         entityManager.migrate(Clean.T.class);
         assertEmpty();
@@ -243,8 +231,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
-    public void testUpdateConstraintWithForeignKey() throws Exception
-    {
+    public void testUpdateConstraintWithForeignKey() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
 
@@ -259,110 +246,83 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertIndex(true);
     }
 
-    private void assertEmpty() throws Exception
-    {
+    private void assertEmpty() throws Exception {
         assertEquals(1, getDdlTable().getFields().length);
     }
 
-    private void assertNullConstraint(boolean set) throws Exception
-    {
-        for (DDLField field : getDdlTable().getFields())
-        {
-            if (field.getName().equalsIgnoreCase("name"))
-            {
+    private void assertNullConstraint(boolean set) throws Exception {
+        for (DDLField field : getDdlTable().getFields()) {
+            if (field.getName().equalsIgnoreCase("name")) {
                 assertEquals("Null constraint should " + (set ? "" : "not ") + "be set.", set, field.isNotNull());
             }
         }
     }
 
-    private void assertDefaultConstraint(boolean set) throws Exception
-    {
-        for (DDLField field : getDdlTable().getFields())
-        {
-            if (field.getName().equalsIgnoreCase("name"))
-            {
+    private void assertDefaultConstraint(boolean set) throws Exception {
+        for (DDLField field : getDdlTable().getFields()) {
+            if (field.getName().equalsIgnoreCase("name")) {
                 assertTrue("Default constraint should " + (set ? "" : "not ") + "be set.", set == (field.getDefaultValue() != null));
             }
         }
     }
 
-    private void assertIndex(boolean set) throws Exception
-    {
+    private void assertIndex(boolean set) throws Exception {
         assertEquals(set, getDdlTable().getIndexes().length > 0);
     }
 
-    private void assertUniqueConstraint(boolean set) throws Exception
-    {
-        for (DDLField field : getDdlTable().getFields())
-        {
-            if (field.getName().equalsIgnoreCase("name"))
-            {
+    private void assertUniqueConstraint(boolean set) throws Exception {
+        for (DDLField field : getDdlTable().getFields()) {
+            if (field.getName().equalsIgnoreCase("name")) {
                 assertTrue("Unique constraint should " + (set ? "" : "not ") + "be set.", set == field.isUnique());
             }
         }
     }
 
-    private void assertHasForeignKey(boolean set) throws Exception
-    {
+    private void assertHasForeignKey(boolean set) throws Exception {
         final DDLTable table = getDdlTable();
-        assertEquals("Foreign key constraint should " + (set ? "" : "NOT ") + "exist.", set, Iterables.any(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
-        {
+        assertEquals("Foreign key constraint should " + (set ? "" : "NOT ") + "exist.", set, Iterables.any(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>() {
             @Override
-            public boolean apply(DDLForeignKey fk)
-            {
+            public boolean apply(DDLForeignKey fk) {
                 return fk.getField().equalsIgnoreCase("name_id");
             }
         }));
     }
 
-    private DDLTable getDdlTable() throws SQLException
-    {
+    private DDLTable getDdlTable() throws SQLException {
         SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
         final DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
         return findTable(tables, entityManager.getNameConverters().getTableNameConverter().getName(Clean.T.class));
     }
 
-    private DDLTable findTable(DDLTable[] tables, final String name)
-    {
-        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>()
-        {
+    private DDLTable findTable(DDLTable[] tables, final String name) {
+        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>() {
             @Override
-            public boolean apply(DDLTable t)
-            {
+            public boolean apply(DDLTable t) {
                 return t.getName().equalsIgnoreCase(name);
             }
         });
     }
 
     // Reflection tools
-    public static Object getFieldValue(Object target, String name)
-    {
-        try
-        {
+    public static Object getFieldValue(Object target, String name) {
+        try {
             Field field = findField(name, target.getClass());
             field.setAccessible(true);
             return field.get(target);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Field findField(String name, Class<?> targetClass)
-    {
+    public static Field findField(String name, Class<?> targetClass) {
         return findField(name, targetClass, null);
     }
 
-    public static Field findField(String name, Class<?> targetClass, Class<?> type)
-    {
+    public static Field findField(String name, Class<?> targetClass, Class<?> type) {
         Class<?> search = targetClass;
-        while (!Object.class.equals(search) && search != null)
-        {
-            for (Field field : search.getDeclaredFields())
-            {
-                if (name.equals(field.getName()) && (type == null || type.equals(field.getType())))
-                {
+        while (!Object.class.equals(search) && search != null) {
+            for (Field field : search.getDeclaredFields()) {
+                if (name.equals(field.getName()) && (type == null || type.equals(field.getType()))) {
                     return field;
                 }
             }
@@ -373,23 +333,19 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         throw new RuntimeException("No field with name '" + name + "' found in class hierarchy of '" + targetClass.getName() + "'");
     }
 
-    static class Clean
-    {
+    static class Clean {
         /**
          * Not Null Constraint Column
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
         }
     }
 
-    static class NotNullConstraint
-    {
+    static class NotNullConstraint {
         /**
          * Not Null Constraint Column
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @NotNull
             public String getName();
 
@@ -397,26 +353,22 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class WithoutNotNullConstraint
-    {
+    static class WithoutNotNullConstraint {
         /**
          * Without null constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             public String getName();
 
             public void setName(String name);
         }
     }
 
-    static class DefaultConstraint
-    {
+    static class DefaultConstraint {
         /**
          * With default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @Default("Test")
             public String getName();
 
@@ -424,13 +376,11 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class EmptyDefaultConstraint
-    {
+    static class EmptyDefaultConstraint {
         /**
          * With default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @Default("")
             public String getName();
 
@@ -438,26 +388,22 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class NoDefaultConstraint
-    {
+    static class NoDefaultConstraint {
         /**
          * With default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             public String getName();
 
             public void setName(String name);
         }
     }
 
-    static class NullAndDefaultConstraint
-    {
+    static class NullAndDefaultConstraint {
         /**
          * Not null and default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @NotNull
             @Default("Test")
             public String getName();
@@ -466,13 +412,11 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class NullAndNoDefaultConstraint
-    {
+    static class NullAndNoDefaultConstraint {
         /**
          * Not null without default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @NotNull
             public String getName();
 
@@ -480,13 +424,11 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class IndexedColumn
-    {
+    static class IndexedColumn {
         /**
          * With default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @Indexed
             public String getName();
 
@@ -494,26 +436,22 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class NoIndexedColumn
-    {
+    static class NoIndexedColumn {
         /**
          * With default constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             public String getName();
 
             public void setName(String name);
         }
     }
 
-    static class UniqueConstraintColumn
-    {
+    static class UniqueConstraintColumn {
         /**
          * With unique constraint constraint
          */
-        public static interface T extends Entity
-        {
+        public static interface T extends Entity {
             @Unique
             public String getName();
 
@@ -521,34 +459,27 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         }
     }
 
-    static class NoUniqueConstraintColumn
-    {
-        public static interface T extends Entity
-        {
+    static class NoUniqueConstraintColumn {
+        public static interface T extends Entity {
             public String getName();
 
             public void setName(String name);
         }
     }
 
-    static class WithForeignKey
-    {
-        public static interface T extends Entity
-        {
+    static class WithForeignKey {
+        public static interface T extends Entity {
             public U getName();
 
             public void setName(U u);
         }
 
-        public static interface U extends Entity
-        {
+        public static interface U extends Entity {
         }
     }
 
-    static class WithForeignKeyAndNotNull
-    {
-        public static interface T extends Entity
-        {
+    static class WithForeignKeyAndNotNull {
+        public static interface T extends Entity {
             @NotNull
             public U getName();
 
@@ -556,8 +487,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
             public void setName(U u);
         }
 
-        public static interface U extends Entity
-        {
+        public static interface U extends Entity {
         }
     }
 }

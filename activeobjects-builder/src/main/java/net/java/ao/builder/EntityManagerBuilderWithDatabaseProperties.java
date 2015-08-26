@@ -18,34 +18,25 @@ import static net.java.ao.builder.DatabaseProviderFactory.getDatabaseProvider;
  * @see EntityManagerBuilderWithUrl
  * @see EntityManagerBuilderWithUrlAndUsername
  */
-public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEntityManagerBuilderWithDatabaseProperties<EntityManagerBuilderWithDatabaseProperties>
-{
-    EntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties)
-    {
+public final class EntityManagerBuilderWithDatabaseProperties extends AbstractEntityManagerBuilderWithDatabaseProperties<EntityManagerBuilderWithDatabaseProperties> {
+    EntityManagerBuilderWithDatabaseProperties(BuilderDatabaseProperties databaseProperties) {
         super(databaseProperties);
     }
 
-    public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final File indexDir)
-    {
+    public EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration withIndex(final File indexDir) {
         checkNotNull(indexDir);
-        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), new LuceneConfiguration()
-        {
-            public Directory getIndexDirectory()
-            {
-                try
-                {
+        return new EntityManagerBuilderWithDatabasePropertiesAndLuceneConfiguration(getDatabaseProperties(), getEntityManagerConfiguration(), new LuceneConfiguration() {
+            public Directory getIndexDirectory() {
+                try {
                     return FSDirectory.getDirectory(indexDir);
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         });
     }
 
-    public EntityManager build()
-    {
+    public EntityManager build() {
         return new EntityManager(getDatabaseProvider(getDatabaseProperties()), getEntityManagerConfiguration());
     }
 }

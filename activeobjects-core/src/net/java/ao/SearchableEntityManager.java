@@ -15,17 +15,8 @@
  */
 package net.java.ao;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.sql.SQLException;
-import java.util.List;
-
 import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.types.TypeInfo;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.document.Document;
@@ -40,6 +31,14 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.SQLException;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -79,10 +78,9 @@ public class SearchableEntityManager extends EntityManager {
 
     private final Directory indexDir;
 
-	private final Analyzer analyzer;
+    private final Analyzer analyzer;
 
-    public SearchableEntityManager(DatabaseProvider databaseProvider, EntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration) throws IOException
-    {
+    public SearchableEntityManager(DatabaseProvider databaseProvider, EntityManagerConfiguration configuration, LuceneConfiguration luceneConfiguration) throws IOException {
         super(databaseProvider, configuration);
         this.indexDir = checkNotNull(checkNotNull(luceneConfiguration).getIndexDirectory());
         this.analyzer = new StopAnalyzer();
@@ -90,250 +88,246 @@ public class SearchableEntityManager extends EntityManager {
     }
 
     @Override
-	protected <T extends RawEntity<K>, K> T getAndInstantiate(EntityInfo<T, K> entityInfo, K key) {
-		T back = super.getAndInstantiate(entityInfo, key);
-		back.addPropertyChangeListener(new IndexAppender<T, K>(back));
+    protected <T extends RawEntity<K>, K> T getAndInstantiate(EntityInfo<T, K> entityInfo, K key) {
+        T back = super.getAndInstantiate(entityInfo, key);
+        back.addPropertyChangeListener(new IndexAppender<T, K>(back));
 
-		return back;
-	}
+        return back;
+    }
 
-	/**
-	 * Runs a Lucene full-text search on the specified entity type with the given
-	 * query.  The search will be run on every {@link Searchable} field within
-	 * the entity.  No caching is performed in this method.  Rather, AO relies
-	 * upon the underlying Lucene code to be performant.
-	 *
-	 * @param type		The type of the entities to search for.
-	 * @param strQuery	The query to pass to Lucene for the search.
-	 * @throws IOException		If Lucene was unable to open the index.
-	 * @throws ParseException	If Lucene was unable to parse the search string into a valid query.
-	 * @return The entity instances which correspond with the search results.
-	 */
-	@SuppressWarnings("unchecked")
-	public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException, SQLException
-    {
+    /**
+     * Runs a Lucene full-text search on the specified entity type with the given
+     * query.  The search will be run on every {@link Searchable} field within
+     * the entity.  No caching is performed in this method.  Rather, AO relies
+     * upon the underlying Lucene code to be performant.
+     *
+     * @param type     The type of the entities to search for.
+     * @param strQuery The query to pass to Lucene for the search.
+     * @return The entity instances which correspond with the search results.
+     * @throws IOException    If Lucene was unable to open the index.
+     * @throws ParseException If Lucene was unable to parse the search string into a valid query.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends RawEntity<K>, K> T[] search(Class<T> type, String strQuery) throws IOException, ParseException, SQLException {
         EntityInfo<T, K> entityInfo = resolveEntityInfo(type);
-		String table = getTableNameConverter().getName(type);
-		List<String> indexFields = Common.getSearchableFields(this, type);
-		String[] searchFields = new String[indexFields.size()];
-		String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
-		TypeInfo dbType = entityInfo.getPrimaryKey().getTypeInfo();
+        String table = getTableNameConverter().getName(type);
+        List<String> indexFields = Common.getSearchableFields(this, type);
+        String[] searchFields = new String[indexFields.size()];
+        String primaryKeyField = Common.getPrimaryKeyField(type, getFieldNameConverter());
+        TypeInfo dbType = entityInfo.getPrimaryKey().getTypeInfo();
 
-		for (int i = 0; i < searchFields.length; i++) {
-			searchFields[i] = table + '.' + indexFields.get(i);
-		}
+        for (int i = 0; i < searchFields.length; i++) {
+            searchFields[i] = table + '.' + indexFields.get(i);
+        }
 
-		IndexSearcher searcher = new IndexSearcher(indexDir);
-		QueryParser parser = new MultiFieldQueryParser(searchFields, analyzer);
-		org.apache.lucene.search.Query query = parser.parse(strQuery);
+        IndexSearcher searcher = new IndexSearcher(indexDir);
+        QueryParser parser = new MultiFieldQueryParser(searchFields, analyzer);
+        org.apache.lucene.search.Query query = parser.parse(strQuery);
 
-		Hits hits = searcher.search(query);
-		K[] keys = (K[]) new Object[hits.length()];
+        Hits hits = searcher.search(query);
+        K[] keys = (K[]) new Object[hits.length()];
 
-		for (int i = 0; i < hits.length(); i++) {
-			keys[i] = (K) dbType.getLogicalType().parseDefault(hits.doc(i).get(table + "." + primaryKeyField));
-		}
-		searcher.close();
+        for (int i = 0; i < hits.length(); i++) {
+            keys[i] = (K) dbType.getLogicalType().parseDefault(hits.doc(i).get(table + "." + primaryKeyField));
+        }
+        searcher.close();
 
-		return peer(entityInfo, keys);
-	}
+        return peer(entityInfo, keys);
+    }
 
-	@Override
-	public void delete(RawEntity<?>... entities) throws SQLException {
-		super.delete(entities);
+    @Override
+    public void delete(RawEntity<?>... entities) throws SQLException {
+        super.delete(entities);
 
-		IndexReader reader = null;
-		try {
-			reader = IndexReader.open(indexDir);
-			for (RawEntity<?> entity : entities) {
-				removeFromIndexImpl(entity, reader);
-			}
-		} catch (IOException e) {
-			throw (SQLException) new SQLException().initCause(e);
-		} finally {
-			if (reader != null) {
-				try {
-					reader.close();
-				} catch (IOException e) {
-				}
-			}
-		}
-	}
+        IndexReader reader = null;
+        try {
+            reader = IndexReader.open(indexDir);
+            for (RawEntity<?> entity : entities) {
+                removeFromIndexImpl(entity, reader);
+            }
+        } catch (IOException e) {
+            throw (SQLException) new SQLException().initCause(e);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
 
-	/**
-	 * Adds the entity instance to the index.  No checking is performed to
-	 * ensure that the entity is not already part of the index.  All of the
-	 * {@link Searchable} fields within the entity will be added to the
-	 * index as part of the document corresponding to the instance.
-	 *
-	 * @param entity	The entity to add to the index.
-	 * @throws IOException		If Lucene was unable to open the index.
-	 */
-	@SuppressWarnings("unchecked")
+    /**
+     * Adds the entity instance to the index.  No checking is performed to
+     * ensure that the entity is not already part of the index.  All of the
+     * {@link Searchable} fields within the entity will be added to the
+     * index as part of the document corresponding to the instance.
+     *
+     * @param entity The entity to add to the index.
+     * @throws IOException If Lucene was unable to open the index.
+     */
+    @SuppressWarnings("unchecked")
     public void addToIndex(RawEntity<?> entity) throws IOException {
-		String table = getTableNameConverter().getName(entity.getEntityType());
+        String table = getTableNameConverter().getName(entity.getEntityType());
 
-		IndexWriter writer = null;
-		try {
-			writer = new IndexWriter(indexDir, analyzer, false);
+        IndexWriter writer = null;
+        try {
+            writer = new IndexWriter(indexDir, analyzer, false);
 
-			Document doc = new Document();
-			doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
-					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					primaryKeyToString(entity),
-					Field.Store.YES, Field.Index.UN_TOKENIZED));
+            Document doc = new Document();
+            doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
+                    + Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+                    primaryKeyToString(entity),
+                    Field.Store.YES, Field.Index.UN_TOKENIZED));
 
-			boolean shouldAdd = false;
-			for (Method m : entity.getEntityType().getMethods()) {
-				Searchable indexAnno = Common.getAnnotationDelegate(getFieldNameConverter(), m).getAnnotation(Searchable.class);
+            boolean shouldAdd = false;
+            for (Method m : entity.getEntityType().getMethods()) {
+                Searchable indexAnno = Common.getAnnotationDelegate(getFieldNameConverter(), m).getAnnotation(Searchable.class);
 
-				if (indexAnno != null) {
-					shouldAdd = true;
+                if (indexAnno != null) {
+                    shouldAdd = true;
 
-					if (Common.isAccessor(m)) {
-						String attribute = getFieldNameConverter().getName(m);
-						Object value = m.invoke(entity);
+                    if (Common.isAccessor(m)) {
+                        String attribute = getFieldNameConverter().getName(m);
+                        Object value = m.invoke(entity);
 
-						if (value != null) {
-							doc.add(new Field(table + '.' + attribute, value.toString(), Field.Store.YES, Field.Index.TOKENIZED));
-						}
-					}
-				}
-			}
+                        if (value != null) {
+                            doc.add(new Field(table + '.' + attribute, value.toString(), Field.Store.YES, Field.Index.TOKENIZED));
+                        }
+                    }
+                }
+            }
 
-			if (shouldAdd) {
-				writer.addDocument(doc);
-			}
-		} catch (IllegalArgumentException e) {
-			throw (IOException) new IOException().initCause(e);
-		} catch (IllegalAccessException e) {
-			throw (IOException) new IOException().initCause(e);
-		} catch (InvocationTargetException e) {
-			throw (IOException) new IOException().initCause(e);
-		} finally {
-			if (writer != null) {
-				writer.close();
-			}
-		}
-	}
+            if (shouldAdd) {
+                writer.addDocument(doc);
+            }
+        } catch (IllegalArgumentException e) {
+            throw (IOException) new IOException().initCause(e);
+        } catch (IllegalAccessException e) {
+            throw (IOException) new IOException().initCause(e);
+        } catch (InvocationTargetException e) {
+            throw (IOException) new IOException().initCause(e);
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
 
-	/**
-	 * Removes the specified entity from the Lucene index.  This performs a lookup
-	 * in the index based on the value of the entity primary key and removes the
-	 * appropriate {@link Document}.
-	 *
-	 * @param entity	The entity to remove from the index.
-	 * @throws IOException		If Lucene was unable to open the index.
-	 */
-	public void removeFromIndex(RawEntity<?> entity) throws IOException {
-		IndexReader reader = null;
-		try {
-			reader = IndexReader.open(indexDir);
-			removeFromIndexImpl(entity, reader);
-		} finally {
-			if (reader != null) {
-				reader.close();
-			}
-		}
-	}
+    /**
+     * Removes the specified entity from the Lucene index.  This performs a lookup
+     * in the index based on the value of the entity primary key and removes the
+     * appropriate {@link Document}.
+     *
+     * @param entity The entity to remove from the index.
+     * @throws IOException If Lucene was unable to open the index.
+     */
+    public void removeFromIndex(RawEntity<?> entity) throws IOException {
+        IndexReader reader = null;
+        try {
+            reader = IndexReader.open(indexDir);
+            removeFromIndexImpl(entity, reader);
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    }
 
-	private void removeFromIndexImpl(RawEntity<?> entity, IndexReader reader) throws IOException {
-		reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
-				+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-				primaryKeyToString(entity)));
-	}
+    private void removeFromIndexImpl(RawEntity<?> entity, IndexReader reader) throws IOException {
+        reader.deleteDocuments(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
+                + Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+                primaryKeyToString(entity)));
+    }
 
-	/**
-	 * <p>Optimizes the Lucene index for searching.  This call peers down to
-	 * <code>IndexWriter#optimize()</code>.  For sizable indexes, this
-	 * call will take some time, so it is best not to perform the operation
-	 * in scenarios where it may block interface responsiveness (such as
-	 * in the middle of a page request, or within the EDT).</p>
-	 *
-	 * <p>This method is the only optimization call made against the Lucene
-	 * index.  Meaning, <code>SearchableEntityManager</code> never
-	 * optimizes the index automatically, as this could potentially cause major
-	 * performance issues.  Developers should be aware of this and the
-	 * negative impact lack-of optimization can have upon search performance.</p>
-	 *
-	 * @throws IOException		If Lucene was unable to open the index.
-	 */
-	public void optimize() throws IOException {
-		IndexWriter writer = null;
-		try {
-			writer = new IndexWriter(indexDir, analyzer, false);
-			writer.optimize();
-		} finally {
-			if (writer != null) {
-				writer.close();
-			}
-		}
-	}
+    /**
+     * <p>Optimizes the Lucene index for searching.  This call peers down to
+     * <code>IndexWriter#optimize()</code>.  For sizable indexes, this
+     * call will take some time, so it is best not to perform the operation
+     * in scenarios where it may block interface responsiveness (such as
+     * in the middle of a page request, or within the EDT).</p>
+     *
+     * <p>This method is the only optimization call made against the Lucene
+     * index.  Meaning, <code>SearchableEntityManager</code> never
+     * optimizes the index automatically, as this could potentially cause major
+     * performance issues.  Developers should be aware of this and the
+     * negative impact lack-of optimization can have upon search performance.</p>
+     *
+     * @throws IOException If Lucene was unable to open the index.
+     */
+    public void optimize() throws IOException {
+        IndexWriter writer = null;
+        try {
+            writer = new IndexWriter(indexDir, analyzer, false);
+            writer.optimize();
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
+    }
 
-	public Directory getIndexDir() {
-		return indexDir;
-	}
+    public Directory getIndexDir() {
+        return indexDir;
+    }
 
-	public Analyzer getAnalyzer() {
-		return analyzer;
-	}
+    public Analyzer getAnalyzer() {
+        return analyzer;
+    }
 
-    private void init() throws IOException
-    {
-        if (!IndexReader.indexExists(indexDir))
-        {
+    private void init() throws IOException {
+        if (!IndexReader.indexExists(indexDir)) {
             new IndexWriter(indexDir, analyzer, true).close();
         }
     }
 
-	private class IndexAppender<T extends RawEntity<K>, K> implements PropertyChangeListener {
-		private List<String> indexFields;
+    private class IndexAppender<T extends RawEntity<K>, K> implements PropertyChangeListener {
+        private List<String> indexFields;
 
-		private Document doc;
+        private Document doc;
 
-		private IndexAppender(T entity) {
-			indexFields = Common.getSearchableFields(SearchableEntityManager.this, entity.getEntityType());
+        private IndexAppender(T entity) {
+            indexFields = Common.getSearchableFields(SearchableEntityManager.this, entity.getEntityType());
 
-			doc = new Document();
+            doc = new Document();
             doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + "."
-					+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-					primaryKeyToString(entity),
-					Field.Store.YES, Field.Index.UN_TOKENIZED));
-		}
+                    + Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+                    primaryKeyToString(entity),
+                    Field.Store.YES, Field.Index.UN_TOKENIZED));
+        }
 
-		public void propertyChange(final PropertyChangeEvent evt) {
-			if (indexFields.contains(evt.getPropertyName())) {
-				T entity = (T) evt.getSource();
+        public void propertyChange(final PropertyChangeEvent evt) {
+            if (indexFields.contains(evt.getPropertyName())) {
+                T entity = (T) evt.getSource();
 
-				doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + '.'
-						+ evt.getPropertyName(), evt.getNewValue().toString(), Field.Store.YES, Field.Index.TOKENIZED));
+                doc.add(new Field(getTableNameConverter().getName(entity.getEntityType()) + '.'
+                        + evt.getPropertyName(), evt.getNewValue().toString(), Field.Store.YES, Field.Index.TOKENIZED));
 
-				IndexWriter writer = null;
-				try {
-					writer = new IndexWriter(getIndexDir(), getAnalyzer(), false);
-					writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
-							+ Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
-							primaryKeyToString(entity)), doc);
-				} catch (IOException e) {
-				} finally {
-					if (writer != null) {
-						try {
-							writer.close();
-						} catch (CorruptIndexException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-    private final String primaryKeyToString(RawEntity<?> entity)
-	{
-	    TypeInfo pkType = Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType());
-	    return pkType.getLogicalType().valueToString(Common.getPrimaryKeyValue(entity));
-	}
+                IndexWriter writer = null;
+                try {
+                    writer = new IndexWriter(getIndexDir(), getAnalyzer(), false);
+                    writer.updateDocument(new Term(getTableNameConverter().getName(entity.getEntityType()) + "."
+                            + Common.getPrimaryKeyField(entity.getEntityType(), getFieldNameConverter()),
+                            primaryKeyToString(entity)), doc);
+                } catch (IOException e) {
+                } finally {
+                    if (writer != null) {
+                        try {
+                            writer.close();
+                        } catch (CorruptIndexException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private final String primaryKeyToString(RawEntity<?> entity) {
+        TypeInfo pkType = Common.getPrimaryKeyType(getProvider().getTypeManager(), entity.getEntityType());
+        return pkType.getLogicalType().valueToString(Common.getPrimaryKeyValue(entity));
+    }
 }

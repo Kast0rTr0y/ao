@@ -20,6 +20,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface EmailAddress extends Address {
-	public String getEmail();
-	public void setEmail(String email);
+    public String getEmail();
+
+    public void setEmail(String email);
 }

@@ -10,8 +10,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>A {@link net.java.ao.schema.TableNameConverter table name converter} that will prepend the given {@link Prefix} to table names.</p>
  * <p>It uses a {@link net.java.ao.schema.TableNameConverter delegate table name converter} for the <em>general</em> conversion strategy.</p>
  */
-final class PrefixedTableNameConverter implements TableNameConverter
-{
+final class PrefixedTableNameConverter implements TableNameConverter {
     private final TablePrefix prefix;
 
     /**
@@ -19,14 +18,12 @@ final class PrefixedTableNameConverter implements TableNameConverter
      */
     private final TableNameConverter delegate;
 
-    public PrefixedTableNameConverter(TablePrefix prefix, TableNameConverter delegate)
-    {
+    public PrefixedTableNameConverter(TablePrefix prefix, TableNameConverter delegate) {
         this.prefix = checkNotNull(prefix);
         this.delegate = checkNotNull(delegate);
     }
 
-    public String getName(Class<? extends RawEntity<?>> clazz)
-    {
+    public String getName(Class<? extends RawEntity<?>> clazz) {
         return prefix.prepend(delegate.getName(clazz));
     }
 }
