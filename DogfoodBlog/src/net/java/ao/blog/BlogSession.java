@@ -23,8 +23,8 @@ import org.apache.wicket.protocol.http.WebSession;
  * @author Daniel Spiewak
  */
 public class BlogSession extends WebSession {
-	
-	protected BlogSession(Application application, Request request) {
-		super(application, request);
-	}
+
+    protected BlogSession(Application application, Request request) {
+        super(application, request);
+    }
 }

@@ -21,9 +21,11 @@ import net.java.ao.Entity;
  * @author Daniel Spiewak
  */
 public interface Select extends Entity {
-	public String getWhere();
-	public void setWhere(String where);
-	
-	public boolean isAnd();
-	public void setAnd(boolean and);
+    public String getWhere();
+
+    public void setWhere(String where);
+
+    public boolean isAnd();
+
+    public void setAnd(boolean and);
 }

@@ -7,17 +7,14 @@ package net.java.ao.builder;
  * @see EntityManagerBuilderWithUrlAndUsername
  * @see EntityManagerBuilderWithDatabaseProperties
  */
-public final class EntityManagerBuilderWithUrl
-{
+public final class EntityManagerBuilderWithUrl {
     private final String url;
 
-    EntityManagerBuilderWithUrl(String url)
-    {
+    EntityManagerBuilderWithUrl(String url) {
         this.url = url;
     }
 
-    public EntityManagerBuilderWithUrlAndUsername username(String username)
-    {
+    public EntityManagerBuilderWithUrlAndUsername username(String username) {
         return new EntityManagerBuilderWithUrlAndUsername(url, username);
     }
 }

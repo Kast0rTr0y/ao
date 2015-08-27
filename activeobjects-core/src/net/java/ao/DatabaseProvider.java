@@ -23,7 +23,6 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
 import net.java.ao.schema.Case;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.NameConverters;
@@ -37,22 +36,13 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.DDLValue;
+import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.sql.SqlUtils;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.collect.Iterables.filter;
-
-import static com.google.common.collect.Iterables.concat;
-
-import static com.google.common.collect.Iterables.addAll;
-
-import static com.google.common.collect.Sets.union;
-
-import net.java.ao.schema.ddl.SQLAction;
 
 import java.io.InputStream;
 import java.sql.Blob;
@@ -74,14 +64,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Iterables.addAll;
+import static com.google.common.collect.Iterables.concat;
+import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Lists.newArrayList;
-import static net.java.ao.Common.*;
+import static com.google.common.collect.Sets.union;
+import static net.java.ao.Common.closeQuietly;
 
 /**
  * <p>The superclass parent of all <code>DatabaseProvider</code>
@@ -112,8 +107,7 @@ import static net.java.ao.Common.*;
  *
  * @author Daniel Spiewak
  */
-public abstract class DatabaseProvider implements Disposable
-{
+public abstract class DatabaseProvider implements Disposable {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Logger sqlLogger = LoggerFactory.getLogger("net.java.ao.sql");
 
@@ -130,8 +124,7 @@ public abstract class DatabaseProvider implements Disposable
     private static final String ORDER_CLAUSE_STRING = "(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING\\.)?(?:IDENTIFIER_QUOTE_STRING(\\w+)IDENTIFIER_QUOTE_STRING)(?:\\s*(?i:(ASC|DESC)))?";
     private final Pattern ORDER_CLAUSE_PATTERN;
 
-    protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager)
-    {
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema, TypeManager typeManager) {
         this.dataSource = checkNotNull(dataSource);
         this.typeManager = typeManager;
         this.schema = isBlank(schema) ? null : schema; // can be null
@@ -142,46 +135,35 @@ public abstract class DatabaseProvider implements Disposable
         // Exclude quote strings around table / column names in order by - some plugins like put the quote string in themselves.
         String identifierQuoteStringPattern = "";
         String quote = quoteRef.get();
-        if (quote != null && !quote.isEmpty())
-        {
+        if (quote != null && !quote.isEmpty()) {
             identifierQuoteStringPattern = "(?:" + Pattern.quote(quote) + ")?";
         }
         ORDER_CLAUSE_PATTERN = Pattern.compile(ORDER_CLAUSE_STRING.replaceAll("IDENTIFIER_QUOTE_STRING", Matcher.quoteReplacement(identifierQuoteStringPattern)));
     }
 
-    protected DatabaseProvider(DisposableDataSource dataSource, String schema)
-    {
+    protected DatabaseProvider(DisposableDataSource dataSource, String schema) {
         this(dataSource, schema, new TypeManager.Builder().build());
     }
 
-    public TypeManager getTypeManager()
-    {
+    public TypeManager getTypeManager() {
         return typeManager;
     }
 
-    public String getSchema()
-    {
+    public String getSchema() {
         return schema;
     }
 
-    protected void loadQuoteString()
-    {
+    protected void loadQuoteString() {
         Connection conn = null;
-        try
-        {
+        try {
             conn = dataSource.getConnection();
-            if (conn == null)
-            {
+            if (conn == null) {
                 throw new IllegalStateException("Could not get connection to load quote String");
             }
             quoteRef.set(conn.getMetaData().getIdentifierQuoteString().trim());
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             throw new RuntimeException("Unable to query the database", e);
-        }
-        finally
-        {
+        } finally {
             closeQuietly(conn);
         }
     }
@@ -189,8 +171,7 @@ public abstract class DatabaseProvider implements Disposable
     /**
      * Render "SELECT * FROM <tableName> LIMIT 1" in the database specific dialect
      */
-    public String renderMetadataQuery(final String tableName)
-    {
+    public String renderMetadataQuery(final String tableName) {
         return "SELECT * FROM " + withSchema(tableName) + " LIMIT 1";
     }
 
@@ -201,8 +182,7 @@ public abstract class DatabaseProvider implements Disposable
      * acceptable return value.  This method should <i>never</i> return <code>null</code>
      * as it would cause the field rendering method to throw a {@link NullPointerException}.</p>
      */
-    protected String renderAutoIncrement()
-    {
+    protected String renderAutoIncrement() {
         return "AUTO_INCREMENT";
     }
 
@@ -213,7 +193,7 @@ public abstract class DatabaseProvider implements Disposable
      * action to roll back creation of the entity if necessary.
      *
      * @param nameConverters
-     * @param action The database-agnostic action to render.
+     * @param action         The database-agnostic action to render.
      * @return An array of DDL statements specific to the database in question.
      * @see #renderTable(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable)
      * @see #renderFunctions(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable)
@@ -229,10 +209,8 @@ public abstract class DatabaseProvider implements Disposable
      * @see #renderAlterTableAddKey(DDLForeignKey)
      * @see #renderAlterTableDropKey(DDLForeignKey)
      */
-    public final Iterable<SQLAction> renderAction(NameConverters nameConverters, DDLAction action)
-    {
-        switch (action.getActionType())
-        {
+    public final Iterable<SQLAction> renderAction(NameConverters nameConverters, DDLAction action) {
+        switch (action.getActionType()) {
             case CREATE:
                 return renderCreateTableActions(nameConverters, action.getTable());
 
@@ -250,14 +228,14 @@ public abstract class DatabaseProvider implements Disposable
 
             case ALTER_ADD_KEY:
                 return ImmutableList.of(renderAlterTableAddKey(action.getKey())
-                                        .withUndoAction(renderAlterTableDropKey(action.getKey())));
+                        .withUndoAction(renderAlterTableDropKey(action.getKey())));
 
             case ALTER_DROP_KEY:
                 return ImmutableList.of(renderAlterTableDropKey(action.getKey()));
 
             case CREATE_INDEX:
                 return ImmutableList.of(renderCreateIndex(nameConverters.getIndexNameConverter(), action.getIndex())
-                                        .withUndoAction(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex())));
+                        .withUndoAction(renderDropIndex(nameConverters.getIndexNameConverter(), action.getIndex())));
 
             case DROP_INDEX:
                 return ImmutableList.of(renderDropForAoManagedIndex(nameConverters.getIndexNameConverter(), action.getIndex()));
@@ -268,84 +246,69 @@ public abstract class DatabaseProvider implements Disposable
         throw new IllegalArgumentException("unknown DDLAction type " + action.getActionType());
     }
 
-    private SQLAction renderDropForAoManagedIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    private SQLAction renderDropForAoManagedIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String aoIndexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        if (aoIndexName.equalsIgnoreCase(index.getIndexName()))
-        {
+        if (aoIndexName.equalsIgnoreCase(index.getIndexName())) {
             return Optional.fromNullable(renderDropIndex(indexNameConverter, index)).or(SQLAction.of(""));
-        }
-        else
-        {
+        } else {
             logger.debug("Ignoring Drop index {} as index not managed by AO", index.getIndexName());
             return SQLAction.of("");
         }
     }
 
-    private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table)
-    {
+    private Iterable<SQLAction> renderCreateTableActions(NameConverters nameConverters, DDLTable table) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         ret.add(renderTable(nameConverters, table).withUndoAction(renderDropTableStatement(table)));
-        
+
         ret.addAll(renderAccessories(nameConverters, table));
 
-        for (DDLIndex index : table.getIndexes())
-        {
+        for (DDLIndex index : table.getIndexes()) {
             DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
             newAction.setIndex(index);
             ret.addAll(renderAction(nameConverters, newAction));
         }
-        
+
         return ret.build();
     }
-    
-    private Iterable<SQLAction> renderDropTableActions(NameConverters nameConverters, DDLTable table)
-    {
+
+    private Iterable<SQLAction> renderDropTableActions(NameConverters nameConverters, DDLTable table) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
-        for (DDLIndex index : table.getIndexes())
-        {
+
+        for (DDLIndex index : table.getIndexes()) {
             final SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
-            if (sqlAction != null)
-            {
+            if (sqlAction != null) {
                 ret.add(sqlAction);
             }
         }
 
         ret.addAll(renderDropAccessories(nameConverters, table));
         ret.add(renderDropTableStatement(table));
-        
+
         return ret.build();
     }
-    
-    private Iterable<SQLAction> renderAddColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+
+    private Iterable<SQLAction> renderAddColumnActions(NameConverters nameConverters, DDLTable table, DDLField field) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
+
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
-        
-        for (DDLIndex index : table.getIndexes())
-        {
-            if (index.getField().equals(field.getName()))
-            {
+
+        for (DDLIndex index : table.getIndexes()) {
+            if (index.getField().equals(field.getName())) {
                 DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
                 newAction.setIndex(index);
                 ret.addAll(renderAction(nameConverters, newAction));
             }
         }
-        
+
         return ret.build();
     }
-    
-    protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+
+    protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-        
-        for (DDLIndex index : table.getIndexes())
-        {
-            if (index.getField().equals(field.getName()))
-            {
+
+        for (DDLIndex index : table.getIndexes()) {
+            if (index.getField().equals(field.getName())) {
                 DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
                 newAction.setIndex(index);
                 ret.addAll(renderAction(nameConverters, newAction));
@@ -353,10 +316,10 @@ public abstract class DatabaseProvider implements Disposable
         }
 
         ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
-        
+
         return ret.build();
     }
-    
+
     /**
      * <p>Top level delegating method for rendering a database-agnostic
      * {@link Query} object into its (potentially) database-specific
@@ -374,13 +337,13 @@ public abstract class DatabaseProvider implements Disposable
      * However, on SQL Server, this same Query would render as
      * <code>SELECT TOP 10 id FROM people</code></p>
      *
-     * @param query The database-agnostic Query object to be rendered in a
-     * potentially database-specific way.
+     * @param query     The database-agnostic Query object to be rendered in a
+     *                  potentially database-specific way.
      * @param converter Used to convert {@link Entity} classes into table names.
-     * @param count If <code>true</code>, render the Query as a <code>SELECT COUNT(*)</code>
-     * rather than a standard field-data query.
+     * @param count     If <code>true</code>, render the Query as a <code>SELECT COUNT(*)</code>
+     *                  rather than a standard field-data query.
      * @return A syntactically complete SQL statement potentially specific to the
-     *         database.
+     * database.
      * @see #renderQuerySelect(Query, TableNameConverter, boolean)
      * @see #renderQueryJoins(Query, TableNameConverter)
      * @see #renderQueryWhere(Query)
@@ -388,8 +351,7 @@ public abstract class DatabaseProvider implements Disposable
      * @see #renderQueryOrderBy(Query)
      * @see #renderQueryLimit(Query)
      */
-    public String renderQuery(Query query, TableNameConverter converter, boolean count)
-    {
+    public String renderQuery(Query query, TableNameConverter converter, boolean count) {
         StringBuilder sql = new StringBuilder();
 
         sql.append(renderQuerySelect(query, converter, count));
@@ -414,41 +376,31 @@ public abstract class DatabaseProvider implements Disposable
      * confuses the purpose of this class.  Do not rely upon it heavily.  (better yet, don't rely on it
      * at all from external code.  It's not designed to be part of the public API)</p>
      *
-     * @param type The JDBC integer type of the database field against which to parse the
-     * value.
+     * @param type  The JDBC integer type of the database field against which to parse the
+     *              value.
      * @param value The database-agnostic String value to parse into a proper Java object
-     * with respect to the specified SQL type.
+     *              with respect to the specified SQL type.
      * @return A Java value which corresponds to the specified String.
      */
-    public Object parseValue(int type, String value)
-    {
-        if (value == null || value.equals("NULL"))
-        {
+    public Object parseValue(int type, String value) {
+        if (value == null || value.equals("NULL")) {
             return null;
         }
-        try
-        {
-            switch (type)
-            {
+        try {
+            switch (type) {
                 case Types.BIGINT:
                     return Long.parseLong(value);
 
                 case Types.BIT:
-                    try
-                    {
+                    try {
                         return Byte.parseByte(value) != 0;
-                    }
-                    catch (Throwable t)
-                    {
+                    } catch (Throwable t) {
                         return Boolean.parseBoolean(value);
                     }
                 case Types.BOOLEAN:
-                    try
-                    {
+                    try {
                         return Integer.parseInt(value) != 0;
-                    }
-                    catch (Throwable t)
-                    {
+                    } catch (Throwable t) {
                         return Boolean.parseBoolean(value);
                     }
                 case Types.CHAR:
@@ -456,12 +408,9 @@ public abstract class DatabaseProvider implements Disposable
                     break;
 
                 case Types.DATE:
-                    try
-                    {
+                    try {
                         return new SimpleDateFormat(getDateFormat()).parse(value);
-                    }
-                    catch (ParseException e)
-                    {
+                    } catch (ParseException e) {
                         return null;
                     }
 
@@ -487,12 +436,9 @@ public abstract class DatabaseProvider implements Disposable
                     return Short.parseShort(value);
 
                 case Types.TIMESTAMP:
-                    try
-                    {
+                    try {
                         return new SimpleDateFormat(getDateFormat()).parse(value);
-                    }
-                    catch (ParseException e)
-                    {
+                    } catch (ParseException e) {
                         return null;
                     }
 
@@ -502,9 +448,7 @@ public abstract class DatabaseProvider implements Disposable
                 case Types.VARCHAR:
                     return value;
             }
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
         }
         return null;
     }
@@ -518,13 +462,12 @@ public abstract class DatabaseProvider implements Disposable
      * <p/>
      * <p>This method is only called on SELECTs.</p>
      *
-     * @param stmt The instance against which the properties
-     * should be set.
+     * @param stmt  The instance against which the properties
+     *              should be set.
      * @param query The query which is being executed against
-     * the statement instance.
+     *              the statement instance.
      */
-    public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException
-    {
+    public void setQueryStatementProperties(Statement stmt, Query query) throws SQLException {
     }
 
     /**
@@ -534,12 +477,11 @@ public abstract class DatabaseProvider implements Disposable
      * databases that don't support it (such as Oracle, Derby,
      * etc).
      *
-     * @param res The <code>ResultSet</code> to modify.
+     * @param res   The <code>ResultSet</code> to modify.
      * @param query The query instance which was run to produce
-     * the result set.
+     *              the result set.
      */
-    public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException
-    {
+    public void setQueryResultSetProperties(ResultSet res, Query query) throws SQLException {
     }
 
     /**
@@ -557,26 +499,22 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param conn The connection to use in retrieving the database tables.
      * @return A result set of tables (and meta) corresponding in fields
-     *         to the JDBC specification.
+     * to the JDBC specification.
      * @see java.sql.DatabaseMetaData#getTables(String, String, String, String[])
      */
-    public ResultSet getTables(Connection conn) throws SQLException
-    {
+    public ResultSet getTables(Connection conn) throws SQLException {
         return conn.getMetaData().getTables(null, schema, "%", new String[]{"TABLE"});
     }
 
-    public ResultSet getSequences(Connection conn) throws SQLException
-    {
+    public ResultSet getSequences(Connection conn) throws SQLException {
         return conn.getMetaData().getTables(null, schema, "%", new String[]{"SEQUENCE"});
     }
 
-    public ResultSet getIndexes(Connection conn, String tableName) throws SQLException
-    {
+    public ResultSet getIndexes(Connection conn, String tableName) throws SQLException {
         return conn.getMetaData().getIndexInfo(null, schema, tableName, false, false);
     }
 
-    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException
-    {
+    public ResultSet getImportedKeys(Connection connection, String tableName) throws SQLException {
         return connection.getMetaData().getImportedKeys(null, schema, tableName);
     }
 
@@ -592,30 +530,24 @@ public abstract class DatabaseProvider implements Disposable
      * <p>There is usually no need to call this method directly.  Under normal
      * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
      *
-     * @param query The Query instance from which to determine the SELECT properties.
+     * @param query     The Query instance from which to determine the SELECT properties.
      * @param converter The name converter to allow conversion of the query entity
-     * interface into a proper table name.
-     * @param count Whether or not the query should be rendered as a <code>SELECT COUNT(*)</code>.
+     *                  interface into a proper table name.
+     * @param count     Whether or not the query should be rendered as a <code>SELECT COUNT(*)</code>.
      * @return The database-specific SQL rendering of the SELECT portion of the query.
      */
-    protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count)
-    {
+    protected String renderQuerySelect(Query query, TableNameConverter converter, boolean count) {
         StringBuilder sql = new StringBuilder();
-        switch (query.getType())
-        {
+        switch (query.getType()) {
             case SELECT:
                 sql.append("SELECT ");
-                if (query.isDistinct())
-                {
+                if (query.isDistinct()) {
                     sql.append("DISTINCT ");
                 }
 
-                if (count)
-                {
+                if (count) {
                     sql.append("COUNT(*)");
-                }
-                else
-                {
+                } else {
                     sql.append(querySelectFields(query, converter));
                 }
                 sql.append(" FROM ").append(queryTableName(query, converter));
@@ -625,39 +557,31 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    protected final String queryTableName(Query query, TableNameConverter converter)
-    {
+    protected final String queryTableName(Query query, TableNameConverter converter) {
         final String queryTable = query.getTable();
         final String tableName = queryTable != null ? queryTable : converter.getName(query.getTableType());
 
         final StringBuilder queryTableName = new StringBuilder().append(withSchema(tableName));
-        if (query.getAlias(query.getTableType()) != null)
-        {
+        if (query.getAlias(query.getTableType()) != null) {
             queryTableName.append(" ").append(query.getAlias(query.getTableType()));
         }
         return queryTableName.toString();
     }
 
-    protected final String querySelectFields(final Query query, final TableNameConverter converter)
-    {
-        return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>()
-        {
+    protected final String querySelectFields(final Query query, final TableNameConverter converter) {
+        return Joiner.on(',').join(transform(query.getFields(), new Function<String, String>() {
             @Override
-            public String apply(String fieldName)
-            {
+            public String apply(String fieldName) {
                 return withAlias(query, fieldName, converter);
             }
         }));
     }
 
-    private String withAlias(Query query, String field, final TableNameConverter converter)
-    {
+    private String withAlias(Query query, String field, final TableNameConverter converter) {
         final StringBuilder withAlias = new StringBuilder();
-        if (query.getAlias(query.getTableType()) != null)
-        {
+        if (query.getAlias(query.getTableType()) != null) {
             withAlias.append(query.getAlias(query.getTableType())).append(".");
-        } else if (!query.getJoins().isEmpty())
-        {
+        } else if (!query.getJoins().isEmpty()) {
             String queryTable = query.getTable();
             String tableName = queryTable != null ? queryTable : converter.getName(query.getTableType());
             withAlias.append(processID(tableName)).append(".");
@@ -675,24 +599,20 @@ public abstract class DatabaseProvider implements Disposable
      * <p>There is usually no need to call this method directly.  Under normal
      * operations it functions as a delegate for {@link #renderQuery(Query, TableNameConverter, boolean)}.</p>
      *
-     * @param query The Query instance from which to determine the JOIN properties.
+     * @param query     The Query instance from which to determine the JOIN properties.
      * @param converter The name converter to allow conversion of the query entity
-     * interface into a proper table name.
+     *                  interface into a proper table name.
      * @return The database-specific SQL rendering of the JOIN portion of the query.
      */
-    protected String renderQueryJoins(Query query, TableNameConverter converter)
-    {
+    protected String renderQueryJoins(Query query, TableNameConverter converter) {
         final StringBuilder sql = new StringBuilder();
 
-        for (Map.Entry<Class<? extends RawEntity<?>>, String> joinEntry : query.getJoins().entrySet())
-        {
+        for (Map.Entry<Class<? extends RawEntity<?>>, String> joinEntry : query.getJoins().entrySet()) {
             sql.append(" JOIN ").append(withSchema(converter.getName(joinEntry.getKey())));
-            if (query.getAlias(joinEntry.getKey()) != null)
-            {
+            if (query.getAlias(joinEntry.getKey()) != null) {
                 sql.append(" ").append(query.getAlias(joinEntry.getKey()));
             }
-            if (joinEntry.getValue() != null)
-            {
+            if (joinEntry.getValue() != null) {
                 sql.append(" ON ").append(processOnClause(joinEntry.getValue()));
             }
         }
@@ -712,13 +632,11 @@ public abstract class DatabaseProvider implements Disposable
      * @param query The Query instance from which to determine the WHERE properties.
      * @return The database-specific SQL rendering of the WHERE portion of the query.
      */
-    protected String renderQueryWhere(Query query)
-    {
+    protected String renderQueryWhere(Query query) {
         StringBuilder sql = new StringBuilder();
 
         String whereClause = query.getWhereClause();
-        if (whereClause != null)
-        {
+        if (whereClause != null) {
             sql.append(" WHERE ");
             sql.append(processWhereClause(whereClause));
         }
@@ -739,13 +657,11 @@ public abstract class DatabaseProvider implements Disposable
      * @param query The Query instance from which to determine the GROUP BY  properties.
      * @return The database-specific SQL rendering of the GROUP BY portion of the query.
      */
-    protected String renderQueryGroupBy(Query query)
-    {
+    protected String renderQueryGroupBy(Query query) {
         StringBuilder sql = new StringBuilder();
 
         String groupClause = query.getGroupClause();
-        if (groupClause != null)
-        {
+        if (groupClause != null) {
             sql.append(" GROUP BY ");
             sql.append(processGroupByClause(groupClause));
         }
@@ -753,22 +669,17 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    private String processGroupByClause(String groupBy)
-    {
+    private String processGroupByClause(String groupBy) {
         return SqlUtils.processGroupByClause(groupBy,
-                new Function<String, String>()
-                {
+                new Function<String, String>() {
                     @Override
-                    public String apply(String field)
-                    {
+                    public String apply(String field) {
                         return processID(field);
                     }
                 },
-                new Function<String, String>()
-                {
+                new Function<String, String>() {
                     @Override
-                    public String apply(String tableName)
-                    {
+                    public String apply(String tableName) {
                         return processTableName(tableName);
                     }
                 }
@@ -788,13 +699,11 @@ public abstract class DatabaseProvider implements Disposable
      * @param query The Query instance from which to determine the HAVING properties.
      * @return The database-specific SQL rendering of the HAVING portion of the query.
      */
-    protected String renderQueryHaving(Query query)
-    {
+    protected String renderQueryHaving(Query query) {
         StringBuilder sql = new StringBuilder();
 
         String havingClause = query.getHavingClause();
-        if (havingClause != null)
-        {
+        if (havingClause != null) {
             sql.append(" HAVING ");
             sql.append(processHavingClause(havingClause));
         }
@@ -802,21 +711,16 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    private String processHavingClause(String having)
-    {
-        return SqlUtils.processHavingClause(having, new Function<String, String>()
-                {
+    private String processHavingClause(String having) {
+        return SqlUtils.processHavingClause(having, new Function<String, String>() {
                     @Override
-                    public String apply(String field)
-                    {
+                    public String apply(String field) {
                         return processID(field);
                     }
                 },
-                new Function<String, String>()
-                {
+                new Function<String, String>() {
                     @Override
-                    public String apply(String tableName)
-                    {
+                    public String apply(String tableName) {
                         return processTableName(tableName);
                     }
                 });
@@ -835,13 +739,11 @@ public abstract class DatabaseProvider implements Disposable
      * @param query The Query instance from which to determine the ORDER BY properties.
      * @return The database-specific SQL rendering of the ORDER BY portion of the query.
      */
-    protected String renderQueryOrderBy(Query query)
-    {
+    protected String renderQueryOrderBy(Query query) {
         StringBuilder sql = new StringBuilder();
 
         String orderClause = query.getOrderClause();
-        if (orderClause != null)
-        {
+        if (orderClause != null) {
             sql.append(" ORDER BY ");
             sql.append(processOrderClause(orderClause));
         }
@@ -849,23 +751,20 @@ public abstract class DatabaseProvider implements Disposable
         return sql.toString();
     }
 
-    public final String processOrderClause(String order)
-    {
+    public final String processOrderClause(String order) {
         final Matcher matcher = ORDER_CLAUSE_PATTERN.matcher(order);
-        
+
         final int ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME = 1;
         final int ORDER_CLAUSE_PATTERN_GROUP_COL_NAME = 2;
         final int ORDER_CLAUSE_PATTERN_GROUP_DIRECTION = 3;
 
         final StringBuffer sql = new StringBuffer();
 
-        while(matcher.find())
-        {
+        while (matcher.find()) {
             final StringBuilder repl = new StringBuilder();
 
             // ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME signifies the (optional) table name to potentially quote
-            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null)
-            {
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME) != null) {
                 repl.append(processTableName(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_TABLE_NAME)));
                 repl.append(".");
             }
@@ -874,8 +773,7 @@ public abstract class DatabaseProvider implements Disposable
             repl.append(processID(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_COL_NAME)));
 
             // ORDER_CLAUSE_PATTERN_GROUP_DIRECTION signifies the ASC/DESC option
-            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION) != null)
-            {
+            if (matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION) != null) {
                 repl.append(" ").append(matcher.group(ORDER_CLAUSE_PATTERN_GROUP_DIRECTION));
             }
 
@@ -905,20 +803,17 @@ public abstract class DatabaseProvider implements Disposable
      * @param query The Query instance from which to determine the LIMIT properties.
      * @return The database-specific SQL rendering of the LIMIT portion of the query.
      */
-    protected String renderQueryLimit(Query query)
-    {
+    protected String renderQueryLimit(Query query) {
         StringBuilder sql = new StringBuilder();
 
         int limit = query.getLimit();
-        if (limit >= 0)
-        {
+        if (limit >= 0) {
             sql.append(" LIMIT ");
             sql.append(limit);
         }
 
         int offset = query.getOffset();
-        if (offset > 0)
-        {
+        if (offset > 0) {
             sql.append(" OFFSET ").append(offset);
         }
 
@@ -955,24 +850,18 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @return A new connection to the database
      */
-    public final Connection getConnection() throws SQLException
-    {
+    public final Connection getConnection() throws SQLException {
         Connection c = transactionThreadLocal.get();
-        if (c != null)
-        {
-            if (!c.isClosed())
-            {
+        if (c != null) {
+            if (!c.isClosed()) {
                 return c;
-            }
-            else
-            {
+            } else {
                 transactionThreadLocal.remove(); // remove the reference to the connection
             }
         }
 
         final Connection connectionImpl = dataSource.getConnection();
-        if (connectionImpl == null)
-        {
+        if (connectionImpl == null) {
             throw new SQLException("Unable to create connection");
         }
 
@@ -981,8 +870,7 @@ public abstract class DatabaseProvider implements Disposable
         return c;
     }
 
-    public final Connection startTransaction() throws SQLException
-    {
+    public final Connection startTransaction() throws SQLException {
         final Connection c = getConnection();
 
         setCloseable(c, false);
@@ -994,8 +882,7 @@ public abstract class DatabaseProvider implements Disposable
         return c;
     }
 
-    public final Connection commitTransaction(Connection c) throws SQLException
-    {
+    public final Connection commitTransaction(Connection c) throws SQLException {
         checkState(c == transactionThreadLocal.get(), "There are two concurrently open transactions!");
         checkState(c != null, "Tried to commit a transaction that is not started!");
 
@@ -1005,18 +892,15 @@ public abstract class DatabaseProvider implements Disposable
         return c;
     }
 
-    public final void rollbackTransaction(Connection c) throws SQLException
-    {
+    public final void rollbackTransaction(Connection c) throws SQLException {
         checkState(c == transactionThreadLocal.get(), "There are two concurrently open transactions!");
         checkState(c != null, "Tried to rollback a transaction that is not started!");
 
         c.rollback();
     }
 
-    void setCloseable(Connection connection, boolean closeable)
-    {
-        if (connection != null && connection instanceof DelegateConnection)
-        {
+    void setCloseable(Connection connection, boolean closeable) {
+        if (connection != null && connection instanceof DelegateConnection) {
             ((DelegateConnection) connection).setCloseable(closeable);
         }
     }
@@ -1027,8 +911,7 @@ public abstract class DatabaseProvider implements Disposable
      * once usage of the provider is complete to ensure that all
      * connections are committed and closed.
      */
-    public void dispose()
-    {
+    public void dispose() {
         dataSource.dispose();
     }
 
@@ -1039,10 +922,9 @@ public abstract class DatabaseProvider implements Disposable
      * the connection is created.
      *
      * @param conn The connection to modify according to the database
-     * requirements.
+     *             requirements.
      */
-    protected void setPostConnectionProperties(Connection conn) throws SQLException
-    {
+    protected void setPostConnectionProperties(Connection conn) throws SQLException {
     }
 
     /**
@@ -1052,18 +934,16 @@ public abstract class DatabaseProvider implements Disposable
      * actual rendering is done in a second delegate method.
      *
      * @param uniqueNameConverter
-     * @param table The database-agnostic DDL representation of the table
-     * in question.
+     * @param table               The database-agnostic DDL representation of the table
+     *                            in question.
      * @return The String rendering of <i>all</i> of the foreign keys for
-     *         the table.
+     * the table.
      * @see #renderForeignKey(DDLForeignKey)
      */
-    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table)
-    {
+    protected String renderConstraintsForTable(UniqueNameConverter uniqueNameConverter, DDLTable table) {
         StringBuilder back = new StringBuilder();
 
-        for (DDLForeignKey key : table.getForeignKeys())
-        {
+        for (DDLForeignKey key : table.getForeignKeys()) {
             back.append("    ").append(renderForeignKey(key)).append(",\n");
         }
 
@@ -1078,10 +958,9 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param key The database-agnostic foreign key representation.
      * @return The database-pecific DDL fragment corresponding to the
-     *         foreign key in question.
+     * foreign key in question.
      */
-    protected String renderForeignKey(DDLForeignKey key)
-    {
+    protected String renderForeignKey(DDLForeignKey key) {
         StringBuilder back = new StringBuilder();
 
         back.append("CONSTRAINT ").append(processID(key.getFKName()));
@@ -1101,8 +980,7 @@ public abstract class DatabaseProvider implements Disposable
      * @param type The type instance to convert to a DDL string.
      * @return The database-specific DDL representation of the type (e.g. "VARCHAR").
      */
-    protected String convertTypeToString(TypeInfo<?> type)
-    {
+    protected String convertTypeToString(TypeInfo<?> type) {
         return type.getSqlTypeIdentifier();
     }
 
@@ -1116,24 +994,21 @@ public abstract class DatabaseProvider implements Disposable
      * field rendering, foreign key rendering, etc.
      *
      * @param nameConverters
-     * @param table The database-agnostic table representation.
+     * @param table          The database-agnostic table representation.
      * @return The database-specific DDL statements which correspond to the
-     *         specified table creation.
+     * specified table creation.
      */
-    protected final SQLAction renderTable(NameConverters nameConverters, DDLTable table)
-    {
+    protected final SQLAction renderTable(NameConverters nameConverters, DDLTable table) {
         StringBuilder back = new StringBuilder("CREATE TABLE ");
         back.append(withSchema(table.getName()));
         back.append(" (\n");
 
         List<String> primaryKeys = new LinkedList<String>();
         StringBuilder append = new StringBuilder();
-        for (DDLField field : table.getFields())
-        {
+        for (DDLField field : table.getFields()) {
             back.append("    ").append(renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true))).append(",\n");
 
-            if (field.isPrimaryKey())
-            {
+            if (field.isPrimaryKey()) {
                 primaryKeys.add(field.getName());
             }
         }
@@ -1142,21 +1017,18 @@ public abstract class DatabaseProvider implements Disposable
 
         back.append(append);
 
-        if (primaryKeys.size() > 1)
-        {
+        if (primaryKeys.size() > 1) {
             throw new RuntimeException("Entities may only have one primary key");
         }
 
-        if (primaryKeys.size() > 0)
-        {
+        if (primaryKeys.size() > 0) {
             back.append(renderPrimaryKey(table.getName(), primaryKeys.get(0)));
         }
 
         back.append(")");
 
         String tailAppend = renderAppend();
-        if (tailAppend != null)
-        {
+        if (tailAppend != null) {
             back.append(' ');
             back.append(tailAppend);
         }
@@ -1164,8 +1036,7 @@ public abstract class DatabaseProvider implements Disposable
         return SQLAction.of(back);
     }
 
-    protected String renderPrimaryKey(String tableName, String pkFieldName)
-    {
+    protected String renderPrimaryKey(String tableName, String pkFieldName) {
         StringBuilder b = new StringBuilder();
         b.append("    PRIMARY KEY(");
         b.append(processID(pkFieldName));
@@ -1173,12 +1044,10 @@ public abstract class DatabaseProvider implements Disposable
         return b.toString();
     }
 
-    protected SQLAction renderInsert(DDLTable ddlTable, DDLValue[] ddlValues)
-    {
+    protected SQLAction renderInsert(DDLTable ddlTable, DDLValue[] ddlValues) {
         final StringBuilder columns = new StringBuilder();
         final StringBuilder values = new StringBuilder();
-        for (DDLValue v : ddlValues)
-        {
+        for (DDLValue v : ddlValues) {
             columns.append(processID(v.getField().getName())).append(",");
             values.append(renderValue(v.getValue())).append(",");
         }
@@ -1201,10 +1070,9 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param table The table representation which is to be dropped.
      * @return A database-specific DDL statement which drops the specified
-     *         table.
+     * table.
      */
-    protected SQLAction renderDropTableStatement(DDLTable table)
-    {
+    protected SQLAction renderDropTableStatement(DDLTable table) {
         return SQLAction.of("DROP TABLE " + withSchema(table.getName()));
     }
 
@@ -1217,19 +1085,16 @@ public abstract class DatabaseProvider implements Disposable
      * the corresponding function, sequence, or trigger.
      *
      * @param nameConverters
-     * @param table The table for which the objects must be generated.
+     * @param table          The table for which the objects must be generated.
      * @return An ordered list of {@link SQLAction}s.
      */
-    protected final Iterable<SQLAction> renderAccessories(final NameConverters nameConverters, final DDLTable table)
-    {
+    protected final Iterable<SQLAction> renderAccessories(final NameConverters nameConverters, final DDLTable table) {
         return renderFields(
                 table,
                 Predicates.<DDLField>alwaysTrue(),
-                new Function<DDLField, Iterable<SQLAction>>()
-                {
+                new Function<DDLField, Iterable<SQLAction>>() {
                     @Override
-                    public Iterable<SQLAction> apply(DDLField field)
-                    {
+                    public Iterable<SQLAction> apply(DDLField field) {
                         return renderAccessoriesForField(nameConverters, table, field);
                     }
                 });
@@ -1242,19 +1107,16 @@ public abstract class DatabaseProvider implements Disposable
      * for each of the table's fields.
      *
      * @param nameConverters
-     * @param table The table for which the objects must be dropped.
+     * @param table          The table for which the objects must be dropped.
      * @return An ordered list of {@link SQLAction}s.
      */
-    protected final Iterable<SQLAction> renderDropAccessories(final NameConverters nameConverters, final DDLTable table)
-    {
+    protected final Iterable<SQLAction> renderDropAccessories(final NameConverters nameConverters, final DDLTable table) {
         return renderFields(
                 table,
                 Predicates.<DDLField>alwaysTrue(),
-                new Function<DDLField, Iterable<SQLAction>>()
-                {
+                new Function<DDLField, Iterable<SQLAction>>() {
                     @Override
-                    public Iterable<SQLAction> apply(DDLField field)
-                    {
+                    public Iterable<SQLAction> apply(DDLField field) {
                         return renderDropAccessoriesForField(nameConverters, table, field);
                     }
                 });
@@ -1266,13 +1128,13 @@ public abstract class DatabaseProvider implements Disposable
      * should have a corresponding {@link SQLAction#getUndoAction() undo action} that deletes
      * the corresponding function, sequence, or trigger.  The default implementation returns
      * an empty list.
+     *
      * @param nameConverters
      * @param table
      * @param field
      * @return an ordered list of {@link SQLAction}s
      */
-    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return ImmutableList.of();
     }
 
@@ -1280,18 +1142,17 @@ public abstract class DatabaseProvider implements Disposable
      * Generates database-specific DDL statements required to drop any functions,
      * sequences, or triggers associated with the given field.  The default implementation
      * returns an empty list.
+     *
      * @param nameConverters
      * @param table
      * @param field
      * @return an ordered list of {@link SQLAction}s
      */
-    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected Iterable<SQLAction> renderDropAccessoriesForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return ImmutableList.of();
     }
-    
-    protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, Iterable<SQLAction>> render)
-    {
+
+    protected final Iterable<SQLAction> renderFields(DDLTable table, Predicate<DDLField> filter, Function<DDLField, Iterable<SQLAction>> render) {
         final Iterable<DDLField> fields = Lists.newArrayList(table.getFields());
         return concat(transform(filter(fields, filter), render));
     }
@@ -1313,21 +1174,19 @@ public abstract class DatabaseProvider implements Disposable
      * be rolled back.
      *
      * @param nameConverters
-     * @param table The table which should receive the new column.
-     * @param field The column to add to the specified table.
+     * @param table          The table which should receive the new column.
+     * @param field          The column to add to the specified table.
      * @return An array of DDL statements to execute.
      * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableAddColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
         ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
         back.add(renderAlterTableAddColumnStatement(nameConverters, table, field)
-                 .withUndoAction(renderAlterTableDropColumnStatement(table, field)));
+                .withUndoAction(renderAlterTableDropColumnStatement(table, field)));
 
-        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
-        {
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field)) {
             back.add(renderAlterTableAddKey(foreignKey).withUndoAction(renderAlterTableDropKey(foreignKey)));
         }
 
@@ -1339,18 +1198,17 @@ public abstract class DatabaseProvider implements Disposable
     /**
      * Generates the database-specific DDL statement for adding a column,
      * but not including any corresponding sequences, triggers, etc.
-     * 
+     *
      * @param nameConverters
-     * @param table The table which should receive the new column.
-     * @param field The column to add to the specified table.
+     * @param table          The table which should receive the new column.
+     * @param field          The column to add to the specified table.
      * @return A DDL statements to execute.
      */
-    protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction renderAlterTableAddColumnStatement(NameConverters nameConverters, DDLTable table, DDLField field) {
         String addStmt = "ALTER TABLE " + withSchema(table.getName()) + " ADD COLUMN " + renderField(nameConverters, table, field, new RenderFieldOptions(true, true, true));
         return SQLAction.of(addStmt);
     }
-    
+
     /**
      * <p>Generates the database-specific DDL statements required to change
      * the given column from its old specification to the given DDL value.
@@ -1375,18 +1233,16 @@ public abstract class DatabaseProvider implements Disposable
      * {@link #renderAlterTableChangeColumnStatement(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)}
      * method.</p>
      *
-     *
      * @param nameConverters
-     * @param table The table containing the column to change.
-     * @param oldField The old column definition.
-     * @param field The new column definition (defining the resultant DDL).    @return An array of DDL statements to be executed.
+     * @param table          The table containing the column to change.
+     * @param oldField       The old column definition.
+     * @param field          The new column definition (defining the resultant DDL).    @return An array of DDL statements to be executed.
      * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderFunctionForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field) {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
         back.addAll(renderDropAccessoriesForField(nameConverters, table, oldField));
@@ -1398,8 +1254,7 @@ public abstract class DatabaseProvider implements Disposable
         return back.build();
     }
 
-    protected RenderFieldOptions renderFieldOptionsInAlterColumn()
-    {
+    protected RenderFieldOptions renderFieldOptionsInAlterColumn() {
         return new RenderFieldOptions(true, true, true, true);
     }
 
@@ -1412,17 +1267,15 @@ public abstract class DatabaseProvider implements Disposable
      * for which it is a primary delegate.  The default implementation of this
      * method functions according to the MySQL specification.
      *
-     *
      * @param nameConverters
-     * @param table The table containing the column to change.
-     * @param oldField The old column definition.
-     * @param field The new column definition (defining the resultant DDL).
+     * @param table          The table containing the column to change.
+     * @param oldField       The old column definition.
+     * @param field          The new column definition (defining the resultant DDL).
      * @param options
      * @return A single DDL statement which is to be executed.
      * @see #renderField(net.java.ao.schema.NameConverters, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField, net.java.ao.DatabaseProvider.RenderFieldOptions)
      */
-    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options)
-    {
+    protected SQLAction renderAlterTableChangeColumnStatement(NameConverters nameConverters, DDLTable table, DDLField oldField, DDLField field, RenderFieldOptions options) {
         StringBuilder current = new StringBuilder();
         current.append("ALTER TABLE ").append(withSchema(table.getName())).append(" CHANGE COLUMN ");
         current.append(processID(oldField.getName())).append(' ');
@@ -1439,20 +1292,17 @@ public abstract class DatabaseProvider implements Disposable
      * triggers, it may be required to override this method, even if the
      * syntax to drop columns is standard.
      *
-     *
      * @param nameConverters
-     * @param table The table from which to drop the column.
-     * @param field The column definition to remove from the table.
+     * @param table          The table from which to drop the column.
+     * @param field          The column definition to remove from the table.
      * @return An array of DDL statements to be executed.
      * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected Iterable<SQLAction> renderAlterTableDropColumn(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableDropColumn(NameConverters nameConverters, DDLTable table, DDLField field) {
         ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-        
-        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field))
-        {
+
+        for (DDLForeignKey foreignKey : findForeignKeysForField(table, field)) {
             back.add(renderAlterTableDropKey(foreignKey));
         }
 
@@ -1463,12 +1313,11 @@ public abstract class DatabaseProvider implements Disposable
         return back.build();
     }
 
-    protected SQLAction renderAlterTableDropColumnStatement(DDLTable table, DDLField field)
-    {
+    protected SQLAction renderAlterTableDropColumnStatement(DDLTable table, DDLField field) {
         String dropStmt = "ALTER TABLE " + withSchema(table.getName()) + " DROP COLUMN " + processID(field.getName());
         return SQLAction.of(dropStmt);
     }
-    
+
     /**
      * Generates the database-specific DDL statement required to add a
      * foreign key to a table.  For databases which do not support such
@@ -1476,13 +1325,12 @@ public abstract class DatabaseProvider implements Disposable
      * <code>null</code> value returned.
      *
      * @param key The foreign key to be added.  As this instance contains
-     * all necessary data (such as domestic table, field, etc), no
-     * additional parameters are required.
+     *            all necessary data (such as domestic table, field, etc), no
+     *            additional parameters are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      * @see #renderForeignKey(DDLForeignKey)
      */
-    protected SQLAction renderAlterTableAddKey(DDLForeignKey key)
-    {
+    protected SQLAction renderAlterTableAddKey(DDLForeignKey key) {
         return SQLAction.of("ALTER TABLE " + withSchema(key.getDomesticTable()) + " ADD " + renderForeignKey(key));
     }
 
@@ -1496,12 +1344,11 @@ public abstract class DatabaseProvider implements Disposable
      * method.
      *
      * @param key The foreign key to be removed.  As this instance contains
-     * all necessary data (such as domestic table, field, etc), no
-     * additional parameters are required.
+     *            all necessary data (such as domestic table, field, etc), no
+     *            additional parameters are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
-    protected SQLAction renderAlterTableDropKey(DDLForeignKey key)
-    {
+    protected SQLAction renderAlterTableDropKey(DDLForeignKey key) {
         return SQLAction.of("ALTER TABLE " + withSchema(key.getDomesticTable()) + " DROP FOREIGN KEY " + processID(key.getFKName()));
     }
 
@@ -1512,18 +1359,15 @@ public abstract class DatabaseProvider implements Disposable
      * database in question does not support indexes, a warning should
      * be printed to stderr and <code>null</code> returned.
      *
-     *
-     *
      * @param indexNameConverter
-     * @param index The index to create.  This single instance contains all
-     * of the data necessary to create the index, thus no separate
-     * parameters (such as a <code>DDLTable</code>) are required.
+     * @param index              The index to create.  This single instance contains all
+     *                           of the data necessary to create the index, thus no separate
+     *                           parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed.
      */
-    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         return SQLAction.of("CREATE INDEX " + withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))
-                                   + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
+                + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
     }
 
     /**
@@ -1533,69 +1377,50 @@ public abstract class DatabaseProvider implements Disposable
      * database in question does not support indexes, a warning should
      * be printed to stderr and <code>null</code> returned.
      *
-     *
-     *
      * @param indexNameConverter
-     * @param index The index to drop.  This single instance contains all
-     * of the data necessary to drop the index, thus no separate
-     * parameters (such as a <code>DDLTable</code>) are required.
+     * @param index              The index to drop.  This single instance contains all
+     *                           of the data necessary to drop the index, thus no separate
+     *                           parameters (such as a <code>DDLTable</code>) are required.
      * @return A DDL statement to be executed, or <code>null</code>.
      */
-    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();
 
-        if (hasIndex(tableName,indexName))
-        {
+        if (hasIndex(tableName, indexName)) {
             return SQLAction.of("DROP INDEX " + withSchema(indexName) + " ON " + withSchema(tableName));
-        }
-        else
-        {
+        } else {
             return null;
         }
     }
 
-    protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
+    protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        return hasIndex(index.getTable(),indexName);
+        return hasIndex(index.getTable(), indexName);
     }
 
-    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index)
-    {
-        if (index.getIndexName() != null)
-        {
+    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index) {
+        if (index.getIndexName() != null) {
             return index.getIndexName();
-        }
-        else
-        {
+        } else {
             return indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
         }
     }
 
-    protected boolean hasIndex(String tableName, String indexName)
-    {
+    protected boolean hasIndex(String tableName, String indexName) {
         Connection connection = null;
-        try
-        {
+        try {
             connection = getConnection();
             ResultSet indexes = getIndexes(connection, tableName);
-            while (indexes.next())
-            {
-                if (indexName.equalsIgnoreCase(indexes.getString("INDEX_NAME")))
-                {
+            while (indexes.next()) {
+                if (indexName.equalsIgnoreCase(indexes.getString("INDEX_NAME"))) {
                     return true;
                 }
             }
             return false;
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             throw new ActiveObjectsException(e);
-        }
-        finally
-        {
+        } finally {
             closeQuietly(connection);
         }
     }
@@ -1617,8 +1442,7 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @return A DDL clause to be appended to the CREATE TABLE DDL, or <code>null</code>
      */
-    protected String renderAppend()
-    {
+    protected String renderAppend() {
         return null;
     }
 
@@ -1642,54 +1466,44 @@ public abstract class DatabaseProvider implements Disposable
      * would be a database like PostgreSQL which requires a different type
      * for auto-incremented fields.</p>
      *
-     *
      * @param nameConverters
      * @param table
-     * @param field The field to be rendered.
+     * @param field          The field to be rendered.
      * @param options
      * @return A DDL fragment to be embedded in a statement elsewhere.
      */
-    protected final String renderField(NameConverters nameConverters, DDLTable table, DDLField field, RenderFieldOptions options)
-    {
+    protected final String renderField(NameConverters nameConverters, DDLTable table, DDLField field, RenderFieldOptions options) {
         StringBuilder back = new StringBuilder();
 
         back.append(processID(field.getName()));
         back.append(" ");
         back.append(renderFieldType(field));
 
-        if (field.isAutoIncrement())
-        {
+        if (field.isAutoIncrement()) {
             String autoIncrementValue = renderAutoIncrement();
-            if (!autoIncrementValue.trim().equals(""))
-            {
+            if (!autoIncrementValue.trim().equals("")) {
                 back.append(' ').append(autoIncrementValue);
             }
-        }
-        else if ((options.forceNull && !field.isNotNull() && !field.isUnique() && !field.isPrimaryKey()) || (options.renderDefault && field.getDefaultValue() != null))
-        {
+        } else if ((options.forceNull && !field.isNotNull() && !field.isUnique() && !field.isPrimaryKey()) || (options.renderDefault && field.getDefaultValue() != null)) {
             back.append(renderFieldDefault(table, field));
         }
 
-        if (options.renderUnique && field.isUnique())
-        {
+        if (options.renderUnique && field.isUnique()) {
             final String renderUniqueString = renderUnique(nameConverters.getUniqueNameConverter(), table, field);
 
-            if (!renderUniqueString.trim().equals(""))
-            {
+            if (!renderUniqueString.trim().equals("")) {
                 back.append(' ').append(renderUniqueString);
             }
         }
 
-        if (options.renderNotNull && (field.isNotNull() || field.isUnique()))
-        {
+        if (options.renderNotNull && (field.isNotNull() || field.isUnique())) {
             back.append(" NOT NULL");
         }
 
         return back.toString();
     }
 
-    protected String renderFieldDefault(DDLTable table, DDLField field)
-    {
+    protected String renderFieldDefault(DDLTable table, DDLField field) {
         return new StringBuilder().append(" DEFAULT ").append(renderValue(field.getDefaultValue())).toString();
     }
 
@@ -1704,25 +1518,17 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param value The Java instance to be rendered as a database literal.
      * @return The database-specific String rendering of the instance in
-     *         question.
+     * question.
      * @see #renderDate(Date)
      */
-    protected String renderValue(Object value)
-    {
-        if (value == null)
-        {
+    protected String renderValue(Object value) {
+        if (value == null) {
             return "NULL";
-        }
-        else if (value instanceof Date)
-        {
+        } else if (value instanceof Date) {
             return "'" + renderDate((Date) value) + "'";
-        }
-        else if (value instanceof Boolean)
-        {
+        } else if (value instanceof Boolean) {
             return ((Boolean) value ? "1" : "0");
-        }
-        else if (value instanceof Number)
-        {
+        } else if (value instanceof Number) {
             return value.toString();
         }
 
@@ -1740,8 +1546,7 @@ public abstract class DatabaseProvider implements Disposable
      * @param date The time instance to be rendered.
      * @return The database-specific String representation of the time.
      */
-    protected String renderDate(Date date)
-    {
+    protected String renderDate(Date date) {
         return new SimpleDateFormat(getDateFormat()).format(date);
     }
 
@@ -1753,13 +1558,12 @@ public abstract class DatabaseProvider implements Disposable
      * override this method to return an empty {@link String} if the database
      * in question does not support the constraint.
      *
-     * @return The database-specific rendering of <code>UNIQUE</code>.
      * @param uniqueNameConverter
      * @param table
      * @param field
+     * @return The database-specific rendering of <code>UNIQUE</code>.
      */
-    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    protected String renderUnique(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         return "UNIQUE";
     }
 
@@ -1772,8 +1576,7 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @return The database-specific TIMESTAMP text format
      */
-    protected String getDateFormat()
-    {
+    protected String getDateFormat() {
         return "yyyy-MM-dd HH:mm:ss";
     }
 
@@ -1787,30 +1590,22 @@ public abstract class DatabaseProvider implements Disposable
      * @param field The field which contains the type to be rendered.
      * @return The database-specific type DDL rendering.
      */
-    protected String renderFieldType(DDLField field)
-    {
+    protected String renderFieldType(DDLField field) {
         return convertTypeToString(field.getType());
     }
 
-    public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException
-    {
+    public Object handleBlob(ResultSet res, Class<?> type, String field) throws SQLException {
         final Blob blob = res.getBlob(field);
-        
-        if (blob == null) 
-        {
-            return null;    
+
+        if (blob == null) {
+            return null;
         }
-        
-        if (type.equals(InputStream.class))
-        {
+
+        if (type.equals(InputStream.class)) {
             return blob.getBinaryStream();
-        }
-        else if (type.equals(byte[].class))
-        {
+        } else if (type.equals(byte[].class)) {
             return blob.getBytes(1, (int) blob.length());
-        }
-        else
-        {
+        } else {
             return null;
         }
     }
@@ -1823,18 +1618,16 @@ public abstract class DatabaseProvider implements Disposable
      * triggers on a field to allow for certain functionality (like
      * ON UPDATE).  The default implementation returns <code>null</code>.
      *
-     *
      * @param triggerNameConverter
-     * @param table The table which contains the field for which a trigger
-     * may or may not exist.
-     * @param field The field for which a previous migration may have
-     * created a trigger.
+     * @param table                The table which contains the field for which a trigger
+     *                             may or may not exist.
+     * @param field                The field for which a previous migration may have
+     *                             created a trigger.
      * @return The unique name of the trigger which was created for the
-     *         field, or <code>null</code> if none.
+     * field, or <code>null</code> if none.
      * @see #renderTriggerForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.SequenceNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected String _getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
-    {
+    protected String _getTriggerNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
         return null;
     }
 
@@ -1844,18 +1637,15 @@ public abstract class DatabaseProvider implements Disposable
      * require the use of triggers to provide functionality such as ON
      * UPDATE.  The default implementation returns <code>null</code>.
      *
-     *
-     *
      * @param nameConverters
-     *@param table The table containing the field for which a trigger
-     * may need to be rendered.
-     * @param field The field for which the trigger should be rendered,
-     * if any.   @return A database-specific DDL statement creating a trigger for
-     *         the field in question, or <code>null</code>.
+     * @param table          The table containing the field for which a trigger
+     *                       may need to be rendered.
+     * @param field          The field for which the trigger should be rendered,
+     *                       if any.   @return A database-specific DDL statement creating a trigger for
+     *                       the field in question, or <code>null</code>.
      * @see #getTriggerNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected SQLAction _renderTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return null;
     }
 
@@ -1863,19 +1653,16 @@ public abstract class DatabaseProvider implements Disposable
      * Renders SQL statement(s) to drop the trigger which corresponds to the
      * specified field, or <code>null</code> if none.
      *
-     *
      * @param nameConverters
-     *@param table The table containing the field for which a trigger
-     * may need to be rendered.
-     * @param field The field for which the trigger should be rendered,
-     * if any.   @return A database-specific DDL statement to drop a trigger for
-     *         the field in question, or <code>null</code>.
+     * @param table          The table containing the field for which a trigger
+     *                       may need to be rendered.
+     * @param field          The field for which the trigger should be rendered,
+     *                       if any.   @return A database-specific DDL statement to drop a trigger for
+     *                       the field in question, or <code>null</code>.
      */
-    protected SQLAction _renderDropTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderDropTriggerForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         final String trigger = _getTriggerNameForField(nameConverters.getTriggerNameConverter(), table, field);
-        if (trigger != null)
-        {
+        if (trigger != null) {
             return SQLAction.of("DROP TRIGGER " + processID(trigger));
         }
         return null;
@@ -1890,17 +1677,15 @@ public abstract class DatabaseProvider implements Disposable
      * PostgreSQL).  Few providers will need to override the default
      * implementation of this method, which returns <code>null</code>.
      *
-     *
      * @param triggerNameConverter
-     * @param table The table which contains the field for which a function
-     * may or may not exist.
-     * @param field The field for which a previous migration may have
-     * created a function.
+     * @param table                The table which contains the field for which a function
+     *                             may or may not exist.
+     * @param field                The field for which a previous migration may have
+     *                             created a function.
      * @return The unique name of the function which was created for the
-     *         field, or <code>null</code> if none.
+     * field, or <code>null</code> if none.
      */
-    protected String _getFunctionNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field)
-    {
+    protected String _getFunctionNameForField(TriggerNameConverter triggerNameConverter, DDLTable table, DDLField field) {
         final String triggerName = _getTriggerNameForField(triggerNameConverter, table, field);
         return triggerName != null ? triggerName + "()" : null;
     }
@@ -1912,19 +1697,16 @@ public abstract class DatabaseProvider implements Disposable
      * provide functionality such as ON UPDATE (e.g. PostgreSQL).  The
      * default implementation returns <code>null</code>.
      *
-     *
-     *
      * @param nameConverters
-     * @param table The table containing the field for which a function
-     * may need to be rendered.
-     * @param field The field for which the function should be rendered,
-     * if any.
+     * @param table          The table containing the field for which a function
+     *                       may need to be rendered.
+     * @param field          The field for which the function should be rendered,
+     *                       if any.
      * @return A database-specific DDL statement creating a function for
-     *         the field in question, or <code>null</code>.
+     * the field in question, or <code>null</code>.
      * @see #getFunctionNameForField(net.java.ao.schema.TriggerNameConverter, net.java.ao.schema.ddl.DDLTable, net.java.ao.schema.ddl.DDLField)
      */
-    protected SQLAction _renderFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return null;
     }
 
@@ -1933,18 +1715,16 @@ public abstract class DatabaseProvider implements Disposable
      * specified field, if applicable, or <code>null</code> otherwise.
      *
      * @param nameConverters
-     * @param table The table containing the field for which a function
-     * may need to be rendered.
-     * @param field The field for which the function should be rendered,
-     * if any.
+     * @param table          The table containing the field for which a function
+     *                       may need to be rendered.
+     * @param field          The field for which the function should be rendered,
+     *                       if any.
      * @return A database-specific DDL statement to drop a function for
-     *         the field in question, or <code>null</code>.
+     * the field in question, or <code>null</code>.
      */
-    protected SQLAction _renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderDropFunctionForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         final String functionName = _getFunctionNameForField(nameConverters.getTriggerNameConverter(), table, field);
-        if (functionName != null)
-        {
+        if (functionName != null) {
             return SQLAction.of("DROP FUNCTION " + processID(functionName));
         }
         return null;
@@ -1955,15 +1735,14 @@ public abstract class DatabaseProvider implements Disposable
      * <code>null</code> if none.  The default implementation returns <code>null</code>.
      *
      * @param nameConverters
-     * @param table The table containing the field for which a sequence
-     * may need to be rendered.
-     * @param field The field for which the sequence should be rendered,
-     * if any.
+     * @param table          The table containing the field for which a sequence
+     *                       may need to be rendered.
+     * @param field          The field for which the sequence should be rendered,
+     *                       if any.
      * @return A database-specific DDL statement creating a sequence for
      * the field in question, or <code>null</code>.
      */
-    protected SQLAction _renderSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return null;
     }
 
@@ -1971,11 +1750,10 @@ public abstract class DatabaseProvider implements Disposable
      * Renders SQL statement(s) to drop the sequence which corresponds to the
      * specified field, or <code>null</code> if none.
      */
-    protected SQLAction _renderDropSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field)
-    {
+    protected SQLAction _renderDropSequenceForField(NameConverters nameConverters, DDLTable table, DDLField field) {
         return null;
     }
-    
+
     /**
      * <p>Generates an INSERT statement to be used to create a new row in the
      * database, returning the primary key value.  This method also invokes
@@ -2008,61 +1786,52 @@ public abstract class DatabaseProvider implements Disposable
      * prepare for the INSERTion (as in the case of MS SQL Server which requires
      * some config parameters to be set on the database itself prior to INSERT).</p>
      *
-     * @param manager The <code>EntityManager</code> which was used to dispatch
-     * the INSERT in question.
-     * @param conn The connection to be used in the eventual execution of the
-     * generated SQL statement.
+     * @param manager    The <code>EntityManager</code> which was used to dispatch
+     *                   the INSERT in question.
+     * @param conn       The connection to be used in the eventual execution of the
+     *                   generated SQL statement.
      * @param entityType The Java class of the entity.
-     * @param pkType The Java type of the primary key value.  Can be used to
-     * perform a linear search for a specified primary key value in the
-     * <code>params</code> list.  The return value of the method must be of
-     * the same type.
-     * @param pkField The database field which is the primary key for the
-     * table in question.  Can be used to perform a linear search for a
-     * specified primary key value in the <code>params</code> list.
+     * @param pkType     The Java type of the primary key value.  Can be used to
+     *                   perform a linear search for a specified primary key value in the
+     *                   <code>params</code> list.  The return value of the method must be of
+     *                   the same type.
+     * @param pkField    The database field which is the primary key for the
+     *                   table in question.  Can be used to perform a linear search for a
+     *                   specified primary key value in the <code>params</code> list.
      * @param pkIdentity Flag indicating whether or not the primary key field
-     * is auto-incremented by the database (IDENTITY field).
-     * @param table The name of the table into which the row is to be INSERTed.
-     * @param params A varargs array of parameters to be passed to the
-     * INSERT statement.  This may include a specified value for the
-     * primary key.
+     *                   is auto-incremented by the database (IDENTITY field).
+     * @param table      The name of the table into which the row is to be INSERTed.
+     * @param params     A varargs array of parameters to be passed to the
+     *                   INSERT statement.  This may include a specified value for the
+     *                   primary key.
      * @throws SQLException If the INSERT fails in the delegate method, or
-     * if any additional statements fail with an exception.
+     *                      if any additional statements fail with an exception.
      * @see #executeInsertReturningKey(EntityManager, java.sql.Connection, Class, String, String, DBParam...)
      */
     @SuppressWarnings("unused")
     public <T extends RawEntity<K>, K> K insertReturningKey(EntityManager manager, Connection conn,
-                                    Class<T> entityType, Class<K> pkType,
-                                    String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException
-    {
+                                                            Class<T> entityType, Class<K> pkType,
+                                                            String pkField, boolean pkIdentity, String table, DBParam... params) throws SQLException {
         final StringBuilder sql = new StringBuilder("INSERT INTO " + withSchema(table) + " (");
 
-        for (DBParam param : params)
-        {
+        for (DBParam param : params) {
             sql.append(processID(param.getField()));
             sql.append(',');
         }
-        if (params.length > 0)
-        {
+        if (params.length > 0) {
             sql.setLength(sql.length() - 1);
-        }
-        else
-        {
+        } else {
             sql.append(processID(pkField));
         }
 
         sql.append(") VALUES (");
 
-        for (DBParam param : params)
-        {
+        for (DBParam param : params) {
             sql.append("?,");
         }
-        if (params.length > 0)
-        {
+        if (params.length > 0) {
             sql.setLength(sql.length() - 1);
-        }
-        else
-        {
+        } else {
             sql.append("DEFAULT");
         }
 
@@ -2112,50 +1881,43 @@ public abstract class DatabaseProvider implements Disposable
      * that this method should not close the connection.  Doing so could cause the
      * entity creation algorithm to fail at a higher level up the stack.</p>
      *
-     * @param manager The <code>EntityManager</code> which was used to dispatch
-     * the INSERT in question.
-     * @param conn The database connection to use in executing the INSERT statement.
+     * @param manager    The <code>EntityManager</code> which was used to dispatch
+     *                   the INSERT in question.
+     * @param conn       The database connection to use in executing the INSERT statement.
      * @param entityType The Java class of the entity.
-     * @param pkType The Java class type of the primary key field (for use both in
-     * searching the <code>params</code> as well as performing value conversion
-     * of auto-generated DB values into proper Java instances).
-     * @param pkField The database field which is the primary key for the
-     * table in question.  Can be used to perform a linear search for a
-     * specified primary key value in the <code>params</code> list.
-     * @param params A varargs array of parameters to be passed to the
-     * INSERT statement.  This may include a specified value for the
-     * primary key.  @throws SQLException If the INSERT fails in the delegate method, or
-     * if any additional statements fail with an exception.
+     * @param pkType     The Java class type of the primary key field (for use both in
+     *                   searching the <code>params</code> as well as performing value conversion
+     *                   of auto-generated DB values into proper Java instances).
+     * @param pkField    The database field which is the primary key for the
+     *                   table in question.  Can be used to perform a linear search for a
+     *                   specified primary key value in the <code>params</code> list.
+     * @param params     A varargs array of parameters to be passed to the
+     *                   INSERT statement.  This may include a specified value for the
+     *                   primary key.  @throws SQLException If the INSERT fails in the delegate method, or
+     *                   if any additional statements fail with an exception.
      * @see #insertReturningKey(EntityManager, Connection, Class, String, boolean, String, DBParam...)
      */
-    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn, 
-                                              Class<T> entityType, Class<K> pkType,
-                                              String pkField, String sql, DBParam... params) throws SQLException
-    {
+    protected <T extends RawEntity<K>, K> K executeInsertReturningKey(EntityManager manager, Connection conn,
+                                                                      Class<T> entityType, Class<K> pkType,
+                                                                      String pkField, String sql, DBParam... params) throws SQLException {
         K back = null;
 
         final PreparedStatement stmt = preparedStatement(conn, sql, Statement.RETURN_GENERATED_KEYS);
-        
-        for (int i = 0; i < params.length; i++)
-        {
+
+        for (int i = 0; i < params.length; i++) {
             Object value = params[i].getValue();
 
-            if (value instanceof RawEntity<?>)
-            {
+            if (value instanceof RawEntity<?>) {
                 value = Common.getPrimaryKeyValue((RawEntity<?>) value);
             }
 
-            if (params[i].getField().equalsIgnoreCase(pkField))
-            {
+            if (params[i].getField().equalsIgnoreCase(pkField)) {
                 back = (K) value;
             }
 
-            if (value == null)
-            {
+            if (value == null) {
                 putNull(stmt, i + 1);
-            }
-            else
-            {
+            } else {
                 TypeInfo<Object> type = (TypeInfo<Object>) typeManager.getType(value.getClass());
                 type.getLogicalType().putToDatabase(manager, stmt, i + 1, value, type.getJdbcWriteType());
             }
@@ -2163,11 +1925,9 @@ public abstract class DatabaseProvider implements Disposable
 
         stmt.executeUpdate();
 
-        if (back == null)
-        {
+        if (back == null) {
             ResultSet res = stmt.getGeneratedKeys();
-            if (res.next())
-            {
+            if (res.next()) {
                 back = typeManager.getType(pkType).getLogicalType().pullFromDatabase(null, res, pkType, 1);
             }
             res.close();
@@ -2185,11 +1945,10 @@ public abstract class DatabaseProvider implements Disposable
      * retrieving parameter type from metadata.  Databases which require a
      * different implementation (e.g. PostgreSQL) should override this method.
      *
-     * @param stmt The statement in which to store the <code>NULL</code> value.
+     * @param stmt  The statement in which to store the <code>NULL</code> value.
      * @param index The index of the parameter which should be assigned <code>NULL</code>.
      */
-    public void putNull(PreparedStatement stmt, int index) throws SQLException
-    {
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
         stmt.setNull(index, stmt.getParameterMetaData().getParameterType(index));
     }
 
@@ -2201,12 +1960,11 @@ public abstract class DatabaseProvider implements Disposable
      * for such databases should override this method to store boolean values in
      * the relevant fashion.
      *
-     * @param stmt The statement in which to store the <code>BOOLEAN</code> value.
+     * @param stmt  The statement in which to store the <code>BOOLEAN</code> value.
      * @param index The index of the parameter which should be assigned.
      * @param value The value to be stored in the relevant field.
      */
-    public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException
-    {
+    public void putBoolean(PreparedStatement stmt, int index, boolean value) throws SQLException {
         stmt.setBoolean(index, value);
     }
 
@@ -2220,12 +1978,10 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param type The JDBC type which is to be tested.
      * @return <code>true</code> if the specified type represents a numeric
-     *         type, otherwise <code>false</code>.
+     * type, otherwise <code>false</code>.
      */
-    protected boolean isNumericType(int type)
-    {
-        switch (type)
-        {
+    protected boolean isNumericType(int type) {
+        switch (type) {
             case Types.BIGINT:
                 return true;
             case Types.BIT:
@@ -2251,13 +2007,10 @@ public abstract class DatabaseProvider implements Disposable
         return false;
     }
 
-    protected String processOnClause(String on)
-    {
-        return SqlUtils.processOnClause(on, new Function<String, String>()
-        {
+    protected String processOnClause(String on) {
+        return SqlUtils.processOnClause(on, new Function<String, String>() {
             @Override
-            public String apply(String id)
-            {
+            public String apply(String id) {
                 return processID(id);
             }
         });
@@ -2271,13 +2024,10 @@ public abstract class DatabaseProvider implements Disposable
      * @return the processed where clause compatible with the database in use.
      * @see #processID(String)
      */
-    public final String processWhereClause(String where)
-    {
-        return SqlUtils.processWhereClause(where, new Function<String, String>()
-        {
+    public final String processWhereClause(String where) {
+        return SqlUtils.processWhereClause(where, new Function<String, String>() {
             @Override
-            public String apply(String id)
-            {
+            public String apply(String id) {
                 return processID(id);
             }
         });
@@ -2311,12 +2061,11 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param id The identifier to process.
      * @return A unique identifier corresponding with the input which is
-     *         guaranteed to function within the underlying database.
+     * guaranteed to function within the underlying database.
      * @see #getMaxIDLength()
      * @see #shouldQuoteID(String)
      */
-    public final String processID(String id)
-    {
+    public final String processID(String id) {
         return quote(shorten(id));
     }
 
@@ -2327,38 +2076,32 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param tableName The table name to process.
      * @return A unique identifier corresponding with the input which is
-     *         guaranteed to function within the underlying database.
+     * guaranteed to function within the underlying database.
      * @see #getMaxIDLength()
      * @see #shouldQuoteTableName(String)
      */
-    public final String processTableName(String tableName)
-    {
+    public final String processTableName(String tableName) {
         return quoteTableName(shorten(tableName));
     }
 
-    public final String withSchema(String tableName)
-    {
+    public final String withSchema(String tableName) {
         final String processedTableName = processID(tableName);
         return isSchemaNotEmpty() ? schema + "." + processedTableName : processedTableName;
     }
 
-    protected final boolean isSchemaNotEmpty()
-    {
+    protected final boolean isSchemaNotEmpty() {
         return schema != null && schema.length() > 0;
     }
 
-    public final String shorten(String id)
-    {
+    public final String shorten(String id) {
         return Common.shorten(id, getMaxIDLength());
     }
 
-    public final String quote(String id)
-    {
+    public final String quote(String id) {
         return shouldQuoteID(id) ? quoteId(id) : id;
     }
 
-    public final String quoteTableName(String tableName)
-    {
+    public final String quoteTableName(String tableName) {
         return shouldQuoteTableName(tableName) ? quoteId(tableName) : tableName;
     }
 
@@ -2377,10 +2120,9 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param id The identifier to check against the quoting rules.
      * @return <code>true</code> if the specified identifier is invalid under
-     *         the relevant quoting rules, otherwise <code>false</code>.
+     * the relevant quoting rules, otherwise <code>false</code>.
      */
-    protected boolean shouldQuoteID(String id)
-    {
+    protected boolean shouldQuoteID(String id) {
         return getReservedWords().contains(Case.UPPER.apply(id));
     }
 
@@ -2392,10 +2134,9 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @param tableName The table name to check against the quoting rules.
      * @return <code>true</code> if the table name is invalid under
-     *         the relevant quoting rules, otherwise <code>false</code>.
+     * the relevant quoting rules, otherwise <code>false</code>.
      */
-    protected boolean shouldQuoteTableName(String tableName)
-    {
+    protected boolean shouldQuoteTableName(String tableName) {
         return shouldQuoteID(tableName);
     }
 
@@ -2407,8 +2148,7 @@ public abstract class DatabaseProvider implements Disposable
      *
      * @return The maximum identifier length for the database.
      */
-    protected int getMaxIDLength()
-    {
+    protected int getMaxIDLength() {
         return Integer.MAX_VALUE;
     }
 
@@ -2421,7 +2161,7 @@ public abstract class DatabaseProvider implements Disposable
      * will suffer greatly.
      *
      * @return A set of <i>upper case</i> reserved words specific
-     *         to the database.
+     * to the database.
      */
     protected abstract Set<String> getReservedWords();
 
@@ -2433,10 +2173,9 @@ public abstract class DatabaseProvider implements Disposable
      * return <code>true</code> for better all-around compatibility.
      *
      * @return boolean <code>true</code> if identifiers are case-sensetive,
-     *         <code>false</code> otherwise.
+     * <code>false</code> otherwise.
      */
-    public boolean isCaseSensitive()
-    {
+    public boolean isCaseSensitive() {
         return true;
     }
 
@@ -2445,46 +2184,38 @@ public abstract class DatabaseProvider implements Disposable
      * non-existing objects should be ignored.
      *
      * @param sql
-     * @param e the {@link java.sql.SQLException} that occured.
+     * @param e   the {@link java.sql.SQLException} that occured.
      * @throws SQLException throws the SQLException if it should not be ignored.
      */
-    public void handleUpdateError(String sql, SQLException e) throws SQLException
-    {
+    public void handleUpdateError(String sql, SQLException e) throws SQLException {
         sqlLogger.error("Exception executing SQL update <" + sql + ">", e);
         throw e;
     }
 
-    public final PreparedStatement preparedStatement(Connection c, CharSequence sql) throws SQLException
-    {
+    public final PreparedStatement preparedStatement(Connection c, CharSequence sql) throws SQLException {
         final String sqlString = sql.toString();
         onSql(sqlString);
         return c.prepareStatement(sqlString);
     }
 
-    public final PreparedStatement preparedStatement(Connection c, CharSequence sql, int autoGeneratedKeys) throws SQLException
-    {
+    public final PreparedStatement preparedStatement(Connection c, CharSequence sql, int autoGeneratedKeys) throws SQLException {
         final String sqlString = sql.toString();
         onSql(sqlString);
         return c.prepareStatement(sqlString, autoGeneratedKeys);
     }
 
-    public final PreparedStatement preparedStatement(Connection c, CharSequence sql, int resultSetType, int resultSetConcurrency) throws SQLException
-    {
+    public final PreparedStatement preparedStatement(Connection c, CharSequence sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         final String sqlString = sql.toString();
         onSql(sqlString);
         return c.prepareStatement(sqlString, resultSetType, resultSetConcurrency);
     }
 
-    public final void executeUpdate(Statement stmt, CharSequence sql) throws SQLException
-    {
+    public final void executeUpdate(Statement stmt, CharSequence sql) throws SQLException {
         final String sqlString = sql.toString();
-        try
-        {
+        try {
             onSql(sqlString);
             checkNotNull(stmt).executeUpdate(sqlString);
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             handleUpdateError(sqlString, e);
         }
     }
@@ -2496,40 +2227,30 @@ public abstract class DatabaseProvider implements Disposable
      * list and execute their corresponding undo action, if any.  For instance, if we successfully
      * executed a CREATE TABLE and a CREATE SEQUENCE, but the next statement fails, we will
      * execute DROP SEQUENCE and then DROP TABLE before rethrowing the exception.
-     * 
+     *
      * @param provider
-     * @param stmt  A JDBC Statement that will be reused for all updates
-     * @param actions  A list of {@link SQLAction}s to execute
-     * @param completedStatements  A set of SQL statements that should not be executed if we encounter the same one again.
-     *   This is necessary because our schema diff logic is not as smart as it could be, so it may
-     *   tell us, for instance, to create an index for a new column even though the statements for
-     *   creating the column also included creation of the index.
+     * @param stmt                A JDBC Statement that will be reused for all updates
+     * @param actions             A list of {@link SQLAction}s to execute
+     * @param completedStatements A set of SQL statements that should not be executed if we encounter the same one again.
+     *                            This is necessary because our schema diff logic is not as smart as it could be, so it may
+     *                            tell us, for instance, to create an index for a new column even though the statements for
+     *                            creating the column also included creation of the index.
      * @return all SQL statements that were executed
      */
-    public final Iterable<String> executeUpdatesForActions(Statement stmt, Iterable<SQLAction> actions, Set<String> completedStatements) throws SQLException
-    {
+    public final Iterable<String> executeUpdatesForActions(Statement stmt, Iterable<SQLAction> actions, Set<String> completedStatements) throws SQLException {
         Stack<SQLAction> completedActions = new Stack<SQLAction>();
         Set<String> newStatements = new LinkedHashSet<String>();
-        for (SQLAction action : actions)
-        {
-            try
-            {
+        for (SQLAction action : actions) {
+            try {
                 addAll(newStatements, executeUpdateForAction(stmt, action, union(completedStatements, newStatements)));
-            }
-            catch (SQLException e)
-            {
+            } catch (SQLException e) {
                 logger.warn("Error in schema creation: " + e.getMessage() + "; attempting to roll back last partially generated table");
-                while (!completedActions.isEmpty())
-                {
+                while (!completedActions.isEmpty()) {
                     SQLAction undoAction = completedActions.pop().getUndoAction();
-                    if (undoAction != null)
-                    {
-                        try
-                        {
+                    if (undoAction != null) {
+                        try {
                             executeUpdateForAction(stmt, undoAction, completedStatements);
-                        }
-                        catch (SQLException e2)
-                        {
+                        } catch (SQLException e2) {
                             logger.warn("Unable to finish rolling back partial table creation due to error: " + e2.getMessage());
                             // swallow this exception because we're going to rethrow the original exception
                             break;
@@ -2543,79 +2264,63 @@ public abstract class DatabaseProvider implements Disposable
         }
         return newStatements;
     }
-    
-    public final Iterable<String> executeUpdateForAction(Statement stmt, SQLAction action, Set<String> completedStatements) throws SQLException
-    {
+
+    public final Iterable<String> executeUpdateForAction(Statement stmt, SQLAction action, Set<String> completedStatements) throws SQLException {
         String sql = action.getStatement().trim();
-        if (sql.isEmpty() || completedStatements.contains(sql))
-        {
+        if (sql.isEmpty() || completedStatements.contains(sql)) {
             return ImmutableList.of();
         }
         executeUpdate(stmt, sql);
         return ImmutableList.of(sql);
     }
 
-    public final void addSqlListener(SqlListener l)
-    {
+    public final void addSqlListener(SqlListener l) {
         sqlListeners.add(l);
     }
 
-    public final void removeSqlListener(SqlListener l)
-    {
+    public final void removeSqlListener(SqlListener l) {
         sqlListeners.remove(l);
     }
 
-    protected final void onSql(String sql)
-    {
-        for (SqlListener sqlListener : sqlListeners)
-        {
+    protected final void onSql(String sql) {
+        for (SqlListener sqlListener : sqlListeners) {
             sqlListener.onSql(sql);
         }
     }
 
-    private static boolean isBlank(String str)
-    {
+    private static boolean isBlank(String str) {
         int strLen;
-        if (str == null || (strLen = str.length()) == 0)
-        {
+        if (str == null || (strLen = str.length()) == 0) {
             return true;
         }
-        for (int i = 0; i < strLen; i++)
-        {
-            if (!Character.isWhitespace(str.charAt(i)))
-            {
+        for (int i = 0; i < strLen; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
                 return false;
             }
         }
         return true;
     }
 
-    protected Iterable<DDLForeignKey> findForeignKeysForField(DDLTable table, final DDLField field)
-    {
-        return Iterables.filter(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>()
-        {
+    protected Iterable<DDLForeignKey> findForeignKeysForField(DDLTable table, final DDLField field) {
+        return Iterables.filter(newArrayList(table.getForeignKeys()), new Predicate<DDLForeignKey>() {
             @Override
-            public boolean apply(DDLForeignKey fk)
-            {
+            public boolean apply(DDLForeignKey fk) {
                 return fk.getField().equals(field.getName());
             }
         });
     }
 
-    protected static class RenderFieldOptions
-    {
+    protected static class RenderFieldOptions {
         public final boolean renderUnique;
         public final boolean renderDefault;
         public final boolean renderNotNull;
         public final boolean forceNull;
 
-        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull)
-        {
+        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull) {
             this(renderUnique, renderDefault, renderNotNull, false);
         }
 
-        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull, boolean forceNull)
-        {
+        public RenderFieldOptions(boolean renderUnique, boolean renderDefault, boolean renderNotNull, boolean forceNull) {
             this.renderUnique = renderUnique;
             this.renderDefault = renderDefault;
             this.renderNotNull = renderNotNull;
@@ -2623,22 +2328,18 @@ public abstract class DatabaseProvider implements Disposable
         }
     }
 
-    public static interface SqlListener
-    {
+    public static interface SqlListener {
         void onSql(String sql);
     }
 
-    private final static class LoggingSqlListener implements SqlListener
-    {
+    private final static class LoggingSqlListener implements SqlListener {
         private final Logger logger;
 
-        public LoggingSqlListener(Logger logger)
-        {
+        public LoggingSqlListener(Logger logger) {
             this.logger = checkNotNull(logger);
         }
 
-        public void onSql(String sql)
-        {
+        public void onSql(String sql) {
             logger.debug(sql);
         }
     }

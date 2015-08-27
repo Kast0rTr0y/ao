@@ -25,6 +25,7 @@ import net.java.ao.schema.Table;
 @Table("personDefence")
 @Preload("severity")
 public interface PersonLegalDefence extends Entity {
-	public int getSeverity();
-	public void setSeverity(int severity);
+    public int getSeverity();
+
+    public void setSeverity(int severity);
 }

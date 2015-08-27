@@ -15,17 +15,8 @@
  */
 package net.java.ao;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-
-import net.java.ao.db.H2DatabaseProvider;
-import net.java.ao.it.model.PersonChair;
-import net.java.ao.schema.info.EntityInfo;
-
-import org.junit.Test;
-
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
+import net.java.ao.db.H2DatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.NuoDBDatabaseProvider;
@@ -37,32 +28,36 @@ import net.java.ao.it.model.Comment;
 import net.java.ao.it.model.Company;
 import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
+import net.java.ao.it.model.PersonChair;
+import net.java.ao.schema.info.EntityInfo;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
+import org.junit.Test;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Data(DatabaseProcessor.class)
-public abstract class QueryTest extends ActiveObjectsIntegrationTest
-{
+public abstract class QueryTest extends ActiveObjectsIntegrationTest {
     protected abstract DatabaseProvider getDatabaseProvider();
 
     @Test
-    public final void testSimpleSelect()
-    {
+    public final void testSimpleSelect() {
         assertSelectSqlEquals(getSimpleSelectQuery(), getExpectedSqlForSimpleSelect());
     }
 
     @Test
-    public final void testSimpleCount()
-    {
+    public final void testSimpleCount() {
         assertCountSqlEquals(getSimpleSelectQuery(), getExpectedSqlForSimpleCount());
     }
 
-    private Query getSimpleSelectQuery()
-    {
+    private Query getSimpleSelectQuery() {
         return Query.select();
     }
 
@@ -71,19 +66,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForSimpleCount();
 
     @Test
-    public final void testSelectSomeFields()
-    {
+    public final void testSelectSomeFields() {
         assertSelectSqlEquals(getSelectSomeFieldsQuery(), getExpectSqlForSelectSomeFields());
     }
 
     @Test
-    public final void testCountSomeFields()
-    {
+    public final void testCountSomeFields() {
         assertCountSqlEquals(getSelectSomeFieldsQuery(), getExpectSqlForCountSomeFields());
     }
 
-    private Query getSelectSomeFieldsQuery()
-    {
+    private Query getSelectSomeFieldsQuery() {
         return Query.select(getPersonId() + ", " + getPersonFirstName() + ", " + getPersonLastName());
     }
 
@@ -92,19 +84,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectSqlForCountSomeFields();
 
     @Test
-    public final void testSelectWithWhereClause()
-    {
+    public final void testSelectWithWhereClause() {
         assertSelectSqlEquals(getSelectWithWhereClauseForQuery(), getExpectedSqlForSelectWithWhereClause());
     }
 
     @Test
-    public final void testCountWithWhereClause()
-    {
+    public final void testCountWithWhereClause() {
         assertCountSqlEquals(getSelectWithWhereClauseForQuery(), getExpectedSqlForCountWithWhereClause());
     }
 
-    private Query getSelectWithWhereClauseForQuery()
-    {
+    private Query getSelectWithWhereClauseForQuery() {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3");
     }
 
@@ -113,64 +102,53 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithWhereClause();
 
     @Test
-    public final void testSelectWithOrderClause()
-    {
+    public final void testSelectWithOrderClause() {
         assertSelectSqlEquals(getSelectWithOrderClauseQuery(), getExpectedSqlForSelectWithOrderClause());
     }
 
     @Test
-    public final void testSelectWithOrderAndAliasClause()
-    {
+    public final void testSelectWithOrderAndAliasClause() {
         assertSelectSqlEquals(getSelectWithOrderClauseAndAliasQuery(), getExpectedSqlForSelectWithOrderClauseAndAlias());
     }
 
     @Test
-    public final void testSelectWithMultipleOrderClauses()
-    {
+    public final void testSelectWithMultipleOrderClauses() {
         assertSelectSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForSelectWithMultipleOrderClauses());
     }
 
     @Test
-    public final void testSelectWithMultipleOrderClausesMultipleOrders()
-    {
+    public final void testSelectWithMultipleOrderClausesMultipleOrders() {
         assertSelectSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders());
     }
 
     @Test
-    public final void testCountWithOrderClause()
-    {
+    public final void testCountWithOrderClause() {
         assertCountSqlEquals(getSelectWithOrderClauseQuery(), getExpectedSqlForCountWithOrderClause());
     }
 
     @Test
-    public final void testCountWithMultipleOrderClauses()
-    {
+    public final void testCountWithMultipleOrderClauses() {
         assertCountSqlEquals(getSelectWithMultipleOrderClausesQuery(), getExpectedSqlForCountWithMultipleOrderClauses());
     }
 
     @Test
-    public final void testCountWithMultipleOrderClausesMultipleOrders()
-    {
+    public final void testCountWithMultipleOrderClausesMultipleOrders() {
         assertCountSqlEquals(getSelectWithMultipleOrderClausesMultipleOrdersQuery(), getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders());
     }
 
-    private Query getSelectWithOrderClauseQuery()
-    {
+    private Query getSelectWithOrderClauseQuery() {
         return Query.select().order(getPersonLastName() + " DESC");
     }
 
-    private Query getSelectWithOrderClauseAndAliasQuery()
-    {
+    private Query getSelectWithOrderClauseAndAliasQuery() {
         return Query.select().alias(Person.class, "p").order("p." + getPersonLastName() + " DESC");
     }
 
-    private Query getSelectWithMultipleOrderClausesQuery()
-    {
+    private Query getSelectWithMultipleOrderClausesQuery() {
         return Query.select().order(getPersonLastName() + ", " + getPersonAge() + ", " + getPersonId());
     }
 
-    private Query getSelectWithMultipleOrderClausesMultipleOrdersQuery()
-    {
+    private Query getSelectWithMultipleOrderClausesMultipleOrdersQuery() {
         return Query.select().order(getPersonLastName() + " DESC, " + getPersonAge() + " ASC, " + getPersonId() + " ASC");
     }
 
@@ -178,81 +156,67 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
 
     protected abstract String getExpectedSqlForSelectWithOrderClauseAndAlias();
 
-    protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders()
-    {
+    protected String getExpectedSqlForSelectWithMultipleOrderClausesMultipleOrders() {
         return format("SELECT %s FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
-    protected String getExpectedSqlForSelectWithMultipleOrderClauses()
-    {
+    protected String getExpectedSqlForSelectWithMultipleOrderClauses() {
         return format("SELECT %s FROM %s ORDER BY %s, %s, %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
     protected abstract String getExpectedSqlForCountWithOrderClause();
 
-    protected String getExpectedSqlForCountWithMultipleOrderClauses()
-    {
+    protected String getExpectedSqlForCountWithMultipleOrderClauses() {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s, %s, %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
-    protected String getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders()
-    {
+    protected String getExpectedSqlForCountWithMultipleOrderClausesMultipleOrders() {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC, %s ASC, %s ASC", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonId());
     }
 
     @Test
-    public final void testSelectWithLimit()
-    {
+    public final void testSelectWithLimit() {
         assertSelectSqlEquals(getSelectWithLimitQuery(), getExpectedSqlForSelectWithLimit());
     }
 
     @Test
-    public final void testSelectWithOffset()
-    {
+    public final void testSelectWithOffset() {
         assertSelectSqlEquals(getSelectWithOffsetQuery(), getExpectedSqlForSelectWithOffset());
     }
 
     @Test
-    public final void testCountWithLimit()
-    {
+    public final void testCountWithLimit() {
         assertCountSqlEquals(getSelectWithLimitQuery(), getExpectedSqlForCountWithLimit());
     }
 
     @Test
-    public final void testCountWithOffset()
-    {
+    public final void testCountWithOffset() {
         assertCountSqlEquals(getSelectWithOffsetQuery(), getExpectedSqlForCountWithOffset());
     }
 
     @Test
-    public final void testDistinctSelectWithLimit()
-    {
+    public final void testDistinctSelectWithLimit() {
         assertSelectSqlEquals(getDistinctSelectWithLimitQuery(), getExpectedSqlForDistinctSelectWithLimit());
     }
 
     @Test
-    public final void testDistinctSelectWithOffset()
-    {
+    public final void testDistinctSelectWithOffset() {
         assertSelectSqlEquals(getDistinctSelectWithOffsetQuery(), getExpectedSqlForDistinctSelectWithOffset());
     }
 
-    private Query getSelectWithLimitQuery()
-    {
+    private Query getSelectWithLimitQuery() {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
     }
 
-    private Query getSelectWithOffsetQuery()
-    {
+    private Query getSelectWithOffsetQuery() {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").offset(4);
     }
 
-    private Query getDistinctSelectWithLimitQuery()
-    {
+    private Query getDistinctSelectWithLimitQuery() {
         return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10);
     }
 
-    private Query getDistinctSelectWithOffsetQuery()
-    {
+    private Query getDistinctSelectWithOffsetQuery() {
         return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").offset(4);
     }
 
@@ -269,30 +233,25 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForDistinctSelectWithOffset();
 
     @Test
-    public final void testSelectWithLimitAndOffset()
-    {
+    public final void testSelectWithLimitAndOffset() {
         assertSelectSqlEquals(getSelectWithLimitAndOffsetQuery(), getExpectedSqlForSelectWithLimitAndOffset());
     }
 
     @Test
-    public final void testCountWithLimitAndOffset()
-    {
+    public final void testCountWithLimitAndOffset() {
         assertCountSqlEquals(getSelectWithLimitAndOffsetQuery(), getExpectedSqlForCountWithLimitAndOffset());
     }
 
     @Test
-    public final void testDistinctSelectWithLimitAndOffset()
-    {
+    public final void testDistinctSelectWithLimitAndOffset() {
         assertSelectSqlEquals(getDistinctSelectWithLimitAndOffsetQuery(), getExpectedSqlForDistinctSelectWithLimitAndOffset());
     }
 
-    private Query getSelectWithLimitAndOffsetQuery()
-    {
+    private Query getSelectWithLimitAndOffsetQuery() {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10).offset(4);
     }
 
-    private Query getDistinctSelectWithLimitAndOffsetQuery()
-    {
+    private Query getDistinctSelectWithLimitAndOffsetQuery() {
         return Query.select().distinct().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(10).offset(4);
     }
 
@@ -303,19 +262,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForDistinctSelectWithLimitAndOffset();
 
     @Test
-    public final void testSelectWithGroupBy()
-    {
+    public final void testSelectWithGroupBy() {
         assertSelectSqlEquals(getSelectWithGroupByQuery(), getExpectedSqlForSelectWithGroupBy());
     }
 
     @Test
-    public final void testCountWithGroupBy()
-    {
+    public final void testCountWithGroupBy() {
         assertCountSqlEquals(getSelectWithGroupByQuery(), getExpectedSqlForCountWithGroupBy());
     }
 
-    private Query getSelectWithGroupByQuery()
-    {
+    private Query getSelectWithGroupByQuery() {
         return Query.select().where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").limit(4).group(getPersonAge());
     }
 
@@ -324,19 +280,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithGroupBy();
 
     @Test
-    public final void testSelectWithHaving()
-    {
+    public final void testSelectWithHaving() {
         assertSelectSqlEquals(getSelectWithHavingQuery(), getExpectedSqlForSelectWithHaving());
     }
 
     @Test
-    public final void testCountWithHaving()
-    {
+    public final void testCountWithHaving() {
         assertCountSqlEquals(getSelectWithHavingQuery(), getExpectedSqlForCountWithHaving());
     }
 
-    private Query getSelectWithHavingQuery()
-    {
+    private Query getSelectWithHavingQuery() {
         return Query.select()
                 .alias(Person.class, "p")
                 .alias(PersonChair.class, "pc")
@@ -350,19 +303,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithHaving();
 
     @Test
-    public final void testSelectWithExplicitJoin()
-    {
+    public final void testSelectWithExplicitJoin() {
         assertSelectSqlEquals(getSelectWithExplicitJoinQuery(), getExpectedSqlForSelectWithExplicitJoin());
     }
 
     @Test
-    public final void testCountWithExplicitJoin()
-    {
+    public final void testCountWithExplicitJoin() {
         assertCountSqlEquals(getSelectWithExplicitJoinQuery(), getExpectedSqlForCountWithExplicitJoin());
     }
 
-    private Query getSelectWithExplicitJoinQuery()
-    {
+    private Query getSelectWithExplicitJoinQuery() {
         return Query.select().join(Company.class, getTableNameForQuery(Person.class) + "." + getPersonCompany() + " = " + getTableNameForQuery(Company.class) + "." + getCompanyId()).where(getPersonLastName() + " IS NULL AND " + getPersonAge() + " = 3").group(getPersonUrl());
     }
 
@@ -371,19 +321,16 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithExplicitJoin();
 
     @Test
-    public final void testSelectWithDefaultJoin()
-    {
+    public final void testSelectWithDefaultJoin() {
         assertSelectSqlEquals(getSelectWithDefaultJoinQuery(), getExpectedSqlForSelectWithDefaultJoin());
     }
 
     @Test
-    public final void testCountWithDefaultJoin()
-    {
+    public final void testCountWithDefaultJoin() {
         assertCountSqlEquals(getSelectWithDefaultJoinQuery(), getExpectedSqlForCountWithDefaultJoin());
     }
 
-    private Query getSelectWithDefaultJoinQuery()
-    {
+    private Query getSelectWithDefaultJoinQuery() {
         return Query.select().join(Company.class).join(CompanyAddressInfo.class).where(getCompanyAddressInfoLine1() + " IS NULL");
     }
 
@@ -392,13 +339,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForCountWithDefaultJoin();
 
     @Test
-    public final void testSelectWithAliasedJoin()
-    {
+    public final void testSelectWithAliasedJoin() {
         assertSelectSqlEquals(getSelectWithAliasedJoinQuery(), getExpectedSqlForSelectWithAliasedJoin());
     }
 
-    private Query getSelectWithAliasedJoinQuery()
-    {
+    private Query getSelectWithAliasedJoinQuery() {
         return Query.select()
                 .alias(Person.class, "p").alias(Company.class, "c").alias(CompanyAddressInfo.class, "ca")
                 .join(Company.class).join(CompanyAddressInfo.class).where("ca." + getCompanyAddressInfoLine1() + " IS NULL");
@@ -407,13 +352,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForSelectWithAliasedJoin();
 
     @Test
-    public final void testSelectWithAliasedJoinAndSomeFields()
-    {
+    public final void testSelectWithAliasedJoinAndSomeFields() {
         assertSelectSqlEquals(getSelectWithAliasedJoinAndSomeFields(), getExpectedSqlForSelectWithAliasedJoinAndSomeFields());
     }
 
-    private Query getSelectWithAliasedJoinAndSomeFields()
-    {
+    private Query getSelectWithAliasedJoinAndSomeFields() {
         return Query.select(getPersonId() + ", " + getPersonFirstName() + ", " + getPersonLastName())
                 .alias(Person.class, "p").alias(Company.class, "c").alias(CompanyAddressInfo.class, "ca")
                 .join(Company.class).join(CompanyAddressInfo.class).where("ca." + getCompanyAddressInfoLine1() + " IS NULL");
@@ -422,13 +365,11 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     protected abstract String getExpectedSqlForSelectWithAliasedJoinAndSomeFields();
 
     @Test
-    public final void testSelectWithAliasedExplicitJoin()
-    {
+    public final void testSelectWithAliasedExplicitJoin() {
         assertSelectSqlEquals(getSelectWithAliasedExplicitJoinQuery(), getExpectedSqlForSelectWithAliasedExplicitJoin());
     }
 
-    private Query getSelectWithAliasedExplicitJoinQuery()
-    {
+    private Query getSelectWithAliasedExplicitJoinQuery() {
         return Query.select()
                 .alias(Person.class, "p").alias(Company.class, "c")
                 .join(Company.class, "p." + getPersonCompany() + " = " + "c." + getCompanyId()).where("p." + getPersonLastName() + " IS NULL AND p." + getPersonAge() + " = 3")
@@ -437,92 +378,75 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
 
     protected abstract String getExpectedSqlForSelectWithAliasedExplicitJoin();
 
-    private String getTableNameForQuery(Class<? extends RawEntity<?>> clazz)
-    {
+    private String getTableNameForQuery(Class<? extends RawEntity<?>> clazz) {
         final String schema = getDatabaseProvider().getSchema();
         final String tableName = entityManager.getTableNameConverter().getName(clazz);
         return schema == null ? tableName : schema + "." + tableName;
     }
-    
-    protected final String getExpectedTableNameWithoutSchema(Class<? extends RawEntity<?>> clazz) 
-    {
+
+    protected final String getExpectedTableNameWithoutSchema(Class<? extends RawEntity<?>> clazz) {
         return entityManager.getTableNameConverter().getName(clazz);
     }
 
-    protected final String getExpectedTableName(Class<? extends RawEntity<?>> clazz)
-    {
+    protected final String getExpectedTableName(Class<? extends RawEntity<?>> clazz) {
         return getDatabaseProvider().withSchema(entityManager.getTableNameConverter().getName(clazz));
     }
 
-    protected final String getPersonId()
-    {
+    protected final String getPersonId() {
         return getFieldName(Person.class, "getID");
     }
 
-    protected final String getPersonFirstName()
-    {
+    protected final String getPersonFirstName() {
         return getFieldName(Person.class, "getFirstName");
     }
 
-    protected final String getPersonLastName()
-    {
+    protected final String getPersonLastName() {
         return getFieldName(Person.class, "getLastName");
     }
 
-    protected final String getPersonAge()
-    {
+    protected final String getPersonAge() {
         return getFieldName(Person.class, "getAge");
     }
 
-    protected final String getPersonCompany()
-    {
+    protected final String getPersonCompany() {
         return getFieldName(Person.class, "getCompany");
     }
 
-    protected final String getPersonUrl()
-    {
+    protected final String getPersonUrl() {
         return getFieldName(Person.class, "getURL");
     }
 
-    protected final String getCompanyId()
-    {
+    protected final String getCompanyId() {
         return getFieldName(Company.class, "getCompanyID");
     }
 
-    protected final String getCompanyAddressInfoLine1()
-    {
+    protected final String getCompanyAddressInfoLine1() {
         return getFieldName(CompanyAddressInfo.class, "getAddressLine1");
     }
 
-    protected final String getPersonChairPerson()
-    {
+    protected final String getPersonChairPerson() {
         return getFieldName(PersonChair.class, "getPerson");
     }
 
-    protected final String getPersonChairChair()
-    {
+    protected final String getPersonChairChair() {
         return getFieldName(PersonChair.class, "getChair");
     }
 
-    private void assertSelectSqlEquals(Query query, String expected)
-    {
+    private void assertSelectSqlEquals(Query query, String expected) {
         assertEquals(expected, toSql(getDatabaseProvider(), query, false));
     }
 
-    private void assertCountSqlEquals(Query query, String expected)
-    {
+    private void assertCountSqlEquals(Query query, String expected) {
         assertEquals(expected, toSql(getDatabaseProvider(), query, true));
     }
 
-    private String toSql(DatabaseProvider provider, Query query, boolean count)
-    {
-        EntityInfo<Person,Integer> entityInfo = entityManager.resolveEntityInfo(Person.class);
+    private String toSql(DatabaseProvider provider, Query query, boolean count) {
+        EntityInfo<Person, Integer> entityInfo = entityManager.resolveEntityInfo(Person.class);
         return query.toSQL(entityInfo, provider, entityManager.getTableNameConverter(), count);
     }
 
     @Test
-    public void testLimitOffset() throws SQLException
-    {
+    public void testLimitOffset() throws SQLException {
         Query query = Query.select().order("ID DESC").limit(3).offset(1);
 
         Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
@@ -535,8 +459,7 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testLimitOnly() throws Exception
-    {
+    public void testLimitOnly() throws Exception {
         Query query = Query.select().order("ID DESC").limit(3);
 
         Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
@@ -549,8 +472,7 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test
-    public void testOffsetOnly() throws Exception
-    {
+    public void testOffsetOnly() throws Exception {
         Query query = Query.select().order("ID DESC").offset(2);
 
         Comment[] unlimited = entityManager.find(Comment.class, Query.select().order("ID"));
@@ -562,88 +484,70 @@ public abstract class QueryTest extends ActiveObjectsIntegrationTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSelectStarForbidden()
-    {
+    public void testSelectStarForbidden() {
         Query.select("*");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSelectStarWithFieldnamesForbidden()
-    {
+    public void testSelectStarWithFieldnamesForbidden() {
         Query.select("fieldname1, fieldname2, *");
     }
 
     @Test
-    public void testOrderByReservedWord() throws Exception
-    {
+    public void testOrderByReservedWord() throws Exception {
         Comment[] ordered = entityManager.find(Comment.class, Query.select().order("INDEX DESC"));
         Comment[] unordered = entityManager.find(Comment.class);
 
         assertEquals(ordered.length, unordered.length);
     }
 
-    static class DatabaseProviders
-    {
-        public static HSQLDatabaseProvider getHsqlDatabaseProvider()
-        {
+    static class DatabaseProviders {
+        public static HSQLDatabaseProvider getHsqlDatabaseProvider() {
             return new HSQLDatabaseProvider(newDataSource(""));
         }
 
-        public static H2DatabaseProvider getH2DatabaseProvier()
-        {
+        public static H2DatabaseProvider getH2DatabaseProvier() {
             return new H2DatabaseProvider(newDataSource(""));
         }
 
-        public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider()
-        {
+        public static PostgreSQLDatabaseProvider getPostgreSqlDatabaseProvider() {
             return new PostgreSQLDatabaseProvider(newDataSource("'"));
         }
 
-        public static OracleDatabaseProvider getOracleDatabaseProvider()
-        {
+        public static OracleDatabaseProvider getOracleDatabaseProvider() {
             return new OracleDatabaseProvider(newDataSource(""));
         }
 
-        public static MySQLDatabaseProvider getMySqlDatabaseProvider()
-        {
+        public static MySQLDatabaseProvider getMySqlDatabaseProvider() {
             return new MySQLDatabaseProvider(newDataSource(""));
         }
-        
-        public static NuoDBDatabaseProvider getNuoDBDatabaseProvider()
-        {
-        	return new NuoDBDatabaseProvider(newDataSource(""));
+
+        public static NuoDBDatabaseProvider getNuoDBDatabaseProvider() {
+            return new NuoDBDatabaseProvider(newDataSource(""));
         }
 
-        public static SQLServerDatabaseProvider getMsSqlDatabaseProvider()
-        {
+        public static SQLServerDatabaseProvider getMsSqlDatabaseProvider() {
             return new SQLServerDatabaseProvider(newDataSource(""));
         }
 
-        public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider()
-        {
-            return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "")
-            {
+        public static EmbeddedDerbyDatabaseProvider getEmbeddedDerbyDatabaseProvider() {
+            return new EmbeddedDerbyDatabaseProvider(newDataSource(""), "") {
                 @Override
-                protected void setPostConnectionProperties(Connection conn) throws SQLException
-                {
+                protected void setPostConnectionProperties(Connection conn) throws SQLException {
                     // nothing
                 }
             };
         }
 
-        private static DisposableDataSource newDataSource(String quote)
-        {
+        private static DisposableDataSource newDataSource(String quote) {
             final DisposableDataSource dataSource = mock(DisposableDataSource.class);
             final Connection connection = mock(Connection.class);
             final DatabaseMetaData metaData = mock(DatabaseMetaData.class);
-            try
-            {
+            try {
                 when(dataSource.getConnection()).thenReturn(connection);
                 when(connection.getMetaData()).thenReturn(metaData);
                 when(metaData.getIdentifierQuoteString()).thenReturn(quote);
-            }
-            catch (SQLException e)
-            {
+            } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
             return dataSource;

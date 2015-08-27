@@ -6,19 +6,16 @@ import com.google.common.collect.Lists;
 import net.java.ao.DatabaseProvider;
 import org.junit.Test;
 
-import java.util.List;
-
 import javax.annotation.Nullable;
+import java.util.List;
 
 import static net.java.ao.DatabaseProviders.getPostgreSqlDatabaseProvider;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
-{
+public final class PostgresDatabaseProviderTest extends DatabaseProviderTest {
     @Test
-    public final void testProcessOrderClauseQuoted()
-    {
+    public final void testProcessOrderClauseQuoted() {
         final List<String> orderClauses = ImmutableList.of(
                 "\"column1\"",
                 "\"column1\" ASC",
@@ -26,11 +23,9 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
                 "table1.\"column1\" ASC"
         );
 
-        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
-        {
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>() {
             @Override
-            public String apply(@Nullable final String input)
-            {
+            public String apply(@Nullable final String input) {
                 return getDatabaseProvider().processOrderClause(input);
             }
         });
@@ -39,61 +34,52 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Override
-    protected String getDatabase()
-    {
+    protected String getDatabase() {
         return "postgres";
     }
 
     @Override
-    protected DatabaseProvider getDatabaseProvider()
-    {
+    protected DatabaseProvider getDatabaseProvider() {
         return getPostgreSqlDatabaseProvider();
     }
 
     @Override
-    protected String getExpectedWhereClause()
-    {
+    protected String getExpectedWhereClause() {
         return "\"field1\" = 2 and \"field2\" like %er";
     }
 
     @Override
-    protected String getExpectedWhereClauseWithWildcard()
-    {
+    protected String getExpectedWhereClauseWithWildcard() {
         // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         // PostgreSQL should quote all but wildcards and digits
         return "\"field1\" = *";
     }
 
     @Override
-    protected String getExpectedWhereClauseWithUnderscore()
-    {
+    protected String getExpectedWhereClauseWithUnderscore() {
         return "\"_field1\" = 1";
     }
 
     @Override
-    protected String getExpectedWhereClauseWithNumericIdentifier()
-    {
+    protected String getExpectedWhereClauseWithNumericIdentifier() {
         // PostgreSQL should quote all but wildcards and digits
         return "\"12345abc\" = 1";
     }
 
     @Override
-    protected String getExpectedWhereClauseWithUnderscoredNumeric()
-    {
+    protected String getExpectedWhereClauseWithUnderscoredNumeric() {
         // PostgreSQL should quote all but wildcards and digits
         return "\"_12345abc\" = 1";
     }
 
     @Override
-    protected String getExpectedWhereClauseWithAlphaNumeric()
-    {
+    protected String getExpectedWhereClauseWithAlphaNumeric() {
         // PostgreSQL should quote all but wildcards and digits
         return "\"a12345bc\" = 1";
     }
 
     @Override
-    protected List<String> getExpectedOrderClauses()
-    {
+    protected List<String> getExpectedOrderClauses() {
         return ImmutableList.of(
                 "\"column1\"",
                 "\"column1\" Asc",
@@ -107,8 +93,7 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Override
-    protected List<String> getExpectedOrderClausesExcessNameLength()
-    {
+    protected List<String> getExpectedOrderClausesExcessNameLength() {
         String excessColumnTableName = "someNamesThatOverMaximumLengthExtraCharacter";
 
         excessColumnTableName = getDatabaseProvider().shorten(excessColumnTableName);
@@ -117,8 +102,7 @@ public final class PostgresDatabaseProviderTest extends DatabaseProviderTest
     }
 
     @Override
-    protected List<String> getExpectedOrderClausesAppendTail()
-    {
+    protected List<String> getExpectedOrderClausesAppendTail() {
         return ImmutableList.of("table1.\"column1\" ASC, table2.\"column2\" ASC \"extraCharacter\"");
     }
 }

@@ -21,27 +21,27 @@ import java.lang.reflect.Method;
  * @author Daniel Spiewak
  */
 class MethodImplWrapper {
-	private Object instance;
-	private Method method;
-	
-	public MethodImplWrapper(Object instance, Method method) {
-		this.instance = instance;
-		this.method = method;
-	}
+    private Object instance;
+    private Method method;
 
-	public Object getInstance() {
-		return instance;
-	}
+    public MethodImplWrapper(Object instance, Method method) {
+        this.instance = instance;
+        this.method = method;
+    }
 
-	public void setInstance(Object instance) {
-		this.instance = instance;
-	}
+    public Object getInstance() {
+        return instance;
+    }
 
-	public Method getMethod() {
-		return method;
-	}
+    public void setInstance(Object instance) {
+        this.instance = instance;
+    }
 
-	public void setMethod(Method method) {
-		this.method = method;
-	}
+    public Method getMethod() {
+        return method;
+    }
+
+    public void setMethod(Method method) {
+        this.method = method;
+    }
 }

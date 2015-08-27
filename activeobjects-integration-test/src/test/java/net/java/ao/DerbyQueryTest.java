@@ -7,161 +7,136 @@ import net.java.ao.it.model.PersonChair;
 import net.java.ao.test.junit.DerbyIntegrationTest;
 import org.junit.experimental.categories.Category;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 @Category(DerbyIntegrationTest.class)
-public final class DerbyQueryTest extends QueryTest
-{
+public final class DerbyQueryTest extends QueryTest {
     @Override
-    protected DatabaseProvider getDatabaseProvider()
-    {
+    protected DatabaseProvider getDatabaseProvider() {
         return DatabaseProviders.getEmbeddedDerbyDatabaseProvider();
     }
 
     @Override
-    protected String getExpectedSqlForSimpleSelect()
-    {
+    protected String getExpectedSqlForSimpleSelect() {
         return format("SELECT %s FROM %s", getPersonId(), getExpectedTableName(Person.class));
     }
 
     @Override
-    protected String getExpectedSqlForSimpleCount()
-    {
+    protected String getExpectedSqlForSimpleCount() {
         return format("SELECT COUNT(*) FROM %s", getExpectedTableName(Person.class));
     }
 
     @Override
-    protected String getExpectSqlForSelectSomeFields()
-    {
+    protected String getExpectSqlForSelectSomeFields() {
         return format("SELECT %s,%s,%s FROM %s", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class));
     }
 
     @Override
-    protected String getExpectSqlForCountSomeFields()
-    {
+    protected String getExpectSqlForCountSomeFields() {
         return getExpectedSqlForSimpleCount();
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithWhereClause()
-    {
+    protected String getExpectedSqlForSelectWithWhereClause() {
         return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithWhereClause()
-    {
+    protected String getExpectedSqlForCountWithWhereClause() {
         return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithOrderClause()
-    {
+    protected String getExpectedSqlForSelectWithOrderClause() {
         return format("SELECT %s FROM %s ORDER BY %s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithOrderClauseAndAlias()
-    {
+    protected String getExpectedSqlForSelectWithOrderClauseAndAlias() {
         return format("SELECT p.%s FROM %s p ORDER BY p.%s DESC", getPersonId(), getExpectedTableName(Person.class), getPersonLastName());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithOrderClause()
-    {
+    protected String getExpectedSqlForCountWithOrderClause() {
         return format("SELECT COUNT(*) FROM %s ORDER BY %s DESC", getExpectedTableName(Person.class), getPersonLastName());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithLimit()
-    {
+    protected String getExpectedSqlForSelectWithLimit() {
         // Note: The limit is achieved through JDBC instead of within the query
         return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithOffset()
-    {
+    protected String getExpectedSqlForSelectWithOffset() {
         // Note: The limit is achieved through JDBC instead of within the query
         return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithLimit()
-    {
+    protected String getExpectedSqlForCountWithLimit() {
         // Note: The limit is achieved through JDBC instead of within the query
         return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithOffset()
-    {
+    protected String getExpectedSqlForCountWithOffset() {
         // Note: The offset is achieved through JDBC instead of within the query
         return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForDistinctSelectWithLimit()
-    {
+    protected String getExpectedSqlForDistinctSelectWithLimit() {
         // Note: The limit is achieved through JDBC instead of within the query
         return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForDistinctSelectWithOffset()
-    {
+    protected String getExpectedSqlForDistinctSelectWithOffset() {
         // Note: The offset is achieved through JDBC instead of within the query
         return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithLimitAndOffset()
-    {
+    protected String getExpectedSqlForSelectWithLimitAndOffset() {
         // Note: The limit and offset is achieved through JDBC instead of within the query
         return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithLimitAndOffset()
-    {
+    protected String getExpectedSqlForCountWithLimitAndOffset() {
         // Note: The limit and offset is achieved through JDBC instead of within the query
         return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForDistinctSelectWithLimitAndOffset()
-    {
+    protected String getExpectedSqlForDistinctSelectWithLimitAndOffset() {
         // Note: The limit and offset is achieved through JDBC instead of within the query
         return format("SELECT DISTINCT %s FROM %s WHERE %s IS NULL AND %s = 3", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithGroupBy()
-    {
+    protected String getExpectedSqlForSelectWithGroupBy() {
         return format("SELECT %s FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s", getPersonId(), getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithGroupBy()
-    {
+    protected String getExpectedSqlForCountWithGroupBy() {
         return format("SELECT COUNT(*) FROM %s WHERE %s IS NULL AND %s = 3 GROUP BY %s", getExpectedTableName(Person.class), getPersonLastName(), getPersonAge(), getPersonAge());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithHaving()
-    {
+    protected String getExpectedSqlForSelectWithHaving() {
         return format("SELECT p.%s FROM %s p JOIN %s pc ON p.%s = pc.%s GROUP BY p.%s HAVING COUNT(pc.%s) > 2", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithHaving()
-    {
+    protected String getExpectedSqlForCountWithHaving() {
         return format("SELECT COUNT(*) FROM %s p JOIN %s pc ON p.%s = pc.%s GROUP BY p.%s HAVING COUNT(pc.%s) > 2", getExpectedTableName(Person.class), getExpectedTableName(PersonChair.class), getPersonId(), getPersonChairPerson(), getPersonId(), getPersonChairChair());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithExplicitJoin()
-    {
+    protected String getExpectedSqlForSelectWithExplicitJoin() {
         return format("SELECT %s FROM %s JOIN %s ON %s.%s = %s.%s WHERE %s IS NULL AND %s = 3 GROUP BY %s",
                 getExpectedTableName(Person.class) + "." + getPersonId(), getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
@@ -171,8 +146,7 @@ public final class DerbyQueryTest extends QueryTest
     }
 
     @Override
-    protected String getExpectedSqlForCountWithExplicitJoin()
-    {
+    protected String getExpectedSqlForCountWithExplicitJoin() {
         return format("SELECT COUNT(*) FROM %s JOIN %s ON %s.%s = %s.%s WHERE %s IS NULL AND %s = 3 GROUP BY %s",
                 getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),
@@ -182,34 +156,29 @@ public final class DerbyQueryTest extends QueryTest
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithDefaultJoin()
-    {
-        return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL", 
-                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(), 
+    protected String getExpectedSqlForSelectWithDefaultJoin() {
+        return format("SELECT %s FROM %s JOIN %s JOIN %s WHERE %s IS NULL",
+                getExpectedTableNameWithoutSchema(Person.class) + "." + getPersonId(),
                 getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
-    protected String getExpectedSqlForCountWithDefaultJoin()
-    {
+    protected String getExpectedSqlForCountWithDefaultJoin() {
         return format("SELECT COUNT(*) FROM %s JOIN %s JOIN %s WHERE %s IS NULL", getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithAliasedJoin()
-    {
+    protected String getExpectedSqlForSelectWithAliasedJoin() {
         return format("SELECT p.%s FROM %s p JOIN %s c JOIN %s ca WHERE ca.%s IS NULL", getPersonId(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithAliasedJoinAndSomeFields()
-    {
+    protected String getExpectedSqlForSelectWithAliasedJoinAndSomeFields() {
         return format("SELECT p.%s,p.%s,p.%s FROM %s p JOIN %s c JOIN %s ca WHERE ca.%s IS NULL", getPersonId(), getPersonFirstName(), getPersonLastName(), getExpectedTableName(Person.class), getExpectedTableName(Company.class), getExpectedTableName(CompanyAddressInfo.class), getCompanyAddressInfoLine1());
     }
 
     @Override
-    protected String getExpectedSqlForSelectWithAliasedExplicitJoin()
-    {
+    protected String getExpectedSqlForSelectWithAliasedExplicitJoin() {
         return format("SELECT p.%s FROM %s p JOIN %s c ON p.%s = c.%s WHERE p.%s IS NULL AND p.%s = 3 GROUP BY p.%s",
                 getPersonId(), getExpectedTableName(Person.class),
                 getExpectedTableName(Company.class),

@@ -27,35 +27,34 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Daniel Spiewak
  */
-public class DatabaseTypeTest
-{
+public class DatabaseTypeTest {
     @Test
-	public void testDefaultParseValue() throws MalformedURLException {
-		assertEquals(123, new IntegerType().parseDefault("123").intValue());
-		assertEquals(123.456d, new DoubleType().parseDefault("123.456"), Double.MIN_VALUE);
-		assertEquals("My test value", new StringType().parseDefault("My test value"));
-		assertEquals(new URL("http://www.google.com"), new URLType().parseDefault("http://www.google.com"));
-		assertEquals(false, new BooleanType().parseDefault("false"));
+    public void testDefaultParseValue() throws MalformedURLException {
+        assertEquals(123, new IntegerType().parseDefault("123").intValue());
+        assertEquals(123.456d, new DoubleType().parseDefault("123.456"), Double.MIN_VALUE);
+        assertEquals("My test value", new StringType().parseDefault("My test value"));
+        assertEquals(new URL("http://www.google.com"), new URLType().parseDefault("http://www.google.com"));
+        assertEquals(false, new BooleanType().parseDefault("false"));
 
-		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-		Date date = new Date(0L);
-
-		assertEquals(date, new DateType().parseDefault(dateFormatter.format(date)));
-	}
-
-	@Test
-	public void testValueToString() throws MalformedURLException {
-		assertEquals("123", new IntegerType().valueToString(123));
-		assertEquals("123.456", new DoubleType().valueToString(123.456));
-		assertEquals("My test value", new StringType().valueToString("My test value"));
-		assertEquals("http://www.google.com", new URLType().valueToString(new URL("http://www.google.com")));
-		assertEquals("false", new BooleanType().valueToString(false));
-
-		SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         Date date = new Date(0L);
 
-		assertEquals(dateFormatter.format(date), new DateType().valueToString(date));
-	}
+        assertEquals(date, new DateType().parseDefault(dateFormatter.format(date)));
+    }
+
+    @Test
+    public void testValueToString() throws MalformedURLException {
+        assertEquals("123", new IntegerType().valueToString(123));
+        assertEquals("123.456", new DoubleType().valueToString(123.456));
+        assertEquals("My test value", new StringType().valueToString("My test value"));
+        assertEquals("http://www.google.com", new URLType().valueToString(new URL("http://www.google.com")));
+        assertEquals("false", new BooleanType().valueToString(false));
+
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        Date date = new Date(0L);
+
+        assertEquals(dateFormatter.format(date), new DateType().valueToString(date));
+    }
 }

@@ -13,14 +13,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TestDelegatingDisposableDataSourceHandler
-{
-    private @Mock DataSource datasource;
-    private @Mock Disposable disposable;
+public class TestDelegatingDisposableDataSourceHandler {
+    private
+    @Mock
+    DataSource datasource;
+    private
+    @Mock
+    Disposable disposable;
 
     @Test
-    public void testInvokeDispose() throws Exception
-    {
+    public void testInvokeDispose() throws Exception {
         DisposableDataSource disposableDatasource = DelegatingDisposableDataSourceHandler.newInstance(datasource, disposable);
 
         disposableDatasource.dispose();
@@ -30,8 +32,7 @@ public class TestDelegatingDisposableDataSourceHandler
     }
 
     @Test
-    public void testInvokeDatasourceMethod() throws Exception
-    {
+    public void testInvokeDatasourceMethod() throws Exception {
         DisposableDataSource disposableDatasource = DelegatingDisposableDataSourceHandler.newInstance(datasource, disposable);
         disposableDatasource.getConnection();
 

@@ -1,6 +1,5 @@
 package net.java.ao;
 
-public interface Disposable
-{
+public interface Disposable {
     void dispose();
 }

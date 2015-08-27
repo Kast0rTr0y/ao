@@ -3,51 +3,41 @@ package net.java.ao.schema.ddl;
 /**
  *
  */
-public class DDLValue
-{
+public class DDLValue {
     private DDLField field;
     private Object value;
 
-    public Object getValue()
-    {
+    public Object getValue() {
         return value;
     }
 
-    public void setValue(Object value)
-    {
+    public void setValue(Object value) {
         this.value = value;
     }
 
-    public DDLField getField()
-    {
+    public DDLField getField() {
         return field;
     }
 
-    public void setField(DDLField field)
-    {
+    public void setField(DDLField field) {
         this.field = field;
     }
 
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o)
-        {
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass())
-        {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
         final DDLValue ddlValue = (DDLValue) o;
 
-        if (field != null ? !field.equals(ddlValue.field) : ddlValue.field != null)
-        {
+        if (field != null ? !field.equals(ddlValue.field) : ddlValue.field != null) {
             return false;
         }
-        if (value != null ? !value.equals(ddlValue.value) : ddlValue.value != null)
-        {
+        if (value != null ? !value.equals(ddlValue.value) : ddlValue.value != null) {
             return false;
         }
 
@@ -55,8 +45,7 @@ public class DDLValue
     }
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         int result = field != null ? field.hashCode() : 0;
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;

@@ -97,7 +97,7 @@ public class NuoDBDisposableDataSourceHandler {
             // call dispose
             if (name.equals(DISPOSE) && parameterTypes.length == 0 && disposable != null) {
                 disposable.dispose();
-            // proxy getConnection() invocation
+                // proxy getConnection() invocation
             } else if (name.equals(GET_CONNECTION)) {
                 Connection connection = (Connection) delegate(method, args);
                 result = newProxy(new Class[]{Connection.class},
@@ -186,7 +186,7 @@ public class NuoDBDisposableDataSourceHandler {
             // proxy connection
             if (name.equals(GET_CONNECTION)) {
                 result = connection;
-            // proxy result set
+                // proxy result set
             } else if (name.equals(EXECUTE_QUERY) || name.equals(GET_RESULT_SET)) {
                 result = newProxy(new Class[]{ResultSet.class},
                         new DelegatingResultSetHandler((Statement) proxy,
@@ -226,7 +226,7 @@ public class NuoDBDisposableDataSourceHandler {
             // proxy statement
             if (name.equals(GET_STATEMENT)) {
                 result = statement;
-            // change resultSet.getObject() for BIGINT to return resultSet.getLong()
+                // change resultSet.getObject() for BIGINT to return resultSet.getLong()
             } else if (name.equals(GET_OBJECT)) {
                 Integer column = null;
                 if (method.getParameterTypes()[0].equals(String.class)) {

@@ -9,14 +9,13 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public final class MigrationFromIntegerToLongTest extends ActiveObjectsIntegrationTest
-{
+public final class MigrationFromIntegerToLongTest extends ActiveObjectsIntegrationTest {
     @Test
     @NonTransactional
-    public void testSimpleColumn() throws Exception
-    {
+    public void testSimpleColumn() throws Exception {
         entityManager.migrate(SimpleIntegerColumn.class);
 
         final SimpleIntegerColumn e = entityManager.create(SimpleIntegerColumn.class);
@@ -35,8 +34,7 @@ public final class MigrationFromIntegerToLongTest extends ActiveObjectsIntegrati
 
     @Test
     @NonTransactional
-    public void testAutoIncrementId() throws Exception
-    {
+    public void testAutoIncrementId() throws Exception {
         final int age = 123;
 
         entityManager.migrate(SimpleIntegerColumn.class);
@@ -58,24 +56,21 @@ public final class MigrationFromIntegerToLongTest extends ActiveObjectsIntegrati
 
 
     @Table("ENTITY")
-    public static interface SimpleIntegerColumn extends Entity
-    {
+    public static interface SimpleIntegerColumn extends Entity {
         Integer getAge();
 
         void setAge(Integer age);
     }
 
     @Table("ENTITY")
-    public static interface SimpleLongColumn extends Entity
-    {
+    public static interface SimpleLongColumn extends Entity {
         Long getAge();
 
         void setAge(Long age);
     }
 
     @Table("ENTITY")
-    public static interface AutoIncrementLong extends RawEntity<Long>
-    {
+    public static interface AutoIncrementLong extends RawEntity<Long> {
         @PrimaryKey
         @AutoIncrement
         Long getID();

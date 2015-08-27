@@ -1,10 +1,8 @@
 package net.java.ao.schema;
 
-public final class DefaultIndexNameConverter implements IndexNameConverter
-{
+public final class DefaultIndexNameConverter implements IndexNameConverter {
     @Override
-    public String getName(String tableName, String fieldName)
-    {
+    public String getName(String tableName, String fieldName) {
         return new StringBuilder()
                 .append("index_")
                 .append(Case.LOWER.apply(tableName))

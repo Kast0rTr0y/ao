@@ -15,81 +15,80 @@
  */
 package net.java.ao.schema;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.net.URL;
-
 import org.junit.Test;
-
 import test.schema.Company;
 import test.schema.CompanyAddressInfo;
 import test.schema.Person;
 import test.schema.PersonLegalDefence;
 import test.schema.PersonSuit;
 
+import java.net.URL;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 /**
  * @author Daniel Spiewak
  */
 public class UnderscoreFieldNameConverterTest {
 
-	@Test
-	public void testGetNameLowercase() throws SecurityException, NoSuchMethodException {
-		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.LOWER);
-		
-		assertEquals("first_name", converter.getName(Person.class.getMethod("getFirstName")));
-		assertEquals("first_name", converter.getName(Person.class.getMethod("setFirstName", String.class)));
-		
-		assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
-		assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
-		
-		assertEquals("company_id", converter.getName(Person.class.getMethod("getCompany")));
-		assertEquals("company_id", converter.getName(Person.class.getMethod("setCompany", Company.class)));
-		
-		assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
+    @Test
+    public void testGetNameLowercase() throws SecurityException, NoSuchMethodException {
+        UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.LOWER);
 
-		assertEquals("name", converter.getName(Company.class.getMethod("getName")));
-		assertEquals("name", converter.getName(Company.class.getMethod("setName", String.class)));
+        assertEquals("first_name", converter.getName(Person.class.getMethod("getFirstName")));
+        assertEquals("first_name", converter.getName(Person.class.getMethod("setFirstName", String.class)));
 
-		assertNull(converter.getName(Company.class.getMethod("getPeople")));
+        assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
+        assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
 
-		assertEquals("person_legal_defence_id", 
-				converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
-		assertEquals("person_legal_defence_id", 
-				converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
+        assertEquals("company_id", converter.getName(Person.class.getMethod("getCompany")));
+        assertEquals("company_id", converter.getName(Person.class.getMethod("setCompany", Company.class)));
 
-		assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
-		assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
-				String.class)));
-	}
+        assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
 
-	@Test
-	public void testGetNameUppercase() throws SecurityException, NoSuchMethodException {
-		UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.UPPER);
-		
-		assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("getFirstName")));
-		assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("setFirstName", String.class)));
-		
-		assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
-		assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
-		
-		assertEquals("COMPANY_ID", converter.getName(Person.class.getMethod("getCompany")));
-		assertEquals("COMPANY_ID", converter.getName(Person.class.getMethod("setCompany", Company.class)));
-		
-		assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
+        assertEquals("name", converter.getName(Company.class.getMethod("getName")));
+        assertEquals("name", converter.getName(Company.class.getMethod("setName", String.class)));
 
-		assertEquals("NAME", converter.getName(Company.class.getMethod("getName")));
-		assertEquals("NAME", converter.getName(Company.class.getMethod("setName", String.class)));
+        assertNull(converter.getName(Company.class.getMethod("getPeople")));
 
-		assertNull(converter.getName(Company.class.getMethod("getPeople")));
+        assertEquals("person_legal_defence_id",
+                converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
+        assertEquals("person_legal_defence_id",
+                converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
 
-		assertEquals("PERSON_LEGAL_DEFENCE_ID", 
-				converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
-		assertEquals("PERSON_LEGAL_DEFENCE_ID", 
-				converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
+        assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
+        assertEquals("address_line1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
+                String.class)));
+    }
 
-		assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
-		assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
-				String.class)));
-	}
+    @Test
+    public void testGetNameUppercase() throws SecurityException, NoSuchMethodException {
+        UnderscoreFieldNameConverter converter = new UnderscoreFieldNameConverter(Case.UPPER);
+
+        assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("getFirstName")));
+        assertEquals("FIRST_NAME", converter.getName(Person.class.getMethod("setFirstName", String.class)));
+
+        assertEquals("url", converter.getName(Person.class.getMethod("getURL")));
+        assertEquals("url", converter.getName(Person.class.getMethod("setURL", URL.class)));
+
+        assertEquals("COMPANY_ID", converter.getName(Person.class.getMethod("getCompany")));
+        assertEquals("COMPANY_ID", converter.getName(Person.class.getMethod("setCompany", Company.class)));
+
+        assertNull(converter.getName(Person.class.getMethod("getPersonLegalDefences")));
+
+        assertEquals("NAME", converter.getName(Company.class.getMethod("getName")));
+        assertEquals("NAME", converter.getName(Company.class.getMethod("setName", String.class)));
+
+        assertNull(converter.getName(Company.class.getMethod("getPeople")));
+
+        assertEquals("PERSON_LEGAL_DEFENCE_ID",
+                converter.getName(PersonSuit.class.getMethod("getPersonLegalDefence")));
+        assertEquals("PERSON_LEGAL_DEFENCE_ID",
+                converter.getName(PersonSuit.class.getMethod("setPersonLegalDefence", PersonLegalDefence.class)));
+
+        assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("getAddressLine1")));
+        assertEquals("ADDRESS_LINE1", converter.getName(CompanyAddressInfo.class.getMethod("setAddressLine1",
+                String.class)));
+    }
 }

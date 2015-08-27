@@ -22,26 +22,21 @@ import java.util.regex.Pattern;
 
 import static com.google.common.collect.Iterables.concat;
 
-public class H2DatabaseProvider extends DatabaseProvider
-{
-    public H2DatabaseProvider(final DisposableDataSource dataSource)
-    {
+public class H2DatabaseProvider extends DatabaseProvider {
+    public H2DatabaseProvider(final DisposableDataSource dataSource) {
         this(dataSource, "PUBLIC");
     }
 
-    public H2DatabaseProvider(final DisposableDataSource dataSource, final String schema)
-    {
+    public H2DatabaseProvider(final DisposableDataSource dataSource, final String schema) {
         super(dataSource, schema, TypeManager.h2());
     }
 
     @Override
-    protected String renderQueryLimit(final Query query)
-    {
+    protected String renderQueryLimit(final Query query) {
         final StringBuilder sql = new StringBuilder();
 
         // H2 requires a LIMIT when OFFSET is specified; -1 indicates unlimited
-        if (query.getLimit() < 0 && query.getOffset() > 0)
-        {
+        if (query.getLimit() < 0 && query.getOffset() > 0) {
             sql.append(" LIMIT -1");
         }
 
@@ -51,12 +46,10 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableAddColumn(final NameConverters nameConverters, final DDLTable table, final DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableAddColumn(final NameConverters nameConverters, final DDLTable table, final DDLField field) {
         final Iterable<SQLAction> back = super.renderAlterTableAddColumn(nameConverters, table, field);
 
-        if (field.isUnique())
-        {
+        if (field.isUnique()) {
             return concat(back, ImmutableList.of(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field)));
         }
 
@@ -64,20 +57,15 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Iterable<SQLAction> renderAlterTableChangeColumn(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field)
-    {
+    protected Iterable<SQLAction> renderAlterTableChangeColumn(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field) {
         final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
 
         back.addAll(super.renderAlterTableChangeColumn(nameConverters, table, oldField, field));
 
-        if (!field.isPrimaryKey())
-        {
-            if (oldField.isUnique() && !field.isUnique())
-            {
+        if (!field.isPrimaryKey()) {
+            if (oldField.isUnique() && !field.isUnique()) {
                 back.add(renderDropUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
-            }
-            else if (!oldField.isUnique() && field.isUnique())
-            {
+            } else if (!oldField.isUnique() && field.isUnique()) {
                 back.add(renderAddUniqueConstraint(nameConverters.getUniqueNameConverter(), table, field));
             }
         }
@@ -86,8 +74,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderAlterTableChangeColumnStatement(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field, final RenderFieldOptions options)
-    {
+    protected SQLAction renderAlterTableChangeColumnStatement(final NameConverters nameConverters, final DDLTable table, final DDLField oldField, final DDLField field, final RenderFieldOptions options) {
         final StringBuilder sql = new StringBuilder();
 
         sql.append("ALTER TABLE ");
@@ -95,8 +82,7 @@ public class H2DatabaseProvider extends DatabaseProvider
         sql.append(" ALTER COLUMN ");
         sql.append(renderField(nameConverters, table, field, options));
 
-        if (oldField.isNotNull() && !field.isNotNull())
-        {
+        if (oldField.isNotNull() && !field.isNotNull()) {
             sql.append(" NULL ");
         }
 
@@ -104,12 +90,10 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderFieldDefault(final DDLTable table, final DDLField field)
-    {
+    protected String renderFieldDefault(final DDLTable table, final DDLField field) {
         final StringBuilder sql = new StringBuilder();
 
-        if (field.getDefaultValue() != null)
-        {
+        if (field.getDefaultValue() != null) {
             sql.append(" DEFAULT ").append(renderValue(field.getDefaultValue()));
         }
 
@@ -117,8 +101,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderAlterTableDropKey(final DDLForeignKey key)
-    {
+    protected SQLAction renderAlterTableDropKey(final DDLForeignKey key) {
         final StringBuilder sql = new StringBuilder();
 
         sql.append("ALTER TABLE ");
@@ -130,8 +113,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index)
-    {
+    protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index) {
         return SQLAction.of(new StringBuilder()
                         .append("DROP INDEX IF EXISTS ")
                         .append(withSchema(getExistingIndexName(indexNameConverter, index)))
@@ -139,14 +121,11 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table)
-    {
+    protected String renderConstraintsForTable(final UniqueNameConverter uniqueNameConverter, final DDLTable table) {
         final StringBuilder sql = new StringBuilder(super.renderConstraintsForTable(uniqueNameConverter, table));
 
-        for (final DDLField field : table.getFields())
-        {
-            if (field.isUnique())
-            {
+        for (final DDLField field : table.getFields()) {
+            if (field.isUnique()) {
                 sql.append("   ");
                 sql.append(renderUniqueConstraint(uniqueNameConverter, table, field));
                 sql.append(",\n");
@@ -157,28 +136,23 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected String renderUnique(final UniqueNameConverter uniqueNameConverter, final DDLTable table, final DDLField field)
-    {
+    protected String renderUnique(final UniqueNameConverter uniqueNameConverter, final DDLTable table, final DDLField field) {
         return "";
     }
 
     @Override
-    public Object parseValue(final int type, String value)
-    {
-        if (value == null || value.equals("") || value.equals("NULL"))
-        {
+    public Object parseValue(final int type, String value) {
+        if (value == null || value.equals("") || value.equals("NULL")) {
             return null;
         }
 
-        switch (type)
-        {
+        switch (type) {
             case Types.TIMESTAMP:
             case Types.DATE:
             case Types.TIME:
             case Types.VARCHAR:
                 Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
-                if (matcher.find())
-                {
+                if (matcher.find()) {
                     value = matcher.group(1);
                 }
                 break;
@@ -188,8 +162,7 @@ public class H2DatabaseProvider extends DatabaseProvider
     }
 
     @Override
-    protected Set<String> getReservedWords()
-    {
+    protected Set<String> getReservedWords() {
         return RESERVED_WORDS;
     }
 
@@ -232,8 +205,7 @@ public class H2DatabaseProvider extends DatabaseProvider
             "WHERE"
     );
 
-    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    private SQLAction renderAddUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         final StringBuilder sql = new StringBuilder();
 
         sql.append("ALTER TABLE ");
@@ -244,8 +216,7 @@ public class H2DatabaseProvider extends DatabaseProvider
         return SQLAction.of(sql);
     }
 
-    private SQLAction renderDropUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    private SQLAction renderDropUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         final StringBuilder sql = new StringBuilder();
 
         sql.append("ALTER TABLE ");
@@ -256,8 +227,7 @@ public class H2DatabaseProvider extends DatabaseProvider
         return SQLAction.of(sql);
     }
 
-    private String renderUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field)
-    {
+    private String renderUniqueConstraint(UniqueNameConverter uniqueNameConverter, DDLTable table, DDLField field) {
         final StringBuilder sql = new StringBuilder();
 
         sql.append(" CONSTRAINT ");

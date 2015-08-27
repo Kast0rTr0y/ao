@@ -19,6 +19,7 @@ package test.schema;
  * @author Daniel Spiewak
  */
 public interface Photo extends Commentable {
-	public int getDepth();
-	public void setDepth(int depth);
+    public int getDepth();
+
+    public void setDepth(int depth);
 }

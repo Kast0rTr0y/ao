@@ -15,26 +15,10 @@
  */
 package net.java.ao.db;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.Date;
-import java.util.List;
-import javax.annotation.Nullable;
-
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-
 import com.google.common.collect.Lists;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
 import net.java.ao.DatabaseProvider;
 import net.java.ao.schema.DefaultIndexNameConverter;
 import net.java.ao.schema.DefaultSequenceNameConverter;
@@ -49,7 +33,21 @@ import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
+import org.hamcrest.Matchers;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import test.schema.Company;
+
+import javax.annotation.Nullable;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Date;
+import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.DatabaseProviders.getDatabaseProviderWithNoIndex;
@@ -63,14 +61,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public abstract class DatabaseProviderTest
-{
+public abstract class DatabaseProviderTest {
     @Mock
     private NameConverters nameConverters;
 
     @Before
-    public final void setUp()
-    {
+    public final void setUp() {
         when(nameConverters.getSequenceNameConverter()).thenReturn(new DefaultSequenceNameConverter());
         when(nameConverters.getTriggerNameConverter()).thenReturn(new DefaultTriggerNameConverter());
         when(nameConverters.getIndexNameConverter()).thenReturn(new DefaultIndexNameConverter());
@@ -82,142 +78,120 @@ public abstract class DatabaseProviderTest
     protected abstract DatabaseProvider getDatabaseProvider();
 
     @Test
-    public final void testRenderActionCreateTable() throws IOException
-    {
+    public final void testRenderActionCreateTable() throws IOException {
         testRenderAction("create-table.sql", createActionCreateTable, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionDropTable() throws IOException
-    {
+    public final void testRenderActionDropTable() throws IOException {
         testRenderAction("drop-table.sql", createActionDropTable, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionAddColumn() throws IOException
-    {
+    public final void testRenderActionAddColumn() throws IOException {
         testRenderAction("add-column.sql", createActionAddColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionAlterColumn() throws IOException
-    {
+    public void testRenderActionAlterColumn() throws IOException {
         testRenderAction("alter-column.sql", createActionAlterColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionAlterStringColumn() throws IOException
-    {
+    public void testRenderActionAlterStringColumn() throws IOException {
         testRenderAction("alter-string-column.sql", createActionAlterStringColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException
-    {
+    public void testRenderActionAlterStringLengthWithinBoundsColumn() throws IOException {
         testRenderAction("alter-string-length-column.sql", createActionAlterStringLengthColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException
-    {
+    public void testRenderActionAlterStringGreaterThanMaxLengthToUnlimitedColumn() throws IOException {
         testRenderAction("alter-string-maxlength-column.sql", createActionAlterStringMaxLengthColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionAlterNumericColumn() throws IOException
-    {
+    public void testRenderActionAlterNumericColumn() throws IOException {
         testRenderAction("alter-numeric-column.sql", createActionAlterNumericColumn, getDatabaseProvider());
     }
 
     @Test
-    public void testRenderActionDropColumn() throws IOException
-    {
+    public void testRenderActionDropColumn() throws IOException {
         testRenderAction("drop-column.sql", createActionDropColumn, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionCreateIndex() throws IOException
-    {
+    public final void testRenderActionCreateIndex() throws IOException {
         testRenderAction("create-index.sql", createActionCreateIndex, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionDropIndex() throws IOException
-    {
+    public final void testRenderActionDropIndex() throws IOException {
         testRenderAction("drop-index.sql", createActionDropIndex, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionDropNonExistentIndex() throws IOException
-    {
-         testRenderAction(new String[]{""}, createActionDropNonExistentIndex, getDatabaseProviderWithNoIndex());
+    public final void testRenderActionDropNonExistentIndex() throws IOException {
+        testRenderAction(new String[]{""}, createActionDropNonExistentIndex, getDatabaseProviderWithNoIndex());
     }
 
     @Test
-    public final void testRenderActionAddKey() throws IOException
-    {
+    public final void testRenderActionAddKey() throws IOException {
         testRenderAction("add-key.sql", createActionAddKey, getDatabaseProvider());
     }
 
     @Test
-    public final void testRenderActionDropKey() throws IOException
-    {
+    public final void testRenderActionDropKey() throws IOException {
         testRenderAction("drop-key.sql", createActionDropKey, getDatabaseProvider());
     }
 
     @Test
-    public final void testProcessWhereClause()
-    {
+    public final void testProcessWhereClause() {
         final String where = "field1 = 2 and field2 like %er";
         assertEquals(getExpectedWhereClause(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithNoIdentifier()
-    {
+    public final void testProcessWhereClauseWithNoIdentifier() {
         final String where = "1 = 1";
         assertEquals(where, getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithWildcard()
-    {
+    public final void testProcessWhereClauseWithWildcard() {
         // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         final String where = "field1 = *";
         assertEquals(getExpectedWhereClauseWithWildcard(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithUnderScoreIdentifier()
-    {
+    public final void testProcessWhereClauseWithUnderScoreIdentifier() {
         final String where = "_field1 = 1";
         assertEquals(getExpectedWhereClauseWithUnderscore(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithNumericIdentifier()
-    {
+    public final void testProcessWhereClauseWithNumericIdentifier() {
         final String where = "12345abc = 1";
         assertEquals(getExpectedWhereClauseWithNumericIdentifier(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithUnderscoredNumeric()
-    {
+    public final void testProcessWhereClauseWithUnderscoredNumeric() {
         final String where = "_12345abc = 1";
         assertEquals(getExpectedWhereClauseWithUnderscoredNumeric(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testProcessWhereClauseWithAlphaNumeric()
-    {
+    public final void testProcessWhereClauseWithAlphaNumeric() {
         final String where = "a12345bc = 1";
         assertEquals(getExpectedWhereClauseWithAlphaNumeric(), getDatabaseProvider().processWhereClause(where));
     }
 
     @Test
-    public final void testDropIndexWithSpecificName()
-    {
+    public final void testDropIndexWithSpecificName() {
         final DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
         final DDLIndex index = new DDLIndex();
         index.setField("field");
@@ -228,43 +202,36 @@ public abstract class DatabaseProviderTest
         final Iterable<SQLAction> sqlActions = getDatabaseProvider().renderAction(nameConverters, action);
 
         assertTrue("Should be dropping the existing index by name",
-                   Iterables.getFirst(sqlActions,SQLAction.of("")).getStatement().contains("index_table_field"));
+                Iterables.getFirst(sqlActions, SQLAction.of("")).getStatement().contains("index_table_field"));
     }
 
-    protected String getExpectedWhereClause()
-    {
+    protected String getExpectedWhereClause() {
         return "field1 = 2 and field2 like %er";
     }
 
-    protected String getExpectedWhereClauseWithWildcard()
-    {
+    protected String getExpectedWhereClauseWithWildcard() {
         // this is invalid SQL but is used to check that field1 is potentially quoted but * isn't
         return "field1 = *";
     }
 
-    protected String getExpectedWhereClauseWithUnderscore()
-    {
+    protected String getExpectedWhereClauseWithUnderscore() {
         return "_field1 = 1";
     }
 
-    protected String getExpectedWhereClauseWithNumericIdentifier()
-    {
+    protected String getExpectedWhereClauseWithNumericIdentifier() {
         return "12345abc = 1";
     }
 
-    protected String getExpectedWhereClauseWithUnderscoredNumeric()
-    {
+    protected String getExpectedWhereClauseWithUnderscoredNumeric() {
         return "_12345abc = 1";
     }
 
-    protected String getExpectedWhereClauseWithAlphaNumeric()
-    {
+    protected String getExpectedWhereClauseWithAlphaNumeric() {
         return "a12345bc = 1";
     }
 
     @Test
-    public final void testProcessOrderClause()
-    {
+    public final void testProcessOrderClause() {
         final List<String> orderClauses = ImmutableList.of(
                 "column1",
                 "column1 Asc",
@@ -276,11 +243,9 @@ public abstract class DatabaseProviderTest
                 "table1.column1 ASC, table2.column2 ASC"
         );
 
-        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
-        {
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>() {
             @Override
-            public String apply(@Nullable final String input)
-            {
+            public String apply(@Nullable final String input) {
                 return getDatabaseProvider().processOrderClause(input);
             }
         });
@@ -302,17 +267,14 @@ public abstract class DatabaseProviderTest
     }
 
     @Test
-    public final void testProcessOrderClauseAppendTail()
-    {
+    public final void testProcessOrderClauseAppendTail() {
         final List<String> orderClauses = ImmutableList.of(
                 "table1.column1 ASC, table2.column2 ASC extraCharacter"
         );
 
-        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
-        {
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>() {
             @Override
-            public String apply(@Nullable final String input)
-            {
+            public String apply(@Nullable final String input) {
                 return getDatabaseProvider().processOrderClause(input);
             }
         });
@@ -321,25 +283,21 @@ public abstract class DatabaseProviderTest
         assertThat(processedOrderClauses, is(getExpectedOrderClausesAppendTail()));
     }
 
-    protected List<String> getExpectedOrderClausesAppendTail()
-    {
+    protected List<String> getExpectedOrderClausesAppendTail() {
         return ImmutableList.of(
                 "table1.column1 ASC, table2.column2 ASC extraCharacter"
         );
     }
 
     @Test
-    public final void testProcessOrderClauseExcessNameLength()
-    {
+    public final void testProcessOrderClauseExcessNameLength() {
         final List<String> orderClauses = ImmutableList.of(
                 "someNamesThatOverMaximumLengthExtraCharacter"
         );
 
-        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>()
-        {
+        final List<String> processedOrderClauses = Lists.transform(orderClauses, new Function<String, String>() {
             @Override
-            public String apply(@Nullable final String input)
-            {
+            public String apply(@Nullable final String input) {
                 return getDatabaseProvider().processOrderClause(input);
             }
         });
@@ -348,8 +306,7 @@ public abstract class DatabaseProviderTest
         assertThat(processedOrderClauses, is(getExpectedOrderClausesExcessNameLength()));
     }
 
-    protected List<String> getExpectedOrderClausesExcessNameLength()
-    {
+    protected List<String> getExpectedOrderClausesExcessNameLength() {
         String excessColumnTableName = "someNamesThatOverMaximumLengthExtraCharacter";
 
         excessColumnTableName = getDatabaseProvider().shorten(excessColumnTableName);
@@ -357,10 +314,8 @@ public abstract class DatabaseProviderTest
         return ImmutableList.of(excessColumnTableName);
     }
 
-    private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionCreateTable = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             final DDLTable table = new DDLTable();
             table.setName("person");
 
@@ -390,8 +345,7 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    private DDLForeignKey newForeignKey(DatabaseProvider db)
-    {
+    private DDLForeignKey newForeignKey(DatabaseProvider db) {
         DDLForeignKey fk = new DDLForeignKey();
         fk.setDomesticTable("person");
         fk.setField("companyID");
@@ -400,24 +354,21 @@ public abstract class DatabaseProviderTest
         return fk;
     }
 
-    private DDLField newModifiedField(DatabaseProvider db)
-    {
+    private DDLField newModifiedField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("modified");
         f.setType(db.getTypeManager().getType(Date.class));
         return f;
     }
 
-    private DDLField newWeightField(DatabaseProvider db)
-    {
+    private DDLField newWeightField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("weight");
         f.setType(db.getTypeManager().getType(double.class));
         return f;
     }
 
-    private DDLField newCoolField(DatabaseProvider db)
-    {
+    private DDLField newCoolField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("cool");
         f.setType(db.getTypeManager().getType(boolean.class));
@@ -425,16 +376,14 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
-    private DDLField newCompanyField(DatabaseProvider db)
-    {
+    private DDLField newCompanyField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("companyID");
         f.setType(db.getTypeManager().getType(Company.class));
         return f;
     }
 
-    private DDLField newHeightField(DatabaseProvider db)
-    {
+    private DDLField newHeightField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("height");
         f.setType(db.getTypeManager().getType(double.class));
@@ -442,8 +391,7 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
-    private DDLField newUrlField(DatabaseProvider db)
-    {
+    private DDLField newUrlField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("url");
         f.setType(db.getTypeManager().getType(URL.class));
@@ -451,24 +399,21 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
-    private DDLField newAgeField(DatabaseProvider db)
-    {
+    private DDLField newAgeField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("age");
         f.setType(db.getTypeManager().getType(int.class));
         return f;
     }
 
-    private DDLField newLastNameField(DatabaseProvider db)
-    {
+    private DDLField newLastNameField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("lastName");
         f.setType(db.getTypeManager().getType(String.class, qualifiers().stringLength(UNLIMITED_LENGTH)));
         return f;
     }
 
-    private DDLField newFirstNameField(DatabaseProvider db)
-    {
+    private DDLField newFirstNameField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("firstName");
         f.setType(db.getTypeManager().getType(String.class));
@@ -476,8 +421,7 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
-    private DDLField newIdField(DatabaseProvider db)
-    {
+    private DDLField newIdField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("id");
         f.setType(db.getTypeManager().getType(int.class));
@@ -487,18 +431,15 @@ public abstract class DatabaseProviderTest
         return f;
     }
 
-    private DDLField newTypeOfPersonField(DatabaseProvider db)
-    {
+    private DDLField newTypeOfPersonField(DatabaseProvider db) {
         DDLField f = new DDLField();
         f.setName("typeOfPerson");
         f.setType(db.getTypeManager().getType(TypeOfPerson.class, qualifiers().stringLength(30)));
         return f;
     }
 
-    private Function<DatabaseProvider, DDLAction> createActionDropTable = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionDropTable = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.DROP);
 
             DDLTable table = new DDLTable();
@@ -522,10 +463,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionAddColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionAddColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -542,10 +481,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    protected final Function<DatabaseProvider, DDLAction> createActionAlterColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -569,10 +506,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -596,10 +531,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringLengthColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringLengthColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -624,10 +557,8 @@ public abstract class DatabaseProviderTest
     };
 
 
-    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringMaxLengthColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterStringMaxLengthColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -652,10 +583,8 @@ public abstract class DatabaseProviderTest
     };
 
 
-    protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionAlterNumericColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("person");
 
@@ -679,10 +608,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    protected final Function<DatabaseProvider, DDLAction> createActionDropColumn = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    protected final Function<DatabaseProvider, DDLAction> createActionDropColumn = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLTable table = new DDLTable();
             table.setName("company");
 
@@ -699,30 +626,24 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionAddKey = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionAddKey = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.ALTER_ADD_KEY);
             back.setKey(newForeignKey(db));
             return back;
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionDropKey = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionDropKey = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.ALTER_DROP_KEY);
             back.setKey(newForeignKey(db));
             return back;
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionCreateIndex = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionCreateIndex = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.CREATE_INDEX);
 
             DDLIndex index = new DDLIndex();
@@ -735,10 +656,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionDropIndex = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionDropIndex = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
 
             DDLIndex index = new DDLIndex();
@@ -752,10 +671,8 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    private Function<DatabaseProvider, DDLAction> createActionDropNonExistentIndex = new Function<DatabaseProvider, DDLAction>()
-    {
-        public DDLAction apply(DatabaseProvider db)
-        {
+    private Function<DatabaseProvider, DDLAction> createActionDropNonExistentIndex = new Function<DatabaseProvider, DDLAction>() {
+        public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
 
             DDLIndex index = new DDLIndex();
@@ -768,36 +685,28 @@ public abstract class DatabaseProviderTest
         }
     };
 
-    protected final void testRenderAction(String expectedSqlFile, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider) throws IOException
-    {
+    protected final void testRenderAction(String expectedSqlFile, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider) throws IOException {
         testRenderAction(readStatements(expectedSqlFile), action, databaseProvider);
     }
 
-    protected final void testRenderAction(String[] expectedSql, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider)
-    {
+    protected final void testRenderAction(String[] expectedSql, Function<DatabaseProvider, DDLAction> action, DatabaseProvider databaseProvider) {
         ImmutableList.Builder<String> statements = ImmutableList.builder();
-        for (SQLAction sql : databaseProvider.renderAction(nameConverters, action.apply(databaseProvider)))
-        {
+        for (SQLAction sql : databaseProvider.renderAction(nameConverters, action.apply(databaseProvider))) {
             statements.add(sql.getStatement());
         }
-        if (expectedSql.length == 0)
-        {
+        if (expectedSql.length == 0) {
             assertThat(statements.build(), Matchers.<String>iterableWithSize(0));
-        }
-        else
-        {
+        } else {
             assertThat(statements.build(), contains(expectedSql));
         }
     }
 
-    private String[] readStatements(String resource) throws IOException
-    {
+    private String[] readStatements(String resource) throws IOException {
         StringBuilder back = new StringBuilder();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/net/java/ao/db/" + getDatabase() + "/" + resource)));
         String cur;
-        while ((cur = reader.readLine()) != null)
-        {
+        while ((cur = reader.readLine()) != null) {
             back.append(cur).append('\n');
         }
         reader.close();
@@ -805,16 +714,14 @@ public abstract class DatabaseProviderTest
         back.setLength(back.length() - 1);
 
         String[] arr = back.toString().split("\n\n");
-        for (int i = 0; i < arr.length; i++)
-        {
+        for (int i = 0; i < arr.length; i++) {
             arr[i] = arr[i].trim();
         }
 
         return arr;
     }
-    
-    static enum TypeOfPerson
-    {
+
+    static enum TypeOfPerson {
         ME,
         EVERYONE_ELSE
     }

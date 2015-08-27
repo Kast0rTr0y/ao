@@ -10,12 +10,12 @@ import java.util.Set;
  * <p/>
  * Note this is different to {@link net.java.ao.types.TypeInfo} which describes what type a column is in the database.
  * {@code EntityInfo} describes the table.
+ *
  * @param <T> the {@link RawEntity entity} interface
  * @param <K> the primary key for the entity
  * @since 0.21
  */
-public interface EntityInfo<T extends RawEntity<K>, K>
-{
+public interface EntityInfo<T extends RawEntity<K>, K> {
 
     /**
      * @return the inteface for the entity {@code <T>}
@@ -38,7 +38,6 @@ public interface EntityInfo<T extends RawEntity<K>, K>
     Set<FieldInfo> getFields();
 
     /**
-     *
      * @return all the field names for the table
      * @see FieldInfo#getName()
      */
@@ -63,14 +62,12 @@ public interface EntityInfo<T extends RawEntity<K>, K>
     boolean hasAccessor(Method method);
 
     /**
-     *
      * @param method the method to test whether it is an mutator
      * @return {@code true} if the method is an mutator for the {@link #getEntityType() entity}, {@code false} otherwise
      */
     boolean hasMutator(Method method);
 
     /**
-     *
      * @param fieldName the name of the database column
      * @return {@code true} if the fieldName is associated with the {@link #getEntityType() entity}, {@code false} otherwise
      */

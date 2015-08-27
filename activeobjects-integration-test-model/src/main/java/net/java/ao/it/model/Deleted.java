@@ -1,31 +1,26 @@
 package net.java.ao.it.model;
 
-public enum Deleted
-{
+public enum Deleted {
     TRUE(true, "Y"),
     FALSE(false, "N");
 
     private final boolean b;
     private final String s;
 
-    private Deleted(boolean b, String s)
-    {
+    private Deleted(boolean b, String s) {
         this.b = b;
         this.s = s;
     }
 
-    public boolean asBoolean()
-    {
+    public boolean asBoolean() {
         return b;
     }
 
-    public String asString()
-    {
+    public String asString() {
         return s;
     }
 
-    public static Deleted fromString(String s)
-    {
+    public static Deleted fromString(String s) {
         return TRUE.s.equals(s) ? TRUE : FALSE;
     }
 }

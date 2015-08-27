@@ -20,18 +20,18 @@ package net.java.ao.schema.ddl;
  * manner.  This enum contains all of the DDL action types
  * supported by ActiveObjects, regardless of the fact that not
  * all databases support all of these actions.
- * 
+ *
  * @author Daniel Spiewak
  */
 public enum DDLActionType {
-	CREATE,
-	DROP,
-	ALTER_ADD_COLUMN,
-	ALTER_CHANGE_COLUMN,
-	ALTER_DROP_COLUMN,
-	ALTER_ADD_KEY,
-	ALTER_DROP_KEY,
-	CREATE_INDEX,
+    CREATE,
+    DROP,
+    ALTER_ADD_COLUMN,
+    ALTER_CHANGE_COLUMN,
+    ALTER_DROP_COLUMN,
+    ALTER_ADD_KEY,
+    ALTER_DROP_KEY,
+    CREATE_INDEX,
     DROP_INDEX,
     INSERT
 }

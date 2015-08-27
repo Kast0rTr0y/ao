@@ -23,16 +23,20 @@ import java.net.URI;
 import java.net.URL;
 import java.sql.Types;
 
-import static net.java.ao.types.LogicalTypes.*;
-import static net.java.ao.types.SchemaProperties.*;
-import static net.java.ao.types.TypeQualifiers.*;
-import static org.junit.Assert.*;
+import static net.java.ao.types.LogicalTypes.booleanType;
+import static net.java.ao.types.LogicalTypes.dateType;
+import static net.java.ao.types.LogicalTypes.doubleType;
+import static net.java.ao.types.LogicalTypes.integerType;
+import static net.java.ao.types.LogicalTypes.longType;
+import static net.java.ao.types.SchemaProperties.schemaType;
+import static net.java.ao.types.TypeQualifiers.UNLIMITED_LENGTH;
+import static net.java.ao.types.TypeQualifiers.qualifiers;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Daniel Spiewak
  */
-public final class TypeManagerTest
-{
+public final class TypeManagerTest {
     private static final TypeQualifiers PLAIN = qualifiers();
     private static final TypeQualifiers PRECISION_100 = qualifiers().precision(100);
     private static final TypeQualifiers LENGTH_127 = qualifiers().stringLength(127);
@@ -43,21 +47,19 @@ public final class TypeManagerTest
     private TypeManager typeManager;
 
     @Before
-    public final void setUp()
-    {
+    public final void setUp() {
         typeManager = new TypeManager.Builder()
-            .addMapping(booleanType(), schemaType("BOOLEAN"))
-            .addMapping(integerType(), schemaType("INTEGER"))
-            .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
-            .addMapping(doubleType(), schemaType("DOUBLE"))
-            .addMapping(dateType(), schemaType("DATETIME"))
-            .addStringTypes("VARCHAR", "TEXT", Integer.MAX_VALUE)
-            .build();
+                .addMapping(booleanType(), schemaType("BOOLEAN"))
+                .addMapping(integerType(), schemaType("INTEGER"))
+                .addMapping(longType(), schemaType("BIGINT").precisionAllowed(true), PRECISION_100)
+                .addMapping(doubleType(), schemaType("DOUBLE"))
+                .addMapping(dateType(), schemaType("DATETIME"))
+                .addStringTypes("VARCHAR", "TEXT", Integer.MAX_VALUE)
+                .build();
     }
 
     @Test
-	public void testGetTypeClass()
-    {
+    public void testGetTypeClass() {
         verifyType(typeManager.getType(boolean.class), BooleanType.class, "BOOLEAN", PLAIN);
         verifyType(typeManager.getType(Boolean.class), BooleanType.class, "BOOLEAN", PLAIN);
         verifyType(typeManager.getType(int.class), IntegerType.class, "INTEGER", PLAIN);
@@ -76,19 +78,17 @@ public final class TypeManagerTest
         verifyType(typeManager.getType(URL.class, LENGTH_127), URLType.class, "VARCHAR", LENGTH_127);
         verifyType(typeManager.getType(URL.class, UNLIMITED), URLType.class, "TEXT", UNLIMITED);
         verifyType(typeManager.getType(Person.class), EntityType.class, "INTEGER", PLAIN);
-	}
+    }
 
     @Test
-    public void testGetTypeInt()
-    {
+    public void testGetTypeInt() {
         verifyType(typeManager.getTypeFromSchema(Types.VARCHAR, LENGTH_127), StringType.class, "VARCHAR", LENGTH_127);
         verifyType(typeManager.getTypeFromSchema(Types.CLOB, PLAIN), StringType.class, "TEXT", UNLIMITED);
         verifyType(typeManager.getTypeFromSchema(Types.INTEGER, PLAIN), IntegerType.class, "INTEGER", PLAIN);
         verifyType(typeManager.getTypeFromSchema(Types.NUMERIC, PRECISION_100), LongType.class, "BIGINT", PRECISION_100);
     }
 
-    private void verifyType(TypeInfo<?> typeInfo, Class<?> logicalTypeShouldBe, String sqlTypeShouldBe, TypeQualifiers qualsShouldBe)
-    {
+    private void verifyType(TypeInfo<?> typeInfo, Class<?> logicalTypeShouldBe, String sqlTypeShouldBe, TypeQualifiers qualsShouldBe) {
         assertEquals(logicalTypeShouldBe, typeInfo.getLogicalType().getClass());
         assertEquals(sqlTypeShouldBe, typeInfo.getSchemaProperties().getSqlTypeName());
         assertEquals(qualsShouldBe, typeInfo.getQualifiers());

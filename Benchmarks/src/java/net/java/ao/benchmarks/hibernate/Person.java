@@ -10,79 +10,79 @@ import java.util.Set;
  * @author Daniel Spiewak
  */
 public class Person {
-	private Long id;
+    private Long id;
 
-	private String firstName, lastName, bio;
-	private int age;
-	private boolean alive;
-	
-	private Workplace workplace;
-	private Set professions = new HashSet();
-	
-	public Person() {
-	}
+    private String firstName, lastName, bio;
+    private int age;
+    private boolean alive;
 
-	public Long getId() {
-		return id;
-	}
+    private Workplace workplace;
+    private Set professions = new HashSet();
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public Person() {
+    }
 
-	public String getFirstName() {
-		return firstName;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public String getLastName() {
-		return lastName;
-	}
+    public String getFirstName() {
+        return firstName;
+    }
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
 
-	public String getBio() {
-		return bio;
-	}
+    public String getLastName() {
+        return lastName;
+    }
 
-	public void setBio(String bio) {
-		this.bio = bio;
-	}
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
-	public int getAge() {
-		return age;
-	}
+    public String getBio() {
+        return bio;
+    }
 
-	public void setAge(int age) {
-		this.age = age;
-	}
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
 
-	public boolean isAlive() {
-		return alive;
-	}
+    public int getAge() {
+        return age;
+    }
 
-	public void setAlive(boolean alive) {
-		this.alive = alive;
-	}
+    public void setAge(int age) {
+        this.age = age;
+    }
 
-	public Workplace getWorkplace() {
-		return workplace;
-	}
+    public boolean isAlive() {
+        return alive;
+    }
 
-	public void setWorkplace(Workplace workplace) {
-		this.workplace = workplace;
-	}
+    public void setAlive(boolean alive) {
+        this.alive = alive;
+    }
 
-	public Set getProfessions() {
-		return professions;
-	}
+    public Workplace getWorkplace() {
+        return workplace;
+    }
 
-	public void setProfessions(Set professions) {
-		this.professions = professions;
-	}
+    public void setWorkplace(Workplace workplace) {
+        this.workplace = workplace;
+    }
+
+    public Set getProfessions() {
+        return professions;
+    }
+
+    public void setProfessions(Set professions) {
+        this.professions = professions;
+    }
 }

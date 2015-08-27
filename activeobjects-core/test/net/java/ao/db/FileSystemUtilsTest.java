@@ -6,11 +6,9 @@ import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 
-public final class FileSystemUtilsTest
-{
+public final class FileSystemUtilsTest {
     @Test
-    public void checkIsCaseSensitiveDoesNotCreateMultipleTempFiles()
-    {
+    public void checkIsCaseSensitiveDoesNotCreateMultipleTempFiles() {
         final int initialNumberOfTempFiles = getNumberOfTempFiles();
 
         FileSystemUtils.isCaseSensitive();
@@ -22,13 +20,11 @@ public final class FileSystemUtilsTest
         assertEquals(initialNumberOfTempFiles + 1, getNumberOfTempFiles()); // no temp file added the second time
     }
 
-    private int getNumberOfTempFiles()
-    {
+    private int getNumberOfTempFiles() {
         return getTempDir().list().length;
     }
 
-    private File getTempDir()
-    {
+    private File getTempDir() {
         return new File(System.getProperty("java.io.tmpdir"));
     }
 }

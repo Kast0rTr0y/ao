@@ -3,13 +3,11 @@ package net.java.ao.schema;
 import net.java.ao.RawEntity;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public final class PluralizedTableNameConverterTest
-{
+public final class PluralizedTableNameConverterTest {
     @Test
-    public void getNameForEntities()
-    {
+    public void getNameForEntities() {
         final PluralizedTableNameConverter converter = new PluralizedTableNameConverter();
 
         assertEquals("StraightRoads", converter.getName(StraightRoad.class));
@@ -18,8 +16,7 @@ public final class PluralizedTableNameConverterTest
     }
 
     @Test
-    public void getNameForEntitiesWithUpperCaseUnderscoreTableNameConverterAsDelegate()
-    {
+    public void getNameForEntitiesWithUpperCaseUnderscoreTableNameConverterAsDelegate() {
         final PluralizedTableNameConverter converter = new PluralizedTableNameConverter(new UnderscoreTableNameConverter(Case.UPPER));
 
         assertEquals("STRAIGHT_ROADS", converter.getName(StraightRoad.class));
@@ -28,8 +25,7 @@ public final class PluralizedTableNameConverterTest
     }
 
     @Test
-    public void getNameForEntitiesWithLowerCaseUnderscoreTableNameConverterAsDelegate()
-    {
+    public void getNameForEntitiesWithLowerCaseUnderscoreTableNameConverterAsDelegate() {
         final PluralizedTableNameConverter converter = new PluralizedTableNameConverter(new UnderscoreTableNameConverter(Case.LOWER));
 
         assertEquals("straight_roads", converter.getName(StraightRoad.class));
@@ -38,8 +34,7 @@ public final class PluralizedTableNameConverterTest
     }
 
     @Test
-    public void getNameForEntitiesWithCamelCaseTableNameConverterAsDelegate()
-    {
+    public void getNameForEntitiesWithCamelCaseTableNameConverterAsDelegate() {
         final PluralizedTableNameConverter converter = new PluralizedTableNameConverter(new CamelCaseTableNameConverter());
 
         assertEquals("straightRoads", converter.getName(StraightRoad.class));
@@ -48,8 +43,7 @@ public final class PluralizedTableNameConverterTest
     }
 
     @Test
-    public void getNameForASetOfCommonNames()
-    {
+    public void getNameForASetOfCommonNames() {
         final PluralizedTableNameConverter converter = new PluralizedTableNameConverter();
 
         assertEquals("companies", converter.getName("company"));
@@ -139,8 +133,7 @@ public final class PluralizedTableNameConverterTest
     }
 
     @Test
-    public void testPatternTransform()
-    {
+    public void testPatternTransform() {
         final TransformsTableNameConverter.Transform transform = new PluralizedTableNameConverter.PatternTransform("(.*p)erson", "{}eople");
 
         assertEquals("Random", transform.apply("Random"));
@@ -151,15 +144,12 @@ public final class PluralizedTableNameConverterTest
         assertEquals("SomePersonIsYelling", transform.apply("SomePersonIsYelling"));
     }
 
-    private static interface Person extends RawEntity<Object>
-    {
+    private static interface Person extends RawEntity<Object> {
     }
 
-    private static interface Company extends RawEntity<Object>
-    {
+    private static interface Company extends RawEntity<Object> {
     }
 
-    private static interface StraightRoad extends RawEntity<Object>
-    {
+    private static interface StraightRoad extends RawEntity<Object> {
     }
 }

@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,8 +35,7 @@ import static org.mockito.Mockito.when;
  * @author Daniel Spiewak
  */
 @RunWith(MockitoJUnitRunner.class)
-public class EntityManagerTest
-{
+public class EntityManagerTest {
     @Mock
     private DatabaseProvider databaseProvider;
     @Mock
@@ -46,27 +44,23 @@ public class EntityManagerTest
     private EntityManager entityManager;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         when(databaseProvider.getTypeManager()).thenReturn(typeManager);
         entityManager = new EntityManager(databaseProvider, getEntityManagerConfiguration());
     }
 
     @After
-    public void tearDown()
-    {
+    public void tearDown() {
         entityManager = null;
     }
 
     @Test(expected = RuntimeException.class)
-    public void testNullTypeMapper()
-    {
+    public void testNullTypeMapper() {
         entityManager.setPolymorphicTypeMapper(null);
         entityManager.getPolymorphicTypeMapper();
     }
 
-    private EntityManagerConfiguration getEntityManagerConfiguration()
-    {
+    private EntityManagerConfiguration getEntityManagerConfiguration() {
         final NameConverters nameConverters = mock(NameConverters.class);
         final TableNameConverter tableNameConverter = mock(TableNameConverter.class);
         final SchemaConfiguration schemaConfiguration = mock(SchemaConfiguration.class);

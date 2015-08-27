@@ -37,13 +37,14 @@ import net.java.ao.schema.Unique;
  * @author Daniel Spiewak
  */
 public interface EmailAddress extends Entity {
-	
-	@Unique
-	public String getEmail();
-	
-	@Unique
-	public void setEmail(String email);
-	
-	public Person getPerson();
-	public void setPerson(Person person);
+
+    @Unique
+    public String getEmail();
+
+    @Unique
+    public void setEmail(String email);
+
+    public Person getPerson();
+
+    public void setPerson(Person person);
 }

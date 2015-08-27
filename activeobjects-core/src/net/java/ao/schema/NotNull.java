@@ -28,12 +28,13 @@ import java.lang.annotation.Target;
  * be non-NULL.  For most databases, this means that the field corresponding
  * to the method in question will be defined with the <code>NOT NULL</code>
  * clause.</p>
- * 
+ *
  * <p>This annotation is only relevant to migrations.  It has no effect upon
  * "runtime" entity usage.</p>
- * 
+ *
  * @author Daniel Spiewak
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface NotNull {}
+public @interface NotNull {
+}

@@ -11,41 +11,35 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public final class MethodFinderTest
-{
+public final class MethodFinderTest {
     private MethodFinder methodFinder;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         methodFinder = new MethodFinder();
     }
 
     @Test
-    public void testFindAnnotatedMethodsWithNoAnnotatedMethods()
-    {
+    public void testFindAnnotatedMethodsWithNoAnnotatedMethods() {
         final Iterable<Method> methods = methodFinder.findAnnotatedMethods(AnAnnotation.class, Object.class);
         assertEquals(0, Iterables.size(methods));
     }
 
     @Test
-    public void testFindAnnotatedMethodsWithAnnotatedMethods()
-    {
+    public void testFindAnnotatedMethodsWithAnnotatedMethods() {
         final Iterable<Method> methods = methodFinder.findAnnotatedMethods(AnAnnotation.class, AnnotatedClass.class);
         assertEquals(2, Iterables.size(methods));
         assertContainsMethodNamed(methods, "annotatedMethod");
         assertContainsMethodNamed(methods, "anotherAnnotatedMethod");
     }
 
-    private void assertContainsMethodNamed(Iterable<Method> methods, final String name)
-    {
-        assertTrue(Iterables.any(methods, new Predicate<Method>()
-        {
+    private void assertContainsMethodNamed(Iterable<Method> methods, final String name) {
+        assertTrue(Iterables.any(methods, new Predicate<Method>() {
             @Override
-            public boolean apply(Method m)
-            {
+            public boolean apply(Method m) {
                 return m.getName().equals(name);
             }
         }));
@@ -53,24 +47,19 @@ public final class MethodFinderTest
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public static @interface AnAnnotation
-    {
+    public static @interface AnAnnotation {
     }
 
-    public static final class AnnotatedClass
-    {
+    public static final class AnnotatedClass {
         @AnAnnotation
-        public void annotatedMethod()
-        {
+        public void annotatedMethod() {
         }
 
-        public void notAnnotatedMethod()
-        {
+        public void notAnnotatedMethod() {
         }
 
         @AnAnnotation
-        public void anotherAnnotatedMethod()
-        {
+        public void anotherAnnotatedMethod() {
         }
     }
 }

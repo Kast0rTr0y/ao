@@ -7,25 +7,21 @@ import net.java.ao.schema.UnderscoreFieldNameConverter;
 
 import java.lang.reflect.Method;
 
-public final class UpperCaseFieldNameConverter implements FieldNameConverter, FieldNameProcessor
-{
+public final class UpperCaseFieldNameConverter implements FieldNameConverter, FieldNameProcessor {
     private final UnderscoreFieldNameConverter fnc = new UnderscoreFieldNameConverter(Case.UPPER);
 
     @Override
-    public String getName(Method method)
-    {
+    public String getName(Method method) {
         return fnc.getName(method);
     }
 
     @Override
-    public String getPolyTypeName(Method method)
-    {
+    public String getPolyTypeName(Method method) {
         return fnc.getPolyTypeName(method);
     }
 
     @Override
-    public String convertName(String name)
-    {
+    public String convertName(String name) {
         return fnc.convertName(name);
     }
 }

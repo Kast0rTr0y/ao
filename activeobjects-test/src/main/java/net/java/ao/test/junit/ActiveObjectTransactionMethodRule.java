@@ -31,8 +31,7 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
 /**
  *
  */
-public class ActiveObjectTransactionMethodRule implements MethodRule
-{
+public class ActiveObjectTransactionMethodRule implements MethodRule {
     private static final Map<JdbcConfiguration, DatabaseConfiguration> DATABASES = new HashMap<JdbcConfiguration, DatabaseConfiguration>();
 
     private final Object test;
@@ -56,8 +55,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                                              SequenceNameConverter sequenceNameConverter,
                                              TriggerNameConverter triggerNameConverter,
                                              IndexNameConverter indexNameConverter,
-                                             UniqueNameConverter uniqueNameConverter)
-    {
+                                             UniqueNameConverter uniqueNameConverter) {
         this.test = test;
         this.jdbc = jdbc;
         this.withIndex = withIndex;
@@ -69,29 +67,21 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         this.uniqueNameConverter = uniqueNameConverter;
     }
 
-    public final Statement apply(final Statement base, final FrameworkMethod method, final Object target)
-    {
-        return new Statement()
-        {
+    public final Statement apply(final Statement base, final FrameworkMethod method, final Object target) {
+        return new Statement() {
             @Override
-            public void evaluate() throws Throwable
-            {
+            public void evaluate() throws Throwable {
                 before(method);
                 final boolean useTransaction = useTransaction(method);
                 Connection c = null;
-                try
-                {
-                    if (useTransaction)
-                    {
+                try {
+                    if (useTransaction) {
                         c = entityManager.getProvider().startTransaction();
                     }
 
                     base.evaluate();
-                }
-                finally
-                {
-                    if (useTransaction && c != null)
-                    {
+                } finally {
+                    if (useTransaction && c != null) {
                         entityManager.getProvider().rollbackTransaction(c);
 
                         // make it closeable
@@ -107,31 +97,24 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         };
     }
 
-    protected void before(FrameworkMethod method) throws Throwable
-    {
+    protected void before(FrameworkMethod method) throws Throwable {
         if (withIndex) createIndexDir();
         entityManager = createEntityManagerAndUpdateDatabase();
         injectEntityManager();
     }
 
-    private void createIndexDir()
-    {
-        try
-        {
+    private void createIndexDir() {
+        try {
             indexDirectory = File.createTempFile("ao_test", "index");
             indexDirectory.delete();
             indexDirectory.mkdirs();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected void after(FrameworkMethod method)
-    {
-        if (!useTransaction(method))
-        {
+    protected void after(FrameworkMethod method) {
+        if (!useTransaction(method)) {
             // make sure that the next test gets a clean database
             final DatabaseConfiguration databaseConfiguration = DATABASES.remove(jdbc);
             databaseConfiguration.getEntityManager().getProvider().dispose();
@@ -140,66 +123,51 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         if (withIndex) removeIndexDir();
     }
 
-    private boolean useTransaction(FrameworkMethod method)
-    {
+    private boolean useTransaction(FrameworkMethod method) {
         return !method.getMethod().isAnnotationPresent(NonTransactional.class);
     }
 
-    private void removeIndexDir()
-    {
+    private void removeIndexDir() {
         removeFile(indexDirectory);
     }
 
-    private void removeFile(File file)
-    {
-        if (file == null || !file.exists())
-        {
+    private void removeFile(File file) {
+        if (file == null || !file.exists()) {
             return;
         }
 
-        if (file.isFile())
-        {
+        if (file.isFile()) {
             file.delete();
-        }
-        else
-        {
-            for (File f : file.listFiles())
-            {
+        } else {
+            for (File f : file.listFiles()) {
                 removeFile(f);
             }
             file.delete(); // now we can delete the empty directory
         }
     }
 
-    private EntityManager createEntityManagerAndUpdateDatabase() throws Exception
-    {
+    private EntityManager createEntityManagerAndUpdateDatabase() throws Exception {
         final Class<? extends DatabaseUpdater> databaseUpdater = isDataAnnotationPresent() ? getDataAnnotationValue() : getDataAnnotationDefaultValue();
         final DatabaseConfiguration dbConfiguration = newDatabaseConfiguration(databaseUpdater);
         final EntityManager entityManager;
-        if (databaseUpdater == NullDatabase.class)
-        {
+        if (databaseUpdater == NullDatabase.class) {
             entityManager = createEntityManager();
             entityManager.migrateDestructively(); // empty the database
             DATABASES.remove(jdbc);
-        }
-        else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex)
-        {
+        } else if (!DATABASES.containsKey(jdbc) || !DATABASES.get(jdbc).equals(dbConfiguration) || withIndex) {
             entityManager = createEntityManager();
             entityManager.migrateDestructively(); // empty the database
             newInstance(databaseUpdater).update(entityManager);
             dbConfiguration.setEntityManager(entityManager);
             DATABASES.put(jdbc, dbConfiguration);
-        }
-        else
-        {
+        } else {
             entityManager = DATABASES.get(jdbc).getEntityManager();
         }
 
         return entityManager;
     }
 
-    private DatabaseConfiguration newDatabaseConfiguration(Class<? extends DatabaseUpdater> databaseUpdater)
-    {
+    private DatabaseConfiguration newDatabaseConfiguration(Class<? extends DatabaseUpdater> databaseUpdater) {
         final Class<? extends TableNameConverter> tableNameConverterClass = (Class<? extends TableNameConverter>) getClass(tableNameConverter);
         final Class<? extends FieldNameConverter> fieldNameConverterClass = (Class<? extends FieldNameConverter>) getClass(fieldNameConverter);
         final Class<? extends SequenceNameConverter> sequenceNameConverterClass = (Class<? extends SequenceNameConverter>) getClass(sequenceNameConverter);
@@ -208,125 +176,94 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         return new DatabaseConfiguration(databaseUpdater, tableNameConverterClass, fieldNameConverterClass, sequenceNameConverterClass, triggerNameConverterClass, indexNameConverterClass, withIndex);
     }
 
-    private Class<?> getClass(Object o)
-    {
+    private Class<?> getClass(Object o) {
         return o != null ? o.getClass() : null;
     }
 
-    private EntityManager createEntityManager()
-    {
+    private EntityManager createEntityManager() {
         EntityManagerBuilderWithDatabaseProperties entityManagerBuilder = EntityManagerBuilder.url(jdbc.getUrl()).username(jdbc.getUsername()).password(jdbc.getPassword()).schema(jdbc.getSchema()).auto();
 
-        if (tableNameConverter != null)
-        {
+        if (tableNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.tableNameConverter(tableNameConverter);
         }
-        if (fieldNameConverter != null)
-        {
+        if (fieldNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.fieldNameConverter(fieldNameConverter);
         }
-        if (sequenceNameConverter != null)
-        {
+        if (sequenceNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.sequenceNameConverter(sequenceNameConverter);
         }
-        if (triggerNameConverter != null)
-        {
+        if (triggerNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.triggerNameConverter(triggerNameConverter);
         }
-        if (indexNameConverter != null)
-        {
+        if (indexNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.indexNameConverter(indexNameConverter);
         }
-        if (uniqueNameConverter != null)
-        {
+        if (uniqueNameConverter != null) {
             entityManagerBuilder = entityManagerBuilder.uniqueNameConverter(uniqueNameConverter);
         }
 
         return withIndex ? entityManagerBuilder.withIndex(indexDirectory).build() : entityManagerBuilder.build();
     }
 
-    private void injectEntityManager()
-    {
+    private void injectEntityManager() {
         final Field field = getEntityManagerField(getTestClass());
         final boolean isFieldAccessible = field.isAccessible();
-        try
-        {
+        try {
             field.setAccessible(true);
-            try
-            {
+            try {
                 field.set(test, entityManager);
-            }
-            catch (IllegalAccessException e)
-            {
+            } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-        }
-        finally
-        {
+        } finally {
             field.setAccessible(isFieldAccessible);
         }
     }
 
-    private Class<? extends DatabaseUpdater> getDataAnnotationDefaultValue() throws NoSuchMethodException
-    {
+    private Class<? extends DatabaseUpdater> getDataAnnotationDefaultValue() throws NoSuchMethodException {
         @Data
-        final class C
-        {
+        final class C {
         }
         return C.class.getAnnotation(Data.class).value();
     }
 
-    private Class<? extends DatabaseUpdater> getDataAnnotationValue()
-    {
+    private Class<? extends DatabaseUpdater> getDataAnnotationValue() {
         return getTestClass().getAnnotation(Data.class).value();
     }
 
-    private boolean isDataAnnotationPresent()
-    {
+    private boolean isDataAnnotationPresent() {
         return getTestClass().isAnnotationPresent(Data.class);
     }
 
-    private <T> T newInstance(Class<T> aClass)
-    {
-        try
-        {
+    private <T> T newInstance(Class<T> aClass) {
+        try {
             return aClass.newInstance();
-        }
-        catch (InstantiationException e)
-        {
+        } catch (InstantiationException e) {
             throw new RuntimeException(e);
-        }
-        catch (IllegalAccessException e)
-        {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Class<?> getTestClass()
-    {
+    private Class<?> getTestClass() {
         return test.getClass();
     }
 
-    private Field getEntityManagerField(Class<?> aClass)
-    {
-        for (Field field : aClass.getDeclaredFields())
-        {
-            if (field.getType().equals(EntityManager.class))
-            {
+    private Field getEntityManagerField(Class<?> aClass) {
+        for (Field field : aClass.getDeclaredFields()) {
+            if (field.getType().equals(EntityManager.class)) {
                 return field;
             }
         }
 
-        if (!aClass.getSuperclass().equals(Object.class))
-        {
+        if (!aClass.getSuperclass().equals(Object.class)) {
             return getEntityManagerField(aClass.getSuperclass());
         }
 
         return null;
     }
 
-    private static final class DatabaseConfiguration
-    {
+    private static final class DatabaseConfiguration {
         private final Class<? extends DatabaseUpdater> databaseUpdaterClass;
         private final Class<? extends TableNameConverter> tableNameConverterClass;
         private final Class<? extends FieldNameConverter> fieldNameConverterClass;
@@ -343,8 +280,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
                                      Class<? extends SequenceNameConverter> sequenceNameConverterClass,
                                      Class<? extends TriggerNameConverter> triggerNameConverterClass,
                                      Class<? extends IndexNameConverter> indexNameConverterClass,
-                                     boolean withIndex)
-        {
+                                     boolean withIndex) {
             this.databaseUpdaterClass = databaseUpdaterClass;
             this.tableNameConverterClass = tableNameConverterClass;
             this.fieldNameConverterClass = fieldNameConverterClass;
@@ -354,56 +290,44 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
             this.withIndex = withIndex;
         }
 
-        public void setEntityManager(EntityManager entityManager)
-        {
+        public void setEntityManager(EntityManager entityManager) {
             this.entityManager = entityManager;
         }
 
-        public EntityManager getEntityManager()
-        {
+        public EntityManager getEntityManager() {
             return entityManager;
         }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            {
+        public boolean equals(Object o) {
+            if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass())
-            {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
 
             final DatabaseConfiguration that = (DatabaseConfiguration) o;
 
-            if (withIndex != that.withIndex)
-            {
+            if (withIndex != that.withIndex) {
                 return false;
             }
-            if (databaseUpdaterClass != null ? !databaseUpdaterClass.equals(that.databaseUpdaterClass) : that.databaseUpdaterClass != null)
-            {
+            if (databaseUpdaterClass != null ? !databaseUpdaterClass.equals(that.databaseUpdaterClass) : that.databaseUpdaterClass != null) {
                 return false;
             }
-            if (fieldNameConverterClass != null ? !fieldNameConverterClass.equals(that.fieldNameConverterClass) : that.fieldNameConverterClass != null)
-            {
+            if (fieldNameConverterClass != null ? !fieldNameConverterClass.equals(that.fieldNameConverterClass) : that.fieldNameConverterClass != null) {
                 return false;
             }
-            if (indexNameConverterClass != null ? !indexNameConverterClass.equals(that.indexNameConverterClass) : that.indexNameConverterClass != null)
-            {
+            if (indexNameConverterClass != null ? !indexNameConverterClass.equals(that.indexNameConverterClass) : that.indexNameConverterClass != null) {
                 return false;
             }
-            if (sequenceNameConverterClass != null ? !sequenceNameConverterClass.equals(that.sequenceNameConverterClass) : that.sequenceNameConverterClass != null)
-            {
+            if (sequenceNameConverterClass != null ? !sequenceNameConverterClass.equals(that.sequenceNameConverterClass) : that.sequenceNameConverterClass != null) {
                 return false;
             }
-            if (tableNameConverterClass != null ? !tableNameConverterClass.equals(that.tableNameConverterClass) : that.tableNameConverterClass != null)
-            {
+            if (tableNameConverterClass != null ? !tableNameConverterClass.equals(that.tableNameConverterClass) : that.tableNameConverterClass != null) {
                 return false;
             }
-            if (triggerNameConverterClass != null ? !triggerNameConverterClass.equals(that.triggerNameConverterClass) : that.triggerNameConverterClass != null)
-            {
+            if (triggerNameConverterClass != null ? !triggerNameConverterClass.equals(that.triggerNameConverterClass) : that.triggerNameConverterClass != null) {
                 return false;
             }
 
@@ -411,8 +335,7 @@ public class ActiveObjectTransactionMethodRule implements MethodRule
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             int result = databaseUpdaterClass != null ? databaseUpdaterClass.hashCode() : 0;
             result = 31 * result + (tableNameConverterClass != null ? tableNameConverterClass.hashCode() : 0);
             result = 31 * result + (fieldNameConverterClass != null ? fieldNameConverterClass.hashCode() : 0);

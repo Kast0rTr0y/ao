@@ -15,9 +15,6 @@
  */
 package net.java.ao.it.model;
 
-import java.net.URL;
-import java.util.Date;
-
 import net.java.ao.Accessor;
 import net.java.ao.Entity;
 import net.java.ao.Implementation;
@@ -32,58 +29,68 @@ import net.java.ao.schema.Indexed;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Unique;
 
+import java.net.URL;
+import java.util.Date;
+
 /**
  * @author Daniel Spiewak
  */
 @Implementation(PersonImpl.class)
 public interface Person extends Entity {
 
-	@Searchable
-	public String getFirstName();
-	public void setFirstName(String firstName);
-	
+    @Searchable
+    public String getFirstName();
+
+    public void setFirstName(String firstName);
+
     @StringLength(127)
-	@Searchable
-	public void setLastName(String lastName);
-	public String getLastName();
-	
-	public Profession getProfession();
-	public void setProfession(Profession profession);
-	
-	@Transient
-	@Indexed
-	public int getAge();
-	public void setAge(int age);
+    @Searchable
+    public void setLastName(String lastName);
 
-	@Unique
-	@Accessor("url")
-	public URL getURL();
+    public String getLastName();
 
-	@Default("http://www.google.com")
-	@Mutator("url")
+    public Profession getProfession();
+
+    public void setProfession(Profession profession);
+
+    @Transient
+    @Indexed
+    public int getAge();
+
+    public void setAge(int age);
+
+    @Unique
+    @Accessor("url")
+    public URL getURL();
+
+    @Default("http://www.google.com")
+    @Mutator("url")
     @StringLength(255)
-	public void setURL(URL url);
-	
-	public Company getCompany();
-	public void setCompany(Company company);
+    public void setURL(URL url);
 
-	public byte[] getImage();
-	public void setImage(byte[] image);
-	
-	public boolean isActive();
-	public void setActive(boolean active);
+    public Company getCompany();
 
-	public Date getModified();
-	
-	@OneToOne
-	public Nose getNose();
-	
-	@OneToMany(where="deleted = 'N'")
-	public Pen[] getPens();
+    public void setCompany(Company company);
+
+    public byte[] getImage();
+
+    public void setImage(byte[] image);
+
+    public boolean isActive();
+
+    public void setActive(boolean active);
+
+    public Date getModified();
+
+    @OneToOne
+    public Nose getNose();
+
+    @OneToMany(where = "deleted = 'N'")
+    public Pen[] getPens();
 
     @ManyToMany(PersonChair.class)
     public Chair[] getChairs();
-	
-	@ManyToMany(value=PersonSuit.class, where="deleted = 'N'")
-	public PersonLegalDefence[] getPersonLegalDefences();
+
+    @ManyToMany(value = PersonSuit.class, where = "deleted = 'N'")
+    public PersonLegalDefence[] getPersonLegalDefences();
 }

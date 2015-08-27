@@ -10,8 +10,7 @@ import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class DriverManagerDataSource implements DataSource
-{
+public final class DriverManagerDataSource implements DataSource {
     private final String url;
     private final String username;
     private final String password;
@@ -19,56 +18,46 @@ public final class DriverManagerDataSource implements DataSource
     private PrintWriter out;
     private int loginTimeOut;
 
-    public DriverManagerDataSource(String url, String username, String password)
-    {
+    public DriverManagerDataSource(String url, String username, String password) {
         this.url = checkNotNull(url);
         this.username = checkNotNull(username);
         this.password = checkNotNull(password);
     }
 
-    public Connection getConnection() throws SQLException
-    {
+    public Connection getConnection() throws SQLException {
         return getConnection(this.username, this.password);
     }
 
-    public Connection getConnection(String username, String password) throws SQLException
-    {
+    public Connection getConnection(String username, String password) throws SQLException {
         return DriverManager.getConnection(url, username, password);
     }
 
-    public <T> T unwrap(Class<T> iface) throws SQLException
-    {
+    public <T> T unwrap(Class<T> iface) throws SQLException {
         return iface.cast(this);
     }
 
-    public boolean isWrapperFor(Class<?> iface) throws SQLException
-    {
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return this.getClass().equals(iface);
     }
 
-    public PrintWriter getLogWriter() throws SQLException
-    {
+    public PrintWriter getLogWriter() throws SQLException {
         return out;
     }
 
-    public void setLogWriter(PrintWriter out) throws SQLException
-    {
+    public void setLogWriter(PrintWriter out) throws SQLException {
         this.out = out;
     }
 
-    public void setLoginTimeout(int seconds) throws SQLException
-    {
+    public void setLoginTimeout(int seconds) throws SQLException {
         this.loginTimeOut = seconds;
     }
 
-    public int getLoginTimeout() throws SQLException
-    {
+    public int getLoginTimeout() throws SQLException {
         return loginTimeOut;
     }
 
     // java 7
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException
-    {
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException();
     }
 }

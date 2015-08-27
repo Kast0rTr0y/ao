@@ -21,12 +21,10 @@ import net.java.ao.ValueGenerator;
 /**
  * @author Daniel Spiewak
  */
-public class MotivationGenerator implements ValueGenerator<String>
-{
+public class MotivationGenerator implements ValueGenerator<String> {
     public static final String MOTIVATION = "Work smarter, not harder";
 
-    public String generateValue(EntityManager manager)
-    {
+    public String generateValue(EntityManager manager) {
         return MOTIVATION;
     }
 }
