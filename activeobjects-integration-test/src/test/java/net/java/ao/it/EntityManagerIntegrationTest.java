@@ -446,7 +446,7 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
             }
         });
 
-        assertEquals("There should have only been one row matching the query", 1, streamed.size());
+        assertEquals("There should have only been one row matching the query - it has a limit of 1", 1, streamed.size());
         assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());
     }
 
