@@ -806,7 +806,6 @@ public class EntityManager {
             conn = provider.getConnection();
             final String sql = query.toSQL(entityInfo, provider, getTableNameConverter(), false);
 
-            // we're only going over the result set once, so use the slimmest possible cursor type
             stmt = provider.preparedStatement(conn, sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             provider.setQueryStatementProperties(stmt, query);
 
