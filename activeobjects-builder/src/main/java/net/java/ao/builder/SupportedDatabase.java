@@ -6,6 +6,7 @@ import net.java.ao.DisposableDataSource;
 import net.java.ao.db.ClientDerbyDatabaseProvider;
 import net.java.ao.db.EmbeddedDerbyDatabaseProvider;
 import net.java.ao.db.HSQLDatabaseProvider;
+import net.java.ao.db.MsJdbcSQLServerDatabaseProvider;
 import net.java.ao.db.MySQLDatabaseProvider;
 import net.java.ao.db.OracleDatabaseProvider;
 import net.java.ao.db.PostgreSQLDatabaseProvider;
@@ -58,7 +59,7 @@ enum SupportedDatabase {
     MSSQL("jdbc:sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver") {
         @Override
         public DatabaseProvider getDatabaseProvider(DataSourceFactory dataSourceFactory, String uri, String username, String password, String schema) {
-            return new SQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
+            return new MsJdbcSQLServerDatabaseProvider(getDataSource(dataSourceFactory, uri, username, password), schema);
         }
     },
     MSSQL_JTDS("jdbc:jtds:sqlserver", "net.sourceforge.jtds.jdbc.Driver") {
