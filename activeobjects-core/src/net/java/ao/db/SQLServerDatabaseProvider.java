@@ -357,6 +357,11 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
+    public void putNull(PreparedStatement stmt, int index) throws SQLException {
+        stmt.setNull(index, Types.VARCHAR);
+    }
+
+    @Override
     protected Set<String> getReservedWords() {
         return RESERVED_WORDS;
     }
