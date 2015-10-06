@@ -437,7 +437,7 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         // make sure we've got enough data
         assertTrue(CompanyData.NAMES.length > 1);
 
-        Query query = new Query(QueryType.SELECT, "*").from(Company.class).limit(1).offset(1).order("NAME DESC");
+        Query query = Query.select("COMPANY_ID, NAME").from(Company.class).limit(1).offset(1).order("NAME DESC");
         entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>() {
             @Override
             public void onRowRead(Company t) {
