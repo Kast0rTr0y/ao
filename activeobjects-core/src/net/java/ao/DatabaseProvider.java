@@ -446,6 +446,7 @@ public abstract class DatabaseProvider implements Disposable {
                     return Short.parseShort(value);
 
                 case Types.VARCHAR:
+                case Types.NVARCHAR:
                     return value;
             }
         } catch (Throwable t) {
@@ -826,7 +827,7 @@ public abstract class DatabaseProvider implements Disposable {
      * can be used to execute arbitrary JDBC operations against the database.
      * Also, this is the method used by the whole of ActiveObjects itself to
      * get database connections when required.</p>
-     *
+     * <p>
      * <p>All {@link Connection} instances are pooled internally by thread.
      * Thus, there is never more than one connection per thread.  This is
      * necessary to allow arbitrary JDBC operations within a transaction
@@ -835,7 +836,7 @@ public abstract class DatabaseProvider implements Disposable {
      * instance immutable.  The only exception is if one is <i>absolutely</i>
      * certain that the JDBC code in question is not being executed within
      * a transaction.</p>
-     *
+     * <p>
      * <p>Despite the fact that there is only a single connection per thread,
      * the {@link Connection} instances returned from this method should
      * still be treated as bona fide JDBC connections. They can and
@@ -846,7 +847,7 @@ public abstract class DatabaseProvider implements Disposable {
      * with the single-connection-per-thread issue when closing the connection
      * as the call to <code>close()</code> will be intercepted and ignored
      * if necessary.</p>
-     * <p/>
+     * <p>
      *
      * @return A new connection to the database
      */

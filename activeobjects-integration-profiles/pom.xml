@@ -531,6 +531,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
+                                net.java.ao.test.junit.H2IntegrationTest,
                                 net.java.ao.test.junit.HsqlIntegrationTest,
                                 net.java.ao.test.junit.DerbyIntegrationTest,
                                 net.java.ao.test.junit.MySqlIntegrationTest,
