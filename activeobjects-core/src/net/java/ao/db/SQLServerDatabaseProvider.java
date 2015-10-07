@@ -37,7 +37,6 @@ import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -94,6 +93,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
             case Types.DATE:
             case Types.TIME:
             case Types.VARCHAR:
+            case Types.NVARCHAR:
                 Matcher matcher = Pattern.compile("'(.*)'.*").matcher(value);
                 if (matcher.find()) {
                     value = matcher.group(1);
