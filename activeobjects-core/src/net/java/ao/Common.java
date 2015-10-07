@@ -370,6 +370,8 @@ public final class Common {
                 || typeA == Types.FLOAT || typeA == Types.INTEGER || typeA == Types.REAL || typeA == Types.SMALLINT
                 || typeA == Types.TINYINT) && typeB == Types.NUMERIC) {
             return true;
+        } else if (typeA == Types.VARCHAR && typeB == Types.NVARCHAR) {
+            return true;
         }
 
         return typeA == typeB;
