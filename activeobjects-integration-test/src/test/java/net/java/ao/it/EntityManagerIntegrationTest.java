@@ -427,6 +427,28 @@ public final class EntityManagerIntegrationTest extends ActiveObjectsIntegration
         assertNotNull("ID field should have been preloaded", streamed.get(0).getCompanyID());
     }
 
+    /**
+     * Query has a limit of 1 and offset of 1
+     */
+    @Test
+    public void testStreamWithOffsetLimit() throws SQLException {
+        final List<Company> streamed = new ArrayList<Company>();
+
+        // make sure we've got enough data
+        assertTrue(CompanyData.NAMES.length > 1);
+
+        Query query = Query.select("COMPANY_ID, NAME").from(Company.class).limit(1).offset(1).order("NAME DESC");
+        entityManager.stream(Company.class, query, new EntityStreamCallback<Company, Long>() {
+            @Override
+            public void onRowRead(Company t) {
+                streamed.add(t);
+            }
+        });
+
+        assertEquals("There should have only been one row matching the query - it has a limit of 1", 1, streamed.size());
+        assertEquals(CompanyData.NAMES[0], streamed.get(0).getName());
+    }
+
     @Test
     public void testCount() throws SQLException {
         assertEquals(1, entityManager.count(Company.class, escapeFieldName(Company.class, "isCool") + " = ?", true));
