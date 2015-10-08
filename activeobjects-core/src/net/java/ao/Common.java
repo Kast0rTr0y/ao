@@ -362,7 +362,7 @@ public final class Common {
         if ((typeA == Types.BIGINT || typeA == Types.BIT || typeA == Types.INTEGER || typeA == Types.NUMERIC
                 || typeA == Types.SMALLINT || typeA == Types.TINYINT) && typeB == Types.BOOLEAN) {
             return true;
-        } else if (typeA == Types.CLOB && (typeB == Types.LONGVARCHAR || typeB == Types.VARCHAR)) {
+        } else if (typeA == Types.CLOB && (typeB == Types.LONGVARCHAR || typeB == Types.LONGNVARCHAR || typeB == Types.VARCHAR)) {
             return true;
         } else if ((typeA == Types.LONGVARCHAR || typeA == Types.VARCHAR) && typeB == Types.CLOB) {
             return true;
