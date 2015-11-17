@@ -8,19 +8,25 @@ import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Indexed;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
@@ -31,6 +37,50 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void setUp() {
         SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
         reader = new DatabaseMetaDataReaderImpl(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
+    }
+
+    @NonTransactional
+    @Test
+    public void testCompositeIndexIgnored() throws Exception {
+        final String tableName = getTableName(Simple.class, false);
+        final String composite_index_name = "COMPOSITE_INDEX";
+        final String simple_index_name = "SIMPLE_INDEX";
+        final String other_field = getFieldName(Simple.class, "getOther");
+        final String name_field = getFieldName(Simple.class, "getName");
+
+        // create a composite and a simple index
+        createIndex(tableName, simple_index_name, Arrays.asList(other_field));
+        createIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field));
+
+        with(new WithConnection() {
+            @Override
+            public void call(Connection connection) throws Exception {
+                final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
+                // ensure we can see the simple index, but not the composite one
+                assertFalse(containsIndexByName(indexes, tableName, composite_index_name));
+                assertTrue(containsIndexByName(indexes, tableName, simple_index_name));
+            }
+        });
+    }
+
+    private void createIndex(String tableName, String indexName, List<String> fieldNames) throws Exception {
+        StringBuilder statement = new StringBuilder("CREATE INDEX " + indexName);
+        statement.append(" ON " + tableName);
+        statement.append(" (");
+        boolean needDelimiter = false;
+        for (String field : fieldNames) {
+            if (needDelimiter) {
+                statement.append(",");
+            }
+            statement.append(field);
+            needDelimiter = true;
+        }
+        statement.append(")");
+        executeUpdate(statement.toString(), new DbUtils.UpdateCallback() {
+            @Override
+            public void setParameters(PreparedStatement statement) throws Exception {
+            }
+        });
     }
 
     @Test
@@ -98,6 +148,15 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             @Override
             public boolean apply(Index i) {
                 return i.getTableName().equals(tableName) && i.getFieldName().equals(columnName);
+            }
+        });
+    }
+
+    private boolean containsIndexByName(Iterable<? extends Index> indexes, final String tableName, final String indexName) {
+        return Iterables.any(indexes, new Predicate<Index>() {
+            @Override
+            public boolean apply(Index i) {
+                return i.getTableName().equals(tableName) && i.getIndexName().equals(indexName);
             }
         });
     }
