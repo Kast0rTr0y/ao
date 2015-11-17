@@ -16,6 +16,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -137,7 +138,27 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
             while (resultSet.next()) {
                 boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");
                 if (nonUnique) {
+                    System.err.println("IVO: AO: table: " + tableName + " index name " + parseStringValue(resultSet, "INDEX_NAME") + " column name " + parseStringValue(resultSet, "COLUMN_NAME"));
                     indexes.add(newIndex(resultSet, tableName));
+                }
+            }
+            // find composite indexes
+            final Set<String> indexNames = newHashSet();
+            final Set<String> compositeIndexNames = newHashSet();
+            for (Index index : indexes) {
+                String indexName = index.getIndexName();
+                if (indexNames.contains(indexName)) {
+                    compositeIndexNames.add(indexName);
+                } else {
+                    indexNames.add(indexName);
+                }
+            }
+            // remove composite indexes from result set, because AO doesn't support them correctly
+            for (Iterator<Index> iterator = indexes.iterator(); iterator.hasNext();) {
+                Index index = iterator.next();
+                if (compositeIndexNames.contains(index.getIndexName())) {
+                    System.err.println("IVO: AO: ignoring index " + index.getIndexName());
+                    iterator.remove();
                 }
             }
             return indexes;
