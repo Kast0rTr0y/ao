@@ -3,6 +3,7 @@ package net.java.ao.schema.helper;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import net.java.ao.DatabaseProvider;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
@@ -64,15 +65,16 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     }
 
     private void createIndex(String tableName, String indexName, List<String> fieldNames) throws Exception {
-        StringBuilder statement = new StringBuilder("CREATE INDEX " + indexName);
-        statement.append(" ON " + tableName);
+        DatabaseProvider databaseProvider = entityManager.getProvider();
+        StringBuilder statement = new StringBuilder("CREATE INDEX " + databaseProvider.processID(indexName));
+        statement.append(" ON " + databaseProvider.withSchema(tableName));
         statement.append(" (");
         boolean needDelimiter = false;
         for (String field : fieldNames) {
             if (needDelimiter) {
                 statement.append(",");
             }
-            statement.append(field);
+            statement.append(databaseProvider.processID(field));
             needDelimiter = true;
         }
         statement.append(")");
