@@ -67,7 +67,8 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
 
     private void createIndex(String tableName, String indexName, List<String> fieldNames) throws Exception {
         DatabaseProvider databaseProvider = entityManager.getProvider();
-        StringBuilder statement = new StringBuilder("CREATE INDEX " + databaseProvider.withSchema(indexName));
+        StringBuilder statement = new StringBuilder();
+        statement.append("CREATE INDEX " + databaseProvider.processID(indexName));
         statement.append(" ON " + databaseProvider.withSchema(tableName));
         statement.append(" (");
         boolean needDelimiter = false;
