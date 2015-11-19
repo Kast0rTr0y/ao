@@ -246,6 +246,23 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
+    public SQLAction renderCreateCompositeIndex(String tableName, String indexName, List<String> fields) {
+        StringBuilder statement = new StringBuilder();
+        statement.append("CREATE INDEX " + processID(indexName));
+        statement.append(" ON " + processID(tableName));
+        statement.append(" (");
+        boolean needDelimiter = false;
+        for (String field : fields) {
+            if (needDelimiter) {
+                statement.append(",");
+            }
+            statement.append(processID(field));
+            needDelimiter = true;
+        }
+        return SQLAction.of(statement);
+    }
+
+    @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();

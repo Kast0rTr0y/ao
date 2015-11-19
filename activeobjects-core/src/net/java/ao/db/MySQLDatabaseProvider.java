@@ -32,6 +32,7 @@ import net.java.ao.types.TypeQualifiers;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 import static com.google.common.collect.Iterables.concat;
@@ -151,6 +152,23 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
         back.append(')');
 
         return SQLAction.of(back);
+    }
+
+    @Override
+    public SQLAction renderCreateCompositeIndex(String tableName, String indexName, List<String> fields) {
+        StringBuilder statement = new StringBuilder();
+        statement.append("CREATE INDEX " + processID(indexName));
+        statement.append(" ON " + processID(tableName));
+        statement.append(" (");
+        boolean needDelimiter = false;
+        for (String field : fields) {
+            if (needDelimiter) {
+                statement.append(",");
+            }
+            statement.append(processID(field));
+            needDelimiter = true;
+        }
+        return SQLAction.of(statement);
     }
 
     public void putNull(PreparedStatement stmt, int index) throws SQLException {
