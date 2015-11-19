@@ -18,6 +18,7 @@ public class TestSetStringNull extends ActiveObjectsIntegrationTest {
     @Test
     public void setStringNull() throws SQLException {
         TestEntity testEntity = entityManager.create(TestEntity.class);
+        testEntity.setComplete(true);
         testEntity.setDescription(null);
         testEntity.save();
     }
@@ -29,8 +30,10 @@ public class TestSetStringNull extends ActiveObjectsIntegrationTest {
         }
     }
 
-    public static interface TestEntity extends Entity {
+    public interface TestEntity extends Entity {
         String getDescription();
         void setDescription(String description);
+        boolean isComplete();
+        void setComplete(boolean complete);
     }
 }
