@@ -168,6 +168,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
             statement.append(processID(field));
             needDelimiter = true;
         }
+        statement.append(")");
         return SQLAction.of(statement);
     }
 

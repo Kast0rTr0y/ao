@@ -29,6 +29,7 @@ import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
 public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrationTest {
@@ -50,10 +51,8 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         final String name_field = getFieldName(Simple.class, "getName");
 
         // create a composite and a simple index
-        entityManager.getProvider().renderCreateCompositeIndex(tableName, simple_index_name, Arrays.asList(other_field));
-//        createIndex(tableName, simple_index_name, Arrays.asList(other_field));
-        entityManager.getProvider().renderCreateCompositeIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field));
-//        createIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field));
+        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
+        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, simple_index_name, Arrays.asList(other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
 
         with(new WithConnection() {
             @Override
@@ -66,28 +65,6 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             }
         });
     }
-
-//    private void createIndex(String tableName, String indexName, List<String> fieldNames) throws Exception {
-//        DatabaseProvider databaseProvider = entityManager.getProvider();
-//        StringBuilder statement = new StringBuilder();
-//        statement.append("CREATE INDEX " + databaseProvider.processID(indexName));
-//        statement.append(" ON " + databaseProvider.withSchema(tableName));
-//        statement.append(" (");
-//        boolean needDelimiter = false;
-//        for (String field : fieldNames) {
-//            if (needDelimiter) {
-//                statement.append(",");
-//            }
-//            statement.append(databaseProvider.processID(field));
-//            needDelimiter = true;
-//        }
-//        statement.append(")");
-//        executeUpdate(statement.toString(), new DbUtils.UpdateCallback() {
-//            @Override
-//            public void setParameters(PreparedStatement statement) throws Exception {
-//            }
-//        });
-//    }
 
     private boolean containsIndexByName(Iterable<? extends Index> indexes, final String tableName, final String indexName) {
         return Iterables.any(indexes, new Predicate<Index>() {

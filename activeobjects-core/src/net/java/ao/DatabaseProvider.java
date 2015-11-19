@@ -1393,6 +1393,7 @@ public abstract class DatabaseProvider implements Disposable {
             statement.append(processID(field));
             needDelimiter = true;
         }
+        statement.append(")");
         return SQLAction.of(statement);
     }
 
