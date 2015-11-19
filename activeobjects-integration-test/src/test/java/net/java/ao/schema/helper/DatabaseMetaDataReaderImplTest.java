@@ -50,18 +50,18 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         final String other_field = getFieldName(Simple.class, "getOther");
         final String name_field = getFieldName(Simple.class, "getName");
 
-        // create a composite and a simple index
+        // create a composite index
         executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
-        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, simple_index_name, Arrays.asList(other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
 
         with(new WithConnection() {
             @Override
             public void call(Connection connection) throws Exception {
                 final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
-                // ensure we can see the simple index, but not the composite one
+                // ensure we can see other indexes but not the composite one
                 assertFalse(containsIndexByName(indexes, tableName, composite_index_name));
-                assertTrue(containsIndexByName(indexes, tableName, simple_index_name));
+                assertTrue(containsIndex(indexes, tableName, other_field));
+                assertTrue(containsIndex(indexes, tableName, name_field));
             }
         });
     }
