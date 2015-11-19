@@ -3,7 +3,6 @@ package net.java.ao.schema.helper;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import net.java.ao.DatabaseProvider;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
@@ -19,9 +18,7 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.Arrays;
-import java.util.List;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
@@ -46,7 +43,6 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void testCompositeIndexIgnored() throws Exception {
         final String tableName = getTableName(Simple.class, false);
         final String composite_index_name = "COMPOSITE_INDEX";
-        final String simple_index_name = "SIMPLE_INDEX";
         final String other_field = getFieldName(Simple.class, "getOther");
         final String name_field = getFieldName(Simple.class, "getName");
 

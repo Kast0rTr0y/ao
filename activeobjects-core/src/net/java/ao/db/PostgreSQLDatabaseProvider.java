@@ -245,7 +245,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
                 .append('(').append(processID(index.getField())).append(')'));
     }
 
-        @Override
+    @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();
