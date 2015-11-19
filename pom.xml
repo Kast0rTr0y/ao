@@ -251,12 +251,12 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <message>You must use maven 2.1.0 or above to build Active Objects</message>
-                                    <version>[2.1.0,)</version>
+                                    <message>You must use maven 3.3.3 or above to build Active Objects</message>
+                                    <version>[3.3.3,)</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <message>Active Objects requires Java 7 or later to be built.</message>
-                                    <version>[1.7,)</version>
+                                    <message>Active Objects requires Java 8 or later to be built.</message>
+                                    <version>[1.8,)</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
