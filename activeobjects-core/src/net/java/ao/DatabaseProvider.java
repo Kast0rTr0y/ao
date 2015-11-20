@@ -1373,7 +1373,9 @@ public abstract class DatabaseProvider implements Disposable {
 
     /**
      * Generates the database-specific DDL statement required to create
-     * a new composite index.
+     * a new composite index. This is only used by AO integration tests
+     * to create a composite index for testing. AO does not provide clients with
+     * a feature to manage composite indexes in any way.
      *
      * @param tableName The name of the database table
      * @param indexName The name of the new index
