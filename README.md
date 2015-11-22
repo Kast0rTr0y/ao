@@ -7,7 +7,7 @@ Active Objects is an ORM (object relational mapping) layer in Atlassian products
 
 The active objects project uses maven for its build. To build:
 
-1. Install maven (2.2.1 or above):
+1. Install maven (3.3.3 or above):
     - you can find all about maven at [maven.apache.org](http://maven.apache.org/)
     - install instructions are [here](http://maven.apache.org/download.html#Installation)
 
