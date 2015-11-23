@@ -28,11 +28,14 @@ public interface DatabaseMetaDataReader {
     Iterable<? extends ForeignKey> getForeignKeys(DatabaseMetaData databaseMetaData, String tableName);
 
     /**
-     * Gets the list of indexes for a given table
+     * Gets the list of simple indexes for a given table. AO only supports single column indexes, and as
+     * such composite indexes will not be returned by this method even if they exist in the table.
+     * Prior to AO v1.1.4 this method returned fragments of composite indexes and it was then possible for
+     * the migration code to crash because it would try to delete the same index multiple times.
      *
      * @param databaseMetaData the database metadata to read the information from
      * @param tableName        the name of the table from which to read the indexes
-     * @return an {@link Iterable} of indexes
+     * @return an {@link Iterable} of simple indexes
      */
     Iterable<? extends Index> getIndexes(DatabaseMetaData databaseMetaData, String tableName);
 }
