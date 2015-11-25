@@ -98,6 +98,15 @@
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>8.4-701.jdbc3</postgres.version>
         <oracle.version>11.2.0.2.0</oracle.version>
+	<sonar.projectName>Atlassian AO Lib</sonar.projectName>
+	<sonar.language>java</sonar.language>
+        <sonar.host.url>http://sonar.dev.intsys.atlassian.com:9000/</sonar.host.url>
+        <sonar.jdbc.url>jdbc:postgresql://sonar.dev.intsys.atlassian.com/sonar</sonar.jdbc.url>
+        <sonar.jdbc.username>${bamboo.sonar.jdbc.username}</sonar.jdbc.username>
+        <sonar.jdbc.password>${bamboo.sonar.jdbc.password}</sonar.jdbc.password>
+        <sonar.login>${bamboo.sonar.login}</sonar.login>
+        <sonar.password>${bamboo.sonar.password}</sonar.password>
+        <sonar.analysis.mode>analysis</sonar.analysis.mode>
     </properties>
 
     <dependencyManagement>
