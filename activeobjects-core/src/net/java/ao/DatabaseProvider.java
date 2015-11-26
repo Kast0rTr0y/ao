@@ -1372,6 +1372,34 @@ public abstract class DatabaseProvider implements Disposable {
     }
 
     /**
+     * Generates the database-specific DDL statement required to create
+     * a new composite index. This is only used by AO integration tests
+     * to create a composite index for testing. AO does not provide clients with
+     * a feature to manage composite indexes in any way.
+     *
+     * @param tableName The name of the database table
+     * @param indexName The name of the new index
+     * @param fields List of fields that make up the index
+     * @return A DDL statement to be executed.
+     */
+    public SQLAction renderCreateCompositeIndex(String tableName, String indexName, List<String> fields) {
+        StringBuilder statement = new StringBuilder();
+        statement.append("CREATE INDEX " + processID(indexName));
+        statement.append(" ON " + withSchema(tableName));
+        statement.append(" (");
+        boolean needDelimiter = false;
+        for (String field : fields) {
+            if (needDelimiter) {
+                statement.append(",");
+            }
+            statement.append(processID(field));
+            needDelimiter = true;
+        }
+        statement.append(")");
+        return SQLAction.of(statement);
+    }
+
+    /**
      * Generates the database-specific DDL statement required to drop
      * an index.  The syntax for this operation is highly standardized
      * and thus it is unlikely this method will be overridden.  If the

@@ -8,20 +8,25 @@ import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Indexed;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
+import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
+import net.java.ao.test.jdbc.NonTransactional;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.util.Arrays;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
 public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrationTest {
@@ -31,6 +36,39 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void setUp() {
         SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
         reader = new DatabaseMetaDataReaderImpl(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
+    }
+
+    @NonTransactional
+    @Test
+    public void testCompositeIndexIgnored() throws Exception {
+        final String tableName = getTableName(Simple.class, false);
+        final String composite_index_name = "COMPOSITE_INDEX";
+        final String other_field = getFieldName(Simple.class, "getOther");
+        final String name_field = getFieldName(Simple.class, "getName");
+
+        // create a composite index
+        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
+
+        with(new WithConnection() {
+            @Override
+            public void call(Connection connection) throws Exception {
+                final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
+
+                // ensure we can see other indexes but not the composite one
+                assertFalse(containsIndexByName(indexes, tableName, composite_index_name));
+                assertTrue(containsIndex(indexes, tableName, other_field));
+                assertTrue(containsIndex(indexes, tableName, name_field));
+            }
+        });
+    }
+
+    private boolean containsIndexByName(Iterable<? extends Index> indexes, final String tableName, final String indexName) {
+        return Iterables.any(indexes, new Predicate<Index>() {
+            @Override
+            public boolean apply(Index i) {
+                return i.getTableName().equals(tableName) && i.getIndexName().equals(indexName);
+            }
+        });
     }
 
     @Test
