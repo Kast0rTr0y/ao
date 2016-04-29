@@ -15,8 +15,10 @@
  */
 package net.java.ao.schema.ddl;
 
+import com.google.common.base.Objects;
 import net.java.ao.types.TypeInfo;
-import org.apache.commons.lang.StringUtils;
+
+import java.util.Arrays;
 
 /**
  * Database-agnostic reprensentation of a general field index
@@ -32,8 +34,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public class DDLIndex {
     private String table;
-    private String field;
-    private TypeInfo<?> type;
+    private DDLIndexField[] fields = {};
     private String indexName;
 
     public String getTable() {
@@ -44,60 +45,73 @@ public class DDLIndex {
         this.table = table;
     }
 
-    public String getField() {
-        return field;
+    public DDLIndexField[] getFields() {
+        return fields;
     }
 
-    public void setField(String field) {
-        this.field = field;
-    }
-
-    public TypeInfo<?> getType() {
-        return type;
-    }
-
-    public void setType(TypeInfo<?> type) {
-        this.type = type;
+    public void setFields(DDLIndexField[] fields) {
+        this.fields = fields;
     }
 
     public void setIndexName(String indexName) {
         this.indexName = indexName;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof DDLIndex) {
-            DDLIndex index = (DDLIndex) obj;
+    public String getIndexName() {
+        return indexName;
+    }
 
-            if (index.getTable().equals(table)
-                    && index.getField().equals(field)
-                    && StringUtils.equals(indexName, index.indexName)) {
-                return true;
-            }
+    public String getField() {
+        if (fields.length < 1) {
+            return null;
+        }
+        return fields[0].getFieldName();
+    }
 
-            return false;
+    public void setField(String field) {
+        if (fields.length < 1) {
+            final DDLIndexField indexField = DDLIndexField.builder()
+                    .fieldName(field)
+                    .build();
+
+            fields = new DDLIndexField[]{indexField};
         }
 
-        return super.equals(obj);
+        fields[0].setFieldName(field);
+    }
+
+    public TypeInfo<?> getType() {
+        if (fields.length < 1) {
+            return null;
+        }
+        return fields[0].getType();
+    }
+
+    public void setType(TypeInfo<?> type) {
+        if (fields.length < 1) {
+            final DDLIndexField indexField = DDLIndexField.builder()
+                    .type(type)
+                    .build();
+
+            fields = new DDLIndexField[]{indexField};
+        }
+
+        fields[0].setType(type);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DDLIndex index = (DDLIndex) o;
+        return Objects.equal(table, index.table) &&
+                Arrays.equals(fields, index.fields) &&
+                Objects.equal(indexName, index.indexName);
     }
 
     @Override
     public int hashCode() {
-        int back = 0;
+        return Objects.hashCode(table, indexName) + Arrays.hashCode(fields);
 
-        if (table != null) {
-            back += table.hashCode();
-        }
-        if (field != null) {
-            back += field.hashCode();
-        }
-        back %= 2 << 10;
-
-        return back;
-    }
-
-
-    public String getIndexName() {
-        return indexName;
     }
 }
