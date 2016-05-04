@@ -199,8 +199,7 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest {
         FieldNameConverter fieldNameConverter = spy(entityManager.getFieldNameConverter());
         DDLIndex[] indexes = SchemaGenerator.parseIndexes(
                 entityManager.getProvider(),
-                tableNameConverter,
-                fieldNameConverter,
+                entityManager.getNameConverters(),
                 AoEntity.class
         );
         assertNotNull(indexes);
