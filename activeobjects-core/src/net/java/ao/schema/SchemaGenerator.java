@@ -38,6 +38,7 @@ import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.schema.ddl.SchemaReader;
+import net.java.ao.schema.index.IndexParser;
 import net.java.ao.types.TypeInfo;
 import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
@@ -52,7 +53,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -156,7 +156,7 @@ public final class SchemaGenerator {
             roots.remove(clazz);
 
             if (clazz.getAnnotation(Polymorphic.class) == null) {
-                parsedTables.add(parseInterface(provider, nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
+                parsedTables.add(parseInterface(provider, nameConverters, clazz));
             }
 
             List<Class<? extends RawEntity<?>>> toRemove = new LinkedList<Class<? extends RawEntity<?>>>();
@@ -268,15 +268,15 @@ public final class SchemaGenerator {
     /**
      * Not intended for public use.
      */
-    public static DDLTable parseInterface(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter, Class<? extends RawEntity<?>> clazz) {
-        String sqlName = nameConverter.getName(clazz);
+    public static DDLTable parseInterface(DatabaseProvider provider, NameConverters nameConverters, Class<? extends RawEntity<?>> clazz) {
+        String sqlName = nameConverters.getTableNameConverter().getName(clazz);
 
         DDLTable table = new DDLTable();
         table.setName(sqlName);
 
-        table.setFields(parseFields(provider, fieldConverter, clazz));
-        table.setForeignKeys(parseForeignKeys(nameConverter, fieldConverter, clazz));
-        table.setIndexes(parseIndexes(provider, nameConverter, fieldConverter, clazz));
+        table.setFields(parseFields(provider, nameConverters.getFieldNameConverter(), clazz));
+        table.setForeignKeys(parseForeignKeys(nameConverters.getTableNameConverter(), nameConverters.getFieldNameConverter(), clazz));
+        table.setIndexes(parseIndexes(provider, nameConverters, clazz));
 
         return table;
     }
@@ -387,7 +387,7 @@ public final class SchemaGenerator {
         return isAutoIncrement;
     }
 
-    private static TypeInfo<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, Method method, AnnotationDelegate annotations) {
+    public static TypeInfo<?> getSQLTypeFromMethod(TypeManager typeManager, Class<?> type, Method method, AnnotationDelegate annotations) {
         TypeQualifiers qualifiers = qualifiers();
 
         StringLength lengthAnno = annotations.getAnnotation(StringLength.class);
@@ -431,43 +431,13 @@ public final class SchemaGenerator {
     }
 
     @VisibleForTesting
-    static DDLIndex[] parseIndexes(DatabaseProvider provider, TableNameConverter nameConverter, FieldNameConverter fieldConverter,
-                                   Class<? extends RawEntity<?>> clazz) {
-        Set<DDLIndex> back = new LinkedHashSet<DDLIndex>();
-        String tableName = nameConverter.getName(clazz);
-
-        for (Method method : clazz.getMethods()) {
-            String attributeName = fieldConverter.getName(method);
-            AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldConverter, method);
-
-            if (Common.isAccessor(method) || Common.isMutator(method)) {
-                Indexed indexedAnno = annotations.getAnnotation(Indexed.class);
-                Class<?> type = Common.getAttributeTypeFromMethod(method);
-
-                if (indexedAnno != null || (type != null && RawEntity.class.isAssignableFrom(type))) {
-                    DDLIndex index = new DDLIndex();
-                    index.setField(attributeName);
-                    index.setTable(tableName);
-                    index.setType(getSQLTypeFromMethod(provider.getTypeManager(), type, method, annotations));
-
-                    back.add(index);
-                }
-            }
-        }
-
-        for (Class<?> superInterface : clazz.getInterfaces()) {
-            if (RawEntity.class.isAssignableFrom(superInterface) &&
-                    !(RawEntity.class.equals(superInterface) || superInterface.isAnnotationPresent(Polymorphic.class))) {
-                back.addAll(Arrays.asList(parseIndexes(
-                                provider,
-                                nameConverter,
-                                fieldConverter,
-                                (Class<? extends RawEntity<?>>) superInterface)
-                ));
-            }
-        }
-
-        return back.toArray(new DDLIndex[back.size()]);
+    static DDLIndex[] parseIndexes(
+            final DatabaseProvider provider,
+            final NameConverters nameConverters,
+            final Class<? extends RawEntity<?>> clazz
+    ) {
+        final IndexParser indexParser = new IndexParser(nameConverters, provider.getTypeManager());
+        return indexParser.parseIndexes(clazz);
     }
 
     private static Object convertStringDefaultValue(String value, TypeInfo<?> type, Method method) {
