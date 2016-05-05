@@ -437,7 +437,8 @@ public final class SchemaGenerator {
             final Class<? extends RawEntity<?>> clazz
     ) {
         final IndexParser indexParser = new IndexParser(nameConverters, provider.getTypeManager());
-        return indexParser.parseIndexes(clazz);
+        final Set<DDLIndex> indexes = indexParser.parseIndexes(clazz);
+        return indexes.toArray(new DDLIndex[indexes.size()]);
     }
 
     private static Object convertStringDefaultValue(String value, TypeInfo<?> type, Method method) {

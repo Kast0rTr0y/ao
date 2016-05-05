@@ -15,7 +15,10 @@ import net.java.ao.types.TypeManager;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IndexParser {
 
@@ -23,42 +26,66 @@ public class IndexParser {
     private final FieldNameConverter fieldNameConverter;
     private final TypeManager typeManager;
 
+    private Predicate<Class<?>> extendsRawEntity = RawEntity.class::isAssignableFrom;
+    private Predicate<Class<?>> isPolymorphic = clazz -> clazz.isAnnotationPresent(Polymorphic.class);
+    private Predicate<Class<?>> isRawEntity = RawEntity.class::equals;
+
     public IndexParser(final NameConverters nameConverters, final TypeManager typeManager) {
         this.tableNameConverter = nameConverters.getTableNameConverter();
         this.fieldNameConverter = nameConverters.getFieldNameConverter();
         this.typeManager = typeManager;
     }
 
-    public DDLIndex[] parseIndexes(Class<? extends RawEntity<?>> clazz) {
-        final LinkedHashSet<DDLIndex> back = new LinkedHashSet<>();
+    public Set<DDLIndex> parseIndexes(Class<? extends RawEntity<?>> clazz) {
         final String tableName = tableNameConverter.getName(clazz);
 
-        for (Method method : clazz.getMethods()) {
-            String attributeName = fieldNameConverter.getName(method);
-            AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldNameConverter, method);
+        final Stream<DDLIndex> methodIndexes = Arrays.stream(clazz.getMethods())
+                .filter(Common::isMutatorOrAccessor)
+                .filter(method -> isIndexed(method) || attributeExtendsRawEntity(method))
+                .map(this::parseIndexField)
+                .map(indexField -> createIndex(indexField, tableName));
 
-            if (Common.isAccessor(method) || Common.isMutator(method)) {
-                Indexed indexedAnno = annotations.getAnnotation(Indexed.class);
-                Class<?> type = Common.getAttributeTypeFromMethod(method);
+        final Stream<DDLIndex> superInterfaceIndexes = Arrays.stream(clazz.getInterfaces())
+                .filter(extendsRawEntity)
+                .filter(isRawEntity.negate())
+                .filter(isPolymorphic.negate())
+                .map(superInterface -> parseIndexes((Class<? extends RawEntity<?>>) superInterface))
+                .flatMap(Set::stream);
 
-                if (indexedAnno != null || (type != null && RawEntity.class.isAssignableFrom(type))) {
-                    DDLIndex index = new DDLIndex();
-                    index.setField(attributeName);
-                    index.setTable(tableName);
-                    index.setType(SchemaGenerator.getSQLTypeFromMethod(typeManager, type, method, annotations));
+        return Stream.concat(methodIndexes, superInterfaceIndexes)
+                .collect(Collectors.toSet());
+    }
 
-                    back.add(index);
-                }
-            }
-        }
+    private boolean isIndexed(Method method) {
+        final AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldNameConverter, method);
+        final Indexed indexed = annotations.getAnnotation(Indexed.class);
 
-        for (Class<?> superInterface : clazz.getInterfaces()) {
-            if (RawEntity.class.isAssignableFrom(superInterface) &&
-                    !(RawEntity.class.equals(superInterface) || superInterface.isAnnotationPresent(Polymorphic.class))) {
-                back.addAll(Arrays.asList(parseIndexes((Class<? extends RawEntity<?>>) superInterface)));
-            }
-        }
+        return indexed != null;
+    }
 
-        return back.toArray(new DDLIndex[back.size()]);
+    private boolean attributeExtendsRawEntity(Method method) {
+        Class<?> type = Common.getAttributeTypeFromMethod(method);
+
+        return type != null && extendsRawEntity.test(type);
+    }
+
+    private DDLIndexField parseIndexField(Method method) {
+        Class<?> type = Common.getAttributeTypeFromMethod(method);
+
+        String attributeName = fieldNameConverter.getName(method);
+        AnnotationDelegate annotations = Common.getAnnotationDelegate(fieldNameConverter, method);
+
+        return DDLIndexField.builder()
+                .fieldName(attributeName)
+                .type(SchemaGenerator.getSQLTypeFromMethod(typeManager, type, method, annotations))
+                .build();
+    }
+
+    private DDLIndex createIndex(DDLIndexField indexField, String tableName) {
+        final DDLIndex index = new DDLIndex();
+        index.setFields(new DDLIndexField[]{indexField});
+        index.setTable(tableName);
+
+        return index;
     }
 }
