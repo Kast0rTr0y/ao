@@ -176,6 +176,10 @@ public final class Common {
         return method.getReturnType() != Void.TYPE && method.getParameterTypes().length == 0;
     }
 
+    public static boolean isMutatorOrAccessor(Method method) {
+        return isMutator(method) || isAccessor(method);
+    }
+
     public static boolean isAnnotatedAsRelational(Method method) {
         return method.isAnnotationPresent(OneToOne.class)
                 || method.isAnnotationPresent(OneToMany.class)
