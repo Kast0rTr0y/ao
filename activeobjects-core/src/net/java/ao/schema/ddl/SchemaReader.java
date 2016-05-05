@@ -152,10 +152,12 @@ public final class SchemaReader {
     private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName) {
         return newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>() {
             public DDLIndex apply(Index index) {
-                DDLIndex ddl = new DDLIndex();
-                ddl.setTable(tableName);
-                ddl.setField(index.getFieldName());
-                ddl.setIndexName(index.getIndexName());
+                DDLIndex ddl = DDLIndex.builder()
+                    .table(tableName)
+                    .field(DDLIndexField.builder().fieldName(index.getFieldName()).build())
+                    .indexName(index.getIndexName())
+                    .build();
+
                 return ddl;
             }
         }));
