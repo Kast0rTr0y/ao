@@ -16,16 +16,8 @@ public class DDLIndexField {
         return fieldName;
     }
 
-    public void setFieldName(String fieldName) {
-        this.fieldName = fieldName;
-    }
-
     public TypeInfo<?> getType() {
         return type;
-    }
-
-    public void setType(TypeInfo<?> type) {
-        this.type = type;
     }
 
     @Override

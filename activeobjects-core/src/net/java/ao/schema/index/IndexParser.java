@@ -85,10 +85,9 @@ public class IndexParser {
     }
 
     private DDLIndex createIndex(DDLIndexField indexField, String tableName) {
-        final DDLIndex index = new DDLIndex();
-        index.setFields(new DDLIndexField[]{indexField});
-        index.setTable(tableName);
-
-        return index;
+        return DDLIndex.builder()
+                .table(tableName)
+                .field(indexField)
+                .build();
     }
 }
