@@ -11,6 +11,7 @@ import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
@@ -104,10 +105,12 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
         }
 
         if (!oldField.isUnique() && field.isUnique()) {
-            DDLIndex index = new DDLIndex();
-            index.setField(field.getName());
-            index.setTable(table.getName());
-            index.setType(field.getType());
+
+            DDLIndex index = DDLIndex.builder()
+                    .field(DDLIndexField.builder().fieldName(field.getName()).type(field.getType()).build())
+                    .table(table.getName())
+                    .build();
+
             back.add(renderUniqueIndex(nameConverters.getIndexNameConverter(), index));
         }
 
@@ -156,10 +159,12 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
             logger.error("Unable to find unique index for field {} in table {}", field.getName(), table.getName());
         }
 
-        DDLIndex index = new DDLIndex();
-        index.setField(field.getName());
-        index.setTable(table.getName());
-        index.setIndexName(indexName);
+        DDLIndex index = DDLIndex.builder()
+                .field(DDLIndexField.builder().fieldName(field.getName()).build())
+                .table(table.getName())
+                .indexName(indexName)
+                .build();
+
         SQLAction renderDropIndex = renderDropIndex(nameConverters.getIndexNameConverter(), index);
         return renderDropIndex;
     }

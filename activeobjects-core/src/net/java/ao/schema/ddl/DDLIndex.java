@@ -37,24 +37,22 @@ public class DDLIndex {
     private DDLIndexField[] fields = {};
     private String indexName;
 
+    public static DDLIndexBuilder builder() {
+        return new DDLIndexBuilder();
+    }
+
+    private DDLIndex(String table, DDLIndexField[] fields, String indexName) {
+        this.table = table;
+        this.fields = fields;
+        this.indexName = indexName;
+    }
+
     public String getTable() {
         return table;
     }
 
-    public void setTable(String table) {
-        this.table = table;
-    }
-
     public DDLIndexField[] getFields() {
         return fields;
-    }
-
-    public void setFields(DDLIndexField[] fields) {
-        this.fields = fields;
-    }
-
-    public void setIndexName(String indexName) {
-        this.indexName = indexName;
     }
 
     public String getIndexName() {
@@ -68,35 +66,11 @@ public class DDLIndex {
         return fields[0].getFieldName();
     }
 
-    public void setField(String field) {
-        if (fields.length < 1) {
-            final DDLIndexField indexField = DDLIndexField.builder()
-                    .fieldName(field)
-                    .build();
-
-            fields = new DDLIndexField[]{indexField};
-        }
-
-        fields[0].setFieldName(field);
-    }
-
     public TypeInfo<?> getType() {
         if (fields.length < 1) {
             return null;
         }
         return fields[0].getType();
-    }
-
-    public void setType(TypeInfo<?> type) {
-        if (fields.length < 1) {
-            final DDLIndexField indexField = DDLIndexField.builder()
-                    .type(type)
-                    .build();
-
-            fields = new DDLIndexField[]{indexField};
-        }
-
-        fields[0].setType(type);
     }
 
     @Override
@@ -113,5 +87,37 @@ public class DDLIndex {
     public int hashCode() {
         return Objects.hashCode(table, indexName) + Arrays.hashCode(fields);
 
+    }
+
+    public static class DDLIndexBuilder {
+        private String table;
+        private DDLIndexField[] fields;
+        private String indexName;
+
+        private DDLIndexBuilder() {}
+
+        public DDLIndexBuilder table(String table) {
+            this.table = table;
+            return this;
+        }
+
+        public DDLIndexBuilder field(DDLIndexField field) {
+            this.fields = new DDLIndexField[]{field};
+            return this;
+        }
+
+        public DDLIndexBuilder fields(DDLIndexField[] fields) {
+            this.fields = fields;
+            return this;
+        }
+
+        public DDLIndexBuilder indexName(String indexName) {
+            this.indexName = indexName;
+            return this;
+        }
+
+        public DDLIndex build() {
+            return new DDLIndex(table, fields, indexName);
+        }
     }
 }
