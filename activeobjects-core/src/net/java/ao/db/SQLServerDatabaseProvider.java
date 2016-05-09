@@ -352,7 +352,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         }
 
         if (identityInsert) {
-            sql.append("\nSET IDENTITY_INSERT ").append(processID(table)).append(" OFF");
+            sql.append("\nSET IDENTITY_INSERT ").append(withSchema(table)).append(" OFF");
         }
 
         K back = executeInsertReturningKey(manager, conn, entityType, pkType, pkField, sql.toString(), params);
