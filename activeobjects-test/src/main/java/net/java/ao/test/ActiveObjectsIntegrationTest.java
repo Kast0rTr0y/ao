@@ -1,8 +1,11 @@
 package net.java.ao.test;
 
+import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.ddl.DDLField;
+import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
@@ -84,5 +87,19 @@ public abstract class ActiveObjectsIntegrationTest {
 
     protected final DDLField findField(DDLTable table, Class<? extends RawEntity<?>> entityClass, String methodName) {
         return findField(table, getFieldName(entityClass, methodName));
+    }
+
+    protected DDLIndexField field(String name, Class type, Class<? extends RawEntity<?>> entity) {
+        return DDLIndexField.builder()
+                .fieldName(getFieldName(entity, name))
+                .type(entityManager.getProvider().getTypeManager().getType(type))
+                .build();
+    }
+
+    protected String indexName(String tableName, String indexName) {
+        final IndexNameConverter indexNameConverter = entityManager.getNameConverters().getIndexNameConverter();
+        final DatabaseProvider provider = entityManager.getProvider();
+
+        return indexNameConverter.getName(provider.shorten(tableName), provider.shorten(indexName));
     }
 }
