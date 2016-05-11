@@ -135,7 +135,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
     @Override
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         StringBuilder back = new StringBuilder("CREATE INDEX ");
-        back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+        back.append(processID(index.getIndexName()))
                 .append(" ON ")
                 .append(processID(index.getTable()))
                 .append('(')

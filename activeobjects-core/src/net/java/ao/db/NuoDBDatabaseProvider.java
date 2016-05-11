@@ -194,12 +194,12 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
     @Override
     protected SQLAction renderCreateIndex(
             IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE INDEX " + indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))
+        return SQLAction.of("CREATE INDEX " + index.getIndexName()
                 + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
     }
 
     private SQLAction renderUniqueIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE UNIQUE INDEX " + indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))
+        return SQLAction.of("CREATE UNIQUE INDEX " + index.getIndexName()
                 + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
     }
 
