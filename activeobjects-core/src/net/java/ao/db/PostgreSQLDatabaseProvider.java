@@ -240,7 +240,7 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     @Override
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         return SQLAction.of(new StringBuilder().append("CREATE INDEX ")
-                .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                .append(processID(index.getIndexName()))
                 .append(" ON ").append(withSchema(index.getTable()))
                 .append('(').append(processID(index.getField())).append(')'));
     }
