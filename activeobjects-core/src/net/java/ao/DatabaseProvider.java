@@ -263,24 +263,11 @@ public abstract class DatabaseProvider implements Disposable {
 
         ret.addAll(renderAccessories(nameConverters, table));
 
-        for (DDLIndex index : table.getIndexes()) {
-            DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-            newAction.setIndex(index);
-            ret.addAll(renderAction(nameConverters, newAction));
-        }
-
         return ret.build();
     }
 
     private Iterable<SQLAction> renderDropTableActions(NameConverters nameConverters, DDLTable table) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
-        for (DDLIndex index : table.getIndexes()) {
-            final SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
-            if (sqlAction != null) {
-                ret.add(sqlAction);
-            }
-        }
 
         ret.addAll(renderDropAccessories(nameConverters, table));
         ret.add(renderDropTableStatement(table));
@@ -293,27 +280,11 @@ public abstract class DatabaseProvider implements Disposable {
 
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
-
         return ret.build();
     }
 
     protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field) {
         ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
-
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
 
         ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
 

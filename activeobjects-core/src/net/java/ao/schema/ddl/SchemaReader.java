@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -210,8 +211,13 @@ public final class SchemaReader {
             DDLAction action = new DDLAction(DDLActionType.CREATE);
             action.setTable(table);
             actions.add(action);
-        }
 
+            for (DDLIndex index : table.getIndexes()) {
+                DDLAction indexAction = new DDLAction(DDLActionType.CREATE_INDEX);
+                indexAction.setIndex(index);
+                actions.add(indexAction);
+            }
+        }
 
         List<DDLForeignKey> dropKeys = new ArrayList<DDLForeignKey>();
 
