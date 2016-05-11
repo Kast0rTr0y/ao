@@ -31,7 +31,7 @@ Please see [The Platform Rules of Engagement (go/proe)](http://go.atlassian.com/
 
 ### Builds
 
-The Bamboo builds for this project are on [EcoBAC](https://ecosystem-bamboo.internal.atlassian.com/browse/AOLIB)
+The Bamboo builds for this project are on [EcoBAC](https://ecosystem.atlassian.net/wiki/display/AO/Home)
 
 ## External User?
 
