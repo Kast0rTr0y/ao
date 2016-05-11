@@ -74,6 +74,15 @@ public class DDLIndex {
     }
 
     @Override
+    public String toString() {
+        return "DDLIndex{" +
+                "table='" + table + '\'' +
+                ", fields=" + Arrays.toString(fields) +
+                ", indexName='" + indexName + '\'' +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -106,7 +115,7 @@ public class DDLIndex {
             return this;
         }
 
-        public DDLIndexBuilder fields(DDLIndexField[] fields) {
+        public DDLIndexBuilder fields(DDLIndexField... fields) {
             this.fields = fields;
             return this;
         }

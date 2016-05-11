@@ -657,6 +657,7 @@ public abstract class DatabaseProviderTest {
                             .type(db.getTypeManager().getType(String.class))
                             .build()
                     )
+                    .indexName(nameConverters.getIndexNameConverter().getName("person", "companyID"))
                     .table("person")
                     .build();
 

@@ -1367,7 +1367,7 @@ public abstract class DatabaseProvider implements Disposable {
      * @return A DDL statement to be executed.
      */
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE INDEX " + withSchema(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField())))
+        return SQLAction.of("CREATE INDEX " + withSchema(index.getIndexName())
                 + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
     }
 
@@ -1424,7 +1424,7 @@ public abstract class DatabaseProvider implements Disposable {
     }
 
     protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        final String indexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
+        final String indexName = index.getIndexName();
         return hasIndex(index.getTable(), indexName);
     }
 
