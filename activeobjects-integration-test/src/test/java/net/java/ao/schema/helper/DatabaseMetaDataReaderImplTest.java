@@ -2,29 +2,40 @@ package net.java.ao.schema.helper;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Indexed;
+import net.java.ao.schema.Indexes;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matcher;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
+import static net.java.ao.matcher.IndexMatchers.index;
+import static net.java.ao.matcher.IndexMatchers.isNamed;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
+import static org.hamcrest.CoreMatchers.everyItem;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -40,25 +51,23 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
 
     @NonTransactional
     @Test
-    public void testCompositeIndexIgnored() throws Exception {
+    public void testGetCompositeIndex() throws Exception {
         final String tableName = getTableName(Simple.class, false);
-        final String composite_index_name = "COMPOSITE_INDEX";
-        final String other_field = getFieldName(Simple.class, "getOther");
-        final String name_field = getFieldName(Simple.class, "getName");
+        final String compositeIndexName = "COMPOSITE_INDEX";
+        final String otherField = getFieldName(Simple.class, "getOther");
+        final String nameField = getFieldName(Simple.class, "getName");
+        final List<String> compositeIndexFields = Arrays.asList(nameField, otherField);
 
-        // create a composite index
-        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, composite_index_name, Arrays.asList(name_field, other_field)).getStatement(), mock(DbUtils.UpdateCallback.class));
+        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, compositeIndexName, compositeIndexFields).getStatement(), mock(DbUtils.UpdateCallback.class));
 
-        with(new WithConnection() {
-            @Override
-            public void call(Connection connection) throws Exception {
-                final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
+        with(connection -> {
+            final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
-                // ensure we can see other indexes but not the composite one
-                assertFalse(containsIndexByName(indexes, tableName, composite_index_name));
-                assertTrue(containsIndex(indexes, tableName, other_field));
-                assertTrue(containsIndex(indexes, tableName, name_field));
-            }
+            assertThat(indexes, hasItems(
+                    index(compositeIndexName, tableName, compositeIndexFields),
+                    index(tableName, otherField),
+                    index(tableName, nameField)
+            ));
         });
     }
 
@@ -121,31 +130,10 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void testGetIndexes() throws Exception {
         final String tableName = getTableName(Simple.class, false);
 
-        with(new WithConnection() {
-            @Override
-            public void call(Connection connection) throws Exception {
-                final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
-                assertTrue(containsIndex(indexes, tableName, getFieldName(Simple.class, "getName")));
-                assertTrue(indexesAreNamed(indexes));
-            }
-        });
-    }
-
-    private boolean containsIndex(Iterable<? extends Index> indexes, final String tableName, final String columnName) {
-        return Iterables.any(indexes, new Predicate<Index>() {
-            @Override
-            public boolean apply(Index i) {
-                return i.getTableName().equals(tableName) && i.getFieldName().equals(columnName);
-            }
-        });
-    }
-
-    private boolean indexesAreNamed(Iterable<? extends Index> indexes) {
-        return Iterables.all(indexes, new Predicate<Index>() {
-            @Override
-            public boolean apply(Index i) {
-                return !StringUtils.isBlank(i.getIndexName());
-            }
+        with(connection -> {
+            final Iterable<Index> indexes = (Iterable<Index>) reader.getIndexes(connection.getMetaData(), tableName);
+            assertThat(indexes, hasItem(index(tableName, getFieldName(Simple.class, "getName"))));
+            assertThat(indexes, everyItem(isNamed()));
         });
     }
 
@@ -212,7 +200,7 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public static final class DatabaseMetadataReaderImplTestUpdater implements DatabaseUpdater {
         @Override
         public void update(EntityManager entityManager) throws Exception {
-            entityManager.migrate(Simple.class);
+            entityManager.migrate(Simple.class, MultipleComposite.class);
         }
     }
 
