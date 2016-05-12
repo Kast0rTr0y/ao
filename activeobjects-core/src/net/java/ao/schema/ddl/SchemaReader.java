@@ -46,6 +46,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -150,17 +153,26 @@ public final class SchemaReader {
     }
 
     private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName) {
-        return newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>() {
-            public DDLIndex apply(Index index) {
-                DDLIndex ddl = DDLIndex.builder()
-                    .table(tableName)
-                    .field(DDLIndexField.builder().fieldName(index.getFieldName()).build())
-                    .indexName(index.getIndexName())
-                    .build();
 
-                return ddl;
-            }
-        }));
+        final Iterable<? extends Index> indexes = databaseMetaDataReader.getIndexes(databaseMetaData, tableName);
+        return StreamSupport.stream(indexes.spliterator(), false)
+                .map(index -> toDDLIndex(index, tableName))
+                .collect(Collectors.toList());
+    }
+
+    private static DDLIndex toDDLIndex(Index index, String tableName) {
+
+        return DDLIndex.builder()
+                .indexName(index.getIndexName())
+                .table(tableName)
+                .fields(index.getFieldNames().stream()
+                        .map(SchemaReader::toDDLIndexField)
+                        .toArray(DDLIndexField[]::new))
+                .build();
+    }
+
+    private static DDLIndexField toDDLIndexField(String fieldName) {
+        return DDLIndexField.builder().fieldName(fieldName).build();
     }
 
     /**
