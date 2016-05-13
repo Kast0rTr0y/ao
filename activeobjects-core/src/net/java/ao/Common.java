@@ -526,16 +526,50 @@ public final class Common {
     }
 
     /**
-     * Shortens a String to the given length if necessary. The process of shortening is stable.
+     * Shortens a string to the given length if necessary. The process of shortening is stable.
+     * <p>
+     *     Strings shorter than length will not be shortened.
+     *     For longer strings the first <code>length - length/3 - 1</code> characters remain unchanged.
+     *     The remaining space is filled with string's last <code>length/3</code> hashCode characters.
+     * </p>
+     *
+     * @param string to be shortened.
+     * @param length to which string will be shortened.
+     * @return a shortened string.
      */
-    public static String shorten(String s, int length) {
-        if (s == null || s.length() <= length) {
-            return s;
+    public static String shorten(String string, int length) {
+        if (string == null || string.length() <= length) {
+            return string;
         }
 
         final int tailLength = length / 3;
-        final int hash = Math.abs((int) (s.hashCode() % Math.round(Math.pow(10, tailLength))));
+        final int prefixEndPosition = length - tailLength - 1;
 
-        return s.substring(0, length - tailLength - 1) + hash;
+        final int hash = Math.abs((int) (string.hashCode() % Math.round(Math.pow(10, tailLength))));
+
+        return string.substring(0, prefixEndPosition) + hash;
+    }
+
+    /**
+     * Extracts a part of the string that remains unchanged during shortening process.
+     * <p>
+     *     For strings shorter than specified length the string itself is returned.
+     *     For longer strings the first <code>length - length/3 - 1</code> characters are returned.
+     * </p>
+     *
+     * @see #shorten(String, int)
+     * @param string for which the prefix will be extracted.
+     * @param length used in {@link #shorten}ing process.
+     * @return part of the string that remains unchanged during shortening process.
+     */
+    public static String prefix(String string, int length) {
+        final int tailLength = length / 3;
+        final int prefixEndPosition = length - tailLength - 1;
+
+        if (string == null || prefixEndPosition > string.length()) {
+            return string;
+        }
+
+        return string.substring(0, prefixEndPosition);
     }
 }

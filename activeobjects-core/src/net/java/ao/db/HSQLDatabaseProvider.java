@@ -386,7 +386,7 @@ public final class HSQLDatabaseProvider extends DatabaseProvider {
 
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        String indexName = getExistingIndexName(indexNameConverter, index);
+        String indexName = index.getIndexName();
         return SQLAction.of(new StringBuilder("DROP INDEX ")
                 .append(withSchema(indexName))
                 .append(" IF EXISTS"));
