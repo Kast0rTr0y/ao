@@ -71,12 +71,25 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         });
     }
 
-    private boolean containsIndexByName(Iterable<? extends Index> indexes, final String tableName, final String indexName) {
-        return Iterables.any(indexes, new Predicate<Index>() {
-            @Override
-            public boolean apply(Index i) {
-                return i.getTableName().equals(tableName) && i.getIndexName().equals(indexName);
-            }
+    @NonTransactional
+    @Test
+    public void shouldGetMultipleCompositeIndexes() throws Exception {
+        final String tableName = getTableName(MultipleComposite.class, false);
+        final String firstField = getFieldName(MultipleComposite.class, "getFirst");
+        final String secondField = getFieldName(MultipleComposite.class, "getSecond");
+        final String thirdField = getFieldName(MultipleComposite.class, "getThird");
+        final String otherField = getFieldName(MultipleComposite.class, "getOther");
+
+
+        with(connection -> {
+            final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
+
+            assertThat(indexes, containsInAnyOrder(
+                    index(tableName, ImmutableList.of(firstField, otherField)),
+                    index(tableName, ImmutableList.of(secondField, otherField)),
+                    index(tableName, ImmutableList.of(thirdField, otherField)),
+                    index(tableName, ImmutableList.of(otherField))
+            ));
         });
     }
 
@@ -87,9 +100,10 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             public void call(Connection connection) throws Exception {
                 final Iterable<String> tableNames = reader.getTableNames(connection.getMetaData());
 
-                assertEquals(2, Iterables.size(tableNames));
+                assertEquals(3, Iterables.size(tableNames));
                 assertTrue(containsTableName(tableNames, getTableName(Simple.class, false)));
                 assertTrue(containsTableName(tableNames, getTableName(Other.class, false)));
+                assertTrue(containsTableName(tableNames, getTableName(MultipleComposite.class, false)));
             }
         });
     }
@@ -178,6 +192,31 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         void call(Connection connection) throws Exception;
     }
 
+
+    @Indexes({
+            @net.java.ao.schema.Index(name = "first", methodNames = {"getFirst", "getOther"}),
+            @net.java.ao.schema.Index(name = "second", methodNames = {"getSecond", "getOther"}),
+            @net.java.ao.schema.Index(name = "third", methodNames = {"getThird", "getOther"}),
+            @net.java.ao.schema.Index(name = "single", methodNames = {"getOther"})
+    })
+    public interface MultipleComposite extends Entity {
+
+        String getFirst();
+
+        void setFirst(String first);
+
+        String getSecond();
+
+        void setSecond(String second);
+
+        String getThird();
+
+        void setThird(String third);
+
+        String getOther();
+
+        void setOther(String other);
+    }
 
     public static interface Simple extends Entity {
         @Indexed

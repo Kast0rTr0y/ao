@@ -1,12 +1,11 @@
 package net.java.ao.it;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import net.java.ao.DefaultSchemaConfiguration;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
+import net.java.ao.schema.Index;
 import net.java.ao.schema.IndexNameConverter;
+import net.java.ao.schema.Indexes;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
@@ -22,17 +21,15 @@ import net.java.ao.test.jdbc.DatabaseUpdater;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Test to recreate the issue described in:
- * https://ecosystem.atlassian.net/browse/AO-554?focusedCommentId=140467
- */
 @Data(TestUnmanagedCompositeIndex.EntityDatabaseUpdater.class)
 public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationTest {
 
@@ -40,21 +37,26 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
 
     @Test
     public void testUnmanagedIndexShouldNotBeDroppedByAo() throws Exception {
-        entityManager.migrate(LexoRank.class);
+        entityManager.migrate(WithCompositeIndexes.class);
         createUnmanagedIndex(UNMANAGED_INDEX_NAME);
-        entityManager.migrate(LexoRank.class);
+        entityManager.migrate(WithCompositeIndexes.class);
         assertTrue(findIndexInDatabase(UNMANAGED_INDEX_NAME).isPresent());
     }
 
     private void createUnmanagedIndex(String indexName) throws Exception {
         DDLAction unmanagedIndexAction = new DDLAction(DDLActionType.CREATE_INDEX);
         DDLIndex index = DDLIndex.builder()
-                .field(DDLIndexField.builder()
-                        .fieldName(entityManager.getFieldNameConverter().getName(LexoRank.class.getMethods()[0]))
-                        .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
-                        .build()
+                .fields(
+                        DDLIndexField.builder()
+                                .fieldName(getFieldName(WithCompositeIndexes.class, "getFirst"))
+                                .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
+                                .build(),
+                        DDLIndexField.builder()
+                                .fieldName(getFieldName(WithCompositeIndexes.class, "getSecond"))
+                                .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
+                                .build()
                 )
-                .table(entityManager.getTableNameConverter().getName(LexoRank.class))
+                .table(entityManager.getTableNameConverter().getName(WithCompositeIndexes.class))
                 .indexName(indexName)
                 .build();
 
@@ -70,41 +72,50 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
     }
 
     private Optional<DDLIndex> findIndexInDatabase(final String indexName) throws SQLException {
-        final DDLTable table = getDdlTable();
-        return Iterables.tryFind(newArrayList(table.getIndexes()), new Predicate<DDLIndex>() {
-            @Override
-            public boolean apply(DDLIndex index) {
-                return index.getIndexName().equalsIgnoreCase(indexName);
-            }
-        });
-
+        return Stream.of(getDdlTable().getIndexes())
+                .filter(index -> index.getIndexName().equalsIgnoreCase(indexName))
+                .findAny();
     }
 
     private DDLTable getDdlTable() throws SQLException {
         final DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), new DefaultSchemaConfiguration());
-        return Iterables.find(newArrayList(tables), new Predicate<DDLTable>() {
-            @Override
-            public boolean apply(DDLTable t) {
-                return t.getName().equalsIgnoreCase(entityManager.getNameConverters().getTableNameConverter().getName(LexoRank.class));
-            }
-        });
+        final String tableName = entityManager.getNameConverters().getTableNameConverter().getName(WithCompositeIndexes.class);
+
+        return Stream.of(tables)
+                .filter(table -> table.getName().equalsIgnoreCase(tableName))
+                .findAny()
+                .orElseThrow(NoSuchElementException::new);
     }
 
     public static class EntityDatabaseUpdater implements DatabaseUpdater {
         @Override
         public void update(EntityManager entityManager) throws Exception {
-            entityManager.migrate(LexoRank.class);
+            entityManager.migrate(WithCompositeIndexes.class);
         }
     }
 
-    public interface LexoRank extends Entity {
-        int getRank();
+    @Indexes({
+            @Index(name = "first", methodNames = {"getFirst", "getAlwaysIndexed"}),
+            @Index(name =  "second", methodNames = {"getSecond", "getAlwaysIndexed"}),
+            @Index(name =  "third", methodNames = {"getThird", "getAlwaysIndexed"})
+    })
+    public interface WithCompositeIndexes extends Entity {
 
-        void setRank(int rank);
+        int getFirst();
 
-        String getType();
+        int getSecond();
 
-        void setType(String type);
+        int getThird();
+
+        int getAlwaysIndexed();
+
+        void setFirst(int value);
+
+        void setSecond(int value);
+
+        void setThird(int value);
+
+        void setAlwaysIndexed(int value);
     }
 
 }

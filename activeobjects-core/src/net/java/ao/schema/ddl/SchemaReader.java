@@ -366,33 +366,27 @@ public final class SchemaReader {
             List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
 
             for (DDLIndex fromIndex : fromTable.getIndexes()) {
-                boolean found = false;
 
-                for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
-                    if (fromIndex.getTable().equalsIgnoreCase(ontoIndex.getTable())
-                            && fromIndex.getField().equalsIgnoreCase(ontoIndex.getField())) {
-                        found = true;
-                        break;
-                    }
-                }
+                final boolean present = Stream.of(ontoTable.getIndexes())
+                        .filter(index -> fromIndex.getTable().equalsIgnoreCase(index.getTable()))
+                        .filter(index -> haveSameFieldNames(fromIndex, index))
+                        .findAny()
+                        .isPresent();
 
-                if (!found) {
+                if (!present) {
                     addIndexes.add(fromIndex);
                 }
             }
 
             for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
-                boolean found = false;
 
-                for (DDLIndex fromIndex : fromTable.getIndexes()) {
-                    if (ontoIndex.getTable().equalsIgnoreCase(fromIndex.getTable())
-                            && ontoIndex.getField().equalsIgnoreCase(fromIndex.getField())) {
-                        found = true;
-                        break;
-                    }
-                }
+                final boolean present = Stream.of(fromTable.getIndexes())
+                        .filter(index -> ontoIndex.getTable().equalsIgnoreCase(index.getTable()))
+                        .filter(index -> haveSameFieldNames(ontoIndex, index))
+                        .findAny()
+                        .isPresent();
 
-                if (!found) {
+                if (!present) {
                     dropIndexes.add(ontoIndex);
                 }
             }
@@ -417,6 +411,18 @@ public final class SchemaReader {
         }
 
         return actions.toArray(new DDLAction[actions.size()]);
+    }
+
+    private static boolean haveSameFieldNames(DDLIndex index1, DDLIndex index2) {
+        Set<String> fieldNamesFromIndex1 = Stream.of(index1.getFields())
+                .map(DDLIndexField::getFieldName)
+                .collect(Collectors.toSet());
+
+        Set<String> fieldNamesFromIndex2 = Stream.of(index2.getFields())
+                .map(DDLIndexField::getFieldName)
+                .collect(Collectors.toSet());
+
+        return fieldNamesFromIndex1.equals(fieldNamesFromIndex2);
     }
 
     private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto) {
@@ -702,6 +708,9 @@ public final class SchemaReader {
         for (DDLAction action : createIndexes) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
             DDLIndex index = action.getIndex();
+            List<String> indexFieldNames = Stream.of(index.getFields())
+                    .map(DDLIndexField::getFieldName)
+                    .collect(Collectors.toList());
 
             for (DDLAction depAction : creates) {
                 if (depAction.getTable().getName().equals(index.getTable())) {
@@ -710,13 +719,13 @@ public final class SchemaReader {
             }
 
             for (DDLAction depAction : addColumns) {
-                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
+                if (depAction.getTable().getName().equals(index.getTable()) || indexFieldNames.contains(depAction.getField().getName())) {
                     dependencies.add(depAction);
                 }
             }
 
             for (DDLAction depAction : changeColumns) {
-                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
+                if (depAction.getTable().getName().equals(index.getTable()) || indexFieldNames.contains(depAction.getField().getName())) {
                     dependencies.add(depAction);
                 }
             }

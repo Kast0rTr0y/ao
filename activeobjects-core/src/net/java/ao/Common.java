@@ -538,4 +538,14 @@ public final class Common {
 
         return s.substring(0, length - tailLength - 1) + hash;
     }
+
+    public static String prefix(String s, int length) {
+        if (s == null || s.length() <= length) {
+            return s;
+        }
+
+        final int tailLength = length / 3;
+
+        return s.substring(0, length - tailLength - 1);
+    }
 }

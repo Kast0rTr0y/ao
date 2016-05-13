@@ -66,13 +66,6 @@ public class DDLIndex {
         return fields[0].getFieldName();
     }
 
-    public TypeInfo<?> getType() {
-        if (fields.length < 1) {
-            return null;
-        }
-        return fields[0].getType();
-    }
-
     @Override
     public String toString() {
         return "DDLIndex{" +
