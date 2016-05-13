@@ -116,7 +116,7 @@ public class H2DatabaseProvider extends DatabaseProvider {
     protected SQLAction renderDropIndex(final IndexNameConverter indexNameConverter, final DDLIndex index) {
         return SQLAction.of(new StringBuilder()
                         .append("DROP INDEX IF EXISTS ")
-                        .append(withSchema(getExistingIndexName(indexNameConverter, index)))
+                        .append(withSchema(index.getIndexName()))
         );
     }
 
