@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -136,6 +137,17 @@ public final class CommonTest {
         testShorten("a-very-long-string");
         testShorten("another-very-long-string");
         testShorten("yet-another-very-long-string");
+    }
+
+    @Test
+    public void testShouldGetPrefix() {
+        String indexName = "index_ao_000000_entity";
+        final int maxIndexLength = 30;
+        String expectedPrefix = "index_ao_000000_ent";
+
+        final String actualPrefix = Common.prefix(indexName, maxIndexLength);
+
+        assertThat(actualPrefix, equalTo(expectedPrefix));
     }
 
     private void testShorten(String s) {

@@ -23,6 +23,8 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import static java.sql.Types.OTHER;
@@ -105,13 +107,7 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
         }
 
         if (!oldField.isUnique() && field.isUnique()) {
-
-            DDLIndex index = DDLIndex.builder()
-                    .field(DDLIndexField.builder().fieldName(field.getName()).type(field.getType()).build())
-                    .table(table.getName())
-                    .build();
-
-            back.add(renderUniqueIndex(nameConverters.getIndexNameConverter(), index));
+            back.add(renderUniqueIndex(nameConverters.getIndexNameConverter(), table.getName(), field.getName()));
         }
 
         if (field.isPrimaryKey() && oldField.getJdbcType() != field.getJdbcType()) {
@@ -125,30 +121,34 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
         return back.build();
     }
 
+    /**
+     * Drop indices on field being altered.
+     */
     @Override
     protected Iterable<SQLAction> renderDropAccessoriesForField(
-            NameConverters nameConverters, DDLTable table, DDLField field) {
-        //Drop indices on field being altered.
-        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equalsIgnoreCase(field.getName())) {
-                back.add(renderDropIndex(nameConverters.getIndexNameConverter(), index));
-            }
-        }
-        return back.build();
+            final NameConverters nameConverters,
+            final DDLTable table,
+            final DDLField field
+    ) {
+        return Stream.of(table.getIndexes())
+                .filter(index -> index.containsFiled(field.getName()))
+                .map(index -> renderDropIndex(nameConverters.getIndexNameConverter(), index))
+                .collect(Collectors.toList());
     }
 
+    /**
+     * Create indices on field being altered.
+     */
     @Override
     protected Iterable<SQLAction> renderAccessoriesForField(
-            NameConverters nameConverters, DDLTable table, DDLField field) {
-        //Create indices on field being altered.
-        final ImmutableList.Builder<SQLAction> back = ImmutableList.builder();
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equalsIgnoreCase(field.getName())) {
-                back.add(renderCreateIndex(nameConverters.getIndexNameConverter(), index));
-            }
-        }
-        return back.build();
+            final NameConverters nameConverters,
+            final DDLTable table,
+            final DDLField field
+    ) {
+        return Stream.of(table.getIndexes())
+                .filter(index -> index.containsFiled(field.getName()))
+                .map(index -> renderCreateIndex(nameConverters.getIndexNameConverter(), index))
+                .collect(Collectors.toList());
     }
 
     private SQLAction findAndRenderDropUniqueIndex(
@@ -192,21 +192,26 @@ public class NuoDBDatabaseProvider extends DatabaseProvider {
     }
 
     @Override
-    protected SQLAction renderCreateIndex(
-            IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE INDEX " + index.getIndexName()
-                + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
+    protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
+        String statement = "CREATE INDEX " + index.getIndexName()
+                + " ON " + withSchema(index.getTable()) +
+                Stream.of(index.getFields())
+                        .map(DDLIndexField::getFieldName)
+                        .map(this::processID)
+                        .collect(Collectors.joining(",", "(", ")"));
+
+        return SQLAction.of(statement);
     }
 
-    private SQLAction renderUniqueIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE UNIQUE INDEX " + index.getIndexName()
-                + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
+    private SQLAction renderUniqueIndex(IndexNameConverter indexNameConverter, String table, String field) {
+        return SQLAction.of("CREATE UNIQUE INDEX " + indexNameConverter.getName(shorten(table), shorten(field))
+                + " ON " + withSchema(table) + "(" + processID(field) + ")");
     }
 
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter,
                                         DDLIndex index) {
-        final String indexName = getExistingIndexName(indexNameConverter, index);
+        final String indexName = index.getIndexName();
         final String tableName = index.getTable();
 
         if (hasIndex(tableName, indexName)) {

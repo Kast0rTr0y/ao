@@ -4,26 +4,20 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import net.java.ao.Entity;
 import net.java.ao.EntityManager;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.Indexed;
 import net.java.ao.schema.Indexes;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
-import net.java.ao.test.DbUtils;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.hamcrest.Matcher;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.List;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
@@ -32,12 +26,10 @@ import static net.java.ao.matcher.IndexMatchers.isNamed;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
 public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrationTest {
@@ -51,32 +43,23 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
 
     @NonTransactional
     @Test
-    public void testGetCompositeIndex() throws Exception {
-        final String tableName = getTableName(Simple.class, false);
-        final String compositeIndexName = "COMPOSITE_INDEX";
-        final String otherField = getFieldName(Simple.class, "getOther");
-        final String nameField = getFieldName(Simple.class, "getName");
-        final List<String> compositeIndexFields = Arrays.asList(nameField, otherField);
+    public void shouldGetMultipleCompositeIndexes() throws Exception {
+        final String tableName = getTableName(MultipleComposite.class, false);
+        final String firstField = getFieldName(MultipleComposite.class, "getFirst");
+        final String secondField = getFieldName(MultipleComposite.class, "getSecond");
+        final String thirdField = getFieldName(MultipleComposite.class, "getThird");
+        final String otherField = getFieldName(MultipleComposite.class, "getOther");
 
-        executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, compositeIndexName, compositeIndexFields).getStatement(), mock(DbUtils.UpdateCallback.class));
 
         with(connection -> {
             final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
-            assertThat(indexes, hasItems(
-                    index(compositeIndexName, tableName, compositeIndexFields),
-                    index(tableName, otherField),
-                    index(tableName, nameField)
+            assertThat(indexes, containsInAnyOrder(
+                    index(tableName, ImmutableList.of(firstField, otherField)),
+                    index(tableName, ImmutableList.of(secondField, otherField)),
+                    index(tableName, ImmutableList.of(thirdField, otherField)),
+                    index(tableName, ImmutableList.of(otherField))
             ));
-        });
-    }
-
-    private boolean containsIndexByName(Iterable<? extends Index> indexes, final String tableName, final String indexName) {
-        return Iterables.any(indexes, new Predicate<Index>() {
-            @Override
-            public boolean apply(Index i) {
-                return i.getTableName().equals(tableName) && i.getIndexName().equals(indexName);
-            }
         });
     }
 
@@ -87,9 +70,10 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             public void call(Connection connection) throws Exception {
                 final Iterable<String> tableNames = reader.getTableNames(connection.getMetaData());
 
-                assertEquals(2, Iterables.size(tableNames));
+                assertEquals(3, Iterables.size(tableNames));
                 assertTrue(containsTableName(tableNames, getTableName(Simple.class, false)));
                 assertTrue(containsTableName(tableNames, getTableName(Other.class, false)));
+                assertTrue(containsTableName(tableNames, getTableName(MultipleComposite.class, false)));
             }
         });
     }
@@ -178,6 +162,31 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         void call(Connection connection) throws Exception;
     }
 
+
+    @Indexes({
+            @net.java.ao.schema.Index(name = "first", methodNames = {"getFirst", "getOther"}),
+            @net.java.ao.schema.Index(name = "second", methodNames = {"getSecond", "getOther"}),
+            @net.java.ao.schema.Index(name = "third", methodNames = {"getThird", "getOther"}),
+            @net.java.ao.schema.Index(name = "single", methodNames = {"getOther"})
+    })
+    public interface MultipleComposite extends Entity {
+
+        String getFirst();
+
+        void setFirst(String first);
+
+        String getSecond();
+
+        void setSecond(String second);
+
+        String getThird();
+
+        void setThird(String third);
+
+        String getOther();
+
+        void setOther(String other);
+    }
 
     public static interface Simple extends Entity {
         @Indexed
