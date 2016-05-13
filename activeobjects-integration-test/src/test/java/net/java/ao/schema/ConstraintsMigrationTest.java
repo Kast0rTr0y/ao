@@ -4,19 +4,26 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import net.java.ao.Entity;
 import net.java.ao.SchemaConfiguration;
+import net.java.ao.matcher.IndexMatchers;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
+import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
+import org.hamcrest.Matchers;
+import org.hamcrest.collection.IsArrayContaining;
+import org.hamcrest.collection.IsArrayWithSize;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -177,10 +184,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertIndex(true);
     }
 
-    /**
-     * Remove an index from a column
-     * Note: Currently broken because schema migration does not check for indexes
-     */
     @Test
     @NonTransactional
     public void testRemoveIndex() throws Exception {
@@ -193,6 +196,58 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
         entityManager.migrate(NoIndexedColumn.T.class);
         assertIndex(false);
+    }
+
+    @Test
+    @NonTransactional
+    public void testShouldAddCompositeIndex() throws Exception {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(NoCompositeIndex.T.class);
+        assertIndex(false);
+
+        entityManager.migrate(CompositeIndex.T.class);
+        assertIndex(true);
+    }
+
+    @Test
+    @NonTransactional
+    public void testShouldRemoveCompositeIndex() throws Exception {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(CompositeIndex.T.class);
+        assertIndex(true);
+
+        entityManager.migrate(NoCompositeIndex.T.class);
+        assertIndex(false);
+    }
+
+    @Test
+    @NonTransactional
+    public void shouldMigrateToSingleColumnCompositeIndex() throws Exception {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(IndexedColumn.T.class);
+        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
+
+        entityManager.migrate(SingleColumnIndex.T.class);
+        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
+    }
+
+    @Test
+    @NonTransactional
+    public void shouldMigrateFromSingleColumnCompositeIndex() throws Exception {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(SingleColumnIndex.T.class);
+        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
+
+        entityManager.migrate(IndexedColumn.T.class);
+        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
     }
 
     /**
@@ -444,6 +499,44 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
             public String getName();
 
             public void setName(String name);
+        }
+    }
+
+    static class SingleColumnIndex {
+        @Indexes(
+                @Index(name = "indx", methodNames = {"getName"})
+        )
+        public interface T extends Entity {
+            String getName();
+
+            void setName(String name);
+        }
+    }
+
+    static class CompositeIndex {
+        @Indexes(
+                @Index(name = "indx", methodNames = {"getName", "getAge"})
+        )
+        public interface T extends Entity {
+            String getName();
+
+            void setName(String name);
+
+            String getAge();
+
+            void setAge(String age);
+        }
+    }
+
+    static class NoCompositeIndex {
+        public interface T extends Entity {
+            String getName();
+
+            void setName(String name);
+
+            String getAge();
+
+            void setAge(String age);
         }
     }
 
