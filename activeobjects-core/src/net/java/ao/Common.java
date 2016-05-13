@@ -534,8 +534,21 @@ public final class Common {
         }
 
         final int tailLength = length / 3;
+        final int prefixEndPosition = length - tailLength - 1;
+
         final int hash = Math.abs((int) (s.hashCode() % Math.round(Math.pow(10, tailLength))));
 
-        return s.substring(0, length - tailLength - 1) + hash;
+        return s.substring(0, prefixEndPosition) + hash;
+    }
+
+    public static String prefix(String s, int length) {
+        final int tailLength = length / 3;
+        final int prefixEndPosition = length - tailLength - 1;
+
+        if (s == null || prefixEndPosition > s.length()) {
+            return s;
+        }
+
+        return s.substring(0, prefixEndPosition);
     }
 }

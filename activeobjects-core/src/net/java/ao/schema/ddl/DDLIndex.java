@@ -16,9 +16,9 @@
 package net.java.ao.schema.ddl;
 
 import com.google.common.base.Objects;
-import net.java.ao.types.TypeInfo;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * Database-agnostic reprensentation of a general field index
@@ -66,11 +66,10 @@ public class DDLIndex {
         return fields[0].getFieldName();
     }
 
-    public TypeInfo<?> getType() {
-        if (fields.length < 1) {
-            return null;
-        }
-        return fields[0].getType();
+    public boolean containsFiled(final String fieldName) {
+        return Stream.of(getFields())
+                .map(DDLIndexField::getFieldName)
+                .anyMatch(indexFieldName -> indexFieldName.equals(fieldName));
     }
 
     @Override

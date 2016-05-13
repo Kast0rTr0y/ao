@@ -43,11 +43,30 @@ public class DDLAction {
     private DDLIndex index;
     private DDLValue[] values;
 
-    private DDLAction() {
+    public static DDLActionBuilder builder() {
+        return new DDLActionBuilder();
     }
 
     public DDLAction(DDLActionType actionType) {
         this.actionType = actionType;
+    }
+
+    public DDLAction(
+            DDLActionType actionType,
+            DDLTable table,
+            DDLField oldField,
+            DDLField field,
+            DDLForeignKey key,
+            DDLIndex index,
+            DDLValue[] values
+    ) {
+        this.actionType = actionType;
+        this.table = table;
+        this.oldField = oldField;
+        this.field = field;
+        this.key = key;
+        this.index = index;
+        this.values = values;
     }
 
     public DDLTable getTable() {

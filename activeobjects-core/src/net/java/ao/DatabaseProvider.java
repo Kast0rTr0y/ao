@@ -30,10 +30,12 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionBuilder;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.DDLValue;
 import net.java.ao.schema.ddl.SQLAction;
@@ -67,6 +69,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -247,8 +252,8 @@ public abstract class DatabaseProvider implements Disposable {
     }
 
     private SQLAction renderDropForAoManagedIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        final String aoIndexName = indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        if (aoIndexName.equalsIgnoreCase(index.getIndexName())) {
+        final String indexNamePrefix = indexNameConverter.getPrefix(shorten(index.getTable()));
+        if (index.getIndexName().toLowerCase().startsWith(indexNamePrefix)) {
             return Optional.fromNullable(renderDropIndex(indexNameConverter, index)).or(SQLAction.of(""));
         } else {
             logger.debug("Ignoring Drop index {} as index not managed by AO", index.getIndexName());
@@ -262,12 +267,6 @@ public abstract class DatabaseProvider implements Disposable {
         ret.add(renderTable(nameConverters, table).withUndoAction(renderDropTableStatement(table)));
 
         ret.addAll(renderAccessories(nameConverters, table));
-
-        for (DDLIndex index : table.getIndexes()) {
-            DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-            newAction.setIndex(index);
-            ret.addAll(renderAction(nameConverters, newAction));
-        }
 
         return ret.build();
     }
@@ -293,31 +292,25 @@ public abstract class DatabaseProvider implements Disposable {
 
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
-
         return ret.build();
     }
 
     protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field) {
-        ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
+        ImmutableList.Builder<SQLAction> sqlActions = ImmutableList.builder();
 
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
+        final List<SQLAction> dropIndexActions = Stream.of(table.getIndexes())
+                .filter(index -> index.containsFiled(field.getName()))
+                .map(index -> DDLAction.builder()
+                        .setActionType(DDLActionType.DROP_INDEX)
+                        .setIndex(index)
+                        .build())
+                .map(action -> renderAction(nameConverters, action))
+                .flatMap(iterable -> StreamSupport.stream(iterable.spliterator(), false))
+                .collect(Collectors.toList());
 
-        ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
-
-        return ret.build();
+        sqlActions.addAll(dropIndexActions);
+        sqlActions.addAll(renderAlterTableDropColumn(nameConverters, table, field));
+        return sqlActions.build();
     }
 
     /**
@@ -1367,8 +1360,14 @@ public abstract class DatabaseProvider implements Disposable {
      * @return A DDL statement to be executed.
      */
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        return SQLAction.of("CREATE INDEX " + withSchema(index.getIndexName())
-                + " ON " + withSchema(index.getTable()) + "(" + processID(index.getField()) + ")");
+        String statement = "CREATE INDEX " + withSchema(index.getIndexName())
+                + " ON " + withSchema(index.getTable()) +
+                Stream.of(index.getFields())
+                        .map(DDLIndexField::getFieldName)
+                        .map(this::processID)
+                        .collect(Collectors.joining(",", "(", ")"));
+
+        return SQLAction.of(statement);
     }
 
     /**
@@ -1377,11 +1376,14 @@ public abstract class DatabaseProvider implements Disposable {
      * to create a composite index for testing. AO does not provide clients with
      * a feature to manage composite indexes in any way.
      *
+     * @deprecated Use {@link #renderCreateIndex(IndexNameConverter, DDLIndex)} for creating indexes.
+     *
      * @param tableName The name of the database table
      * @param indexName The name of the new index
      * @param fields List of fields that make up the index
      * @return A DDL statement to be executed.
      */
+    @Deprecated
     public SQLAction renderCreateCompositeIndex(String tableName, String indexName, List<String> fields) {
         StringBuilder statement = new StringBuilder();
         statement.append("CREATE INDEX " + processID(indexName));
@@ -1413,7 +1415,7 @@ public abstract class DatabaseProvider implements Disposable {
      * @return A DDL statement to be executed, or <code>null</code>.
      */
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        final String indexName = getExistingIndexName(indexNameConverter, index);
+        final String indexName = index.getIndexName();
         final String tableName = index.getTable();
 
         if (hasIndex(tableName, indexName)) {
@@ -1426,14 +1428,6 @@ public abstract class DatabaseProvider implements Disposable {
     protected boolean hasIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
         final String indexName = index.getIndexName();
         return hasIndex(index.getTable(), indexName);
-    }
-
-    protected String getExistingIndexName(IndexNameConverter indexNameConverter, DDLIndex index) {
-        if (index.getIndexName() != null) {
-            return index.getIndexName();
-        } else {
-            return indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()));
-        }
     }
 
     protected boolean hasIndex(String tableName, String indexName) {
