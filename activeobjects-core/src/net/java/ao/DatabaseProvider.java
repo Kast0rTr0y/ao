@@ -30,6 +30,7 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
+import net.java.ao.schema.ddl.DDLActionBuilder;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -64,13 +65,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
-import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -267,12 +268,6 @@ public abstract class DatabaseProvider implements Disposable {
 
         ret.addAll(renderAccessories(nameConverters, table));
 
-        for (DDLIndex index : table.getIndexes()) {
-            DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-            newAction.setIndex(index);
-            ret.addAll(renderAction(nameConverters, newAction));
-        }
-
         return ret.build();
     }
 
@@ -297,31 +292,25 @@ public abstract class DatabaseProvider implements Disposable {
 
         ret.addAll(renderAlterTableAddColumn(nameConverters, table, field));
 
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.CREATE_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
-
         return ret.build();
     }
 
     protected Iterable<SQLAction> renderDropColumnActions(NameConverters nameConverters, DDLTable table, DDLField field) {
-        ImmutableList.Builder<SQLAction> ret = ImmutableList.builder();
+        ImmutableList.Builder<SQLAction> sqlActions = ImmutableList.builder();
 
-        for (DDLIndex index : table.getIndexes()) {
-            if (index.getField().equals(field.getName())) {
-                DDLAction newAction = new DDLAction(DDLActionType.DROP_INDEX);
-                newAction.setIndex(index);
-                ret.addAll(renderAction(nameConverters, newAction));
-            }
-        }
+        final List<SQLAction> dropIndexActions = Stream.of(table.getIndexes())
+                .filter(index -> index.containsFiled(field.getName()))
+                .map(index -> DDLAction.builder()
+                        .setActionType(DDLActionType.DROP_INDEX)
+                        .setIndex(index)
+                        .build())
+                .map(action -> renderAction(nameConverters, action))
+                .flatMap(iterable -> StreamSupport.stream(iterable.spliterator(), false))
+                .collect(Collectors.toList());
 
-        ret.addAll(renderAlterTableDropColumn(nameConverters, table, field));
-
-        return ret.build();
+        sqlActions.addAll(dropIndexActions);
+        sqlActions.addAll(renderAlterTableDropColumn(nameConverters, table, field));
+        return sqlActions.build();
     }
 
     /**
