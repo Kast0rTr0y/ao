@@ -15,10 +15,8 @@
  */
 package net.java.ao.db;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -46,8 +44,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * @author Daniel Spiewak
@@ -172,14 +168,8 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     private Iterable<DDLIndex> findIndexesForField(final DDLTable table, final DDLField field) {
         return Stream.of(table.getIndexes())
-                .filter(index -> containsFiled(index, field))
+                .filter(index -> index.containsFiled(field.getName()))
                 .collect(Collectors.toList());
-    }
-
-    private boolean containsFiled(final DDLIndex index, final DDLField field) {
-        return Stream.of(index.getFields())
-                .map(DDLIndexField::getFieldName)
-                .anyMatch(indexFieldName -> indexFieldName.equals(field.getName()));
     }
 
     private String defaultConstraintName(DDLTable table, DDLField field) {
