@@ -57,21 +57,28 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         final String otherField = getFieldName(Simple.class, "getOther");
         final String nameField = getFieldName(Simple.class, "getName");
         final List<String> compositeIndexFields = Arrays.asList(nameField, otherField);
-
+        printIndexes();
         executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, compositeIndexName, compositeIndexFields).getStatement(), mock(DbUtils.UpdateCallback.class));
-
+        printIndexes();
         with(connection -> {
             final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
-
-            for (Index index : indexes) {
-                System.out.println(index);
-            }
 
             assertThat(indexes, hasItems(
                     index(compositeIndexName, tableName, compositeIndexFields),
                     index(tableName, otherField),
                     index(tableName, nameField)
             ));
+        });
+    }
+
+    private void printIndexes() {
+        with(connection -> {
+            final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
+
+            for (Index index : indexes) {
+                System.out.println(index);
+                System.out.println("\n");
+            }
         });
     }
 
