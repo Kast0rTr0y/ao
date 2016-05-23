@@ -53,10 +53,10 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     @NonTransactional
     @Test
     public void testGetCompositeIndex() throws Exception {
-        final String tableName = getTableName(Simple.class, false);
+        final String tableName = getTableName(NoIndex.class, false);
         final String compositeIndexName = "COMPOSITE_INDEX";
-        final String otherField = getFieldName(Simple.class, "getOther");
-        final String nameField = getFieldName(Simple.class, "getName");
+        final String otherField = getFieldName(NoIndex.class, "getOther");
+        final String nameField = getFieldName(NoIndex.class, "getName");
         final List<String> compositeIndexFields = Arrays.asList(nameField, otherField);
         printIndexes();
         executeUpdate(entityManager.getProvider().renderCreateCompositeIndex(tableName, compositeIndexName, compositeIndexFields).getStatement(), mock(DbUtils.UpdateCallback.class));
@@ -76,7 +76,7 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     }
 
     private void printIndexes() throws Exception{
-        final String tableName = getTableName(Simple.class, false);
+        final String tableName = getTableName(NoIndex.class, false);
 
         with(connection -> {
             final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
@@ -251,6 +251,17 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         public String getName();
 
         public void setName(String id);
+    }
+
+    public static interface NoIndex extends Entity {
+
+        public String getName();
+
+        public void setName(String id);
+
+        public String getOther();
+
+        public void setOther(String o);
     }
 
     public static final class DatabaseMetadataReaderImplTestUpdater implements DatabaseUpdater {
