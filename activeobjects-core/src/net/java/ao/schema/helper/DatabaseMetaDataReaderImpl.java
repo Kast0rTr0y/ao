@@ -140,9 +140,16 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
             final Multimap<String, String> indexNameToIndexFieldNames = HashMultimap.create();
             resultSet = databaseProvider.getIndexes(databaseMetaData.getConnection(), tableName);
             while (resultSet.next()) {
+                final String indexName = parseStringValue(resultSet, "INDEX_NAME");
+                final String columnName = parseStringValue(resultSet, "COLUMN_NAME");
                 boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");
+
+                System.out.println(columnName+":"+indexName+" "+nonUnique);
+
                 if (nonUnique) {
-                    indexNameToIndexFieldNames.put(parseStringValue(resultSet, "INDEX_NAME"), parseStringValue(resultSet, "COLUMN_NAME"));
+
+
+                    indexNameToIndexFieldNames.put(indexName, columnName);
                 }
             }
 

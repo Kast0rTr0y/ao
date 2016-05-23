@@ -1398,7 +1398,6 @@ public abstract class DatabaseProvider implements Disposable {
             needDelimiter = true;
         }
         statement.append(")");
-        System.out.println(statement);
         return SQLAction.of(statement);
     }
 
