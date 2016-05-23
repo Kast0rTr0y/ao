@@ -71,7 +71,9 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         });
     }
 
-    private void printIndexes() {
+    private void printIndexes() throws Exception{
+        final String tableName = getTableName(Simple.class, false);
+
         with(connection -> {
             final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
