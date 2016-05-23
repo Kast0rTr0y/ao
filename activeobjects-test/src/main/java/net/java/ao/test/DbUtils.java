@@ -57,7 +57,8 @@ public final class DbUtils {
             statement = connection.prepareStatement(sql);
             logger.debug(sql);
             callback.setParameters(statement);
-            statement.executeUpdate();
+            final int updateResult = statement.executeUpdate();
+            System.out.println("updateResult = " + updateResult);
         } finally {
             closeQuietly(statement, connection);
         }
