@@ -117,7 +117,8 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             public void call(Connection connection) throws Exception {
                 final Iterable<String> tableNames = reader.getTableNames(connection.getMetaData());
 
-                assertEquals(3, Iterables.size(tableNames));
+                assertEquals(4, Iterables.size(tableNames));
+                assertTrue(containsTableName(tableNames, getTableName(NoIndex.class, false)));
                 assertTrue(containsTableName(tableNames, getTableName(Simple.class, false)));
                 assertTrue(containsTableName(tableNames, getTableName(Other.class, false)));
                 assertTrue(containsTableName(tableNames, getTableName(MultipleComposite.class, false)));
@@ -267,7 +268,7 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public static final class DatabaseMetadataReaderImplTestUpdater implements DatabaseUpdater {
         @Override
         public void update(EntityManager entityManager) throws Exception {
-            entityManager.migrate(Simple.class, MultipleComposite.class);
+            entityManager.migrate(Simple.class, MultipleComposite.class, NoIndex.class);
         }
     }
 
