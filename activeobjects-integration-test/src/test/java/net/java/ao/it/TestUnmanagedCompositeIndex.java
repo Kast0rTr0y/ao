@@ -37,9 +37,9 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
 
     @Test
     public void testUnmanagedIndexShouldNotBeDroppedByAo() throws Exception {
-        entityManager.migrate(WithCompositeIndexes.class);
+        entityManager.migrate(TestCase.class);
         createUnmanagedIndex(UNMANAGED_INDEX_NAME);
-        entityManager.migrate(WithCompositeIndexes.class);
+        entityManager.migrate(TestCase.class);
         assertTrue(findIndexInDatabase(UNMANAGED_INDEX_NAME).isPresent());
     }
 
@@ -48,15 +48,15 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
         DDLIndex index = DDLIndex.builder()
                 .fields(
                         DDLIndexField.builder()
-                                .fieldName(getFieldName(WithCompositeIndexes.class, "getFirst"))
+                                .fieldName(getFieldName(TestCase.class, "getFirst"))
                                 .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
                                 .build(),
                         DDLIndexField.builder()
-                                .fieldName(getFieldName(WithCompositeIndexes.class, "getSecond"))
+                                .fieldName(getFieldName(TestCase.class, "getSecond"))
                                 .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
                                 .build()
                 )
-                .table(entityManager.getTableNameConverter().getName(WithCompositeIndexes.class))
+                .table(entityManager.getTableNameConverter().getName(TestCase.class))
                 .indexName(indexName)
                 .build();
 
@@ -79,7 +79,7 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
 
     private DDLTable getDdlTable() throws SQLException {
         final DDLTable[] tables = SchemaReader.readSchema(entityManager.getProvider(), entityManager.getNameConverters(), new DefaultSchemaConfiguration());
-        final String tableName = entityManager.getNameConverters().getTableNameConverter().getName(WithCompositeIndexes.class);
+        final String tableName = entityManager.getNameConverters().getTableNameConverter().getName(TestCase.class);
 
         return Stream.of(tables)
                 .filter(table -> table.getName().equalsIgnoreCase(tableName))
@@ -90,7 +90,7 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
     public static class EntityDatabaseUpdater implements DatabaseUpdater {
         @Override
         public void update(EntityManager entityManager) throws Exception {
-            entityManager.migrate(WithCompositeIndexes.class);
+            entityManager.migrate(TestCase.class);
         }
     }
 
@@ -99,7 +99,7 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
             @Index(name =  "second", methodNames = {"getSecond", "getAlwaysIndexed"}),
             @Index(name =  "third", methodNames = {"getThird", "getAlwaysIndexed"})
     })
-    public interface WithCompositeIndexes extends Entity {
+    public interface TestCase extends Entity {
 
         int getFirst();
 
