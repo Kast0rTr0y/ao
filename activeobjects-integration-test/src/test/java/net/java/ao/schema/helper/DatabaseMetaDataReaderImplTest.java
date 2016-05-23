@@ -63,6 +63,10 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         with(connection -> {
             final Iterable<? extends Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
+            for (Index index : indexes) {
+                System.out.println(index);
+            }
+
             assertThat(indexes, hasItems(
                     index(compositeIndexName, tableName, compositeIndexFields),
                     index(tableName, otherField),
