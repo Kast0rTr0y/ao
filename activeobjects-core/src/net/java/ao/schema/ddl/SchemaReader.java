@@ -222,6 +222,12 @@ public final class SchemaReader {
             DDLAction action = new DDLAction(DDLActionType.CREATE);
             action.setTable(table);
             actions.add(action);
+
+            for (DDLIndex index : table.getIndexes()) {
+                DDLAction indexAction = new DDLAction(DDLActionType.CREATE_INDEX);
+                indexAction.setIndex(index);
+                actions.add(indexAction);
+            }
         }
 
 
