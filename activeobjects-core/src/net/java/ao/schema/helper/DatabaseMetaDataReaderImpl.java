@@ -137,17 +137,17 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
         final ImmutableList.Builder<Index> indexes = ImmutableList.builder();
         ResultSet resultSet = null;
         try {
-            final Multimap<String, String> indexNameToIndexFieldNames = HashMultimap.create();
+            final Multimap<String, String> fieldsByIndex = HashMultimap.create();
             resultSet = databaseProvider.getIndexes(databaseMetaData.getConnection(), tableName);
             while (resultSet.next()) {
                 boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");
                 if (nonUnique) {
-                    indexNameToIndexFieldNames.put(parseStringValue(resultSet, "INDEX_NAME"), parseStringValue(resultSet, "COLUMN_NAME"));
+                    fieldsByIndex.put(parseStringValue(resultSet, "INDEX_NAME"), parseStringValue(resultSet, "COLUMN_NAME"));
                 }
             }
 
-            for (String indexName : indexNameToIndexFieldNames.keySet()) {
-                Collection<String> fieldNames = indexNameToIndexFieldNames.get(indexName);
+            for (String indexName : fieldsByIndex.keySet()) {
+                Collection<String> fieldNames = fieldsByIndex.get(indexName);
 
                 indexes.add(new IndexImpl(indexName, tableName, fieldNames));
             }
