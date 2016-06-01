@@ -61,7 +61,7 @@ public class DDLIndex {
         return indexName;
     }
 
-    public boolean containsFiled(final String fieldName) {
+    public boolean containsField(final String fieldName) {
         return Stream.of(getFields())
                 .map(DDLIndexField::getFieldName)
                 .anyMatch(indexFieldName -> indexFieldName.equals(fieldName));

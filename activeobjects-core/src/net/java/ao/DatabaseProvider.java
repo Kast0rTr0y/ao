@@ -30,7 +30,6 @@ import net.java.ao.schema.TableNameConverter;
 import net.java.ao.schema.TriggerNameConverter;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLAction;
-import net.java.ao.schema.ddl.DDLActionBuilder;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
@@ -299,7 +298,7 @@ public abstract class DatabaseProvider implements Disposable {
         ImmutableList.Builder<SQLAction> sqlActions = ImmutableList.builder();
 
         final List<SQLAction> dropIndexActions = Stream.of(table.getIndexes())
-                .filter(index -> index.containsFiled(field.getName()))
+                .filter(index -> index.containsField(field.getName()))
                 .map(index -> DDLAction.builder()
                         .setActionType(DDLActionType.DROP_INDEX)
                         .setIndex(index)

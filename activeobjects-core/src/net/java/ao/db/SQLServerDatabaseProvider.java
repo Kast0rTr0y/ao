@@ -168,7 +168,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     private Iterable<DDLIndex> findIndexesForField(final DDLTable table, final DDLField field) {
         return Stream.of(table.getIndexes())
-                .filter(index -> index.containsFiled(field.getName()))
+                .filter(index -> index.containsField(field.getName()))
                 .collect(Collectors.toList());
     }
 
