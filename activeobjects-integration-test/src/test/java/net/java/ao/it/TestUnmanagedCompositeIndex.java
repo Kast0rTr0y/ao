@@ -36,7 +36,7 @@ public final class TestUnmanagedCompositeIndex extends ActiveObjectsIntegrationT
     private static final String UNMANAGED_INDEX_NAME = "index_ao_unmanaged";
 
     @Test
-    public void testUnmanagedIndexShouldNotBeDroppedByAo() throws Exception {
+    public void shouldNotBeDropped() throws Exception {
         entityManager.migrate(TestCase.class);
         createUnmanagedIndex(UNMANAGED_INDEX_NAME);
         entityManager.migrate(TestCase.class);
