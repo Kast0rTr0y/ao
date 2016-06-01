@@ -11,7 +11,7 @@ public class StreamUtils {
         return ofOptional(Optional.ofNullable(t));
     }
 
-    public static <T> Stream<T> ofOptional(Optional<T> optional) {
+    private static <T> Stream<T> ofOptional(Optional<T> optional) {
         return optional.map(Stream::of).orElseGet(Stream::empty);
 
     }
