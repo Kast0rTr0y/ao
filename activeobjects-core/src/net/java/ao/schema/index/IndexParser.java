@@ -29,6 +29,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A component responsible for parsing given ORM entity class to extract index declarations from it.
+ */
 public class IndexParser {
 
     private final DatabaseProvider databaseProvider;
