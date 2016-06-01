@@ -18,6 +18,8 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Objects;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -59,17 +61,35 @@ public class DDLIndex {
         return indexName;
     }
 
-    public String getField() {
-        if (fields.length < 1) {
-            return null;
-        }
-        return fields[0].getFieldName();
-    }
-
     public boolean containsFiled(final String fieldName) {
         return Stream.of(getFields())
                 .map(DDLIndexField::getFieldName)
                 .anyMatch(indexFieldName -> indexFieldName.equals(fieldName));
+    }
+
+    /**
+     * Check if this is equivalent to other index.
+     * <p>
+     *      Two indexes are considered equivalent if they have exactly the same column names and table name specified.
+     * </p>
+     *
+     * @param other index to compare with
+     * @return true if index is equivalent to the other index false otherwise.
+     */
+    public boolean isEquivalent(DDLIndex other) {
+        return this.getTable().equalsIgnoreCase(other.getTable()) && hasFieldNames(other);
+    }
+
+    private boolean hasFieldNames(DDLIndex other) {
+        Set<String> thisIndexFieldNames = Stream.of(this.getFields())
+                .map(DDLIndexField::getFieldName)
+                .collect(Collectors.toSet());
+
+        Set<String> otherIndexFieldNames = Stream.of(other.getFields())
+                .map(DDLIndexField::getFieldName)
+                .collect(Collectors.toSet());
+
+        return thisIndexFieldNames.equals(otherIndexFieldNames);
     }
 
     @Override

@@ -369,8 +369,7 @@ public final class SchemaReader {
             for (DDLIndex fromIndex : fromTable.getIndexes()) {
 
                 final boolean present = Stream.of(ontoTable.getIndexes())
-                        .filter(index -> fromIndex.getTable().equalsIgnoreCase(index.getTable()))
-                        .filter(index -> haveSameFieldNames(fromIndex, index))
+                        .filter(index -> index.isEquivalent(fromIndex))
                         .findAny()
                         .isPresent();
 
@@ -382,8 +381,7 @@ public final class SchemaReader {
             for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
 
                 final boolean present = Stream.of(fromTable.getIndexes())
-                        .filter(index -> ontoIndex.getTable().equalsIgnoreCase(index.getTable()))
-                        .filter(index -> haveSameFieldNames(ontoIndex, index))
+                        .filter(index -> index.isEquivalent(ontoIndex))
                         .findAny()
                         .isPresent();
 
@@ -412,18 +410,6 @@ public final class SchemaReader {
         }
 
         return actions.toArray(new DDLAction[actions.size()]);
-    }
-
-    private static boolean haveSameFieldNames(DDLIndex index1, DDLIndex index2) {
-        Set<String> fieldNamesFromIndex1 = Stream.of(index1.getFields())
-                .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toSet());
-
-        Set<String> fieldNamesFromIndex2 = Stream.of(index2.getFields())
-                .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toSet());
-
-        return fieldNamesFromIndex1.equals(fieldNamesFromIndex2);
     }
 
     private static boolean physicalTypesEqual(TypeInfo from, TypeInfo onto) {
