@@ -44,6 +44,9 @@ import static com.google.common.collect.Iterables.concat;
  * @author Daniel Spiewak
  */
 public class MySQLDatabaseProvider extends DatabaseProvider {
+
+    public static final String TRUNCATE_TO_255_CHARACTERS_FUNCTION = "(255)";
+
     public MySQLDatabaseProvider(DisposableDataSource dataSource) {
         super(dataSource, null, TypeManager.mysql());
     }
@@ -160,7 +163,7 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
 
         TypeQualifiers qualifiers = indexField.getType().getQualifiers();
         if (qualifiers.hasStringLength() && qualifiers.getStringLength() > 255) {
-            return processID(indexField.getFieldName()) + "(255)";
+            return processID(indexField.getFieldName()) + TRUNCATE_TO_255_CHARACTERS_FUNCTION;
         } else {
             return processID(indexField.getFieldName());
         }
