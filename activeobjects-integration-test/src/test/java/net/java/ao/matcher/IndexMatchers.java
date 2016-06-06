@@ -2,7 +2,6 @@ package net.java.ao.matcher;
 
 import com.google.common.collect.ImmutableList;
 import net.java.ao.schema.helper.Index;
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
