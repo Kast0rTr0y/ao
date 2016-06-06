@@ -166,12 +166,12 @@ public final class SchemaReader {
                 .indexName(index.getIndexName())
                 .table(tableName)
                 .fields(index.getFieldNames().stream()
-                        .map(SchemaReader::toDLLIndexField)
+                        .map(SchemaReader::toDDLIndexField)
                         .toArray(DDLIndexField[]::new))
                 .build();
     }
 
-    private static DDLIndexField toDLLIndexField(String fieldName) {
+    private static DDLIndexField toDDLIndexField(String fieldName) {
         return DDLIndexField.builder().fieldName(fieldName).build();
     }
 
