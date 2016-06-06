@@ -7,6 +7,7 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
 
 import java.util.List;
 import java.util.Objects;
@@ -39,10 +40,10 @@ public class IndexMatchers {
     public static Matcher<Index> isNamed() {
         final Matcher<String> notEmptyString = CoreMatchers.not(isEmptyOrNullString());
 
-        return new BaseMatcher<Index>() {
+        return new TypeSafeMatcher<Index>() {
             @Override
-            public boolean matches(Object o) {
-                return notEmptyString.matches(o);
+            public boolean matchesSafely(Index index) {
+                return notEmptyString.matches(index.getIndexName());
             }
 
             @Override
@@ -52,18 +53,17 @@ public class IndexMatchers {
             }
 
             @Override
-            public void describeMismatch(Object o, Description description) {
-                notEmptyString.describeMismatch(((Index) o).getIndexName(), description);
+            public void describeMismatchSafely(Index index, Description description) {
+                notEmptyString.describeMismatch(index.getIndexName(), description);
             }
         };
     }
 
 
     public static Matcher<Index> hasName(final String indexName) {
-        return new BaseMatcher<Index>() {
+        return new TypeSafeMatcher<Index>() {
             @Override
-            public boolean matches(Object o) {
-                final Index index = (Index) o;
+            public boolean matchesSafely(Index index) {
                 return Objects.equals(indexName, index.getIndexName());
             }
 
@@ -73,17 +73,16 @@ public class IndexMatchers {
             }
 
             @Override
-            public void describeMismatch(Object o, Description description) {
-                description.appendText("was ").appendValue(((Index) o).getIndexName());
+            public void describeMismatchSafely(Index index, Description description) {
+                description.appendText("was ").appendValue(index.getIndexName());
             }
         };
     }
 
     public static Matcher<Index> hasTable(final String tableName) {
-        return new BaseMatcher<Index>() {
+        return new TypeSafeMatcher<Index>() {
             @Override
-            public boolean matches(Object o) {
-                final Index index = (Index) o;
+            public boolean matchesSafely(Index index) {
                 return Objects.equals(tableName, index.getTableName());
             }
 
@@ -93,8 +92,8 @@ public class IndexMatchers {
             }
 
             @Override
-            public void describeMismatch(Object o, Description description) {
-                description.appendText("was ").appendValue(((Index) o).getTableName());
+            public void describeMismatchSafely(Index index, Description description) {
+                description.appendText("was ").appendValue(index.getTableName());
             }
         };
     }
@@ -102,10 +101,9 @@ public class IndexMatchers {
     public static Matcher<Index> hasFieldsInAnyOrder(final List<String> fieldNames) {
         final Matcher<Iterable<? extends String>> containsInAnyOrder = containsInAnyOrder(fieldNames.toArray(new String[fieldNames.size()]));
 
-        return new BaseMatcher<Index>() {
+        return new TypeSafeMatcher<Index>() {
             @Override
-            public boolean matches(Object o) {
-                final Index index = (Index) o;
+            public boolean matchesSafely(Index index) {
                 return containsInAnyOrder.matches(index.getFieldNames());
             }
 
@@ -116,8 +114,7 @@ public class IndexMatchers {
             }
 
             @Override
-            public void describeMismatch(Object o, Description description) {
-                final Index index = (Index) o;
+            public void describeMismatchSafely(Index index, Description description) {
                 containsInAnyOrder.describeMismatch(index.getFieldNames(), description);
             }
         };
