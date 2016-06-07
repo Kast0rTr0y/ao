@@ -22,7 +22,6 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
 import static net.java.ao.matcher.IndexMatchers.index;
 import static net.java.ao.matcher.IndexMatchers.isNamed;
-import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -146,21 +145,6 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
             }
         });
     }
-
-    private void with(WithConnection w) throws Exception {
-        Connection connection = null;
-        try {
-            connection = entityManager.getProvider().getConnection();
-            w.call(connection);
-        } finally {
-            closeQuietly(connection);
-        }
-    }
-
-    private static interface WithConnection {
-        void call(Connection connection) throws Exception;
-    }
-
 
     @Indexes({
             @net.java.ao.schema.Index(name = "first", methodNames = {"getFirst", "getOther"}),

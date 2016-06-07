@@ -11,10 +11,7 @@ import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.sql.Connection;
-
 import static net.java.ao.matcher.IndexMatchers.index;
-import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.collection.IsIterableWithSize.iterableWithSize;
@@ -58,20 +55,6 @@ public final class IndexFieldOrderSensitivityTest extends ActiveObjectsIntegrati
             assertThat(indexes, iterableWithSize(1));
             assertThat(indexes, contains(index(tableName, ImmutableList.of(secondNameFieldName, nameFieldName))));
         });
-    }
-
-    private void with(WithConnection w) throws Exception {
-        Connection connection = null;
-        try {
-            connection = entityManager.getProvider().getConnection();
-            w.call(connection);
-        } finally {
-            closeQuietly(connection);
-        }
-    }
-
-    private interface WithConnection {
-        void call(Connection connection) throws Exception;
     }
 
     static class Clean {

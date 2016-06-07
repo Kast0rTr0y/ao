@@ -12,7 +12,10 @@ import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+import java.sql.Connection;
 import java.util.concurrent.Callable;
+
+import static net.java.ao.sql.SqlUtils.closeQuietly;
 
 @RunWith(ActiveObjectsJUnitRunner.class)
 public abstract class ActiveObjectsIntegrationTest {
@@ -137,4 +140,19 @@ public abstract class ActiveObjectsIntegrationTest {
 
         throw new RuntimeException("No field with name '" + name + "' found in class hierarchy of '" + targetClass.getName() + "'");
     }
+
+    protected void with(WithConnection w) throws Exception {
+        Connection connection = null;
+        try {
+            connection = entityManager.getProvider().getConnection();
+            w.call(connection);
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    protected interface WithConnection {
+        void call(Connection connection) throws Exception;
+    }
+
 }
