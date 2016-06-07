@@ -3,6 +3,7 @@ package net.java.ao.test;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.EntityManager;
 import net.java.ao.RawEntity;
+import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.IndexNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndexField;
@@ -10,6 +11,7 @@ import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 
 @RunWith(ActiveObjectsJUnitRunner.class)
@@ -101,5 +103,38 @@ public abstract class ActiveObjectsIntegrationTest {
         final DatabaseProvider provider = entityManager.getProvider();
 
         return indexNameConverter.getName(provider.shorten(tableName), provider.shorten(indexName));
+    }
+
+    protected SchemaConfiguration getSchemaConfiguration() {
+        return (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
+    }
+
+    protected static Object getFieldValue(Object target, String name) {
+        try {
+            Field field = findField(name, target.getClass());
+            field.setAccessible(true);
+            return field.get(target);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Field findField(String name, Class<?> targetClass) {
+        return findField(name, targetClass, null);
+    }
+
+    private static Field findField(String name, Class<?> targetClass, Class<?> type) {
+        Class<?> search = targetClass;
+        while (!Object.class.equals(search) && search != null) {
+            for (Field field : search.getDeclaredFields()) {
+                if (name.equals(field.getName()) && (type == null || type.equals(field.getType()))) {
+                    return field;
+                }
+            }
+
+            search = search.getSuperclass();
+        }
+
+        throw new RuntimeException("No field with name '" + name + "' found in class hierarchy of '" + targetClass.getName() + "'");
     }
 }
