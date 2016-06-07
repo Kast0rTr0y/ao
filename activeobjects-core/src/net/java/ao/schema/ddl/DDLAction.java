@@ -43,8 +43,8 @@ public class DDLAction {
     private DDLIndex index;
     private DDLValue[] values;
 
-    public static DDLActionBuilder builder() {
-        return new DDLActionBuilder();
+    public static DDLActionBuilder builder(DDLActionType actionType) {
+        return new DDLActionBuilder(actionType);
     }
 
     public DDLAction(DDLActionType actionType) {

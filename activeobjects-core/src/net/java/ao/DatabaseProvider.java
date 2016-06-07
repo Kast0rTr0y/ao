@@ -299,8 +299,7 @@ public abstract class DatabaseProvider implements Disposable {
 
         final List<SQLAction> dropIndexActions = Stream.of(table.getIndexes())
                 .filter(index -> index.containsField(field.getName()))
-                .map(index -> DDLAction.builder()
-                        .setActionType(DDLActionType.DROP_INDEX)
+                .map(index -> DDLAction.builder(DDLActionType.DROP_INDEX)
                         .setIndex(index)
                         .build())
                 .map(action -> renderAction(nameConverters, action))

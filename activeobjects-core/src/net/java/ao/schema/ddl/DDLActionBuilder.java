@@ -9,9 +9,8 @@ public class DDLActionBuilder {
     private DDLIndex index;
     private DDLValue[] values;
 
-    public DDLActionBuilder setActionType(DDLActionType actionType) {
+    public DDLActionBuilder(DDLActionType actionType) {
         this.actionType = actionType;
-        return this;
     }
 
     public DDLActionBuilder setTable(DDLTable table) {
