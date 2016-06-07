@@ -16,14 +16,12 @@ import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
 import static net.java.ao.matcher.IndexMatchers.index;
 import static net.java.ao.matcher.IndexMatchers.isNamed;
-import static net.java.ao.sql.SqlUtils.closeQuietly;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +35,7 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
 
     @Before
     public void setUp() {
-        SchemaConfiguration schemaConfiguration = (SchemaConfiguration) getFieldValue(entityManager, "schemaConfiguration");
+        SchemaConfiguration schemaConfiguration = getSchemaConfiguration();
         reader = new DatabaseMetaDataReaderImpl(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
     }
 
@@ -148,21 +146,6 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         });
     }
 
-    private void with(WithConnection w) throws Exception {
-        Connection connection = null;
-        try {
-            connection = entityManager.getProvider().getConnection();
-            w.call(connection);
-        } finally {
-            closeQuietly(connection);
-        }
-    }
-
-    private static interface WithConnection {
-        void call(Connection connection) throws Exception;
-    }
-
-
     @Indexes({
             @net.java.ao.schema.Index(name = "first", methodNames = {"getFirst", "getOther"}),
             @net.java.ao.schema.Index(name = "second", methodNames = {"getSecond", "getOther"}),
@@ -211,34 +194,5 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
         public void update(EntityManager entityManager) throws Exception {
             entityManager.migrate(Simple.class, MultipleComposite.class);
         }
-    }
-
-    public static Object getFieldValue(Object target, String name) {
-        try {
-            java.lang.reflect.Field field = findField(name, target.getClass());
-            field.setAccessible(true);
-            return field.get(target);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Field findField(String name, Class<?> targetClass) {
-        return findField(name, targetClass, null);
-    }
-
-    public static Field findField(String name, Class<?> targetClass, Class<?> type) {
-        Class<?> search = targetClass;
-        while (!Object.class.equals(search) && search != null) {
-            for (Field field : search.getDeclaredFields()) {
-                if (name.equals(field.getName()) && (type == null || type.equals(field.getType()))) {
-                    return field;
-                }
-            }
-
-            search = search.getSuperclass();
-        }
-
-        throw new RuntimeException("No field with name '" + name + "' found in class hierarchy of '" + targetClass.getName() + "'");
     }
 }

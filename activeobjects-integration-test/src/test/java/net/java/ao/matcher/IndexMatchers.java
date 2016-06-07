@@ -11,7 +11,7 @@ import org.hamcrest.TypeSafeMatcher;
 import java.util.List;
 import java.util.Objects;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 public class IndexMatchers {
@@ -23,7 +23,7 @@ public class IndexMatchers {
 
     public static Matcher<Index> index(String indexName, String tableName, List<String> fieldNames) {
 
-        return Matchers.allOf(hasName(indexName), hasTable(tableName), hasFieldsInAnyOrder(fieldNames));
+        return Matchers.allOf(hasName(indexName), hasTable(tableName), hasFieldsInOrder(fieldNames));
     }
 
     public static Matcher<Index> index(String tableName, String fieldName) {
@@ -33,7 +33,7 @@ public class IndexMatchers {
 
     public static Matcher<Index> index(String tableName, List<String> fieldNames) {
 
-        return Matchers.allOf(hasTable(tableName), hasFieldsInAnyOrder(fieldNames));
+        return Matchers.allOf(hasTable(tableName), hasFieldsInOrder(fieldNames));
     }
 
     public static Matcher<Index> isNamed() {
@@ -97,24 +97,24 @@ public class IndexMatchers {
         };
     }
 
-    public static Matcher<Index> hasFieldsInAnyOrder(final List<String> fieldNames) {
-        final Matcher<Iterable<? extends String>> containsInAnyOrder = containsInAnyOrder(fieldNames.toArray(new String[fieldNames.size()]));
+    public static Matcher<Index> hasFieldsInOrder(final List<String> fieldNames) {
+        final Matcher<Iterable<? extends String>> contains = contains(fieldNames.toArray(new String[fieldNames.size()]));
 
         return new TypeSafeMatcher<Index>() {
             @Override
             public boolean matchesSafely(Index index) {
-                return containsInAnyOrder.matches(index.getFieldNames());
+                return contains.matches(index.getFieldNames());
             }
 
             @Override
             public void describeTo(Description description) {
                 description.appendText("fieldNames should be an ");
-                containsInAnyOrder.describeTo(description);
+                contains.describeTo(description);
             }
 
             @Override
             public void describeMismatchSafely(Index index, Description description) {
-                containsInAnyOrder.describeMismatch(index.getFieldNames(), description);
+                contains.describeMismatch(index.getFieldNames(), description);
             }
         };
     }
