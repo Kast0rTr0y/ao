@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 public final class SchemaGeneratorDuplicateIndexTest extends ActiveObjectsIntegrationTest {
 
     @Test
-    public void testShouldParseConflictingIndexes() {
+    public void shouldParseDuplicateIndexes() {
 
         final TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
         final String tableName = tableNameConverter.getName(TestedEntity.class);

@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 public final class SchemaGeneratorInvalidIndexTest extends ActiveObjectsIntegrationTest {
 
     @Test
-    public void testShouldParseConflictingIndexes() {
+    public void shoudlParseInvalidIndexDeclaration() {
 
         final TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
         final String tableName = tableNameConverter.getName(TestedEntity.class);
