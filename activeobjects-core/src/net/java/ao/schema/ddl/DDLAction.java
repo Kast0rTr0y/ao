@@ -51,7 +51,7 @@ public class DDLAction {
         this.actionType = actionType;
     }
 
-    public DDLAction(
+    DDLAction(
             DDLActionType actionType,
             DDLTable table,
             DDLField oldField,
