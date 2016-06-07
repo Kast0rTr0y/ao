@@ -73,32 +73,6 @@ public class DDLIndex {
                 .anyMatch(indexFieldName -> indexFieldName.equalsIgnoreCase(fieldName));
     }
 
-    /**
-     * Check if this is equivalent to other index.
-     * <p>
-     *      Two indexes are considered equivalent if and only if they have exactly the same column names in the same
-     *      order and the same table name specified.
-     * </p>
-     *
-     * @param other index to compare with
-     * @return true if index is equivalent to the other index false otherwise.
-     */
-    public boolean isEquivalent(DDLIndex other) {
-        return this.getTable().equalsIgnoreCase(other.getTable()) && hasFieldNames(other);
-    }
-
-    private boolean hasFieldNames(DDLIndex other) {
-        List<String> thisIndexFieldNames = Stream.of(this.getFields())
-                .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toList());
-
-        List<String> otherIndexFieldNames = Stream.of(other.getFields())
-                .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toList());
-
-        return thisIndexFieldNames.equals(otherIndexFieldNames);
-    }
-
     @Override
     public String toString() {
         return "DDLIndex{" +
@@ -108,19 +82,29 @@ public class DDLIndex {
                 '}';
     }
 
+    /**
+     * Check if this is equal to other index.
+     * <p>
+     *      Two indexes are considered equivalent if and only if they have exactly the same column names in the same
+     *      order and the same table name specified.
+     *      Please note that index name does not matter when checking for index equality.
+     * </p>
+     *
+     * @param o object to compare with
+     * @return true if index is equivalent to the other index false otherwise.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DDLIndex index = (DDLIndex) o;
         return Objects.equal(table, index.table) &&
-                Arrays.equals(fields, index.fields) &&
-                Objects.equal(indexName, index.indexName);
+                Arrays.equals(fields, index.fields);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(table, indexName) + Arrays.hashCode(fields);
+        return Objects.hashCode(table) + Arrays.hashCode(fields);
 
     }
 

@@ -369,7 +369,7 @@ public final class SchemaReader {
             for (DDLIndex fromIndex : fromTable.getIndexes()) {
 
                 final boolean present = Stream.of(ontoTable.getIndexes())
-                        .filter(index -> index.isEquivalent(fromIndex))
+                        .filter(index -> index.equals(fromIndex))
                         .findAny()
                         .isPresent();
 
@@ -381,7 +381,7 @@ public final class SchemaReader {
             for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
 
                 final boolean present = Stream.of(fromTable.getIndexes())
-                        .filter(index -> index.isEquivalent(ontoIndex))
+                        .filter(index -> index.equals(ontoIndex))
                         .findAny()
                         .isPresent();
 
