@@ -1,6 +1,6 @@
 package net.java.ao.schema.helper;
 
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import net.java.ao.DatabaseProvider;
@@ -137,7 +137,7 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
         final ImmutableList.Builder<Index> indexes = ImmutableList.builder();
         ResultSet resultSet = null;
         try {
-            final Multimap<String, String> fieldsByIndex = HashMultimap.create();
+            final Multimap<String, String> fieldsByIndex = ArrayListMultimap.create();
             resultSet = databaseProvider.getIndexes(databaseMetaData.getConnection(), tableName);
             while (resultSet.next()) {
                 boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");

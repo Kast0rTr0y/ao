@@ -4,17 +4,12 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import net.java.ao.Entity;
 import net.java.ao.SchemaConfiguration;
-import net.java.ao.matcher.IndexMatchers;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
-import net.java.ao.schema.ddl.DDLIndex;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SchemaReader;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
-import org.hamcrest.Matchers;
-import org.hamcrest.collection.IsArrayContaining;
-import org.hamcrest.collection.IsArrayWithSize;
 import org.junit.Test;
 
 import java.lang.reflect.Field;

@@ -18,7 +18,7 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Objects;
 
 import java.util.Arrays;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -76,7 +76,8 @@ public class DDLIndex {
     /**
      * Check if this is equivalent to other index.
      * <p>
-     *      Two indexes are considered equivalent if they have exactly the same column names and table name specified.
+     *      Two indexes are considered equivalent if and only if they have exactly the same column names in the same
+     *      order and the same table name specified.
      * </p>
      *
      * @param other index to compare with
@@ -87,13 +88,13 @@ public class DDLIndex {
     }
 
     private boolean hasFieldNames(DDLIndex other) {
-        Set<String> thisIndexFieldNames = Stream.of(this.getFields())
+        List<String> thisIndexFieldNames = Stream.of(this.getFields())
                 .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
-        Set<String> otherIndexFieldNames = Stream.of(other.getFields())
+        List<String> otherIndexFieldNames = Stream.of(other.getFields())
                 .map(DDLIndexField::getFieldName)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         return thisIndexFieldNames.equals(otherIndexFieldNames);
     }
