@@ -61,10 +61,16 @@ public class DDLIndex {
         return indexName;
     }
 
-    public boolean containsField(final String fieldName) {
+    public boolean containsFieldWithName(final String fieldName) {
         return Stream.of(getFields())
                 .map(DDLIndexField::getFieldName)
                 .anyMatch(indexFieldName -> indexFieldName.equals(fieldName));
+    }
+
+    public boolean containsFieldWithNameIgnoreCase(final String fieldName) {
+        return Stream.of(getFields())
+                .map(DDLIndexField::getFieldName)
+                .anyMatch(indexFieldName -> indexFieldName.equalsIgnoreCase(fieldName));
     }
 
     /**

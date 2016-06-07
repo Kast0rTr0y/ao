@@ -298,7 +298,7 @@ public abstract class DatabaseProvider implements Disposable {
         ImmutableList.Builder<SQLAction> sqlActions = ImmutableList.builder();
 
         final List<SQLAction> dropIndexActions = Stream.of(table.getIndexes())
-                .filter(index -> index.containsField(field.getName()))
+                .filter(index -> index.containsFieldWithName(field.getName()))
                 .map(index -> DDLAction.builder(DDLActionType.DROP_INDEX)
                         .setIndex(index)
                         .build())
