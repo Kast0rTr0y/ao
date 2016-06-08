@@ -55,9 +55,6 @@ public class AtlassianIndexNameConverterTest {
         final String shortenedIndexName = sut.getName(tableName, columnName);
         final String indexNamePrefix = sut.getPrefix(tableName);
 
-        System.out.println(shortenedIndexName);
-        System.out.println(indexNamePrefix);
-
         assertThat(shortenedIndexName, startsWith(indexNamePrefix));
     }
 }
