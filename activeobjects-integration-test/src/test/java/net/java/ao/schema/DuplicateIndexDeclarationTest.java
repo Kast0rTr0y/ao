@@ -65,7 +65,8 @@ public final class DuplicateIndexDeclarationTest extends ActiveObjectsIntegratio
 
         entityManager.migrate(Clean.T.class);
         entityManager.migrate(SingleIndex.T.class);
-        entityManager.migrate(DuplicateIndexes.T.class);        with(connection -> {
+        entityManager.migrate(DuplicateIndexes.T.class);
+        with(connection -> {
             final Iterable<? extends net.java.ao.schema.helper.Index> indexes = reader.getIndexes(connection.getMetaData(), tableName);
 
             assertThat(indexes, iterableWithSize(1));
