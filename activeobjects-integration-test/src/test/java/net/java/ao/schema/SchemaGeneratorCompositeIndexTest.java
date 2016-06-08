@@ -18,7 +18,7 @@ import static org.junit.Assert.assertThat;
 public final class SchemaGeneratorCompositeIndexTest extends ActiveObjectsIntegrationTest {
 
     @Test
-    public void testShouldParseCompositeIndexes() {
+    public void shouldParseCompositeIndex() {
 
         final TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
         final String tableName = tableNameConverter.getName(TestedEntity.class);
