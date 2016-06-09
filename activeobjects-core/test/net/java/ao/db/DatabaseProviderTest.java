@@ -31,6 +31,7 @@ import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
+import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import org.hamcrest.Matchers;
@@ -193,11 +194,15 @@ public abstract class DatabaseProviderTest {
     @Test
     public final void testDropIndexWithSpecificName() {
         final DDLAction action = new DDLAction(DDLActionType.DROP_INDEX);
-        final DDLIndex index = new DDLIndex();
-        index.setField("field");
-        index.setTable("table");
-        index.setType(getDatabaseProvider().getTypeManager().getType(Long.class));
-        index.setIndexName("index_table_field");
+        final DDLIndex index = DDLIndex.builder()
+                .field(DDLIndexField.builder()
+                        .fieldName("field")
+                        .type(getDatabaseProvider().getTypeManager().getType(Long.class))
+                        .build()
+                )
+                .table("table")
+                .indexName("index_table_field")
+                .build();
         action.setIndex(index);
         final Iterable<SQLAction> sqlActions = getDatabaseProvider().renderAction(nameConverters, action);
 
@@ -646,10 +651,16 @@ public abstract class DatabaseProviderTest {
         public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.CREATE_INDEX);
 
-            DDLIndex index = new DDLIndex();
-            index.setField("companyID");
-            index.setTable("person");
-            index.setType(db.getTypeManager().getType(String.class));
+            final DDLIndex index = DDLIndex.builder()
+                    .field(DDLIndexField.builder()
+                            .fieldName("companyID")
+                            .type(db.getTypeManager().getType(String.class))
+                            .build()
+                    )
+                    .indexName(nameConverters.getIndexNameConverter().getName("person", "companyID"))
+                    .table("person")
+                    .build();
+
             back.setIndex(index);
 
             return back;
@@ -660,11 +671,16 @@ public abstract class DatabaseProviderTest {
         public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
 
-            DDLIndex index = new DDLIndex();
-            index.setField("companyID");
-            index.setTable("person");
-            index.setType(db.getTypeManager().getType(String.class));
-            index.setIndexName(nameConverters.getIndexNameConverter().getName("person", "companyID"));
+            final DDLIndex index = DDLIndex.builder()
+                    .field(DDLIndexField.builder()
+                            .fieldName("companyID")
+                            .type(db.getTypeManager().getType(String.class))
+                            .build()
+                    )
+                    .table("person")
+                    .indexName(nameConverters.getIndexNameConverter().getName("person", "companyID"))
+                    .build();
+
             back.setIndex(index);
 
             return back;
@@ -675,10 +691,11 @@ public abstract class DatabaseProviderTest {
         public DDLAction apply(DatabaseProvider db) {
             DDLAction back = new DDLAction(DDLActionType.DROP_INDEX);
 
-            DDLIndex index = new DDLIndex();
-            index.setField("companyID");
-            index.setTable("person");
-            index.setIndexName("index_non_existent");
+            final DDLIndex index = DDLIndex.builder()
+                    .field(DDLIndexField.builder().fieldName("companyID").build())
+                    .table("person")
+                    .indexName("index_non_existent")
+                    .build();
             back.setIndex(index);
 
             return back;
