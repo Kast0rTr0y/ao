@@ -46,9 +46,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static net.java.ao.sql.SqlUtils.closeQuietly;
@@ -153,26 +150,15 @@ public final class SchemaReader {
     }
 
     private static List<DDLIndex> readIndexes(DatabaseMetaDataReader databaseMetaDataReader, DatabaseMetaData databaseMetaData, final String tableName) {
-
-        final Iterable<? extends Index> indexes = databaseMetaDataReader.getIndexes(databaseMetaData, tableName);
-        return StreamSupport.stream(indexes.spliterator(), false)
-                .map(index -> toDDLIndex(index, tableName))
-                .collect(Collectors.toList());
-    }
-
-    private static DDLIndex toDDLIndex(Index index, String tableName) {
-
-        return DDLIndex.builder()
-                .indexName(index.getIndexName())
-                .table(tableName)
-                .fields(index.getFieldNames().stream()
-                        .map(SchemaReader::toDDLIndexField)
-                        .toArray(DDLIndexField[]::new))
-                .build();
-    }
-
-    private static DDLIndexField toDDLIndexField(String fieldName) {
-        return DDLIndexField.builder().fieldName(fieldName).build();
+        return newArrayList(Iterables.transform(databaseMetaDataReader.getIndexes(databaseMetaData, tableName), new Function<Index, DDLIndex>() {
+            public DDLIndex apply(Index index) {
+                DDLIndex ddl = new DDLIndex();
+                ddl.setTable(tableName);
+                ddl.setField(index.getFieldName());
+                ddl.setIndexName(index.getIndexName());
+                return ddl;
+            }
+        }));
     }
 
     /**
@@ -222,12 +208,6 @@ public final class SchemaReader {
             DDLAction action = new DDLAction(DDLActionType.CREATE);
             action.setTable(table);
             actions.add(action);
-
-            for (DDLIndex index : table.getIndexes()) {
-                DDLAction indexAction = new DDLAction(DDLActionType.CREATE_INDEX);
-                indexAction.setIndex(index);
-                actions.add(indexAction);
-            }
         }
 
 
@@ -367,25 +347,33 @@ public final class SchemaReader {
             List<DDLIndex> dropIndexes = new ArrayList<DDLIndex>();
 
             for (DDLIndex fromIndex : fromTable.getIndexes()) {
+                boolean found = false;
 
-                final boolean present = Stream.of(ontoTable.getIndexes())
-                        .filter(index -> index.equals(fromIndex))
-                        .findAny()
-                        .isPresent();
+                for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
+                    if (fromIndex.getTable().equalsIgnoreCase(ontoIndex.getTable())
+                            && fromIndex.getField().equalsIgnoreCase(ontoIndex.getField())) {
+                        found = true;
+                        break;
+                    }
+                }
 
-                if (!present) {
+                if (!found) {
                     addIndexes.add(fromIndex);
                 }
             }
 
             for (DDLIndex ontoIndex : ontoTable.getIndexes()) {
+                boolean found = false;
 
-                final boolean present = Stream.of(fromTable.getIndexes())
-                        .filter(index -> index.equals(ontoIndex))
-                        .findAny()
-                        .isPresent();
+                for (DDLIndex fromIndex : fromTable.getIndexes()) {
+                    if (ontoIndex.getTable().equalsIgnoreCase(fromIndex.getTable())
+                            && ontoIndex.getField().equalsIgnoreCase(fromIndex.getField())) {
+                        found = true;
+                        break;
+                    }
+                }
 
-                if (!present) {
+                if (!found) {
                     dropIndexes.add(ontoIndex);
                 }
             }
@@ -695,9 +683,6 @@ public final class SchemaReader {
         for (DDLAction action : createIndexes) {
             Set<DDLAction> dependencies = new HashSet<DDLAction>();
             DDLIndex index = action.getIndex();
-            List<String> indexFieldNames = Stream.of(index.getFields())
-                    .map(DDLIndexField::getFieldName)
-                    .collect(Collectors.toList());
 
             for (DDLAction depAction : creates) {
                 if (depAction.getTable().getName().equals(index.getTable())) {
@@ -706,13 +691,13 @@ public final class SchemaReader {
             }
 
             for (DDLAction depAction : addColumns) {
-                if (depAction.getTable().getName().equals(index.getTable()) || indexFieldNames.contains(depAction.getField().getName())) {
+                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
                     dependencies.add(depAction);
                 }
             }
 
             for (DDLAction depAction : changeColumns) {
-                if (depAction.getTable().getName().equals(index.getTable()) || indexFieldNames.contains(depAction.getField().getName())) {
+                if (depAction.getTable().getName().equals(index.getTable()) || depAction.getField().getName().equals(index.getField())) {
                     dependencies.add(depAction);
                 }
             }

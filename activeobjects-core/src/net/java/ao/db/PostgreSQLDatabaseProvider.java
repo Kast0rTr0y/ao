@@ -32,7 +32,6 @@ import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeInfo;
@@ -50,8 +49,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PostgreSQLDatabaseProvider extends DatabaseProvider {
     private static final int MAX_SEQUENCE_LENGTH = 64;
@@ -242,19 +239,15 @@ public class PostgreSQLDatabaseProvider extends DatabaseProvider {
 
     @Override
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        String statement = "CREATE INDEX " + processID(index.getIndexName())
-                + " ON " + withSchema(index.getTable()) +
-                Stream.of(index.getFields())
-                        .map(DDLIndexField::getFieldName)
-                        .map(this::processID)
-                        .collect(Collectors.joining(",", "(", ")"));
-
-        return SQLAction.of(statement);
+        return SQLAction.of(new StringBuilder().append("CREATE INDEX ")
+                .append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                .append(" ON ").append(withSchema(index.getTable()))
+                .append('(').append(processID(index.getField())).append(')'));
     }
 
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        final String indexName = index.getIndexName();
+        final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();
         if (hasIndex(tableName, indexName)) {
             return SQLAction.of(new StringBuilder("DROP INDEX ")

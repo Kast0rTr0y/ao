@@ -15,8 +15,10 @@
  */
 package net.java.ao.db;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import net.java.ao.DBParam;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.DisposableDataSource;
@@ -30,7 +32,6 @@ import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
@@ -42,8 +43,8 @@ import java.sql.Types;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * @author Daniel Spiewak
@@ -166,10 +167,13 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
         return sql.build();
     }
 
-    private Iterable<DDLIndex> findIndexesForField(final DDLTable table, final DDLField field) {
-        return Stream.of(table.getIndexes())
-                .filter(index -> index.containsFieldWithName(field.getName()))
-                .collect(Collectors.toList());
+    private Iterable<DDLIndex> findIndexesForField(DDLTable table, final DDLField field) {
+        return Iterables.filter(newArrayList(table.getIndexes()), new Predicate<DDLIndex>() {
+            @Override
+            public boolean apply(DDLIndex index) {
+                return index.getField().equals(field.getName());
+            }
+        });
     }
 
     private String defaultConstraintName(DDLTable table, DDLField field) {
@@ -178,19 +182,17 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
     @Override
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        String statement = "CREATE INDEX " + processID(index.getIndexName())
-                + " ON " + withSchema(index.getTable()) +
-                Stream.of(index.getFields())
-                        .map(DDLIndexField::getFieldName)
-                        .map(this::processID)
-                        .collect(Collectors.joining(",", "(", ")"));
+        StringBuilder back = new StringBuilder();
 
-        return SQLAction.of(statement);
+        back.append("CREATE INDEX ").append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))));
+        back.append(" ON ").append(withSchema(index.getTable())).append('(').append(processID(index.getField())).append(')');
+
+        return SQLAction.of(back);
     }
 
     @Override
     protected SQLAction renderDropIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-        final String indexName = index.getIndexName();
+        final String indexName = getExistingIndexName(indexNameConverter, index);
         final String tableName = index.getTable();
         if (hasIndex(tableName, indexName)) {
             return SQLAction.of(new StringBuilder().append("DROP INDEX ")

@@ -12,12 +12,11 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.NonTransactional;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.sql.SQLException;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -178,6 +177,10 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         assertIndex(true);
     }
 
+    /**
+     * Remove an index from a column
+     * Note: Currently broken because schema migration does not check for indexes
+     */
     @Test
     @NonTransactional
     public void testRemoveIndex() throws Exception {
@@ -190,58 +193,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
         entityManager.migrate(NoIndexedColumn.T.class);
         assertIndex(false);
-    }
-
-    @Test
-    @NonTransactional
-    public void testShouldAddCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
-        assertEmpty();
-
-        entityManager.migrate(NoCompositeIndex.T.class);
-        assertIndex(false);
-
-        entityManager.migrate(CompositeIndex.T.class);
-        assertIndex(true);
-    }
-
-    @Test
-    @NonTransactional
-    public void testShouldRemoveCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
-        assertEmpty();
-
-        entityManager.migrate(CompositeIndex.T.class);
-        assertIndex(true);
-
-        entityManager.migrate(NoCompositeIndex.T.class);
-        assertIndex(false);
-    }
-
-    @Test
-    @NonTransactional
-    public void shouldMigrateToSingleColumnCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
-        assertEmpty();
-
-        entityManager.migrate(IndexedColumn.T.class);
-        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
-
-        entityManager.migrate(SingleColumnIndex.T.class);
-        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
-    }
-
-    @Test
-    @NonTransactional
-    public void shouldMigrateFromSingleColumnCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
-        assertEmpty();
-
-        entityManager.migrate(SingleColumnIndex.T.class);
-        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
-
-        entityManager.migrate(IndexedColumn.T.class);
-        assertThat(getDdlTable().getIndexes(), arrayWithSize(1));
     }
 
     /**
@@ -350,6 +301,36 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
                 return t.getName().equalsIgnoreCase(name);
             }
         });
+    }
+
+    // Reflection tools
+    public static Object getFieldValue(Object target, String name) {
+        try {
+            Field field = findField(name, target.getClass());
+            field.setAccessible(true);
+            return field.get(target);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Field findField(String name, Class<?> targetClass) {
+        return findField(name, targetClass, null);
+    }
+
+    public static Field findField(String name, Class<?> targetClass, Class<?> type) {
+        Class<?> search = targetClass;
+        while (!Object.class.equals(search) && search != null) {
+            for (Field field : search.getDeclaredFields()) {
+                if (name.equals(field.getName()) && (type == null || type.equals(field.getType()))) {
+                    return field;
+                }
+            }
+
+            search = search.getSuperclass();
+        }
+
+        throw new RuntimeException("No field with name '" + name + "' found in class hierarchy of '" + targetClass.getName() + "'");
     }
 
     static class Clean {
@@ -463,44 +444,6 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
             public String getName();
 
             public void setName(String name);
-        }
-    }
-
-    static class SingleColumnIndex {
-        @Indexes(
-                @Index(name = "indx", methodNames = {"getName"})
-        )
-        public interface T extends Entity {
-            String getName();
-
-            void setName(String name);
-        }
-    }
-
-    static class CompositeIndex {
-        @Indexes(
-                @Index(name = "indx", methodNames = {"getName", "getAge"})
-        )
-        public interface T extends Entity {
-            String getName();
-
-            void setName(String name);
-
-            String getAge();
-
-            void setAge(String age);
-        }
-    }
-
-    static class NoCompositeIndex {
-        public interface T extends Entity {
-            String getName();
-
-            void setName(String name);
-
-            String getAge();
-
-            void setAge(String age);
         }
     }
 

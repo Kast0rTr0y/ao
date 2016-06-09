@@ -25,7 +25,6 @@ import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.UniqueNameConverter;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.types.TypeManager;
@@ -35,8 +34,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.collect.Iterables.concat;
 
@@ -44,9 +41,6 @@ import static com.google.common.collect.Iterables.concat;
  * @author Daniel Spiewak
  */
 public class MySQLDatabaseProvider extends DatabaseProvider {
-
-    public static final String TRUNCATE_TO_255_CHARACTERS_FUNCTION = "(255)";
-
     public MySQLDatabaseProvider(DisposableDataSource dataSource) {
         super(dataSource, null, TypeManager.mysql());
     }
@@ -140,33 +134,24 @@ public class MySQLDatabaseProvider extends DatabaseProvider {
 
     @Override
     protected SQLAction renderCreateIndex(IndexNameConverter indexNameConverter, DDLIndex index) {
-
-        String statement = "CREATE INDEX " + processID(index.getIndexName())
-                + " ON " + processID(index.getTable()) +
-                Stream.of(index.getFields())
-                        .map(this::appendLength)
-                        .collect(Collectors.joining(",", "(", ")"));
-        return SQLAction.of(statement);
-    }
-
-    /**
-     * MySQL has an internal limitation that prevents "long" indexes. Its default behaviour is to truncate them
-     * silently, but some settings cause index creation to fail instead. When creating an index on columns that
-     * have length data available, if the length is "too long", create a prefix index instead.
-     *
-     * When MySQL silently truncates a "long" index, the prefix index it creates is 255 characters. This
-     * emulates that behaviour.
-     *
-     * @return index field name with length declaration if necessary
-     */
-    private String appendLength(DDLIndexField indexField) {
-
-        TypeQualifiers qualifiers = indexField.getType().getQualifiers();
+        StringBuilder back = new StringBuilder("CREATE INDEX ");
+        back.append(processID(indexNameConverter.getName(shorten(index.getTable()), shorten(index.getField()))))
+                .append(" ON ")
+                .append(processID(index.getTable()))
+                .append('(')
+                .append(processID(index.getField()));
+        // MySQL has an internal limitation that prevents "long" indexes. Its default behaviour is to truncate them
+        // silently, but some settings cause index creation to fail instead. When creating an index on columns that
+        // have length data available, if the length is "too long", create a prefix index instead.
+        TypeQualifiers qualifiers = index.getType().getQualifiers();
         if (qualifiers.hasStringLength() && qualifiers.getStringLength() > 255) {
-            return processID(indexField.getFieldName()) + TRUNCATE_TO_255_CHARACTERS_FUNCTION;
-        } else {
-            return processID(indexField.getFieldName());
+            // When MySQL silently truncates a "long" index, the prefix index it creates is 255 characters. This
+            // emulates that behaviour.
+            back.append("(255)");
         }
+        back.append(')');
+
+        return SQLAction.of(back);
     }
 
     @Override

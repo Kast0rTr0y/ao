@@ -11,7 +11,6 @@ import net.java.ao.schema.NameConverters;
 import net.java.ao.schema.ddl.DDLAction;
 import net.java.ao.schema.ddl.DDLActionType;
 import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.schema.ddl.SQLAction;
 import net.java.ao.schema.ddl.SchemaReader;
@@ -48,16 +47,11 @@ public final class TestUnmanagedIndex extends ActiveObjectsIntegrationTest {
 
     private void createUnmanagedIndex(String indexName) throws Exception {
         DDLAction unmanagedIndexAction = new DDLAction(DDLActionType.CREATE_INDEX);
-        DDLIndex index = DDLIndex.builder()
-                .field(DDLIndexField.builder()
-                        .fieldName(entityManager.getFieldNameConverter().getName(LexoRank.class.getMethods()[0]))
-                        .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
-                        .build()
-                )
-                .table(entityManager.getTableNameConverter().getName(LexoRank.class))
-                .indexName(indexName)
-                .build();
-
+        DDLIndex index = new DDLIndex();
+        index.setField(entityManager.getFieldNameConverter().getName(LexoRank.class.getMethods()[0]));
+        index.setTable(entityManager.getTableNameConverter().getName(LexoRank.class));
+        index.setIndexName(indexName);
+        index.setType(entityManager.getProvider().getTypeManager().getType(Integer.class));
         unmanagedIndexAction.setIndex(index);
 
         NameConverters unmanagedNameCoverters = mock(NameConverters.class);

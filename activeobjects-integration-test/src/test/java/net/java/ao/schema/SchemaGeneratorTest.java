@@ -15,7 +15,6 @@
  */
 package net.java.ao.schema;
 
-import com.google.common.collect.ImmutableList;
 import net.java.ao.Entity;
 import net.java.ao.RawEntity;
 import net.java.ao.it.DatabaseProcessor;
@@ -26,7 +25,6 @@ import net.java.ao.it.model.PersonSuit;
 import net.java.ao.schema.ddl.DDLField;
 import net.java.ao.schema.ddl.DDLForeignKey;
 import net.java.ao.schema.ddl.DDLIndex;
-import net.java.ao.schema.ddl.DDLIndexField;
 import net.java.ao.schema.ddl.DDLTable;
 import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
@@ -36,14 +34,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.sql.Types;
-import java.util.Arrays;
-import java.util.List;
 
 import static net.java.ao.types.LogicalTypes.integerType;
 import static net.java.ao.types.LogicalTypes.stringType;
 import static net.java.ao.types.LogicalTypes.urlType;
 import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,49 +73,16 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest {
                 getFieldName(Person.class, "isActive"),
                 getFieldName(Person.class, "getModified")};
 
-        final TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
-        final String tableName = tableNameConverter.getName(Person.class);
+        String[] expectedIndexes = {getFieldName(Person.class, "getAge"), getFieldName(Person.class, "getCompany")};
 
-        List<DDLIndex> expectedIndexes = ImmutableList.<DDLIndex>builder()
-                .add(DDLIndex.builder()
-                        .field(DDLIndexField.builder()
-                                .fieldName(getFieldName(Person.class, "getAge"))
-                                .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
-                                .build())
-                        .table(tableName)
-                        .indexName(indexName(tableName, getFieldName(Person.class, "getAge")))
-                        .build())
-                .add(DDLIndex.builder()
-                        .field(DDLIndexField.builder()
-                                .fieldName(getFieldName(Person.class, "getCompany"))
-                                .type(entityManager.getProvider().getTypeManager().getType(Integer.class))
-                                .build())
-                        .indexName(indexName(tableName, getFieldName(Person.class, "getCompany")))
-                        .table(tableName)
-                        .build())
-                .add(DDLIndex.builder()
-                        .fields(
-                                DDLIndexField.builder()
-                                        .fieldName(getFieldName(Person.class, "getFirstName"))
-                                        .type(entityManager.getProvider().getTypeManager().getType(String.class))
-                                        .build(),
-                                DDLIndexField.builder()
-                                        .fieldName(getFieldName(Person.class, "getLastName"))
-                                        .type(entityManager.getProvider().getTypeManager().getType(String.class))
-                                        .build()
-                        )
-                        .indexName(indexName(tableName, "names"))
-                        .table(tableName)
-                        .build())
-                .build();
-
+        TableNameConverter tableNameConverter = entityManager.getNameConverters().getTableNameConverter();
         DDLTable[] parsedTables = SchemaGenerator.parseDDL(entityManager.getProvider(), entityManager.getNameConverters(), PersonSuit.class, Pen.class);
 
         assertEquals(6, parsedTables.length);
 
         DDLTable personDDL = null;
         for (DDLTable table : parsedTables) {
-            if (table.getName().equals(tableName)) {
+            if (table.getName().equals(tableNameConverter.getName(Person.class))) {
                 personDDL = table;
                 break;
             }
@@ -208,13 +170,27 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest {
 
         assertNotNull(cidKey);
 
-        assertEquals(tableName, cidKey.getDomesticTable());
+        assertEquals(tableNameConverter.getName(Person.class), cidKey.getDomesticTable());
         assertEquals(getFieldName(Person.class, "getCompany"), cidKey.getField());
         assertEquals(getFieldName(Company.class, "getCompanyID"), cidKey.getForeignField());
         assertEquals(tableNameConverter.getName(Company.class), cidKey.getTable());
 
-        assertEquals(expectedIndexes.size(), personDDL.getIndexes().length);
-        assertThat(Arrays.asList(personDDL.getIndexes()), containsInAnyOrder(expectedIndexes.toArray()));
+        assertEquals(expectedIndexes.length, personDDL.getIndexes().length);
+        for (DDLIndex index : personDDL.getIndexes()) {
+            boolean found = false;
+            for (String expectedIndex : expectedIndexes) {
+                if (expectedIndex.equals(index.getField())) {
+                    assertEquals(tableNameConverter.getName(Person.class), index.getTable());
+
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                fail("Index for field " + index.getField() + " was unexpected");
+            }
+        }
     }
 
     @Test
@@ -223,7 +199,8 @@ public final class SchemaGeneratorTest extends ActiveObjectsIntegrationTest {
         FieldNameConverter fieldNameConverter = spy(entityManager.getFieldNameConverter());
         DDLIndex[] indexes = SchemaGenerator.parseIndexes(
                 entityManager.getProvider(),
-                entityManager.getNameConverters(),
+                tableNameConverter,
+                fieldNameConverter,
                 AoEntity.class
         );
         assertNotNull(indexes);

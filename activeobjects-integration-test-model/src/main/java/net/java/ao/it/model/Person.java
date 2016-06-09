@@ -25,9 +25,7 @@ import net.java.ao.OneToOne;
 import net.java.ao.Searchable;
 import net.java.ao.Transient;
 import net.java.ao.schema.Default;
-import net.java.ao.schema.Index;
 import net.java.ao.schema.Indexed;
-import net.java.ao.schema.Indexes;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Unique;
 
@@ -37,10 +35,6 @@ import java.util.Date;
 /**
  * @author Daniel Spiewak
  */
-@Indexes({
-    @Index(name = "names", methodNames = {"getFirstName", "getLastName"}),
-    @Index(name = "age", methodNames = "getAge")
-})
 @Implementation(PersonImpl.class)
 public interface Person extends Entity {
 

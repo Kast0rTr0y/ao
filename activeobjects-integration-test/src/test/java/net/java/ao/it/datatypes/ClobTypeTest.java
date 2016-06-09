@@ -47,7 +47,7 @@ public final class ClobTypeTest extends ActiveObjectsIntegrationTest {
         if (entityManager.getProvider() instanceof MySQLDatabaseProvider) {
             //force the DDL to create using the TEXT type when in MySQL so we test the migration of TEXT to LONGTEXT
             DDLAction createTableAction = new DDLAction(DDLActionType.CREATE);
-            createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getNameConverters(), LargeTextColumn.class));
+            createTableAction.setTable(SchemaGenerator.parseInterface(entityManager.getProvider(), entityManager.getTableNameConverter(), entityManager.getFieldNameConverter(), LargeTextColumn.class));
             Iterable<SQLAction> action = entityManager.getProvider().renderAction(entityManager.getNameConverters(), createTableAction);
             String sqlStatement = action.iterator().next().getStatement();
 

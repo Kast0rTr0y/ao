@@ -1,8 +1,5 @@
 package net.java.ao.schema.helper;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import net.java.ao.DatabaseProvider;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.NameConverters;
@@ -19,7 +16,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -134,31 +131,42 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
 
     @Override
     public Iterable<? extends Index> getIndexes(DatabaseMetaData databaseMetaData, String tableName) {
-        final ImmutableList.Builder<Index> indexes = ImmutableList.builder();
         ResultSet resultSet = null;
         try {
-            final Multimap<String, String> fieldsByIndex = ArrayListMultimap.create();
+            final List<Index> indexes = newLinkedList();
             resultSet = databaseProvider.getIndexes(databaseMetaData.getConnection(), tableName);
             while (resultSet.next()) {
                 boolean nonUnique = resultSet.getBoolean("NON_UNIQUE");
                 if (nonUnique) {
-                    fieldsByIndex.put(parseStringValue(resultSet, "INDEX_NAME"), parseStringValue(resultSet, "COLUMN_NAME"));
+                    indexes.add(newIndex(resultSet, tableName));
                 }
             }
-
-            for (String indexName : fieldsByIndex.keySet()) {
-                Collection<String> fieldNames = fieldsByIndex.get(indexName);
-
-                indexes.add(new IndexImpl(indexName, tableName, fieldNames));
+            // find composite indexes
+            final Set<String> indexNames = newHashSet();
+            final Set<String> compositeIndexNames = newHashSet();
+            for (Index index : indexes) {
+                String indexName = index.getIndexName();
+                if (indexNames.contains(indexName)) {
+                    compositeIndexNames.add(indexName);
+                } else {
+                    indexNames.add(indexName);
+                }
             }
-
-            return indexes.build();
+            // remove composite indexes from result set, because AO doesn't support them correctly
+            for (Iterator<Index> iterator = indexes.iterator(); iterator.hasNext();) {
+                Index index = iterator.next();
+                if (compositeIndexNames.contains(index.getIndexName())) {
+                    iterator.remove();
+                }
+            }
+            return indexes;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
             closeQuietly(resultSet);
         }
     }
+
 
     private Set<String> getUniqueFields(DatabaseMetaData metaData, String tableName) {
         ResultSet rs = null;
@@ -281,6 +289,10 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
         return new ForeignKeyImpl(localTableName, localFieldName, foreignTableName, foreignFieldName);
     }
 
+    private Index newIndex(ResultSet rs, String tableName) throws SQLException {
+        return new IndexImpl(tableName, parseStringValue(rs, "COLUMN_NAME"), parseStringValue(rs, "INDEX_NAME"));
+    }
+
     private String parseStringValue(ResultSet rs, String columnName) throws SQLException {
         final String value = rs.getString(columnName);
         if (StringUtils.isBlank(value)) {
@@ -394,38 +406,25 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
     }
 
     private static final class IndexImpl implements Index {
-        private final String indexName;
-        private final String tableName;
-        private final Collection<String> fieldNames;
+        private final String tableName, fieldName, indexName;
 
-        public IndexImpl(String indexName, String tableName, Collection<String> fieldNames) {
-            this.indexName = indexName;
+        public IndexImpl(String tableName, String fieldName, String indexName) {
             this.tableName = tableName;
-            this.fieldNames = fieldNames;
+            this.fieldName = fieldName;
+            this.indexName = indexName;
         }
 
-        @Override
         public String getTableName() {
             return tableName;
         }
 
-        @Override
-        public Collection<String> getFieldNames() {
-            return fieldNames;
+        public String getFieldName() {
+            return fieldName;
         }
 
         @Override
         public String getIndexName() {
             return indexName;
-        }
-
-        @Override
-        public String toString() {
-            return "IndexImpl{" +
-                    "indexName='" + indexName + '\'' +
-                    ", tableName='" + tableName + '\'' +
-                    ", fieldNames=" + fieldNames +
-                    '}';
         }
     }
 }
