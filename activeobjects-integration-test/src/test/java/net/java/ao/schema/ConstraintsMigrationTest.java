@@ -207,6 +207,19 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
 
     @Test
     @NonTransactional
+    public void shouldAddCompositeIndexAndColumnConstraint() throws Exception {
+        entityManager.migrate(Clean.T.class);
+        assertEmpty();
+
+        entityManager.migrate(NoUniqueConstraintColumn.T.class);
+        assertIndex(false);
+
+        entityManager.migrate(CompositeIndexWithColumnConstrain.T.class);
+        assertIndex(true);
+    }
+
+    @Test
+    @NonTransactional
     public void testShouldRemoveCompositeIndex() throws Exception {
         entityManager.migrate(Clean.T.class);
         assertEmpty();
@@ -482,6 +495,22 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
                 @Index(name = "indx", methodNames = {"getName", "getAge"})
         )
         public interface T extends Entity {
+            String getName();
+
+            void setName(String name);
+
+            String getAge();
+
+            void setAge(String age);
+        }
+    }
+
+    static class CompositeIndexWithColumnConstraint {
+        @Indexes(
+                @Index(name = "indx", methodNames = {"getName", "getAge"})
+        )
+        public interface T extends Entity {
+            @Unique
             String getName();
 
             void setName(String name);
