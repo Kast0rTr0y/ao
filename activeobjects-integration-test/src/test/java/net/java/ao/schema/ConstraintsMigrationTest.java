@@ -214,7 +214,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
         entityManager.migrate(NoUniqueConstraintColumn.T.class);
         assertIndex(false);
 
-        entityManager.migrate(CompositeIndexWithColumnConstrain.T.class);
+        entityManager.migrate(CompositeIndexWithColumnConstraint.T.class);
         assertIndex(true);
     }
 
