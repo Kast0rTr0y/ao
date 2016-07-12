@@ -109,11 +109,10 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
 
         // Removing index before applying changes to columns, SQL Server doesn't like to touch columns with indexes!
         final Iterable<DDLIndex> indexes = findIndexesForField(table, field);
+
         for (DDLIndex index : indexes) {
             SQLAction sqlAction = renderDropIndex(nameConverters.getIndexNameConverter(), index);
-            if (sqlAction != null) {
-                sql.add(sqlAction);
-            }
+            sql.add(sqlAction);
         }
 
         if (field.isPrimaryKey()) {
@@ -169,6 +168,7 @@ public class SQLServerDatabaseProvider extends DatabaseProvider {
     private Iterable<DDLIndex> findIndexesForField(final DDLTable table, final DDLField field) {
         return Stream.of(table.getIndexes())
                 .filter(index -> index.containsFieldWithName(field.getName()))
+                .filter(index -> hasIndex(table.getName(), index.getIndexName()))
                 .collect(Collectors.toList());
     }
 
