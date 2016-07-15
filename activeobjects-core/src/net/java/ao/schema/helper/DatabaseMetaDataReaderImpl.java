@@ -4,6 +4,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import net.java.ao.DatabaseProvider;
+import net.java.ao.RawEntity;
 import net.java.ao.SchemaConfiguration;
 import net.java.ao.schema.NameConverters;
 import net.java.ao.sql.AbstractCloseableResultSetMetaData;
@@ -13,6 +14,7 @@ import net.java.ao.types.TypeManager;
 import net.java.ao.types.TypeQualifiers;
 import net.java.ao.util.StringUtils;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.collect.Lists.newLinkedList;
 import static com.google.common.collect.Maps.newHashMap;
@@ -43,6 +46,15 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
         this.databaseProvider = databaseProvider;
         this.nameConverters = nameConverters;
         this.schemaConfiguration = schemaConfiguration;
+    }
+
+    public boolean isTablePresent(final DatabaseMetaData databaseMetaData, final Class<? extends RawEntity<?>> type) {
+        final String entityTableName = nameConverters.getTableNameConverter().getName(type);
+
+        final Iterable<String> tableNames = getTableNames(databaseMetaData);
+
+        return StreamSupport.stream(tableNames.spliterator(), false)
+                .anyMatch(tableName -> tableName.equalsIgnoreCase(entityTableName));
     }
 
     public Iterable<String> getTableNames(DatabaseMetaData metaData) {

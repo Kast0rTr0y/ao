@@ -1,8 +1,20 @@
 package net.java.ao.schema.helper;
 
+import net.java.ao.RawEntity;
+
 import java.sql.DatabaseMetaData;
 
 public interface DatabaseMetaDataReader {
+
+    /**
+     * Checks if the table corresponding to given type exists in the database.
+     *
+     * @param databaseMetaData of the database to be checked
+     * @param type to check against
+     * @return true if the table exists, false otherwise
+     */
+    public boolean isTablePresent(DatabaseMetaData databaseMetaData, Class<? extends RawEntity<?>> type);
+
     /**
      * Gets the names of the existing tables in the DB
      *

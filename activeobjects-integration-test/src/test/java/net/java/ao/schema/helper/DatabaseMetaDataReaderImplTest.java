@@ -13,6 +13,7 @@ import net.java.ao.test.ActiveObjectsIntegrationTest;
 import net.java.ao.test.jdbc.Data;
 import net.java.ao.test.jdbc.DatabaseUpdater;
 import net.java.ao.test.jdbc.NonTransactional;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,10 +21,13 @@ import java.sql.Connection;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
+import static com.google.common.collect.Iterables.removeAll;
 import static net.java.ao.matcher.IndexMatchers.index;
 import static net.java.ao.matcher.IndexMatchers.isNamed;
 import static org.hamcrest.CoreMatchers.everyItem;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -37,6 +41,23 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void setUp() {
         SchemaConfiguration schemaConfiguration = getSchemaConfiguration();
         reader = new DatabaseMetaDataReaderImpl(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
+    }
+
+    @NonTransactional
+    @Test
+    public void shouldCheckTablePresence() throws Exception {
+        with(connection -> {
+            final boolean simpleTablePresent = reader.isTablePresent(connection.getMetaData(), Simple.class);
+            final boolean multipleCompositeTablePresent = reader.isTablePresent(connection.getMetaData(), MultipleComposite.class);
+            final boolean otherPresent = reader.isTablePresent(connection.getMetaData(), Other.class);
+            final boolean notManaged = reader.isTablePresent(connection.getMetaData(), NotManaged.class);
+
+            assertThat(simpleTablePresent, is(true));
+            assertThat(multipleCompositeTablePresent, is(true));
+            assertThat(otherPresent, is(true));
+            assertThat(notManaged, is(false));
+
+        });
     }
 
     @NonTransactional
@@ -184,6 +205,12 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
 
     public static interface Other extends Entity {
         @Indexed
+        public String getName();
+
+        public void setName(String id);
+    }
+
+    public static interface NotManaged extends Entity {
         public String getName();
 
         public void setName(String id);
