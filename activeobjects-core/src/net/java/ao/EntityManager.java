@@ -966,6 +966,15 @@ public class EntityManager {
         return provider;
     }
 
+    /**
+     * Retrieves {@link SchemaConfiguration} used by this entity manager.
+     *
+     * @return the {@link SchemaConfiguration}
+     */
+    public SchemaConfiguration getSchemaConfiguration() {
+        return schemaConfiguration;
+    }
+
     <T extends RawEntity<K>, K> EntityProxy<T, K> getProxyForEntity(T entity) {
         return ((EntityProxyAccessor) entity).getEntityProxy();
     }
