@@ -18,9 +18,9 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Objects;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.apache.commons.lang.StringUtils.equalsIgnoreCase;
 
 /**
  * Database-agnostic reprensentation of a general field index
@@ -98,7 +98,7 @@ public class DDLIndex {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DDLIndex index = (DDLIndex) o;
-        return Objects.equal(table, index.table) &&
+        return equalsIgnoreCase(table, index.table) &&
                 Arrays.equals(fields, index.fields);
     }
 

@@ -3,6 +3,8 @@ package net.java.ao.schema.ddl;
 import com.google.common.base.Objects;
 import net.java.ao.types.TypeInfo;
 
+import static org.apache.commons.lang.StringUtils.equalsIgnoreCase;
+
 public class DDLIndexField {
     private String fieldName;
     private TypeInfo<?> type;
@@ -33,7 +35,7 @@ public class DDLIndexField {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DDLIndexField that = (DDLIndexField) o;
-        return Objects.equal(fieldName, that.fieldName);
+        return equalsIgnoreCase(fieldName, that.fieldName);
     }
 
     @Override
