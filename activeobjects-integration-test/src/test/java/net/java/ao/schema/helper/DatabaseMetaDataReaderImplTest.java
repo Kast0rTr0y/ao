@@ -18,6 +18,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Iterables.contains;
@@ -31,6 +35,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Data(DatabaseMetaDataReaderImplTest.DatabaseMetadataReaderImplTestUpdater.class)
@@ -41,6 +46,16 @@ public final class DatabaseMetaDataReaderImplTest extends ActiveObjectsIntegrati
     public void setUp() {
         SchemaConfiguration schemaConfiguration = getSchemaConfiguration();
         reader = new DatabaseMetaDataReaderImpl(entityManager.getProvider(), entityManager.getNameConverters(), schemaConfiguration);
+    }
+
+    @Test
+    public void testGetSequences() throws Exception {
+        //"ID" field should be recognized as auto increment as a sequence should be created for Simple
+        with(connection -> {
+            assertEquals(1, StreamSupport.stream(reader.getFields(connection.getMetaData(), getTableName(Simple.class, false)).spliterator(), false)
+                    .filter(field -> "ID".equals(field.getName()) && field.isAutoIncrement())
+                    .count());
+        });
     }
 
     @NonTransactional
