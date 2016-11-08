@@ -20,7 +20,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.Collection;
 import java.util.List;
@@ -194,8 +193,10 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
     }
 
     private List<String> getSequenceNames(DatabaseMetaData metaData) {
-        try (ResultSet rs = databaseProvider.getSequences(metaData.getConnection());
-            Statement statement = rs.getStatement()) {
+        ResultSet rs = null;
+        try {
+            rs = databaseProvider.getSequences(metaData.getConnection());
+
             final List<String> sequenceNames = newLinkedList();
             while (rs.next()) {
                 sequenceNames.add(databaseProvider.processID(parseStringValue(rs, "TABLE_NAME")));
@@ -203,6 +204,15 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
             return sequenceNames;
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null) {
+                try {
+                    closeQuietly(rs.getStatement());
+                } catch (SQLException e) {
+                    //ignored
+                }
+            }
+            closeQuietly(rs);
         }
     }
 
