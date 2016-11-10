@@ -24,7 +24,7 @@ public final class OracleQueryTest extends QueryTest {
         with(connection -> {
             ResultSet resultSet = entityManager.getProvider().getSequences(connection);
             while (resultSet.next()) {
-                names.add(resultSet.getString(1));
+                names.add(resultSet.getString("TABLE_NAME"));
             }
             resultSet.close();
         });
