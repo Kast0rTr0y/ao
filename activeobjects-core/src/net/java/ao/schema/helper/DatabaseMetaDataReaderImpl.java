@@ -205,6 +205,13 @@ public class DatabaseMetaDataReaderImpl implements DatabaseMetaDataReader {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
+            if (rs != null) {
+                try {
+                    closeQuietly(rs.getStatement());
+                } catch (SQLException e) {
+                    //ignored
+                }
+            }
             closeQuietly(rs);
         }
     }

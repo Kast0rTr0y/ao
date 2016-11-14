@@ -5,12 +5,32 @@ import net.java.ao.it.model.CompanyAddressInfo;
 import net.java.ao.it.model.Person;
 import net.java.ao.it.model.PersonChair;
 import net.java.ao.test.junit.OracleIntegrationTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertFalse;
 import static java.lang.String.format;
 
 @Category(OracleIntegrationTest.class)
 public final class OracleQueryTest extends QueryTest {
+
+    @Test
+    public void testGetSequences() throws Exception {
+        final List<String> names = new ArrayList<>();
+        with(connection -> {
+            ResultSet resultSet = entityManager.getProvider().getSequences(connection);
+            while (resultSet.next()) {
+                names.add(resultSet.getString("TABLE_NAME"));
+            }
+            resultSet.close();
+        });
+        assertFalse(names.isEmpty());
+    }
+
     @Override
     protected DatabaseProvider getDatabaseProvider() {
         return DatabaseProviders.getOracleDatabaseProvider();

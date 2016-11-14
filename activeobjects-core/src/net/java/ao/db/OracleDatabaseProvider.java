@@ -87,7 +87,10 @@ public final class OracleDatabaseProvider extends DatabaseProvider {
     public ResultSet getSequences(Connection conn) throws SQLException {
         final DatabaseMetaData metaData = conn.getMetaData();
         final String schemaPattern = isSchemaNotEmpty() ? getSchema() : metaData.getUserName();
-        return metaData.getTables(null, schemaPattern, "%", new String[]{"SEQUENCE"});
+        final String sql = "SELECT NULL AS table_cat, o.owner AS table_schem, o.object_name AS table_name, o.object_type AS table_type, NULL AS remarks FROM all_objects o WHERE o.owner = ? AND o.object_type = 'SEQUENCE'";
+        PreparedStatement statement = conn.prepareStatement(sql);
+        statement.setString(1, schemaPattern);
+        return statement.executeQuery();
     }
 
     @Override
