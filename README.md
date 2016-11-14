@@ -23,7 +23,8 @@ The active objects project uses maven for its build. To build:
 
 ### Internal Documentation
 
-[Development and maintenance documentation](https://ecosystem.atlassian.net/wiki/display/AO/Home)
+* [Development and maintenance documentation](https://ecosystem.atlassian.net/wiki/display/AO/Home)
+* [Releasing](https://ecosystem.atlassian.net/wiki/display/AO/Releasing+Active+Objects)
 
 ### Committing Guidelines
 
