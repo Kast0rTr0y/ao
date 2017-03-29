@@ -1,5 +1,6 @@
 package net.java.ao.test.jdbc;
 
+import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -84,10 +85,10 @@ public final class DynamicJdbcConfiguration extends AbstractJdbcConfiguration {
         private JdbcConfiguration buildJdbcConfiguration(String db) {
             JdbcConfiguration jdbcConfiguration = null;
 
-            String username = ConfigurationProperties.get("db.username", null);
-            String password = ConfigurationProperties.get("db.password", null);
-            String dbUrl = ConfigurationProperties.get("db.url", null);
-            String dbSchema = ConfigurationProperties.get("db.schema", null);
+            String username = Strings.emptyToNull(ConfigurationProperties.get("db.username", null));
+            String password = Strings.emptyToNull(ConfigurationProperties.get("db.password", null));
+            String dbUrl = Strings.emptyToNull(ConfigurationProperties.get("db.url", null));
+            String dbSchema = Strings.emptyToNull(ConfigurationProperties.get("db.schema", null));
 
 
             if (!isBlank(username) || !isBlank(password) || !isBlank(dbUrl) || !isBlank(dbSchema)) {
