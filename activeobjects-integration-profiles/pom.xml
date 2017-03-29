@@ -248,7 +248,14 @@
             <properties>
                 <ao.test.database>mysql</ao.test.database>
                 <db.system.username>root</db.system.username>
-                <db.system.password />
+                <db.system.password>crowd</db.system.password>
+                <db.username>crowd</db.username>
+                <db.password>crowd</db.password>
+                <db.name>crowd</db.name>
+                <db.url>jdbc:mysql://localhost:${db.port}/crowd?autoReconnect=true</db.url>
+
+                <docker.image>mysql:5.5</docker.image>
+                <docker.wait.log>Server socket created on IP</docker.wait.log>
             </properties>
             <dependencies>
                 <dependency>
@@ -261,16 +268,34 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>mysql</groupId>
-                                <artifactId>mysql-connector-java</artifactId>
-                                <version>${mysql.version}</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>${docker.image}</name>
+                                    <run>
+                                        <ports>
+                                            <port>db.port:3306</port>
+                                        </ports>
+                                        <cmd>--character-set-server=utf8 --collation-server=utf8_bin</cmd>
+                                        <env>
+                                            <MYSQL_DATABASE>${db.name}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${db.username}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
+                                            <MYSQL_ROOT_PASSWORD>${db.system.password}</MYSQL_ROOT_PASSWORD>
+                                        </env>
+                                        <wait>
+                                            <log>${docker.wait.log}</log>
+                                            <time>120000</time>
+                                        </wait>
+                                        <log>
+                                            <prefix>mysql</prefix>
+                                        </log>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>

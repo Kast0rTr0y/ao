@@ -21,40 +21,32 @@
                 <configuration>
                     <systemPropertyVariables>
                         <ao.test.database>${ao.test.database}</ao.test.database>
+                        <db.username>${db.username}</db.username>
+                        <db.password>${db.password}</db.password>
+                        <db.name>${db.name}</db.name>
+                        <db.url>${db.url}</db.url>
                         <ao.test.tablenameconverter>${ao.test.tablenameconverter}</ao.test.tablenameconverter>
                         <ao.test.fieldnameconverter>${ao.test.fieldnameconverter}</ao.test.fieldnameconverter>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            <!-- creates and drops databases before and after tests -->
             <plugin>
-                <groupId>org.leberrigaud.maven.plugins</groupId>
-                <artifactId>database-maven-plugin</artifactId>
-                <configuration>
-                    <skip>${db.skip}</skip>
-                    <database>${ao.test.database}</database>
-                    <schema>${db.schema}</schema>
-                    <name>${db.name}</name>
-                    <host>${db.host}</host>
-                    <username>${db.username}</username>
-                    <password>${db.password}</password>
-                    <rootUsername>${db.system.username}</rootUsername>
-                    <rootPassword>${db.system.password}</rootPassword>
-                </configuration>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>create-db</id>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
+                        <id>start</id>
                         <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
                     </execution>
                     <execution>
-                        <id>drop-db</id>
+                        <id>stop</id>
+                        <phase>test</phase> <!-- this really should run via failsafe -->
                         <goals>
-                            <goal>drop</goal>
+                            <goal>stop</goal>
                         </goals>
-                        <phase>test</phase>
                     </execution>
                 </executions>
             </plugin>
