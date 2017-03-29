@@ -15,8 +15,11 @@
     <properties>
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
-        <postgres.version>8.4-701.jdbc3</postgres.version>
+        <postgres.version>9.2-1002.jdbc4</postgres.version>
         <oracle.version>11.2.0.2.0</oracle.version>
+        <nuodb.version>2.0.4</nuodb.version>
+        <jtds.version>1.2.4</jtds.version>
+        <sqljdbc.version>4.0.2206</sqljdbc.version>
         <db.skip>false</db.skip>
         <db.host>localhost</db.host>
         <db.name>ao_test</db.name>
@@ -31,6 +34,11 @@
             <properties>
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -44,7 +52,7 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -65,6 +73,11 @@
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
                 <hsqldb.version>2.2.4</hsqldb.version>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -78,7 +91,7 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -101,6 +114,11 @@
             <properties>
                 <ao.test.database>h2-memory</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -120,7 +138,7 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
@@ -140,6 +158,11 @@
             <properties>
                 <ao.test.database>h2-file</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -153,7 +176,7 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
@@ -173,6 +196,11 @@
             <properties>
                 <ao.test.database>h2-server</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -186,7 +214,7 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.HsqlIntegrationTest,
@@ -205,8 +233,11 @@
             <id>mysql</id>
             <properties>
                 <ao.test.database>mysql</ao.test.database>
+                <db.url>jdbc:mysql://localhost:${db.port}/${db.name}?autoReconnect=true</db.url>
                 <db.system.username>root</db.system.username>
-                <db.system.password />
+                <db.system.password>root</db.system.password>
+                <docker.image>mysql:5.5</docker.image>
+                <docker.wait.log>starting as process 1</docker.wait.log>
             </properties>
             <dependencies>
                 <dependency>
@@ -219,20 +250,38 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>mysql</groupId>
-                                <artifactId>mysql-connector-java</artifactId>
-                                <version>${mysql.version}</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>${docker.image}</name>
+                                    <run>
+                                        <ports>
+                                            <port>db.port:3306</port>
+                                        </ports>
+                                        <cmd>--character-set-server=utf8 --collation-server=utf8_bin</cmd>
+                                        <env>
+                                            <MYSQL_DATABASE>${db.name}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${db.username}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
+                                            <MYSQL_ROOT_PASSWORD>${db.system.password}</MYSQL_ROOT_PASSWORD>
+                                        </env>
+                                        <wait>
+                                            <log>${docker.wait.log}</log>
+                                            <time>120000</time>
+                                        </wait>
+                                        <log>
+                                            <prefix>mysql</prefix>
+                                        </log>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -251,8 +300,11 @@
             <id>postgres</id>
             <properties>
                 <ao.test.database>postgres</ao.test.database>
-                <db.system.username>postgres</db.system.username>
-                <db.system.password>postgres</db.system.password>
+                <db.schema>public</db.schema>
+                <db.url>jdbc:postgresql://localhost:${db.port}/${db.name}</db.url>
+
+                <docker.image>postgres:9.2</docker.image>
+                <docker.wait.log>PostgreSQL init process complete</docker.wait.log>
             </properties>
             <dependencies>
                 <dependency>
@@ -265,69 +317,37 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <dependencies>
-                            <dependency>
-                                <groupId>postgresql</groupId>
-                                <artifactId>postgresql</artifactId>
-                                <version>${postgres.version}</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>${docker.image}</name>
+
+                                    <run>
+                                        <ports>
+                                            <port>db.port:5432</port>
+                                        </ports>
+                                        <env>
+                                            <POSTGRES_DB>${db.name}</POSTGRES_DB>
+                                            <POSTGRES_USER>${db.username}</POSTGRES_USER>
+                                            <POSTGRES_PASSWORD>${db.password}</POSTGRES_PASSWORD>
+                                        </env>
+                                        <wait>
+                                            <log>${docker.wait.log}</log>
+                                            <time>1200000</time>
+                                        </wait>
+                                        <log>
+                                            <prefix>postgres</prefix>
+                                        </log>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>
-                                net.java.ao.test.junit.H2IntegrationTest,
-                                net.java.ao.test.junit.HsqlIntegrationTest,
-                                net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.OracleIntegrationTest,
-                                net.java.ao.test.junit.SqlServerIntegrationTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>postgres-jdbc4</id>
-            <properties>
-                <ao.test.database>postgres</ao.test.database>
-                <db.username>postgres</db.username>
-                <db.password>postgres</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>9.0-801.jdbc4</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <configuration>
-                            <schema>ao_schema</schema>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>postgresql</groupId>
-                                <artifactId>postgresql</artifactId>
-                                <version>9.0-801.jdbc4</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -346,10 +366,11 @@
             <id>oracle</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
-                <db.url>jdbc:oracle:thin:localhost:1521:XE</db.url>
+                <db.plugin.url>jdbc:oracle:thin:localhost:1521:XE</db.plugin.url>
                 <db.sid>XE</db.sid>
                 <db.system.username>system</db.system.username>
                 <db.system.password>manager</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -391,7 +412,7 @@
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -407,17 +428,18 @@
             </build>
         </profile>
         <profile>
-            <id>sqlserver</id>
+            <id>sqlserver-jtds</id>
             <properties>
                 <ao.test.database>sqlserver</ao.test.database>
                 <db.system.username>sa</db.system.username>
                 <db.system.password>password</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>net.sourceforge.jtds</groupId>
                     <artifactId>jtds</artifactId>
-                    <version>1.2.4</version>
+                    <version>${jtds.version}</version>
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
@@ -430,14 +452,14 @@
                             <dependency>
                                 <groupId>net.sourceforge.jtds</groupId>
                                 <artifactId>jtds</artifactId>
-                                <version>1.2.4</version>
+                                <version>${jtds.version}</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
@@ -458,12 +480,13 @@
                 <ao.test.database>sqlserver</ao.test.database>
                 <db.system.username>sa</db.system.username>
                 <db.system.password>password</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>com.microsoft.sqlserver</groupId>
                     <artifactId>sqljdbc</artifactId>
-                    <version>4.0.2206</version>
+                    <version>${sqljdbc.version}</version>
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
@@ -476,14 +499,14 @@
                             <dependency>
                                 <groupId>com.microsoft.sqlserver</groupId>
                                 <artifactId>sqljdbc</artifactId>
-                                <version>4.0.2206</version>
+                                <version>${sqljdbc.version}</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
                             <excludedGroups>
                                 net.java.ao.test.junit.H2IntegrationTest,
