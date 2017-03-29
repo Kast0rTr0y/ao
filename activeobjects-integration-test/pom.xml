@@ -13,50 +13,108 @@
     <name>Active Objects - Integration testing</name>
     <description>This is where the integration testing of the Active Objects library is done!</description>
 
-    <build>
-        <plugins>
+    <profiles>
+        <profile> <!-- create then drop test DB; not used with docker -->
+            <id>createDB</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>${db.skip}</skip>
+                            <database>${ao.test.database}</database>
+                            <schema>${db.schema}</schema>
+                            <name>${db.name}</name>
+                            <host>${db.host}</host>
+                            <username>${db.username}</username>
+                            <password>${db.password}</password>
+                            <rootUsername>${db.system.username}</rootUsername>
+                            <rootPassword>${db.system.password}</rootPassword>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>create-db</id>
+                                <goals>
+                                    <goal>create</goal>
+                                </goals>
+                                <phase>pre-integration-test</phase>
+                            </execution>
+                            <execution>
+                                <id>drop-db</id>
+                                <goals>
+                                    <goal>drop</goal>
+                                </goals>
+                                <phase>post-integration-test</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+</profiles>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <configuration>
+                <skip>${docker.skip}</skip>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>start</id>
+                    <phase>pre-integration-test</phase>
+                    <goals>
+                        <goal>start</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>stop</id>
+                    <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                </execution>
+            </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <excludes>
+                        <exclude>**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
                     <systemPropertyVariables>
                         <ao.test.database>${ao.test.database}</ao.test.database>
+                        <db.username>${db.username}</db.username>
+                        <db.password>${db.password}</db.password>
+                        <db.name>${db.name}</db.name>
+                        <db.schema>${db.schema}</db.schema>
+                        <db.url>${db.url}</db.url>
                         <ao.test.tablenameconverter>${ao.test.tablenameconverter}</ao.test.tablenameconverter>
                         <ao.test.fieldnameconverter>${ao.test.fieldnameconverter}</ao.test.fieldnameconverter>
                     </systemPropertyVariables>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
                 </configuration>
-            </plugin>
-            <!-- creates and drops databases before and after tests -->
-            <plugin>
-                <groupId>org.leberrigaud.maven.plugins</groupId>
-                <artifactId>database-maven-plugin</artifactId>
-                <configuration>
-                    <skip>${db.skip}</skip>
-                    <database>${ao.test.database}</database>
-                    <schema>${db.schema}</schema>
-                    <name>${db.name}</name>
-                    <host>${db.host}</host>
-                    <username>${db.username}</username>
-                    <password>${db.password}</password>
-                    <rootUsername>${db.system.username}</rootUsername>
-                    <rootPassword>${db.system.password}</rootPassword>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>create-db</id>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                        <phase>process-test-resources</phase>
-                    </execution>
-                    <execution>
-                        <id>drop-db</id>
-                        <goals>
-                            <goal>drop</goal>
-                        </goals>
-                        <phase>test</phase>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
