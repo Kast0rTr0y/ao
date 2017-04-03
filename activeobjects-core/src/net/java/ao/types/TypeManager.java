@@ -173,7 +173,7 @@ public class TypeManager {
                 .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("NVARCHAR", "NVARCHAR(max)", Integer.MAX_VALUE)
+                .addStringTypes("NVARCHAR", "NVARCHAR(max)", (1024 * 1024 * 1024) - 1) // NVARCHAR(max) is (2^30)-1
                 .build();
     }
 
