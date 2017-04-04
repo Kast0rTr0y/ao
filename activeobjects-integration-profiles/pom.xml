@@ -380,56 +380,6 @@
             </build>
         </profile>
         <profile>
-            <id>postgres-jdbc4</id>
-            <properties>
-                <ao.test.database>postgres</ao.test.database>
-                <db.username>postgres</db.username>
-                <db.password>postgres</db.password>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>9.0-801.jdbc4</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.leberrigaud.maven.plugins</groupId>
-                        <artifactId>database-maven-plugin</artifactId>
-                        <configuration>
-                            <schema>ao_schema</schema>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>postgresql</groupId>
-                                <artifactId>postgresql</artifactId>
-                                <version>9.0-801.jdbc4</version>
-                                <scope>runtime</scope>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>
-                                net.java.ao.test.junit.H2IntegrationTest,
-                                net.java.ao.test.junit.HsqlIntegrationTest,
-                                net.java.ao.test.junit.DerbyIntegrationTest,
-                                net.java.ao.test.junit.MySqlIntegrationTest,
-                                net.java.ao.test.junit.NuoDBIntegrationTest,
-                                net.java.ao.test.junit.OracleIntegrationTest,
-                                net.java.ao.test.junit.SqlServerIntegrationTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>oracle</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
