@@ -16,8 +16,7 @@
         <hsqldb.version>1.8.0.5</hsqldb.version>
         <mysql.version>5.1.13</mysql.version>
         <postgres.version>9.2-1002.jdbc4</postgres.version>
-        <oracle.version>12.1.0.1-atlassian-hosted</oracle.version>
-        <ojdbc.version>12.1.0.1-atlassian-hosted</ojdbc.version>
+        <oracle.version>11.2.0.2.0</oracle.version>
         <nuodb.version>2.0.4</nuodb.version>
         <jtds.version>1.2.4</jtds.version>
         <sqljdbc.version>4.0.2206</sqljdbc.version>
@@ -434,24 +433,17 @@
             <id>oracle</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
-                <docker.image>docker.atlassian.io/buildeng/oracle-database:12.1.0.2-ee</docker.image>
-                <docker.wait.log>DATABASE IS READY TO USE</docker.wait.log>
-
-                <db.url>jdbc:oracle:thin:@localhost:${db.port}:ORCLPDB1</db.url>
-                <db.artifactGroup>com.oracle</db.artifactGroup>
-                <db.artifactId>ojdbc6</db.artifactId>
-
-                <db.username>ao_oracle</db.username>
-                <db.password>ao_oracle</db.password>
-                <db.name>ao_oracle</db.name>
-                <db.schema>ao_oracle</db.schema>
+                <db.url>jdbc:oracle:thin:localhost:1521:XE</db.url>
+                <db.sid>XE</db.sid>
+                <db.system.username>system</db.system.username>
+                <db.system.password>manager</db.system.password>
             </properties>
             <dependencies>
                 <dependency>
-                    <groupId>${db.artifactGroup}</groupId>
-                    <artifactId>${db.artifactId}</artifactId>
-                    <version>${ojdbc.version}</version>
-                    <scope>test</scope>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${oracle.version}</version>
+                    <scope>runtime</scope>
                 </dependency>
                 <dependency>
                     <groupId>c3p0</groupId>
@@ -463,69 +455,26 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
+                        <groupId>org.leberrigaud.maven.plugins</groupId>
+                        <artifactId>database-maven-plugin</artifactId>
                         <configuration>
-                            <images>
-                                <image>
-                                    <name>${docker.image}</name>
-
-                                    <run>
-                                        <ports>
-                                            <port>db.port:1521</port>
-                                        </ports>
-                                        <env>
-                                            <WEB_CONSOLE>false</WEB_CONSOLE>
-                                        </env>
-                                        <wait>
-                                            <log>${docker.wait.log}</log>
-                                            <time>1200000</time>
-                                        </wait>
-                                        <log>
-                                            <prefix>oracle</prefix>
-                                        </log>
-                                    </run>
-                                </image>
-                            </images>
+                            <schema>ao_schema</schema>
+                            <sid>${db.sid}</sid>
                         </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sql-maven-plugin</artifactId>
                         <dependencies>
                             <dependency>
-                                <groupId>${db.artifactGroup}</groupId>
-                                <artifactId>${db.artifactId}</artifactId>
-                                <version>${ojdbc.version}</version>
+                                <groupId>com.oracle</groupId>
+                                <artifactId>ojdbc6</artifactId>
+                                <version>${oracle.version}</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                            <dependency>
+                                <groupId>c3p0</groupId>
+                                <artifactId>c3p0</artifactId>
+                                <version>${c3p0.version}</version>
+                                <scope>runtime</scope>
                             </dependency>
                         </dependencies>
-
-                        <configuration>
-                            <username>SYS AS SYSDBA</username>
-                            <password>oracle</password>
-                            <url>jdbc:oracle:thin:@localhost:${db.port}:ORCLPDB1</url>
-                            <driver>oracle.jdbc.OracleDriver</driver>
-                            <skip>${skipTests}</skip>
-                        </configuration>
-
-                        <executions>
-                            <execution>
-                                <id>create-db</id>
-                                <phase>integration-test</phase>
-
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-
-                                <configuration>
-                                    <autocommit>true</autocommit>
-                                    <srcFiles>
-                                        <srcFile>../activeobjects-integration-profiles/src/test/bin/create-oracle-user.sql</srcFile>
-                                    </srcFiles>
-                                    <onError>continue</onError>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
