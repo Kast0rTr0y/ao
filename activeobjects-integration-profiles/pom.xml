@@ -34,6 +34,11 @@
             <properties>
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -69,6 +74,11 @@
                 <ao.test.database>hsql</ao.test.database>
                 <db.skip>true</db.skip>
                 <hsqldb.version>2.2.4</hsqldb.version>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -106,6 +116,11 @@
             <properties>
                 <ao.test.database>h2-memory</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -146,6 +161,11 @@
             <properties>
                 <ao.test.database>h2-file</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -180,6 +200,11 @@
             <properties>
                 <ao.test.database>h2-server</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -214,6 +239,11 @@
             <properties>
                 <ao.test.database>nuodb</ao.test.database>
                 <db.skip>true</db.skip>
+                <db.name/>
+                <db.username/>
+                <db.password/>
+                <db.schema/>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -386,6 +416,7 @@
                 <db.sid>XE</db.sid>
                 <db.system.username>system</db.system.username>
                 <db.system.password>manager</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
@@ -449,6 +480,7 @@
                 <ao.test.database>sqlserver</ao.test.database>
                 <db.system.username>sa</db.system.username>
                 <db.system.password>password</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
