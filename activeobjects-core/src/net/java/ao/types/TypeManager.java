@@ -166,15 +166,16 @@ public class TypeManager {
     }
 
     public static TypeManager sqlServer() {
-        return new TypeManager.Builder()
+        final int maxTextPrecision = (1024 * 1024 * 1024) - 1; // NVARCHAR(max) is (2^30)-1
+        Builder builder = new Builder()
                 .addMapping(blobType(), schemaType("IMAGE"))
                 .addMapping(booleanType(), schemaType("BIT"))
                 .addMapping(dateType(), schemaType("DATETIME"))
                 .addMapping(doubleType(), schemaType("FLOAT"))
                 .addMapping(integerType(), schemaType("INTEGER"))
                 .addMapping(longType(), schemaType("BIGINT"))
-                .addStringTypes("NVARCHAR", "NVARCHAR(max)", (1024 * 1024 * 1024) - 1) // NVARCHAR(max) is (2^30)-1
-                .build();
+                .addStringTypes("NVARCHAR", "NVARCHAR(max)", maxTextPrecision);
+        return new SqlServerTypeManager(builder, maxTextPrecision);
     }
 
     public static TypeManager oracle() {
@@ -265,6 +266,25 @@ public class TypeManager {
                 //
                 // The MariaDB connector bug is: https://mariadb.atlassian.net/browse/CONJ-72
                 return super.getTypeFromSchema(Types.BIT, qualifiers());
+            }
+            return super.getTypeFromSchema(jdbcType, qualifiers);
+        }
+    }
+
+    private static class SqlServerTypeManager extends TypeManager {
+        private final int maxTextPrecision;
+
+        private SqlServerTypeManager(final Builder builder, int maxTextPrecision) {
+            super(builder);
+            this.maxTextPrecision = maxTextPrecision;
+        }
+
+        @Override
+        public TypeInfo<?> getTypeFromSchema(final int jdbcType, final TypeQualifiers qualifiers) {
+            if (jdbcType == Types.NVARCHAR && qualifiers.hasPrecision() && qualifiers.getPrecision() == maxTextPrecision) {
+                // JTDS reports NVARCHAR(max) as CLOB (2005) while sqlserver driver reports it as NVARCHAR(max), and in that
+                // scnario we don't handle the unlimited type properly, so we want to ensure we treat it correctly as unlimited
+                return super.getTypeFromSchema(Types.NVARCHAR, qualifiers().stringLength(UNLIMITED_LENGTH));
             }
             return super.getTypeFromSchema(jdbcType, qualifiers);
         }
