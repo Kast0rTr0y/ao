@@ -30,7 +30,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testRemoveNotNullConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NotNullConstraint.T.class);
@@ -46,7 +46,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testAddNotNullConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(WithoutNotNullConstraint.T.class);
@@ -62,7 +62,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testAddDefaultConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoDefaultConstraint.T.class);
@@ -78,7 +78,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testRemoveDefaultConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(DefaultConstraint.T.class);
@@ -94,7 +94,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testNotNullAndDefaultToNotNullConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NullAndDefaultConstraint.T.class);
@@ -112,7 +112,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testNotNullToNotNullAndDefaultConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NullAndNoDefaultConstraint.T.class);
@@ -130,7 +130,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testNoneToNotNullAndDefaultConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoDefaultConstraint.T.class);
@@ -148,7 +148,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testNotNullAndDefaultToNoConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NullAndDefaultConstraint.T.class);
@@ -168,7 +168,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @NonTransactional
     public void testAddIndex() throws Exception {
         // first create with constraint
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoIndexedColumn.T.class);
@@ -182,7 +182,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @NonTransactional
     public void testRemoveIndex() throws Exception {
         // first create with constraint
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(IndexedColumn.T.class);
@@ -195,7 +195,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testShouldAddCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoCompositeIndex.T.class);
@@ -208,7 +208,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void shouldAddCompositeIndexAndColumnConstraint() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoUniqueConstraintColumn.T.class);
@@ -221,7 +221,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testShouldRemoveCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(CompositeIndex.T.class);
@@ -234,7 +234,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void shouldMigrateToSingleColumnCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(IndexedColumn.T.class);
@@ -247,7 +247,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void shouldMigrateFromSingleColumnCompositeIndex() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(SingleColumnIndex.T.class);
@@ -264,7 +264,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @NonTransactional
     public void testAddUniqueConstraint() throws Exception {
         // first create with constraint
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(NoUniqueConstraintColumn.T.class);
@@ -281,7 +281,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @NonTransactional
     public void testRemoveUniqueConstraint() throws Exception {
         // first create with constraint
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(UniqueConstraintColumn.T.class);
@@ -294,7 +294,7 @@ public final class ConstraintsMigrationTest extends ActiveObjectsIntegrationTest
     @Test
     @NonTransactional
     public void testUpdateConstraintWithForeignKey() throws Exception {
-        entityManager.migrate(Clean.T.class);
+        entityManager.migrateDestructively(Clean.T.class);
         assertEmpty();
 
         entityManager.migrate(WithForeignKey.T.class);
