@@ -528,6 +528,7 @@
                 <ao.test.database>sqlserver</ao.test.database>
                 <db.system.username>sa</db.system.username>
                 <db.system.password>password</db.system.password>
+                <docker.skip>true</docker.skip>
             </properties>
             <dependencies>
                 <dependency>
