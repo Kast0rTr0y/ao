@@ -5,30 +5,24 @@
     <parent>
         <groupId>net.java.dev.activeobjects</groupId>
         <artifactId>activeobjects-parent</artifactId>
-        <version>1.3.0-SNAPSHOT</version>
+        <version>1.2.4-SNAPSHOT</version>
     </parent>
 
-    <artifactId>activeobjects-test</artifactId>
-    <name>Active Objects - The testing library</name>
-    <description>This is a library for Active Objects users to depend on for their own testing.</description>
+    <artifactId>activeobjects-integration-test-model</artifactId>
+    <name>Active Objects - Integration testing model</name>
+    <description>This is the model used for integration testing!</description>
 
     <dependencies>
         <dependency>
             <groupId>net.java.dev.activeobjects</groupId>
-            <artifactId>activeobjects</artifactId>
+            <artifactId>activeobjects-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
-            <scope>provided</scope>
+            <groupId>net.java.dev.activeobjects</groupId>
+            <artifactId>activeobjects-test</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
-
