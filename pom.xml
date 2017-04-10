@@ -11,7 +11,7 @@
 
     <groupId>net.java.dev.activeobjects</groupId>
     <artifactId>activeobjects-parent</artifactId>
-    <version>1.4.0</version>
+    <version>1.4.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Active Objects - Parent POM</name>
@@ -38,7 +38,7 @@
         <connection>scm:git:git@bitbucket.org:activeobjects/ao.git</connection>
         <developerConnection>scm:git:git@bitbucket.org:activeobjects/ao.git</developerConnection>
         <url>https://bitbucket.org/activeobjects/ao</url>
-      <tag>v1.4.0</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <developers>
