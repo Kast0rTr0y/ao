@@ -1,7 +1,7 @@
 CREATE TABLE dbo.person (
     id INTEGER IDENTITY(1,1) NOT NULL,
     firstName NVARCHAR(255) NOT NULL,
-    lastName NTEXT,
+    lastName NVARCHAR(max),
     age INTEGER,
     url NVARCHAR(450) CONSTRAINT U_person_url UNIQUE NOT NULL,
     height FLOAT CONSTRAINT df_person_height DEFAULT 62.3,
