@@ -27,6 +27,7 @@
                             <schema>${db.schema}</schema>
                             <name>${db.name}</name>
                             <host>${db.host}</host>
+                            <url>${db.plugin.url}${db.url}</url> <!-- use db.plugin.url if the URL is only for this plugin, db.url otherwise -->
                             <username>${db.username}</username>
                             <password>${db.password}</password>
                             <rootUsername>${db.system.username}</rootUsername>

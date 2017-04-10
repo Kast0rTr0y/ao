@@ -412,6 +412,8 @@
             <id>oracle</id>
             <properties>
                 <ao.test.database>oracle</ao.test.database>
+                <db.plugin.url>jdbc:oracle:thin:localhost:1521:XE</db.plugin.url>
+                <db.sid>XE</db.sid>
                 <db.system.username>system</db.system.username>
                 <db.system.password>manager</db.system.password>
                 <docker.skip>true</docker.skip>
