@@ -108,7 +108,6 @@
                         <db.name>${db.name}</db.name>
                         <db.schema>${db.schema}</db.schema>
                         <db.url>${db.url}</db.url>
-                        <db.sid>${db.sid}</db.sid>
                         <ao.test.tablenameconverter>${ao.test.tablenameconverter}</ao.test.tablenameconverter>
                         <ao.test.fieldnameconverter>${ao.test.fieldnameconverter}</ao.test.fieldnameconverter>
                     </systemPropertyVariables>
