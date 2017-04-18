@@ -281,7 +281,7 @@
                 <db.system.username>root</db.system.username>
                 <db.system.password>root</db.system.password>
                 <docker.image>mysql:5.5</docker.image>
-                <docker.wait.log>Server socket created on IP</docker.wait.log>
+                <docker.wait.log>starting as process</docker.wait.log>
             </properties>
             <dependencies>
                 <dependency>
